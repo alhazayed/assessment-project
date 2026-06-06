@@ -17,7 +17,7 @@ export interface Profile {
 export interface PatientProfile {
   id: string
   date_of_birth: string | null
-  gender: 'male' | 'female' | 'prefer_not_to_say' | 'other' | null
+  gender: 'male' | 'female' | null
   phone_number: string | null
   emergency_contact_name: string | null
   emergency_contact_phone: string | null
@@ -28,6 +28,12 @@ export interface PatientProfile {
   share_journal_default: boolean
   onboarding_completed_at: string | null
   onboarding_step: number | null
+  marital_status: 'single' | 'married' | 'divorced' | 'widowed' | null
+  educational_status: 'none' | 'primary' | 'secondary' | 'diploma' | 'bachelor' | 'master' | 'phd' | 'other' | null
+  employment_status: 'employed' | 'self_employed' | 'unemployed' | 'student' | 'retired' | 'homemaker' | 'other' | null
+  has_psychiatric_medications: boolean
+  psychiatric_medication_details: string | null
+  psychiatric_medication_duration: string | null
 }
 
 export interface AssessmentDefinition {
@@ -94,7 +100,6 @@ export interface AssessmentAssignment {
   note_to_patient_en: string | null
   note_to_patient_ar: string | null
   assessment_definitions?: AssessmentDefinition
-  profiles?: Profile
 }
 
 export interface MoodLog {

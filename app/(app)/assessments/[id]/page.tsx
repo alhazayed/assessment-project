@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, LogIn } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentItem, ResponseOption, ScoringBand } from '@/lib/types'
 
 export default function TakeAssessmentPage() {
@@ -11,6 +12,7 @@ export default function TakeAssessmentPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const [definition, setDefinition] = useState<AssessmentDefinition | null>(null)
   const [items, setItems] = useState<AssessmentItem[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -22,6 +24,9 @@ export default function TakeAssessmentPage() {
 
   useEffect(() => {
     async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      setIsLoggedIn(!!user)
+
       const [defRes, itemsRes] = await Promise.all([
         supabase.from('assessment_definitions').select('*').eq('id', id).single(),
         supabase.from('assessment_items').select('*').eq('definition_id', id).order('item_number'),
@@ -32,7 +37,7 @@ export default function TakeAssessmentPage() {
     load()
   }, [id])
 
-  function calcScore(scoringLogic: ScoringBand[], totalScore: number) {
+  function calcBand(scoringLogic: ScoringBand[], totalScore: number) {
     for (const band of scoringLogic) {
       if (totalScore >= band.min && totalScore <= band.max) return band
     }
@@ -40,54 +45,55 @@ export default function TakeAssessmentPage() {
   }
 
   async function handleSubmit() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user || !definition) return
-
+    if (!definition) return
     setSubmitting(true)
     setError(null)
 
     const totalScore = Object.values(answers).reduce((sum, a) => sum + a.value, 0)
-    const band = calcScore(definition.scoring_logic, totalScore)
+    const band = calcBand(definition.scoring_logic, totalScore)
     const highRisk = definition.high_risk_threshold !== null && totalScore >= definition.high_risk_threshold
 
-    const { data: submission, error: subError } = await supabase
-      .from('assessment_submissions')
-      .insert({
-        patient_id: user.id,
-        definition_id: definition.id,
-        total_score: totalScore,
-        severity_band: band?.severity_en || 'Unknown',
-        high_risk_flag: highRisk,
-        is_self_initiated: true,
-      })
-      .select()
-      .single()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (subError || !submission) {
-      setError('Failed to submit assessment. Please try again.')
-      setSubmitting(false)
-      return
-    }
+    if (user) {
+      const { data: submission, error: subError } = await supabase
+        .from('assessment_submissions')
+        .insert({
+          patient_id: user.id,
+          definition_id: definition.id,
+          total_score: totalScore,
+          severity_band: band?.severity_en || 'Unknown',
+          high_risk_flag: highRisk,
+          is_self_initiated: true,
+        })
+        .select()
+        .single()
 
-    const responses = items.map(item => {
-      const ans = answers[item.id]
-      return {
-        submission_id: submission.id,
-        item_id: item.id,
-        response_value: ans?.value ?? 0,
-        response_label_en: ans?.label_en ?? '',
-        response_label_ar: ans?.label_ar ?? '',
+      if (subError || !submission) {
+        setError('Failed to save results. Please try again.')
+        setSubmitting(false)
+        return
       }
-    })
 
-    await supabase.from('assessment_responses').insert(responses)
+      const responses = items.map(item => {
+        const ans = answers[item.id]
+        return {
+          submission_id: submission.id,
+          item_id: item.id,
+          response_value: ans?.value ?? 0,
+          response_label_en: ans?.label_en ?? '',
+          response_label_ar: ans?.label_ar ?? '',
+        }
+      })
+      await supabase.from('assessment_responses').insert(responses)
+    }
 
     setResult({ score: totalScore, band: band?.severity_en || 'Unknown', high_risk: highRisk })
     setSubmitted(true)
     setSubmitting(false)
   }
 
-  if (!definition || items.length === 0) {
+  if (!definition || items.length === 0 || isLoggedIn === null) {
     return (
       <div className="p-8 flex items-center justify-center min-h-64">
         <div className="text-center">
@@ -120,7 +126,7 @@ export default function TakeAssessmentPage() {
 
           <div className="bg-gray-50 rounded-xl p-6 mb-6">
             <p className="text-4xl font-bold text-gray-900 mb-1">{result.score}</p>
-            <p className="text-sm text-gray-500 mb-3">Total Score (out of {definition.total_questions * 3})</p>
+            <p className="text-sm text-gray-500 mb-3">Total Score</p>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
               isHighRisk ? 'bg-red-100 text-red-700' :
               isGood ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
@@ -133,18 +139,38 @@ export default function TakeAssessmentPage() {
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
               <p className="text-sm font-semibold text-red-700 mb-1">Important Notice</p>
               <p className="text-sm text-red-600">
-                Your score indicates you may be experiencing significant distress. Please reach out to your clinician or contact a mental health crisis line immediately.
+                Your score suggests you may be experiencing significant distress. Please reach out to a mental health professional or crisis line as soon as possible.
               </p>
             </div>
           )}
 
+          {!isLoggedIn ? (
+            <div className="mb-6 p-4 bg-brand-50 border border-brand-200 rounded-xl text-left">
+              <div className="flex items-start gap-3">
+                <LogIn className="w-5 h-5 text-brand-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-brand-800">Save your results</p>
+                  <p className="text-sm text-brand-600 mt-1">
+                    Create a free account to save this result, track changes over time, and get personalised insights.
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <Link href="/register" className="btn-primary text-xs px-3 py-1.5">Create free account</Link>
+                    <Link href="/login" className="btn-secondary text-xs px-3 py-1.5">Sign in</Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-green-600 mb-6 flex items-center justify-center gap-2">
+              <CheckCircle2 className="w-4 h-4" /> Results saved to your account
+            </p>
+          )}
+
           <div className="flex gap-3 justify-center">
-            <button onClick={() => router.push('/assessments')} className="btn-secondary">
-              Back to Assessments
-            </button>
-            <button onClick={() => router.push('/dashboard')} className="btn-primary">
-              Go to Dashboard
-            </button>
+            <Link href="/assessments" className="btn-secondary">Back to Assessments</Link>
+            {isLoggedIn && (
+              <Link href="/dashboard" className="btn-primary">Go to Dashboard</Link>
+            )}
           </div>
         </div>
       </div>
@@ -154,12 +180,20 @@ export default function TakeAssessmentPage() {
   const currentItem = items[currentIndex]
   const progress = ((currentIndex + 1) / items.length) * 100
   const currentAnswer = answers[currentItem.id]
+  const allAnswered = Object.keys(answers).length >= items.length
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-lg font-semibold text-gray-900">{definition.name_en}</h1>
+          <div>
+            <h1 className="text-lg font-semibold text-gray-900">{definition.name_en}</h1>
+            {!isLoggedIn && (
+              <p className="text-xs text-gray-400 mt-0.5">
+                <Link href="/register" className="text-brand-600 hover:underline">Sign up</Link> to save your results
+              </p>
+            )}
+          </div>
           <span className="text-sm text-gray-400">{currentIndex + 1} / {items.length}</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -225,18 +259,18 @@ export default function TakeAssessmentPage() {
         ) : (
           <button
             onClick={handleSubmit}
-            disabled={!currentAnswer || submitting || Object.keys(answers).length < items.length}
+            disabled={!allAnswered || submitting}
             className="btn-primary gap-2 disabled:opacity-40"
           >
-            {submitting ? 'Submitting...' : 'Submit Assessment'}
+            {submitting ? 'Submitting...' : 'See Results'}
             <CheckCircle2 className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {Object.keys(answers).length < items.length && currentIndex === items.length - 1 && (
+      {!allAnswered && currentIndex === items.length - 1 && (
         <p className="text-center text-xs text-orange-600 mt-3">
-          Please answer all {items.length} questions before submitting. ({items.length - Object.keys(answers).length} remaining)
+          {items.length - Object.keys(answers).length} question(s) still need an answer
         </p>
       )}
     </div>
