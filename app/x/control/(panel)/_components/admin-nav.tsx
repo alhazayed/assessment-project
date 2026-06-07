@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, Shield, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, Shield, LogOut, TrendingUp } from 'lucide-react'
 
 const NAV = [
   { href: '/x/control/overview',      label: 'Overview',       icon: LayoutDashboard },
+  { href: '/x/control/analytics',     label: 'Analytics',      icon: TrendingUp },
   { href: '/x/control/users',         label: 'Users',          icon: Users },
   { href: '/x/control/assessments',   label: 'Assessments',    icon: ClipboardList },
   { href: '/x/control/results',       label: 'Results',        icon: BarChart3 },
