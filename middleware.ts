@@ -42,7 +42,8 @@ export async function middleware(request: NextRequest) {
     isAuthPage ||
     isAdminLogin ||
     pathname === '/' ||
-    pathname.startsWith('/assessments')
+    pathname.startsWith('/assessments') ||
+    pathname.startsWith('/api/')
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
