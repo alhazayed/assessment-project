@@ -16,39 +16,43 @@ import {
   Settings,
 } from 'lucide-react'
 import type { Profile } from '@/lib/types'
+import type { Lang } from '@/lib/i18n'
+import { t } from '@/lib/i18n'
+import LanguageToggle from '@/components/language-toggle'
 
 interface SidebarProps {
   profile: Profile | null
+  lang: Lang
 }
 
-const patientNav = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/assessments', label: 'Assessments', icon: ClipboardList },
-  { href: '/mood', label: 'Mood Tracker', icon: Heart },
-  { href: '/journal', label: 'Journal', icon: BookOpen },
-  { href: '/messages', label: 'Messages', icon: MessageSquare },
-  { href: '/profile', label: 'Profile', icon: User },
-]
-
-const clinicianNav = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/patients', label: 'My Patients', icon: Users },
-  { href: '/assessments', label: 'Assessments', icon: ClipboardList },
-  { href: '/messages', label: 'Messages', icon: MessageSquare },
-  { href: '/profile', label: 'Profile', icon: User },
-]
-
-const adminNav = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/patients', label: 'Patients', icon: Users },
-  { href: '/assessments', label: 'Assessments', icon: ClipboardList },
-  { href: '/profile', label: 'Profile', icon: User },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
-]
-
-export default function Sidebar({ profile }: SidebarProps) {
+export default function Sidebar({ profile, lang }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+
+  const patientNav = [
+    { href: '/dashboard', label: t('nav.dashboard', lang), icon: LayoutDashboard },
+    { href: '/assessments', label: t('nav.assessments', lang), icon: ClipboardList },
+    { href: '/mood', label: t('nav.mood', lang), icon: Heart },
+    { href: '/journal', label: t('nav.journal', lang), icon: BookOpen },
+    { href: '/messages', label: t('nav.messages', lang), icon: MessageSquare },
+    { href: '/profile', label: t('nav.profile', lang), icon: User },
+  ]
+
+  const clinicianNav = [
+    { href: '/dashboard', label: t('nav.dashboard', lang), icon: LayoutDashboard },
+    { href: '/patients', label: t('nav.patients', lang), icon: Users },
+    { href: '/assessments', label: t('nav.assessments', lang), icon: ClipboardList },
+    { href: '/messages', label: t('nav.messages', lang), icon: MessageSquare },
+    { href: '/profile', label: t('nav.profile', lang), icon: User },
+  ]
+
+  const adminNav = [
+    { href: '/dashboard', label: t('nav.dashboard', lang), icon: LayoutDashboard },
+    { href: '/patients', label: t('nav.admin_patients', lang), icon: Users },
+    { href: '/assessments', label: t('nav.assessments', lang), icon: ClipboardList },
+    { href: '/profile', label: t('nav.profile', lang), icon: User },
+    { href: '/admin/settings', label: t('nav.settings', lang), icon: Settings },
+  ]
 
   const nav = profile?.role === 'clinician' ? clinicianNav
     : profile?.role === 'admin' || profile?.role === 'superadmin' ? adminNav
@@ -61,15 +65,19 @@ export default function Sidebar({ profile }: SidebarProps) {
     router.refresh()
   }
 
+  const displayName = lang === 'ar' && profile?.full_name_ar
+    ? profile.full_name_ar
+    : profile?.full_name_en ?? ''
+
   return (
-    <aside className="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 flex flex-col z-10">
+    <aside className={`fixed inset-y-0 w-64 bg-white flex flex-col z-10 ${lang === 'ar' ? 'right-0 border-l' : 'left-0 border-r'} border-gray-200`}>
       <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100">
         <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center flex-shrink-0">
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </div>
-        <span className="font-semibold text-gray-900">vWelfare</span>
+        <span className="font-semibold text-gray-900">{t('app.name', lang)}</span>
       </div>
 
       {profile && (
@@ -77,11 +85,11 @@ export default function Sidebar({ profile }: SidebarProps) {
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
               <span className="text-sm font-semibold text-brand-700">
-                {profile.full_name_en.charAt(0).toUpperCase()}
+                {displayName.charAt(0).toUpperCase()}
               </span>
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{profile.full_name_en}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{displayName}</p>
               <p className="text-xs text-gray-500 capitalize">{profile.role}</p>
             </div>
           </div>
@@ -109,13 +117,17 @@ export default function Sidebar({ profile }: SidebarProps) {
         })}
       </nav>
 
+      <div className="px-3 pb-2">
+        <LanguageToggle lang={lang} className="w-full justify-center mb-1" />
+      </div>
+
       <div className="p-3 border-t border-gray-100">
         <button
           onClick={handleSignOut}
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
         >
           <LogOut className="w-4 h-4 text-gray-400" />
-          Sign out
+          {t('nav.signout', lang)}
         </button>
       </div>
     </aside>

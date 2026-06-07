@@ -5,9 +5,12 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { UserPlus } from 'lucide-react'
+import { useLang } from '@/lib/use-lang'
+import { t } from '@/lib/i18n'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const lang = useLang()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
@@ -48,17 +51,15 @@ export default function RegisterPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Account created!</h2>
-        <p className="text-gray-500 text-sm">
-          Please check your email to verify your account. Redirecting to login...
-        </p>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('auth.register.success.title', lang)}</h2>
+        <p className="text-gray-500 text-sm">{t('auth.register.success.msg', lang)}</p>
       </div>
     )
   }
 
   return (
     <div className="card p-8">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">Create your account</h2>
+      <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('auth.register.title', lang)}</h2>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -68,7 +69,7 @@ export default function RegisterPage() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="label" htmlFor="fullName">Full name</label>
+          <label className="label" htmlFor="fullName">{t('auth.register.name', lang)}</label>
           <input
             id="fullName"
             type="text"
@@ -76,12 +77,12 @@ export default function RegisterPage() {
             value={fullName}
             onChange={e => setFullName(e.target.value)}
             required
-            placeholder="Your full name"
+            placeholder={t('auth.register.name.ph', lang)}
           />
         </div>
 
         <div>
-          <label className="label" htmlFor="email">Email address</label>
+          <label className="label" htmlFor="email">{t('auth.register.email', lang)}</label>
           <input
             id="email"
             type="email"
@@ -94,7 +95,7 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className="label" htmlFor="password">Password</label>
+          <label className="label" htmlFor="password">{t('auth.register.password', lang)}</label>
           <input
             id="password"
             type="password"
@@ -103,20 +104,20 @@ export default function RegisterPage() {
             onChange={e => setPassword(e.target.value)}
             required
             minLength={8}
-            placeholder="Min. 8 characters"
+            placeholder={t('auth.register.password.ph', lang)}
           />
         </div>
 
         <button type="submit" className="btn-primary w-full gap-2" disabled={loading}>
           <UserPlus className="w-4 h-4" />
-          {loading ? 'Creating account...' : 'Create account'}
+          {loading ? t('auth.register.submitting', lang) : t('auth.register.submit', lang)}
         </button>
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-500">
-        Already have an account?{' '}
+        {t('auth.register.have_account', lang)}{' '}
         <Link href="/login" className="font-medium text-brand-600 hover:text-brand-700">
-          Sign in
+          {t('auth.register.signin', lang)}
         </Link>
       </p>
     </div>

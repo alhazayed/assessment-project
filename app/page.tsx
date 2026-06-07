@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getLanguage } from '@/lib/get-language'
+import { t } from '@/lib/i18n'
 import Link from 'next/link'
+import LanguageToggle from '@/components/language-toggle'
 import type { AssessmentDefinition } from '@/lib/types'
 import {
   ClipboardList, Brain, BookOpen, MessageSquare,
@@ -35,7 +38,7 @@ const DOMAIN_COLORS: Record<string, string> = {
   LSAS:   'bg-purple-50 text-purple-700 border-purple-200',
 }
 
-const DOMAIN_LABEL: Record<string, string> = {
+const DOMAIN_LABEL_EN: Record<string, string> = {
   PHQ9: 'Depression', GAD7: 'Anxiety', DASS21: 'Depression · Anxiety · Stress',
   ISI: 'Sleep', ASRS: 'ADHD', AUDITC: 'Alcohol', DAST10: 'Drug Use',
   MDQ: 'Bipolar', PCL5: 'Trauma', WHO5: 'Well-being', K10: 'Distress',
@@ -45,19 +48,83 @@ const DOMAIN_LABEL: Record<string, string> = {
   LSAS: 'Social Anxiety',
 }
 
+const DOMAIN_LABEL_AR: Record<string, string> = {
+  PHQ9: 'الاكتئاب', GAD7: 'القلق', DASS21: 'الاكتئاب · القلق · الضغط',
+  ISI: 'النوم', ASRS: 'فرط الحركة', AUDITC: 'الكحول', DAST10: 'تعاطي المخدرات',
+  MDQ: 'ثنائي القطب', PCL5: 'الصدمة', WHO5: 'الرفاهية', K10: 'الضيق',
+  OCIR: 'الوسواس القهري', IESR: 'الصدمة', PSS10: 'الضغط', RSES: 'تقدير الذات',
+  GDS15: 'الاكتئاب', ESS: 'النوم', EAT26: 'الأكل', CAGE: 'الكحول',
+  ACE: 'الطفولة', PSS4: 'الضغط', PHQ15: 'جسدي', WEMWBS: 'الرفاهية',
+  LSAS: 'القلق الاجتماعي',
+}
+
 export default async function LandingPage() {
   const supabase = createClient()
+  const lang = getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) redirect('/dashboard')
 
   const { data: definitions } = await supabase
     .from('assessment_definitions')
-    .select('id, code, name_en, description_en, total_questions')
+    .select('id, code, name_en, name_ar, description_en, description_ar, total_questions')
     .eq('is_active', true)
     .order('name_en')
 
-  const assessments = (definitions || []) as Pick<AssessmentDefinition, 'id' | 'code' | 'name_en' | 'description_en' | 'total_questions'>[]
+  const assessments = (definitions || []) as Pick<AssessmentDefinition, 'id' | 'code' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'total_questions'>[]
+  const DOMAIN_LABEL = lang === 'ar' ? DOMAIN_LABEL_AR : DOMAIN_LABEL_EN
+
+  const services = [
+    {
+      icon: ClipboardList,
+      color: 'bg-blue-50 text-blue-600',
+      titleKey: 'service.assessments.title' as const,
+      descPre: `${assessments.length} `,
+      descKey: 'service.assessments.desc.pre' as const,
+      ctaKey: 'service.assessments.cta' as const,
+      href: '#assessments',
+    },
+    {
+      icon: BarChart3,
+      color: 'bg-purple-50 text-purple-600',
+      titleKey: 'service.mood.title' as const,
+      descKey: 'service.mood.desc' as const,
+      ctaKey: 'service.mood.cta' as const,
+      href: '/register',
+    },
+    {
+      icon: BookOpen,
+      color: 'bg-emerald-50 text-emerald-600',
+      titleKey: 'service.journal.title' as const,
+      descKey: 'service.journal.desc' as const,
+      ctaKey: 'service.journal.cta' as const,
+      href: '/register',
+    },
+    {
+      icon: MessageSquare,
+      color: 'bg-orange-50 text-orange-600',
+      titleKey: 'service.messages.title' as const,
+      descKey: 'service.messages.desc' as const,
+      ctaKey: 'service.messages.cta' as const,
+      href: '/register',
+    },
+    {
+      icon: Brain,
+      color: 'bg-rose-50 text-rose-600',
+      titleKey: 'service.results.title' as const,
+      descKey: 'service.results.desc' as const,
+      ctaKey: 'service.results.cta' as const,
+      href: '#assessments',
+    },
+    {
+      icon: Users,
+      color: 'bg-teal-50 text-teal-600',
+      titleKey: 'service.clinicians.title' as const,
+      descKey: 'service.clinicians.desc' as const,
+      ctaKey: 'service.clinicians.cta' as const,
+      href: '/register',
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-white">
@@ -69,19 +136,20 @@ export default async function LandingPage() {
             <div className="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center shadow-sm">
               <Heart className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900 text-lg tracking-tight">vWelfare</span>
+            <span className="font-bold text-gray-900 text-lg tracking-tight">{t('app.name', lang)}</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm text-gray-600">
-            <a href="#services" className="hover:text-gray-900 transition-colors">Services</a>
-            <a href="#assessments" className="hover:text-gray-900 transition-colors">Assessments</a>
-            <a href="#about" className="hover:text-gray-900 transition-colors">About</a>
+            <a href="#services" className="hover:text-gray-900 transition-colors">{t('nav.services', lang)}</a>
+            <a href="#assessments" className="hover:text-gray-900 transition-colors">{t('nav.assessments', lang)}</a>
+            <a href="#about" className="hover:text-gray-900 transition-colors">{t('nav.about', lang)}</a>
           </nav>
           <div className="flex items-center gap-3">
+            <LanguageToggle lang={lang} />
             <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-              Sign in
+              {t('nav.signin', lang)}
             </Link>
             <Link href="/register" className="btn-primary text-sm px-4 py-2">
-              Get started free
+              {t('nav.signup', lang)}
             </Link>
           </div>
         </div>
@@ -93,28 +161,27 @@ export default async function LandingPage() {
         <div className="relative max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-brand-100 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
             <Sparkles className="w-3.5 h-3.5" />
-            Free · Evidence-based · Bilingual
+            {t('landing.badge', lang)}
           </div>
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight tracking-tight mb-6">
-            Your mental health<br />
-            <span className="text-brand-600">deserves clarity</span>
+            {t('landing.hero1', lang)}<br />
+            <span className="text-brand-600">{t('landing.hero2', lang)}</span>
           </h1>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Take validated psychological assessments, track your mood, and connect with clinicians —
-            all in one place. No account required to start.
+            {t('landing.hero.sub', lang)}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a href="#assessments" className="btn-primary text-base px-6 py-3 gap-2">
               <ClipboardList className="w-5 h-5" />
-              Take a free assessment
+              {t('landing.cta.assess', lang)}
             </a>
             <Link href="/register" className="btn-secondary text-base px-6 py-3 gap-2">
-              Create free account
+              {t('landing.cta.register', lang)}
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
           <p className="mt-5 text-sm text-gray-400">
-            {assessments.length} validated scales available · No login required to take any assessment
+            {assessments.length}{t('landing.count.suffix', lang)}
           </p>
         </div>
       </section>
@@ -124,14 +191,14 @@ export default async function LandingPage() {
         <div className="max-w-5xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
-              { icon: Shield, text: 'Clinically validated tools' },
-              { icon: Lock, text: 'Private & confidential' },
-              { icon: Globe, text: 'Arabic & English' },
-              { icon: Clock, text: 'Results in minutes' },
-            ].map(({ icon: Icon, text }) => (
-              <div key={text} className="flex items-center justify-center gap-2 text-sm text-gray-500 font-medium">
+              { icon: Shield, key: 'trust.validated' as const },
+              { icon: Lock, key: 'trust.private' as const },
+              { icon: Globe, key: 'trust.bilingual' as const },
+              { icon: Clock, key: 'trust.fast' as const },
+            ].map(({ icon: Icon, key }) => (
+              <div key={key} className="flex items-center justify-center gap-2 text-sm text-gray-500 font-medium">
                 <Icon className="w-4 h-4 text-brand-500 flex-shrink-0" />
-                {text}
+                {t(key, lang)}
               </div>
             ))}
           </div>
@@ -142,71 +209,22 @@ export default async function LandingPage() {
       <section id="services" className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">Everything you need</h2>
-            <p className="text-gray-500 text-lg max-w-xl mx-auto">
-              A complete mental health support ecosystem — from screening to ongoing care.
-            </p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">{t('services.title', lang)}</h2>
+            <p className="text-gray-500 text-lg max-w-xl mx-auto">{t('services.sub', lang)}</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: ClipboardList,
-                color: 'bg-blue-50 text-blue-600',
-                title: 'Validated Assessments',
-                description: `${assessments.length} evidence-based psychological scales covering depression, anxiety, stress, trauma, ADHD, eating disorders, substance use, and more. Free to take — no account needed.`,
-                cta: 'Take an assessment',
-                href: '#assessments',
-              },
-              {
-                icon: BarChart3,
-                color: 'bg-purple-50 text-purple-600',
-                title: 'Mood Tracking',
-                description: 'Log your mood, energy, anxiety, and sleep daily. Visualise trends over time and share insights with your clinician to inform treatment decisions.',
-                cta: 'Create account to track',
-                href: '/register',
-              },
-              {
-                icon: BookOpen,
-                color: 'bg-emerald-50 text-emerald-600',
-                title: 'Personal Journal',
-                description: 'Write private reflections and optionally share entries with your assigned clinician. Evidence shows expressive writing supports emotional regulation.',
-                cta: 'Start journaling',
-                href: '/register',
-              },
-              {
-                icon: MessageSquare,
-                color: 'bg-orange-50 text-orange-600',
-                title: 'Clinician Messaging',
-                description: 'Communicate securely with your assigned mental health clinician. Share updates, ask questions, and stay connected between appointments.',
-                cta: 'Connect with a clinician',
-                href: '/register',
-              },
-              {
-                icon: Brain,
-                color: 'bg-rose-50 text-rose-600',
-                title: 'Scientific Results',
-                description: 'Every assessment result includes a clinical explanation of your score, evidence-based recommendations, related conditions to be aware of, and suggested follow-up assessments.',
-                cta: 'See a sample result',
-                href: '#assessments',
-              },
-              {
-                icon: Users,
-                color: 'bg-teal-50 text-teal-600',
-                title: 'Clinician Portal',
-                description: 'Clinicians can assign assessments, review patient results, monitor mood trends, flag high-risk cases, and maintain therapeutic relationships — all in one dashboard.',
-                cta: 'For clinicians',
-                href: '/register',
-              },
-            ].map((service) => (
-              <div key={service.title} className="card p-6 flex flex-col hover:shadow-md transition-shadow">
+            {services.map((service) => (
+              <div key={service.titleKey} className="card p-6 flex flex-col hover:shadow-md transition-shadow">
                 <div className={`w-11 h-11 rounded-xl ${service.color} flex items-center justify-center mb-4`}>
                   <service.icon className="w-5 h-5" />
                 </div>
-                <h3 className="font-semibold text-gray-900 text-lg mb-2">{service.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed flex-1">{service.description}</p>
+                <h3 className="font-semibold text-gray-900 text-lg mb-2">{t(service.titleKey, lang)}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed flex-1">
+                  {'descPre' in service ? service.descPre : ''}{t(service.descKey, lang)}
+                </p>
                 <a href={service.href} className="mt-5 text-sm font-medium text-brand-600 hover:text-brand-700 flex items-center gap-1 transition-colors">
-                  {service.cta} <ChevronRight className="w-3.5 h-3.5" />
+                  {t(service.ctaKey, lang)} <ChevronRight className="w-3.5 h-3.5" />
                 </a>
               </div>
             ))}
@@ -218,10 +236,9 @@ export default async function LandingPage() {
       <section id="assessments" className="py-24 px-6 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">Free assessments — start now</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-3">{t('assessments.section.title', lang)}</h2>
             <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-              All {assessments.length} tools are scientifically validated and free to use.
-              No account required. Create one to save your results and track progress over time.
+              {t('assessments.section.sub.pre', lang)} {assessments.length} {t('assessments.section.sub.post', lang)}
             </p>
           </div>
 
@@ -229,6 +246,8 @@ export default async function LandingPage() {
             {assessments.map((a) => {
               const colorClass = DOMAIN_COLORS[a.code] ?? 'bg-gray-50 text-gray-600 border-gray-200'
               const domainLabel = DOMAIN_LABEL[a.code] ?? 'Mental Health'
+              const name = lang === 'ar' && a.name_ar ? a.name_ar : a.name_en
+              const description = lang === 'ar' && a.description_ar ? a.description_ar : a.description_en
               return (
                 <div key={a.id} className="card p-5 flex flex-col hover:shadow-md transition-all hover:-translate-y-0.5">
                   <div className="flex items-start justify-between mb-3">
@@ -236,20 +255,15 @@ export default async function LandingPage() {
                       {domainLabel}
                     </span>
                     <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md font-medium">
-                      {a.total_questions}Q
+                      {a.total_questions}{t('assessments.questions', lang)}
                     </span>
                   </div>
-                  <h3 className="font-semibold text-gray-900 leading-snug mb-2">{a.name_en}</h3>
-                  {a.description_en && (
-                    <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed flex-1">
-                      {a.description_en}
-                    </p>
+                  <h3 className="font-semibold text-gray-900 leading-snug mb-2">{name}</h3>
+                  {description && (
+                    <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed flex-1">{description}</p>
                   )}
-                  <Link
-                    href={`/assessments/${a.id}`}
-                    className="mt-4 btn-primary text-xs px-4 py-2 self-start"
-                  >
-                    Start free
+                  <Link href={`/assessments/${a.id}`} className="mt-4 btn-primary text-xs px-4 py-2 self-start">
+                    {t('assessments.start', lang)}
                   </Link>
                 </div>
               )
@@ -260,9 +274,11 @@ export default async function LandingPage() {
             <div className="inline-flex items-center gap-3 bg-brand-50 border border-brand-100 rounded-xl px-6 py-4 text-sm text-brand-700">
               <Heart className="w-4 h-4 flex-shrink-0" />
               <span>
-                <strong>Want to track your progress?</strong>{' '}
-                <Link href="/register" className="underline font-semibold hover:text-brand-800">Create a free account</Link>
-                {' '}to save results, monitor trends, and connect with a clinician.
+                <strong>{t('assessments.track.cta', lang)}</strong>{' '}
+                <Link href="/register" className="underline font-semibold hover:text-brand-800">
+                  {t('assessments.track.link', lang)}
+                </Link>
+                {' '}{t('assessments.track.suffix', lang)}
               </span>
             </div>
           </div>
@@ -274,53 +290,30 @@ export default async function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Built for real mental health care</h2>
-              <p className="text-gray-500 leading-relaxed mb-6">
-                vWelfare is a bilingual (Arabic &amp; English) mental health platform designed to bridge the gap
-                between evidence-based screening tools and everyday access to mental health support.
-              </p>
-              <p className="text-gray-500 leading-relaxed mb-6">
-                Every assessment on this platform is a validated, open-source psychological scale used by
-                clinicians and researchers worldwide. Results are explained in plain language with scientific
-                context, clinical recommendations, and suggested next steps.
-              </p>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('about.title', lang)}</h2>
+              <p className="text-gray-500 leading-relaxed mb-6">{t('about.p1', lang)}</p>
+              <p className="text-gray-500 leading-relaxed mb-6">{t('about.p2', lang)}</p>
               <div className="flex flex-col gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <div className="w-2 h-2 rounded-full bg-brand-600" />
+                {(['about.bullet1', 'about.bullet2', 'about.bullet3', 'about.bullet4'] as const).map(key => (
+                  <div key={key} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <div className="w-2 h-2 rounded-full bg-brand-600" />
+                    </div>
+                    <p className="text-sm text-gray-600">{t(key, lang)}</p>
                   </div>
-                  <p className="text-sm text-gray-600">All screening tools are free and publicly accessible without registration</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <div className="w-2 h-2 rounded-full bg-brand-600" />
-                  </div>
-                  <p className="text-sm text-gray-600">Results include scientific explanations, not just scores</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <div className="w-2 h-2 rounded-full bg-brand-600" />
-                  </div>
-                  <p className="text-sm text-gray-600">Designed for both individual users and clinical organisations</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <div className="w-2 h-2 rounded-full bg-brand-600" />
-                  </div>
-                  <p className="text-sm text-gray-600">Fully bilingual — Arabic and English throughout</p>
-                </div>
+                ))}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { value: `${assessments.length}`, label: 'Validated scales' },
-                { value: '24/7', label: 'Always available' },
-                { value: '2', label: 'Languages' },
-                { value: '100%', label: 'Free to screen' },
-              ].map(({ value, label }) => (
-                <div key={label} className="card p-6 text-center">
+                { value: `${assessments.length}`, key: 'about.stat1' as const },
+                { value: '24/7', key: 'about.stat2' as const },
+                { value: '2', key: 'about.stat3' as const },
+                { value: '100%', key: 'about.stat4' as const },
+              ].map(({ value, key }) => (
+                <div key={key} className="card p-6 text-center">
                   <div className="text-3xl font-bold text-brand-600 mb-1">{value}</div>
-                  <div className="text-sm text-gray-500">{label}</div>
+                  <div className="text-sm text-gray-500">{t(key, lang)}</div>
                 </div>
               ))}
             </div>
@@ -331,17 +324,15 @@ export default async function LandingPage() {
       {/* ── CTA Banner ──────────────────────────────────────────────────── */}
       <section className="bg-brand-600 py-16 px-6">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to understand your mental health?</h2>
-          <p className="text-brand-100 text-lg mb-8">
-            Take any assessment for free — no account, no waiting. Create an account to save your history.
-          </p>
+          <h2 className="text-3xl font-bold text-white mb-4">{t('cta.title', lang)}</h2>
+          <p className="text-brand-100 text-lg mb-8">{t('cta.sub', lang)}</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a href="#assessments" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-brand-700 font-semibold rounded-lg hover:bg-brand-50 transition-colors text-sm">
               <ClipboardList className="w-4 h-4" />
-              Browse assessments
+              {t('cta.browse', lang)}
             </a>
             <Link href="/register" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand-700 text-white font-semibold rounded-lg hover:bg-brand-800 transition-colors text-sm border border-brand-500">
-              Create free account
+              {t('cta.register', lang)}
             </Link>
           </div>
         </div>
@@ -354,16 +345,16 @@ export default async function LandingPage() {
             <div className="w-7 h-7 rounded-lg bg-brand-500 flex items-center justify-center">
               <Heart className="w-4 h-4 text-white" />
             </div>
-            <span className="font-semibold">vWelfare</span>
-            <span className="text-gray-500 text-sm ml-2">Mental Health Platform</span>
+            <span className="font-semibold">{t('app.name', lang)}</span>
+            <span className="text-gray-500 text-sm ml-2">{t('app.tagline', lang)}</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-gray-400">
-            <Link href="/assessments" className="hover:text-white transition-colors">Assessments</Link>
-            <Link href="/login" className="hover:text-white transition-colors">Sign in</Link>
-            <Link href="/register" className="hover:text-white transition-colors">Register</Link>
+            <Link href="/assessments" className="hover:text-white transition-colors">{t('nav.assessments', lang)}</Link>
+            <Link href="/login" className="hover:text-white transition-colors">{t('nav.signin', lang)}</Link>
+            <Link href="/register" className="hover:text-white transition-colors">{t('nav.create_account', lang)}</Link>
           </div>
           <p className="text-xs text-gray-600 text-center md:text-right">
-            For screening purposes only. Not a substitute for professional clinical assessment.
+            {t('footer.disclaimer', lang)}
           </p>
         </div>
       </footer>

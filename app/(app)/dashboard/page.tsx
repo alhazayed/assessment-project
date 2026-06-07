@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { getLanguage } from '@/lib/get-language'
+import { t } from '@/lib/i18n'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ClipboardList, Heart, BookOpen, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react'
@@ -8,7 +10,7 @@ async function getPatientDashboard(supabase: ReturnType<typeof createClient>, us
   const [submissions, moods, assignments] = await Promise.all([
     supabase
       .from('assessment_submissions')
-      .select('*, assessment_definitions(name_en, code)')
+      .select('*, assessment_definitions(name_en, name_ar, code)')
       .eq('patient_id', userId)
       .order('submitted_at', { ascending: false })
       .limit(5),
@@ -20,7 +22,7 @@ async function getPatientDashboard(supabase: ReturnType<typeof createClient>, us
       .limit(7),
     supabase
       .from('assessment_assignments')
-      .select('*, assessment_definitions(name_en, code)')
+      .select('*, assessment_definitions(name_en, name_ar, code)')
       .eq('patient_id', userId)
       .eq('status', 'pending')
       .limit(3),
@@ -36,7 +38,7 @@ async function getPatientDashboard(supabase: ReturnType<typeof createClient>, us
 async function getClinicianDashboard(supabase: ReturnType<typeof createClient>, userId: string) {
   const { data: patients } = await supabase
     .from('profiles')
-    .select('id, full_name_en, created_at')
+    .select('id, full_name_en, full_name_ar, created_at')
     .eq('assigned_clinician_id', userId)
     .eq('role', 'patient')
     .eq('is_active', true)
@@ -47,7 +49,7 @@ async function getClinicianDashboard(supabase: ReturnType<typeof createClient>, 
     patientIds.length > 0
       ? supabase
           .from('assessment_submissions')
-          .select('*, assessment_definitions(name_en), profiles!assessment_submissions_patient_id_fkey(full_name_en)')
+          .select('*, assessment_definitions(name_en, name_ar), profiles!assessment_submissions_patient_id_fkey(full_name_en, full_name_ar)')
           .in('patient_id', patientIds)
           .order('submitted_at', { ascending: false })
           .limit(5)
@@ -55,7 +57,7 @@ async function getClinicianDashboard(supabase: ReturnType<typeof createClient>, 
     patientIds.length > 0
       ? supabase
           .from('assessment_submissions')
-          .select('*, profiles!assessment_submissions_patient_id_fkey(full_name_en)')
+          .select('*, profiles!assessment_submissions_patient_id_fkey(full_name_en, full_name_ar)')
           .in('patient_id', patientIds)
           .eq('high_risk_flag', true)
           .gte('submitted_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
@@ -79,6 +81,7 @@ function severityColor(band: string) {
 
 export default async function DashboardPage() {
   const supabase = createClient()
+  const lang = getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
@@ -94,33 +97,38 @@ export default async function DashboardPage() {
     const { submissions, moods, pendingAssignments } = await getPatientDashboard(supabase, user.id)
     const latestMood = moods[0] as MoodLog | undefined
     const avgMood = moods.length > 0 ? Math.round(moods.reduce((sum, m) => sum + m.mood_score, 0) / moods.length) : null
+    const firstName = (lang === 'ar' && p.full_name_ar ? p.full_name_ar : p.full_name_en).split(' ')[0]
 
     return (
       <div className="p-8 max-w-6xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back, {p.full_name_en.split(' ')[0]}
+            {t('dashboard.welcome', lang)}, {firstName}
           </h1>
-          <p className="text-gray-500 mt-1">Here&apos;s how you&apos;re doing</p>
+          <p className="text-gray-500 mt-1">{t('dashboard.subtitle', lang)}</p>
         </div>
 
         {pendingAssignments.length > 0 && (
           <div className="mb-6 p-4 bg-brand-50 border border-brand-200 rounded-xl">
             <div className="flex items-center gap-2 mb-3">
               <AlertTriangle className="w-4 h-4 text-brand-600" />
-              <span className="text-sm font-semibold text-brand-700">Assessments waiting for you</span>
+              <span className="text-sm font-semibold text-brand-700">{t('dashboard.assignments.title', lang)}</span>
             </div>
             <div className="space-y-2">
-              {pendingAssignments.map((a: AssessmentAssignment) => (
-                <Link
-                  key={a.id}
-                  href={`/assessments/${a.definition_id}`}
-                  className="flex items-center justify-between p-3 bg-white rounded-lg border border-brand-100 hover:border-brand-300 transition-colors group"
-                >
-                  <span className="text-sm font-medium text-gray-900">{(a as any).assessment_definitions?.name_en}</span>
-                  <span className="text-xs text-brand-600 group-hover:text-brand-700">Start →</span>
-                </Link>
-              ))}
+              {pendingAssignments.map((a: AssessmentAssignment) => {
+                const def = (a as any).assessment_definitions
+                const aName = lang === 'ar' && def?.name_ar ? def.name_ar : def?.name_en
+                return (
+                  <Link
+                    key={a.id}
+                    href={`/assessments/${a.definition_id}`}
+                    className="flex items-center justify-between p-3 bg-white rounded-lg border border-brand-100 hover:border-brand-300 transition-colors group"
+                  >
+                    <span className="text-sm font-medium text-gray-900">{aName}</span>
+                    <span className="text-xs text-brand-600 group-hover:text-brand-700">{t('dashboard.assignments.start', lang)}</span>
+                  </Link>
+                )
+              })}
             </div>
           </div>
         )}
@@ -131,7 +139,7 @@ export default async function DashboardPage() {
               <div className="w-9 h-9 rounded-lg bg-pink-50 flex items-center justify-center">
                 <Heart className="w-5 h-5 text-pink-500" />
               </div>
-              <span className="text-sm font-medium text-gray-600">Today&apos;s Mood</span>
+              <span className="text-sm font-medium text-gray-600">{t('dashboard.mood.card', lang)}</span>
             </div>
             {latestMood ? (
               <div>
@@ -139,7 +147,7 @@ export default async function DashboardPage() {
                 <p className="text-xs text-gray-500 mt-1">{latestMood.log_date}</p>
               </div>
             ) : (
-              <Link href="/mood" className="text-sm text-brand-600 hover:underline">Log your mood →</Link>
+              <Link href="/mood" className="text-sm text-brand-600 hover:underline">{t('dashboard.mood.log', lang)}</Link>
             )}
           </div>
 
@@ -148,12 +156,12 @@ export default async function DashboardPage() {
               <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-blue-500" />
               </div>
-              <span className="text-sm font-medium text-gray-600">7-Day Avg Mood</span>
+              <span className="text-sm font-medium text-gray-600">{t('dashboard.mood.avg', lang)}</span>
             </div>
             {avgMood !== null ? (
               <p className="text-3xl font-bold text-gray-900">{avgMood}<span className="text-lg text-gray-400">/10</span></p>
             ) : (
-              <p className="text-sm text-gray-400">No data yet</p>
+              <p className="text-sm text-gray-400">{t('dashboard.mood.no_data', lang)}</p>
             )}
           </div>
 
@@ -162,7 +170,7 @@ export default async function DashboardPage() {
               <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
                 <CheckCircle2 className="w-5 h-5 text-green-500" />
               </div>
-              <span className="text-sm font-medium text-gray-600">Assessments Done</span>
+              <span className="text-sm font-medium text-gray-600">{t('dashboard.done', lang)}</span>
             </div>
             <p className="text-3xl font-bold text-gray-900">{submissions.length}</p>
           </div>
@@ -171,45 +179,49 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 gap-6">
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-gray-900">Recent Assessments</h2>
-              <Link href="/assessments" className="text-sm text-brand-600 hover:underline">View all</Link>
+              <h2 className="text-base font-semibold text-gray-900">{t('dashboard.recent', lang)}</h2>
+              <Link href="/assessments" className="text-sm text-brand-600 hover:underline">{t('dashboard.view_all', lang)}</Link>
             </div>
             {submissions.length === 0 ? (
               <div className="text-center py-8">
                 <ClipboardList className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">No assessments yet</p>
+                <p className="text-sm text-gray-500">{t('dashboard.no_assessments', lang)}</p>
                 <Link href="/assessments" className="btn-primary mt-3 text-xs px-3 py-1.5 inline-flex">
-                  Take an assessment
+                  {t('dashboard.take_one', lang)}
                 </Link>
               </div>
             ) : (
               <div className="space-y-3">
-                {submissions.map((s: AssessmentSubmission) => (
-                  <div key={s.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{(s as any).assessment_definitions?.name_en}</p>
-                      <p className="text-xs text-gray-400">{new Date(s.submitted_at).toLocaleDateString()}</p>
+                {submissions.map((s: AssessmentSubmission) => {
+                  const def = (s as any).assessment_definitions
+                  const sName = lang === 'ar' && def?.name_ar ? def.name_ar : def?.name_en
+                  return (
+                    <div key={s.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{sName}</p>
+                        <p className="text-xs text-gray-400">{new Date(s.submitted_at).toLocaleDateString()}</p>
+                      </div>
+                      <span className={`badge-minimal border ${severityColor(s.severity_band)}`}>
+                        {s.severity_band}
+                      </span>
                     </div>
-                    <span className={`badge-minimal border ${severityColor(s.severity_band)}`}>
-                      {s.severity_band}
-                    </span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
 
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-gray-900">Mood This Week</h2>
-              <Link href="/mood" className="text-sm text-brand-600 hover:underline">Log mood</Link>
+              <h2 className="text-base font-semibold text-gray-900">{t('dashboard.mood_week', lang)}</h2>
+              <Link href="/mood" className="text-sm text-brand-600 hover:underline">{t('dashboard.log_mood', lang)}</Link>
             </div>
             {moods.length === 0 ? (
               <div className="text-center py-8">
                 <Heart className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">Start tracking your mood daily</p>
+                <p className="text-sm text-gray-500">{t('dashboard.track_mood', lang)}</p>
                 <Link href="/mood" className="btn-primary mt-3 text-xs px-3 py-1.5 inline-flex">
-                  Track mood
+                  {t('dashboard.track_cta', lang)}
                 </Link>
               </div>
             ) : (
@@ -240,19 +252,19 @@ export default async function DashboardPage() {
   return (
     <div className="p-8 max-w-6xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Clinician Dashboard
-        </h1>
-        <p className="text-gray-500 mt-1">Overview of your patients</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.clinician.title', lang)}</h1>
+        <p className="text-gray-500 mt-1">{t('dashboard.clinician.subtitle', lang)}</p>
       </div>
 
       {highRiskPatients.length > 0 && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-4 h-4 text-red-600" />
-            <span className="text-sm font-semibold text-red-700">{highRiskPatients.length} high-risk flag(s) in the last 7 days</span>
+            <span className="text-sm font-semibold text-red-700">
+              {highRiskPatients.length} {t('dashboard.clinician.high_risk', lang)}
+            </span>
           </div>
-          <p className="text-xs text-red-600">Please review these patients promptly.</p>
+          <p className="text-xs text-red-600">{t('dashboard.clinician.review', lang)}</p>
         </div>
       )}
 
@@ -262,7 +274,7 @@ export default async function DashboardPage() {
             <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
               <ClipboardList className="w-5 h-5 text-blue-500" />
             </div>
-            <span className="text-sm font-medium text-gray-600">Active Patients</span>
+            <span className="text-sm font-medium text-gray-600">{t('dashboard.clinician.patients', lang)}</span>
           </div>
           <p className="text-3xl font-bold text-gray-900 mt-2">{patients.length}</p>
         </div>
@@ -271,7 +283,7 @@ export default async function DashboardPage() {
             <div className="w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-orange-500" />
             </div>
-            <span className="text-sm font-medium text-gray-600">High Risk (7d)</span>
+            <span className="text-sm font-medium text-gray-600">{t('dashboard.clinician.risk', lang)}</span>
           </div>
           <p className="text-3xl font-bold text-gray-900 mt-2">{highRiskPatients.length}</p>
         </div>
@@ -280,7 +292,7 @@ export default async function DashboardPage() {
             <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
               <CheckCircle2 className="w-5 h-5 text-green-500" />
             </div>
-            <span className="text-sm font-medium text-gray-600">Recent Submissions</span>
+            <span className="text-sm font-medium text-gray-600">{t('dashboard.clinician.recent', lang)}</span>
           </div>
           <p className="text-3xl font-bold text-gray-900 mt-2">{recentSubmissions.length}</p>
         </div>
@@ -288,48 +300,55 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-2 gap-6">
         <div className="card p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Recent Assessment Results</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">{t('dashboard.clinician.results', lang)}</h2>
           {recentSubmissions.length === 0 ? (
-            <p className="text-sm text-gray-400 py-6 text-center">No recent submissions</p>
+            <p className="text-sm text-gray-400 py-6 text-center">{t('dashboard.clinician.no_results', lang)}</p>
           ) : (
             <div className="space-y-3">
-              {recentSubmissions.map((s: any) => (
-                <div key={s.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{s.profiles?.full_name_en}</p>
-                    <p className="text-xs text-gray-400">{s.assessment_definitions?.name_en} · {new Date(s.submitted_at).toLocaleDateString()}</p>
+              {recentSubmissions.map((s: any) => {
+                const patName = lang === 'ar' && s.profiles?.full_name_ar ? s.profiles.full_name_ar : s.profiles?.full_name_en
+                const defName = lang === 'ar' && s.assessment_definitions?.name_ar ? s.assessment_definitions.name_ar : s.assessment_definitions?.name_en
+                return (
+                  <div key={s.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{patName}</p>
+                      <p className="text-xs text-gray-400">{defName} · {new Date(s.submitted_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`badge-minimal border ${severityColor(s.severity_band)}`}>
+                        {s.severity_band}
+                      </span>
+                      {s.high_risk_flag && (
+                        <p className="text-xs text-red-600 mt-1 font-medium">⚠ High Risk</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className={`badge-minimal border ${severityColor(s.severity_band)}`}>
-                      {s.severity_band}
-                    </span>
-                    {s.high_risk_flag && (
-                      <p className="text-xs text-red-600 mt-1 font-medium">⚠ High Risk</p>
-                    )}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
 
         <div className="card p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Your Patients</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">{t('dashboard.clinician.your_patients', lang)}</h2>
           {patients.length === 0 ? (
-            <p className="text-sm text-gray-400 py-6 text-center">No patients assigned yet</p>
+            <p className="text-sm text-gray-400 py-6 text-center">{t('dashboard.clinician.no_patients', lang)}</p>
           ) : (
             <div className="space-y-2">
-              {patients.map((pt: any) => (
-                <div key={pt.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                  <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-semibold text-brand-700">{pt.full_name_en.charAt(0)}</span>
+              {patients.map((pt: any) => {
+                const ptName = lang === 'ar' && pt.full_name_ar ? pt.full_name_ar : pt.full_name_en
+                return (
+                  <div key={pt.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
+                    <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-semibold text-brand-700">{ptName.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{ptName}</p>
+                      <p className="text-xs text-gray-400">{t('dashboard.clinician.joined', lang)} {new Date(pt.created_at).toLocaleDateString()}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{pt.full_name_en}</p>
-                    <p className="text-xs text-gray-400">Joined {new Date(pt.created_at).toLocaleDateString()}</p>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

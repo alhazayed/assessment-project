@@ -4,9 +4,12 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { BookOpen, Plus, Save, X } from 'lucide-react'
 import type { JournalEntry } from '@/lib/types'
+import { useLang } from '@/lib/use-lang'
+import { t } from '@/lib/i18n'
 
 export default function JournalPage() {
   const supabase = createClient()
+  const lang = useLang()
   const [entries, setEntries] = useState<JournalEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [showEditor, setShowEditor] = useState(false)
@@ -55,19 +58,19 @@ export default function JournalPage() {
     <div className="p-8 max-w-3xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Journal</h1>
-          <p className="text-gray-500 mt-1">Your private space to reflect and express</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('journal.title', lang)}</h1>
+          <p className="text-gray-500 mt-1">{t('journal.subtitle', lang)}</p>
         </div>
         <button onClick={() => setShowEditor(true)} className="btn-primary gap-2">
           <Plus className="w-4 h-4" />
-          New Entry
+          {t('journal.new', lang)}
         </button>
       </div>
 
       {showEditor && (
         <div className="card p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">New Journal Entry</h2>
+            <h2 className="text-base font-semibold text-gray-900">{t('journal.new.title', lang)}</h2>
             <button onClick={() => setShowEditor(false)} className="text-gray-400 hover:text-gray-600">
               <X className="w-5 h-5" />
             </button>
@@ -77,7 +80,7 @@ export default function JournalPage() {
             rows={8}
             value={newEntry}
             onChange={e => setNewEntry(e.target.value)}
-            placeholder="What's on your mind today? How are you feeling? Write freely..."
+            placeholder={t('journal.placeholder', lang)}
             autoFocus
           />
           <div className="flex items-center justify-between">
@@ -88,11 +91,11 @@ export default function JournalPage() {
                 onChange={e => setIsShared(e.target.checked)}
                 className="rounded text-brand-600"
               />
-              <span className="text-sm text-gray-600">Share with my clinician</span>
+              <span className="text-sm text-gray-600">{t('journal.share', lang)}</span>
             </label>
             <div className="flex gap-3">
               <span className="text-xs text-gray-400 self-center">
-                {newEntry.trim() ? newEntry.trim().split(/\s+/).length : 0} words
+                {newEntry.trim() ? newEntry.trim().split(/\s+/).length : 0} {t('journal.words', lang)}
               </span>
               <button
                 onClick={handleSave}
@@ -100,7 +103,7 @@ export default function JournalPage() {
                 className="btn-primary gap-2 disabled:opacity-40"
               >
                 <Save className="w-4 h-4" />
-                {saving ? 'Saving...' : 'Save Entry'}
+                {saving ? t('journal.saving', lang) : t('journal.save', lang)}
               </button>
             </div>
           </div>
@@ -108,15 +111,15 @@ export default function JournalPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Loading...</div>
+        <div className="text-center py-12 text-gray-400">{t('journal.loading', lang)}</div>
       ) : entries.length === 0 ? (
         <div className="card p-12 text-center">
           <BookOpen className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-          <h3 className="text-base font-medium text-gray-700 mb-2">Your journal is empty</h3>
-          <p className="text-sm text-gray-400 mb-4">Start writing to reflect on your thoughts and feelings</p>
+          <h3 className="text-base font-medium text-gray-700 mb-2">{t('journal.empty.title', lang)}</h3>
+          <p className="text-sm text-gray-400 mb-4">{t('journal.empty.sub', lang)}</p>
           <button onClick={() => setShowEditor(true)} className="btn-primary gap-2">
             <Plus className="w-4 h-4" />
-            Write your first entry
+            {t('journal.empty.cta', lang)}
           </button>
         </div>
       ) : (
@@ -135,22 +138,22 @@ export default function JournalPage() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-gray-900">
-                      {new Date(entry.created_at).toLocaleDateString('en-US', {
+                      {new Date(entry.created_at).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US', {
                         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
                       })}
                     </span>
                     {entry.is_shared && (
                       <span className="badge-minimal bg-blue-50 text-blue-600 border border-blue-200">
-                        Shared
+                        {t('journal.shared', lang)}
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-gray-400">{entry.word_count || 0} words</span>
+                  <span className="text-xs text-gray-400">{entry.word_count || 0} {t('journal.words', lang)}</span>
                 </div>
                 <p className="text-sm text-gray-700 leading-relaxed">
                   {isExpanded ? entry.body : preview}
                   {!isExpanded && needsTruncation && (
-                    <span className="text-brand-600 ml-1">... read more</span>
+                    <span className="text-brand-600 ml-1">...</span>
                   )}
                 </p>
               </div>

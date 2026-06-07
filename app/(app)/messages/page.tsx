@@ -4,9 +4,12 @@ import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Send, MessageSquare } from 'lucide-react'
 import type { Message, Profile } from '@/lib/types'
+import { useLang } from '@/lib/use-lang'
+import { t } from '@/lib/i18n'
 
 export default function MessagesPage() {
   const supabase = createClient()
+  const lang = useLang()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [clinician, setClinician] = useState<Profile | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -62,45 +65,46 @@ export default function MessagesPage() {
     load()
   }
 
-  if (loading) return <div className="p-8 text-gray-400">Loading messages...</div>
+  if (loading) return <div className="p-8 text-gray-400">{t('messages.loading', lang)}</div>
 
   if (profile?.role === 'patient' && !profile.assigned_clinician_id) {
     return (
       <div className="p-8 flex items-center justify-center min-h-64">
         <div className="card p-8 text-center max-w-sm">
           <MessageSquare className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-          <h3 className="text-base font-medium text-gray-700 mb-2">No clinician assigned</h3>
-          <p className="text-sm text-gray-400">You&apos;ll be able to message your clinician once one is assigned to you.</p>
+          <h3 className="text-base font-medium text-gray-700 mb-2">{t('messages.no_clinician', lang)}</h3>
+          <p className="text-sm text-gray-400">{t('messages.no_clinician.sub', lang)}</p>
         </div>
       </div>
     )
   }
 
   const otherParty = clinician
+  const otherName = otherParty
+    ? (lang === 'ar' && otherParty.full_name_ar ? otherParty.full_name_ar : otherParty.full_name_en)
+    : t('messages.clinician', lang)
 
   return (
     <div className="flex flex-col h-screen max-h-screen">
-      {/* Header */}
       <div className="px-8 py-5 border-b border-gray-200 bg-white flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center">
             <span className="text-sm font-semibold text-brand-700">
-              {otherParty?.full_name_en.charAt(0) || '?'}
+              {otherName.charAt(0)}
             </span>
           </div>
           <div>
-            <p className="font-semibold text-gray-900">{otherParty?.full_name_en || 'Your Clinician'}</p>
+            <p className="font-semibold text-gray-900">{otherName}</p>
             <p className="text-xs text-gray-400 capitalize">{otherParty?.role || ''}</p>
           </div>
         </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4">
         {messages.length === 0 ? (
           <div className="text-center py-12">
             <MessageSquare className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-sm text-gray-400">No messages yet. Start the conversation!</p>
+            <p className="text-sm text-gray-400">{t('messages.placeholder', lang)}</p>
           </div>
         ) : (
           messages.map(msg => {
@@ -126,7 +130,6 @@ export default function MessagesPage() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Compose */}
       <div className="px-8 py-4 border-t border-gray-200 bg-white flex-shrink-0">
         <form onSubmit={handleSend} className="flex gap-3">
           <input
@@ -134,7 +137,7 @@ export default function MessagesPage() {
             className="input flex-1"
             value={newMessage}
             onChange={e => setNewMessage(e.target.value)}
-            placeholder="Type a message..."
+            placeholder={t('messages.placeholder', lang)}
             maxLength={2000}
           />
           <button
