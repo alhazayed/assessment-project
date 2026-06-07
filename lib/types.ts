@@ -12,6 +12,11 @@ export interface Profile {
   updated_at: string
   is_active: boolean
   deactivated_at: string | null
+  date_of_birth: string | null
+  gender: 'male' | 'female' | null
+  marital_status: 'single' | 'married' | 'divorced' | 'widowed' | null
+  educational_status: 'none' | 'primary' | 'secondary' | 'diploma' | 'bachelor' | 'master' | 'phd' | 'other' | null
+  country_of_residence: string | null
 }
 
 export interface PatientProfile {
