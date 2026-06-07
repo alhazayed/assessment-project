@@ -27,10 +27,20 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register')
+  const isAdminLogin = pathname === '/x/control/login'
+  const isAdminArea = pathname.startsWith('/x/control') && !isAdminLogin
+
+  // Admin area: must be authenticated (cookie-based admin session is verified in each page/route)
+  if (isAdminArea && !user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/x/control/login'
+    return NextResponse.redirect(url)
+  }
 
   // These routes are publicly accessible without login
   const isPublicRoute =
     isAuthPage ||
+    isAdminLogin ||
     pathname === '/' ||
     pathname.startsWith('/assessments')
 
