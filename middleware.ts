@@ -31,6 +31,7 @@ export async function middleware(request: NextRequest) {
   // These routes are publicly accessible without login
   const isPublicRoute =
     isAuthPage ||
+    pathname === '/' ||
     pathname.startsWith('/assessments')
 
   if (!user && !isPublicRoute) {
