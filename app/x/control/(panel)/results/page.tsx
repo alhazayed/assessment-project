@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { BarChart3, Download, AlertTriangle, Filter, TrendingUp, Hash, Sigma } from 'lucide-react'
+import { useLang } from '@/lib/use-lang'
+import { t } from '@/lib/i18n'
 
 type Submission = {
   id: string; patient_name: string; assessment_name: string; code: string
@@ -34,6 +36,7 @@ function severityColor(band: string) {
 }
 
 export default function AdminResultsPage() {
+  const lang = useLang()
   const [results, setResults] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
   const [assessment, setAssessment] = useState('')
@@ -98,35 +101,48 @@ export default function AdminResultsPage() {
     else { setSortKey(key); setSortDir('desc') }
   }
 
-  // Severity distribution for current results
   const severityDist = useMemo(() => {
     const m: Record<string, number> = {}
     results.forEach(r => { const b = r.severity_band || 'Unknown'; m[b] = (m[b] || 0) + 1 })
     return Object.entries(m).sort((a, b) => b[1] - a[1])
   }, [results])
 
+  const statsCards = [
+    { label: t('admin.results.count', lang), value: results.length.toLocaleString(), icon: Hash },
+    { label: t('admin.results.mean', lang), value: stats?.avg, icon: TrendingUp },
+    { label: t('admin.results.median', lang), value: stats?.median, icon: BarChart3 },
+    { label: t('admin.results.stddev', lang), value: stats?.stddev, icon: Sigma },
+    { label: t('admin.results.min', lang), value: stats?.min, icon: null },
+    { label: t('admin.results.max', lang), value: stats?.max, icon: null },
+    {
+      label: t('admin.results.high_risk', lang),
+      value: `${highRiskCount} (${results.length ? ((highRiskCount / results.length) * 100).toFixed(1) : 0}%)`,
+      icon: AlertTriangle,
+    },
+  ]
+
   return (
     <div className="p-8 max-w-7xl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Assessment Results</h1>
-          <p className="text-gray-500 mt-1">{results.length.toLocaleString()} results · {highRiskCount} high-risk flags</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('admin.results.title', lang)}</h1>
+          <p className="text-gray-500 mt-1">{results.length.toLocaleString()} results · {highRiskCount} {t('admin.results.high_risk_flags', lang)}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => exportCsv('stats')} disabled={!!exporting || results.length === 0}
             className="flex items-center gap-1.5 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-40 text-gray-700 text-sm font-medium px-3 py-2 rounded-lg transition-colors">
             <Sigma className="w-4 h-4" />
-            {exporting === 'stats' ? 'Exporting…' : 'Summary Stats'}
+            {exporting === 'stats' ? t('admin.results.exporting', lang) : t('admin.results.export_stats', lang)}
           </button>
           <button onClick={() => exportCsv('risk')} disabled={!!exporting || highRiskCount === 0}
             className="flex items-center gap-1.5 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-40 text-red-600 text-sm font-medium px-3 py-2 rounded-lg transition-colors">
             <AlertTriangle className="w-4 h-4" />
-            {exporting === 'risk' ? 'Exporting…' : 'Risk Report'}
+            {exporting === 'risk' ? t('admin.results.exporting', lang) : t('admin.results.export_risk', lang)}
           </button>
           <button onClick={() => exportCsv('detailed')} disabled={!!exporting || results.length === 0}
             className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors">
             <Download className="w-4 h-4" />
-            {exporting === 'detailed' ? 'Exporting…' : 'Export CSV'}
+            {exporting === 'detailed' ? t('admin.results.exporting', lang) : t('admin.results.export_csv', lang)}
           </button>
         </div>
       </div>
@@ -136,17 +152,17 @@ export default function AdminResultsPage() {
         <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
         <select className="input flex-1 min-w-36 text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           value={assessment} onChange={e => setAssessment(e.target.value)}>
-          <option value="">All assessments</option>
+          <option value="">{t('admin.results.all_assessments', lang)}</option>
           {assessmentList.map(a => <option key={a.code} value={a.code}>{a.name} ({a.code})</option>)}
         </select>
         <select className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-40"
           value={severity} onChange={e => setSeverity(e.target.value)}>
-          <option value="">All severities</option>
-          <option value="high_risk">⚠ High risk only</option>
-          <option value="minimal">Minimal / None</option>
-          <option value="mild">Mild</option>
-          <option value="moderate">Moderate</option>
-          <option value="severe">Severe</option>
+          <option value="">{t('admin.results.all_severities', lang)}</option>
+          <option value="high_risk">{t('admin.results.high_risk_only', lang)}</option>
+          <option value="minimal">{t('admin.results.minimal', lang)}</option>
+          <option value="mild">{t('admin.results.mild', lang)}</option>
+          <option value="moderate">{t('admin.results.moderate', lang)}</option>
+          <option value="severe">{t('admin.results.severe', lang)}</option>
         </select>
         <div className="flex items-center gap-2">
           <input type="date" className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-36"
@@ -158,7 +174,7 @@ export default function AdminResultsPage() {
         {(assessment || severity || from || to) && (
           <button onClick={() => { setAssessment(''); setSeverity(''); setFrom(''); setTo('') }}
             className="text-sm text-gray-400 hover:text-gray-600 px-2">
-            Clear filters
+            {t('admin.results.clear', lang)}
           </button>
         )}
       </div>
@@ -166,18 +182,10 @@ export default function AdminResultsPage() {
       {/* Stats summary bar */}
       {!loading && stats && results.length > 0 && (
         <div className="grid grid-cols-7 gap-3 mb-4">
-          {[
-            { label: 'Count', value: results.length.toLocaleString(), icon: Hash },
-            { label: 'Mean Score', value: stats.avg, icon: TrendingUp },
-            { label: 'Median', value: stats.median, icon: BarChart3 },
-            { label: 'Std Dev', value: stats.stddev, icon: Sigma },
-            { label: 'Min Score', value: stats.min, icon: null },
-            { label: 'Max Score', value: stats.max, icon: null },
-            { label: 'High Risk', value: `${highRiskCount} (${results.length ? ((highRiskCount / results.length) * 100).toFixed(1) : 0}%)`, icon: AlertTriangle },
-          ].map(s => (
-            <div key={s.label} className={`bg-white border rounded-xl px-4 py-3 ${s.label === 'High Risk' && highRiskCount > 0 ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}>
+          {statsCards.map(s => (
+            <div key={s.label} className={`bg-white border rounded-xl px-4 py-3 ${s.label === t('admin.results.high_risk', lang) && highRiskCount > 0 ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}>
               <p className="text-xs text-gray-500 mb-0.5">{s.label}</p>
-              <p className={`text-lg font-bold ${s.label === 'High Risk' && highRiskCount > 0 ? 'text-red-700' : 'text-gray-900'}`}>{s.value}</p>
+              <p className={`text-lg font-bold ${s.label === t('admin.results.high_risk', lang) && highRiskCount > 0 ? 'text-red-700' : 'text-gray-900'}`}>{s.value}</p>
             </div>
           ))}
         </div>
@@ -186,7 +194,7 @@ export default function AdminResultsPage() {
       {/* Severity distribution for current filter */}
       {!loading && severityDist.length > 0 && results.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex items-center gap-6 flex-wrap">
-          <span className="text-xs font-medium text-gray-500 flex-shrink-0">Severity mix:</span>
+          <span className="text-xs font-medium text-gray-500 flex-shrink-0">{t('admin.results.severity_mix', lang)}</span>
           {severityDist.map(([band, cnt]) => (
             <div key={band} className="flex items-center gap-1.5">
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${severityColor(band)}`}>{band}</span>
@@ -201,28 +209,28 @@ export default function AdminResultsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Patient</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Assessment</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.results.col.patient', lang)}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.results.col.assessment', lang)}</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => toggleSort('total_score')}>
-                Score {sortKey === 'total_score' && (sortDir === 'asc' ? '↑' : '↓')}
+                {t('admin.results.col.score', lang)} {sortKey === 'total_score' && (sortDir === 'asc' ? '↑' : '↓')}
               </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Severity</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Risk</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.results.col.severity', lang)}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.results.col.risk', lang)}</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600 cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => toggleSort('submitted_at')}>
-                Date {sortKey === 'submitted_at' && (sortDir === 'asc' ? '↑' : '↓')}
+                {t('admin.results.col.date', lang)} {sortKey === 'submitted_at' && (sortDir === 'asc' ? '↑' : '↓')}
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {loading ? (
-              <tr><td colSpan={6} className="text-center py-12 text-gray-400">Loading…</td></tr>
+              <tr><td colSpan={6} className="text-center py-12 text-gray-400">{t('admin.loading', lang)}</td></tr>
             ) : sorted.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-12 text-gray-400">No results match filters</td></tr>
+              <tr><td colSpan={6} className="text-center py-12 text-gray-400">{t('admin.results.empty', lang)}</td></tr>
             ) : sorted.map(r => (
               <tr key={r.id} className="hover:bg-gray-50/60">
-                <td className="px-4 py-3 font-medium text-gray-800">{r.patient_name || 'Anonymous'}</td>
+                <td className="px-4 py-3 font-medium text-gray-800">{r.patient_name || t('admin.anonymous', lang)}</td>
                 <td className="px-4 py-3">
                   <span className="text-gray-700">{r.assessment_name}</span>
                   <span className="ml-1 text-xs text-gray-400">({r.code})</span>
@@ -234,7 +242,7 @@ export default function AdminResultsPage() {
                 <td className="px-4 py-3">
                   {r.high_risk_flag && (
                     <span className="flex items-center gap-1 text-red-600 text-xs font-medium">
-                      <AlertTriangle className="w-3.5 h-3.5" />High risk
+                      <AlertTriangle className="w-3.5 h-3.5" />{t('admin.results.high_risk', lang)}
                     </span>
                   )}
                 </td>

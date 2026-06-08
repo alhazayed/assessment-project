@@ -199,7 +199,7 @@ export default function TakeAssessmentPage() {
           )}
           {isLoggedIn && (
             <p className="mt-4 text-sm text-green-600 flex items-center justify-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4" /> Results saved to your account
+              <CheckCircle2 className="w-4 h-4" /> {t('assessment.result.saved', lang)}
             </p>
           )}
         </div>
@@ -268,7 +268,7 @@ export default function TakeAssessmentPage() {
               <Brain className="w-4 h-4 text-brand-600" />
               <h3 className="text-base font-semibold text-gray-900">{t('assessment.result.related_conditions', lang)}</h3>
             </div>
-            <p className="text-xs text-gray-400 mb-4">Only a qualified clinician can provide a diagnosis.</p>
+            <p className="text-xs text-gray-400 mb-4">{t('assessment.result.clinician_note', lang)}</p>
             <div className="space-y-3">
               {bandContent.relatedDisorders.map((disorder, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
@@ -415,7 +415,7 @@ export default function TakeAssessmentPage() {
       </div>
       {!allAnswered && currentIndex === items.length - 1 && (
         <p className="text-center text-xs text-orange-600 mt-3">
-          {items.length - Object.keys(answers).length} question(s) still need an answer
+          {items.length - Object.keys(answers).length} {t('assessment.unanswered', lang)}
         </p>
       )}
     </div>

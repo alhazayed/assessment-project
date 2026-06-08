@@ -319,7 +319,7 @@ export default async function DashboardPage() {
                         {s.severity_band}
                       </span>
                       {s.high_risk_flag && (
-                        <p className="text-xs text-red-600 mt-1 font-medium">⚠ High Risk</p>
+                        <p className="text-xs text-red-600 mt-1 font-medium">⚠ {t('dashboard.high_risk_badge', lang)}</p>
                       )}
                     </div>
                   </div>

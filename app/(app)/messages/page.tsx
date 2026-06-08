@@ -104,7 +104,7 @@ export default function MessagesPage() {
         {messages.length === 0 ? (
           <div className="text-center py-12">
             <MessageSquare className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-sm text-gray-400">{t('messages.placeholder', lang)}</p>
+            <p className="text-sm text-gray-400">{t('messages.empty', lang)}</p>
           </div>
         ) : (
           messages.map(msg => {

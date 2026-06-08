@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Users, Search, CheckCircle, XCircle, ChevronDown, AlertTriangle } from 'lucide-react'
+import { Users, Search, CheckCircle, XCircle, ChevronDown } from 'lucide-react'
+import { useLang } from '@/lib/use-lang'
+import { t } from '@/lib/i18n'
 
 type User = {
   id: string; full_name_en: string; full_name_ar: string | null; role: string
@@ -12,6 +14,7 @@ type User = {
 const ROLES = ['patient', 'clinician', 'admin', 'superadmin']
 
 export default function AdminUsersPage() {
+  const lang = useLang()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -32,7 +35,7 @@ export default function AdminUsersPage() {
   async function toggleActive(id: string, current: boolean) {
     setUpdating(id)
     await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_active: !current }) })
-    setMsg(`User ${!current ? 'activated' : 'deactivated'}`)
+    setMsg(t(!current ? 'admin.users.activated' : 'admin.users.deactivated', lang))
     setTimeout(() => setMsg(''), 3000)
     load()
     setUpdating(null)
@@ -41,7 +44,7 @@ export default function AdminUsersPage() {
   async function changeRole(id: string, role: string) {
     setUpdating(id)
     await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, role }) })
-    setMsg('Role updated')
+    setMsg(t('admin.users.role_updated', lang))
     setTimeout(() => setMsg(''), 3000)
     load()
     setUpdating(null)
@@ -56,8 +59,8 @@ export default function AdminUsersPage() {
     <div className="p-8 max-w-6xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-500 mt-1">{users.length} users · activate, deactivate, change roles</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('admin.users.title', lang)}</h1>
+          <p className="text-gray-500 mt-1">{users.length} {t('admin.nav.users', lang).toLowerCase()} · {t('admin.users.subtitle', lang)}</p>
         </div>
         <Users className="w-6 h-6 text-gray-400" />
       </div>
@@ -66,11 +69,11 @@ export default function AdminUsersPage() {
 
       <div className="flex gap-3 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input className="input pl-9 w-full" placeholder="Search by name…" value={search} onChange={e => setSearch(e.target.value)} />
+          <Search className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 ${lang === 'ar' ? 'right-3' : 'left-3'}`} />
+          <input className={`input w-full ${lang === 'ar' ? 'pr-9' : 'pl-9'}`} placeholder={t('admin.users.search', lang)} value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="input w-40" value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
-          <option value="">All roles</option>
+        <select className="input w-44" value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
+          <option value="">{t('admin.users.all_roles', lang)}</option>
           {ROLES.map(r => <option key={r} value={r} className="capitalize">{r}</option>)}
         </select>
       </div>
@@ -79,19 +82,19 @@ export default function AdminUsersPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Name</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Role</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Joined</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Submissions</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-600">Actions</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.users.col.name', lang)}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.users.col.role', lang)}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.users.col.status', lang)}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.users.col.joined', lang)}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.users.col.submissions', lang)}</th>
+              <th className="text-right px-4 py-3 font-medium text-gray-600">{t('admin.users.col.actions', lang)}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {loading ? (
-              <tr><td colSpan={6} className="text-center py-12 text-gray-400">Loading…</td></tr>
+              <tr><td colSpan={6} className="text-center py-12 text-gray-400">{t('admin.loading', lang)}</td></tr>
             ) : users.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-12 text-gray-400">No users found</td></tr>
+              <tr><td colSpan={6} className="text-center py-12 text-gray-400">{t('admin.users.empty', lang)}</td></tr>
             ) : users.map(u => (
               <tr key={u.id} className={`hover:bg-gray-50 ${updating === u.id ? 'opacity-50' : ''}`}>
                 <td className="px-4 py-3">
@@ -113,7 +116,7 @@ export default function AdminUsersPage() {
                 <td className="px-4 py-3">
                   <span className={`flex items-center gap-1 w-fit text-xs font-medium ${u.is_active ? 'text-green-600' : 'text-red-500'}`}>
                     {u.is_active ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                    {u.is_active ? 'Active' : 'Inactive'}
+                    {u.is_active ? t('admin.users.active', lang) : t('admin.users.inactive', lang)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-gray-500">{new Date(u.created_at).toLocaleDateString()}</td>
@@ -123,7 +126,7 @@ export default function AdminUsersPage() {
                     onClick={() => toggleActive(u.id, u.is_active)}
                     className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${u.is_active ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
                   >
-                    {u.is_active ? 'Deactivate' : 'Activate'}
+                    {u.is_active ? t('admin.users.deactivate', lang) : t('admin.users.activate', lang)}
                   </button>
                 </td>
               </tr>

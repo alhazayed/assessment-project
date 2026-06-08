@@ -3,20 +3,23 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, Shield, LogOut, TrendingUp } from 'lucide-react'
-
-const NAV = [
-  { href: '/x/control/overview',      label: 'Overview',       icon: LayoutDashboard },
-  { href: '/x/control/analytics',     label: 'Analytics',      icon: TrendingUp },
-  { href: '/x/control/users',         label: 'Users',          icon: Users },
-  { href: '/x/control/assessments',   label: 'Assessments',    icon: ClipboardList },
-  { href: '/x/control/results',       label: 'Results',        icon: BarChart3 },
-  { href: '/x/control/platform',      label: 'Platform',       icon: Settings },
-  { href: '/x/control/announcements', label: 'Announcements',  icon: Megaphone },
-  { href: '/x/control/audit',         label: 'Audit Log',      icon: ScrollText },
-]
+import { useLang } from '@/lib/use-lang'
+import { t } from '@/lib/i18n'
 
 export default function AdminNav({ role }: { role: string }) {
   const pathname = usePathname()
+  const lang = useLang()
+
+  const NAV = [
+    { href: '/x/control/overview',      label: t('admin.nav.overview', lang),       icon: LayoutDashboard },
+    { href: '/x/control/analytics',     label: t('admin.nav.analytics', lang),      icon: TrendingUp },
+    { href: '/x/control/users',         label: t('admin.nav.users', lang),          icon: Users },
+    { href: '/x/control/assessments',   label: t('admin.nav.assessments', lang),    icon: ClipboardList },
+    { href: '/x/control/results',       label: t('admin.nav.results', lang),        icon: BarChart3 },
+    { href: '/x/control/platform',      label: t('admin.nav.platform', lang),       icon: Settings },
+    { href: '/x/control/announcements', label: t('admin.nav.announcements', lang),  icon: Megaphone },
+    { href: '/x/control/audit',         label: t('admin.nav.audit', lang),          icon: ScrollText },
+  ]
 
   async function handleLogout() {
     await fetch('/api/admin/login', { method: 'DELETE' })
@@ -31,7 +34,7 @@ export default function AdminNav({ role }: { role: string }) {
             <Shield className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="text-sm font-bold text-white leading-tight">Admin Panel</p>
+            <p className="text-sm font-bold text-white leading-tight">{t('admin.panel', lang)}</p>
             <p className="text-xs text-slate-400 capitalize">{role}</p>
           </div>
         </div>
@@ -57,12 +60,12 @@ export default function AdminNav({ role }: { role: string }) {
 
       <div className="px-2 py-4 border-t border-slate-800 space-y-1">
         <Link href="/" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs text-slate-500 hover:text-slate-300 transition-colors">
-          ← Back to platform
+          {t('admin.nav.back', lang)}
         </Link>
         <button onClick={handleLogout}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors">
           <LogOut className="w-4 h-4" />
-          Sign out
+          {t('admin.nav.signout', lang)}
         </button>
       </div>
     </aside>
