@@ -326,6 +326,16 @@ const dict = {
     'assessment.result.promo.cta': 'Create free account',
     'assessment.result.promo.signin': 'Already have one? Sign in',
 
+    // Post-assessment demographics
+    'demo.title': 'One more thing',
+    'demo.sub': 'A few details help put your results in context. Takes under a minute.',
+    'demo.save': 'Save to profile',
+    'demo.saving': 'Saving...',
+    'demo.saved': 'Profile updated — thank you!',
+    'demo.skip': 'Skip for now',
+    'demo.guest.note': 'Create a free account to save these details and get insights tailored to your background.',
+    'demo.guest.cta': 'Create account to save',
+
     // Admin panel — nav
     'admin.panel': 'Admin Panel',
     'admin.nav.overview': 'Overview',
@@ -859,6 +869,16 @@ const dict = {
     'assessment.result.promo.secure': 'خاص وآمن ومجاني دائماً',
     'assessment.result.promo.cta': 'أنشئ حساباً مجانياً',
     'assessment.result.promo.signin': 'لديك حساب بالفعل؟ سجّل الدخول',
+
+    // Post-assessment demographics
+    'demo.title': 'شيء أخير',
+    'demo.sub': 'بضعة تفاصيل تساعد في تفسير نتائجك. تستغرق أقل من دقيقة.',
+    'demo.save': 'حفظ في الملف الشخصي',
+    'demo.saving': 'جارٍ الحفظ...',
+    'demo.saved': 'تم تحديث الملف الشخصي — شكراً!',
+    'demo.skip': 'تخطّ الآن',
+    'demo.guest.note': 'أنشئ حساباً مجانياً لحفظ هذه التفاصيل والحصول على رؤى مخصصة لخلفيتك.',
+    'demo.guest.cta': 'أنشئ حساباً لحفظ البيانات',
 
     // Admin panel — nav
     'admin.panel': 'لوحة الإدارة',

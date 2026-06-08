@@ -13,6 +13,7 @@ import type { AssessmentDefinition, AssessmentItem, ResponseOption, ScoringBand 
 import { getAssessmentContent, getBandContent, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import DemographicsCard from '@/components/demographics-card'
 
 function severityColor(band: string) {
   const b = band.toLowerCase()
@@ -205,6 +206,9 @@ export default function TakeAssessmentPage() {
             </p>
           )}
         </div>
+
+        {/* Demographics collection */}
+        <DemographicsCard isLoggedIn={!!isLoggedIn} lang={lang} />
 
         {/* Profile creation promo for guests */}
         {!isLoggedIn && (
