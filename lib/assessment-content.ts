@@ -1625,6 +1625,77 @@ export const ASSESSMENT_CONTENT: Record<string, AssessmentContent> = {
   },
 }
 
+export interface IpipDomainInfo {
+  label: string
+  label_ar: string
+  color: string
+  low: string
+  low_ar: string
+  average: string
+  average_ar: string
+  high: string
+  high_ar: string
+}
+
+export const IPIP_DOMAINS: Record<string, IpipDomainInfo> = {
+  N: {
+    label: 'Neuroticism', label_ar: 'العصابية',
+    color: 'text-rose-700 bg-rose-50 border-rose-200',
+    low: 'Emotionally stable, calm, even-tempered, and resilient under stress.',
+    low_ar: 'مستقر عاطفياً، هادئ، ومرن تحت الضغط.',
+    average: 'Moderate emotional reactivity — experiences stress and negative emotions at a typical level.',
+    average_ar: 'تفاعل عاطفي معتدل — يعاني من التوتر والمشاعر السلبية بمستوى نموذجي.',
+    high: 'Prone to emotional instability, anxiety, moodiness, and heightened reactions to stress.',
+    high_ar: 'عُرضة لعدم الاستقرار العاطفي، القلق، تقلبات المزاج، والتفاعلات المفرطة مع الضغط.',
+  },
+  E: {
+    label: 'Extraversion', label_ar: 'الانبساطية',
+    color: 'text-amber-700 bg-amber-50 border-amber-200',
+    low: 'Introverted — prefers solitude, is reserved, and recharges from quiet, independent activities.',
+    low_ar: 'انطوائي — يفضل العزلة والهدوء ويستمد طاقته من الأنشطة المستقلة.',
+    average: 'Balanced sociability — comfortable in both social and solitary settings.',
+    average_ar: 'اجتماعية متوازنة — مرتاح في البيئات الاجتماعية والمنفردة على حد سواء.',
+    high: 'Highly extraverted — energetic, sociable, talkative, and draws energy from social interaction.',
+    high_ar: 'انبساطي للغاية — نشيط، اجتماعي، مفوّه، يستمد طاقته من التفاعل الاجتماعي.',
+  },
+  O: {
+    label: 'Openness to Experience', label_ar: 'الانفتاح على التجربة',
+    color: 'text-violet-700 bg-violet-50 border-violet-200',
+    low: 'Conventional and practical — prefers routine, familiarity, and established ways of doing things.',
+    low_ar: 'تقليدي وعملي — يفضل الروتين والمألوف والأساليب المعتادة.',
+    average: 'Moderate curiosity and openness — interested in new ideas but also values stability.',
+    average_ar: 'فضول واستعداد للتجربة معتدل — مهتم بالأفكار الجديدة مع تقدير الاستقرار.',
+    high: 'Highly imaginative, curious, and open to new experiences, ideas, and unconventional viewpoints.',
+    high_ar: 'خيال عالٍ، فضول واسع، وانفتاح على التجارب والأفكار الجديدة ووجهات النظر غير التقليدية.',
+  },
+  A: {
+    label: 'Agreeableness', label_ar: 'القبول',
+    color: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+    low: 'Competitive and questioning — values self-interest, may be skeptical of others\' motives.',
+    low_ar: 'تنافسي ومتشكك — يقدر مصلحته الخاصة وقد يشكك في دوافع الآخرين.',
+    average: 'Moderately agreeable — cooperative and considerate while also asserting own needs.',
+    average_ar: 'قبول معتدل — متعاون ومراعٍ مع التعبير عن احتياجاته الخاصة.',
+    high: 'Highly cooperative, empathetic, and trusting — prioritises harmony and others\' wellbeing.',
+    high_ar: 'تعاوني للغاية، متعاطف، وموثوق — يولي الأولوية للانسجام ورفاهية الآخرين.',
+  },
+  C: {
+    label: 'Conscientiousness', label_ar: 'يقظة الضمير',
+    color: 'text-sky-700 bg-sky-50 border-sky-200',
+    low: 'Flexible and spontaneous — may be disorganised, impulsive, or prefer going with the flow.',
+    low_ar: 'مرن وعفوي — قد يكون غير منظم أو اندفاعي أو يفضل التكيف مع الظروف.',
+    average: 'Moderately conscientious — generally organised and dependable with some flexibility.',
+    average_ar: 'يقظة الضمير المعتدلة — منظم وموثوق بشكل عام مع بعض المرونة.',
+    high: 'Highly organised, disciplined, and goal-directed — strong work ethic and attention to detail.',
+    high_ar: 'منظم للغاية، منضبط، وموجه نحو الأهداف — أخلاقيات عمل قوية واهتمام بالتفاصيل.',
+  },
+}
+
+export function getIpipDomainLevel(score: number): 'low' | 'average' | 'high' {
+  if (score < 65) return 'low'
+  if (score <= 88) return 'average'
+  return 'high'
+}
+
 export function getAssessmentContent(code: string): AssessmentContent | null {
   return ASSESSMENT_CONTENT[code] ?? null
 }

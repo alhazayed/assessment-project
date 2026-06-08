@@ -9,7 +9,7 @@ import {
   LogIn, BookOpen, FlaskConical, ArrowRight, Brain,
 } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentItem, ResponseOption, ScoringBand } from '@/lib/types'
-import { getAssessmentContent, getBandContent } from '@/lib/assessment-content'
+import { getAssessmentContent, getBandContent, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
@@ -45,6 +45,7 @@ export default function TakeAssessmentPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [result, setResult] = useState<{ score: number; band_en: string; band_ar: string; high_risk: boolean } | null>(null)
+  const [domainScores, setDomainScores] = useState<Record<string, number> | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -87,6 +88,15 @@ export default function TakeAssessmentPage() {
     const totalScore = Object.values(answers).reduce((sum, a) => sum + a.value, 0)
     const band = calcBand(definition.scoring_logic, totalScore)
     const highRisk = definition.high_risk_threshold !== null && totalScore >= definition.high_risk_threshold
+
+    if (definition.code === 'IPIP120') {
+      const scores: Record<string, number> = { N: 0, E: 0, O: 0, A: 0, C: 0 }
+      items.forEach(item => {
+        const domain = item.subscale?.charAt(0)
+        if (domain && domain in scores) scores[domain] += answers[item.id]?.value ?? 0
+      })
+      setDomainScores(scores)
+    }
 
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
@@ -203,6 +213,40 @@ export default function TakeAssessmentPage() {
             </p>
           )}
         </div>
+
+        {/* IPIP-NEO Domain Scores */}
+        {definition.code === 'IPIP120' && domainScores && (
+          <div className="card p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Brain className="w-4 h-4 text-brand-600" />
+              <h3 className="text-base font-semibold text-gray-900">Your Personality Profile</h3>
+            </div>
+            <p className="text-xs text-gray-400 mb-5">Scores range 24–120 per domain. Low &lt;65 · Average 65–88 · High &gt;88</p>
+            <div className="space-y-4">
+              {Object.entries(IPIP_DOMAINS).map(([key, info]) => {
+                const score = domainScores[key] ?? 0
+                const level = getIpipDomainLevel(score)
+                const pct = Math.round(((score - 24) / 96) * 100)
+                const desc = lang === 'ar' ? info[`${level}_ar`] : info[level]
+                return (
+                  <div key={key}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-gray-800">{lang === 'ar' ? info.label_ar : info.label}</span>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border capitalize ${info.color}`}>{level}</span>
+                      </div>
+                      <span className="text-sm font-bold text-gray-700">{score}</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2 mb-1.5">
+                      <div className="h-2 rounded-full bg-brand-500 transition-all" style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* About This Assessment */}
         {assessmentContent && (

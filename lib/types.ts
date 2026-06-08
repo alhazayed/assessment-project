@@ -72,6 +72,7 @@ export interface AssessmentItem {
   response_options: ResponseOption[]
   is_safety_item: boolean
   score_weight: number
+  subscale?: string | null
 }
 
 export interface ResponseOption {

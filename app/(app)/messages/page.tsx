@@ -12,11 +12,23 @@ export default function MessagesPage() {
   const lang = useLang()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [clinician, setClinician] = useState<Profile | null>(null)
+  const [patients, setPatients] = useState<Profile[]>([])
+  const [selectedPatient, setSelectedPatient] = useState<Profile | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [newMessage, setNewMessage] = useState('')
   const [sending, setSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  async function loadMessages(patientId: string, clinicianId: string) {
+    const { data: msgs } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('patient_id', patientId)
+      .eq('clinician_id', clinicianId)
+      .order('created_at')
+    setMessages(msgs as Message[] || [])
+  }
 
   async function load() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -28,41 +40,82 @@ export default function MessagesPage() {
     if (p?.role === 'patient' && p.assigned_clinician_id) {
       const { data: clin } = await supabase.from('profiles').select('*').eq('id', p.assigned_clinician_id).single()
       setClinician(clin as Profile)
-
-      const { data: msgs } = await supabase
-        .from('messages')
+      await loadMessages(user.id, p.assigned_clinician_id)
+    } else if (p?.role === 'clinician') {
+      const { data: pts } = await supabase
+        .from('profiles')
         .select('*')
-        .eq('patient_id', user.id)
-        .eq('clinician_id', p.assigned_clinician_id)
-        .order('created_at')
-      setMessages(msgs as Message[] || [])
+        .eq('assigned_clinician_id', user.id)
+        .eq('role', 'patient')
+        .eq('is_active', true)
+        .order('full_name_en')
+      setPatients(pts as Profile[] || [])
     }
     setLoading(false)
   }
 
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    if (profile?.role === 'clinician' && selectedPatient) {
+      loadMessages(selectedPatient.id, profile.id)
+    }
+  }, [selectedPatient])
+
+  useEffect(() => {
+    if (!profile) return
+
+    let patientId: string | null = null
+    let clinicianId: string | null = null
+
+    if (profile.role === 'patient' && clinician) {
+      patientId = profile.id
+      clinicianId = clinician.id
+    } else if (profile.role === 'clinician' && selectedPatient) {
+      patientId = selectedPatient.id
+      clinicianId = profile.id
+    }
+
+    if (!patientId || !clinicianId) return
+
+    const pid = patientId
+    const cid = clinicianId
+
+    const channel = supabase
+      .channel(`msgs:${pid}:${cid}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `patient_id=eq.${pid}` },
+        () => loadMessages(pid, cid))
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [profile, clinician, selectedPatient])
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault()
-    if (!newMessage.trim() || !profile || !clinician) return
-    setSending(true)
+    if (!newMessage.trim() || !profile) return
 
+    const patientId = profile.role === 'patient' ? profile.id : selectedPatient?.id
+    const clinicianId = profile.role === 'clinician' ? profile.id : clinician?.id
+    if (!patientId || !clinicianId) return
+
+    setSending(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
     await supabase.from('messages').insert({
-      patient_id: profile.role === 'patient' ? user.id : clinician.id,
-      clinician_id: profile.role === 'clinician' ? user.id : clinician.id,
+      patient_id: patientId,
+      clinician_id: clinicianId,
       sender_id: user.id,
       body: newMessage.trim(),
     })
 
     setNewMessage('')
     setSending(false)
-    load()
+    loadMessages(patientId, clinicianId)
   }
 
   if (loading) return <div className="p-8 text-gray-400">{t('messages.loading', lang)}</div>
@@ -79,75 +132,112 @@ export default function MessagesPage() {
     )
   }
 
-  const otherParty = clinician
+  if (profile?.role === 'clinician' && patients.length === 0) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-64">
+        <div className="card p-8 text-center max-w-sm">
+          <MessageSquare className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+          <h3 className="text-base font-medium text-gray-700 mb-2">{t('messages.no_patients', lang)}</h3>
+          <p className="text-sm text-gray-400">{t('messages.no_patients.sub', lang)}</p>
+        </div>
+      </div>
+    )
+  }
+
+  const isClinician = profile?.role === 'clinician'
+  const otherParty = isClinician ? selectedPatient : clinician
   const otherName = otherParty
     ? (lang === 'ar' && otherParty.full_name_ar ? otherParty.full_name_ar : otherParty.full_name_en)
     : t('messages.clinician', lang)
 
   return (
-    <div className="flex flex-col h-screen max-h-screen">
-      <div className="px-8 py-5 border-b border-gray-200 bg-white flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center">
-            <span className="text-sm font-semibold text-brand-700">
-              {otherName.charAt(0)}
-            </span>
+    <div className="flex h-screen max-h-screen overflow-hidden">
+      {isClinician && (
+        <div className="w-64 flex-shrink-0 border-r border-gray-200 bg-white flex flex-col">
+          <div className="px-4 py-4 border-b border-gray-100">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('messages.patients', lang)}</p>
           </div>
-          <div>
-            <p className="font-semibold text-gray-900">{otherName}</p>
-            <p className="text-xs text-gray-400 capitalize">{otherParty?.role || ''}</p>
+          <div className="flex-1 overflow-y-auto">
+            {patients.map(p => {
+              const name = lang === 'ar' && p.full_name_ar ? p.full_name_ar : p.full_name_en
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedPatient(p)}
+                  className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors ${selectedPatient?.id === p.id ? 'bg-indigo-50' : 'hover:bg-gray-50'}`}
+                >
+                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-semibold text-indigo-700">{name.charAt(0)}</span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-800 truncate">{name}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4">
-        {messages.length === 0 ? (
-          <div className="text-center py-12">
-            <MessageSquare className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-sm text-gray-400">{t('messages.empty', lang)}</p>
-          </div>
-        ) : (
-          messages.map(msg => {
-            const isMine = msg.sender_id === profile?.id
-            return (
-              <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-md px-4 py-3 rounded-2xl text-sm ${
-                    isMine
-                      ? 'bg-brand-600 text-white rounded-br-sm'
-                      : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm'
-                  }`}
-                >
-                  <p className="leading-relaxed">{msg.body}</p>
-                  <p className={`text-xs mt-1.5 ${isMine ? 'text-brand-200' : 'text-gray-400'}`}>
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
+      <div className="flex flex-col flex-1 min-w-0">
+        {(!isClinician || selectedPatient) ? (
+          <>
+            <div className="px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center">
+                  <span className="text-sm font-semibold text-brand-700">{otherName.charAt(0)}</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">{otherName}</p>
+                  <p className="text-xs text-gray-400 capitalize">{otherParty?.role || ''}</p>
                 </div>
               </div>
-            )
-          })
-        )}
-        <div ref={bottomRef} />
-      </div>
+            </div>
 
-      <div className="px-8 py-4 border-t border-gray-200 bg-white flex-shrink-0">
-        <form onSubmit={handleSend} className="flex gap-3">
-          <input
-            type="text"
-            className="input flex-1"
-            value={newMessage}
-            onChange={e => setNewMessage(e.target.value)}
-            placeholder={t('messages.placeholder', lang)}
-            maxLength={2000}
-          />
-          <button
-            type="submit"
-            disabled={!newMessage.trim() || sending}
-            className="btn-primary px-4 gap-2 disabled:opacity-40"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </form>
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+              {messages.length === 0 ? (
+                <div className="text-center py-12">
+                  <MessageSquare className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                  <p className="text-sm text-gray-400">{t('messages.empty', lang)}</p>
+                </div>
+              ) : messages.map(msg => {
+                const isMine = msg.sender_id === profile?.id
+                return (
+                  <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-md px-4 py-3 rounded-2xl text-sm ${isMine ? 'bg-brand-600 text-white rounded-br-sm' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm'}`}>
+                      <p className="leading-relaxed">{msg.body}</p>
+                      <p className={`text-xs mt-1.5 ${isMine ? 'text-brand-200' : 'text-gray-400'}`}>
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+              <div ref={bottomRef} />
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 bg-white flex-shrink-0">
+              <form onSubmit={handleSend} className="flex gap-3">
+                <input
+                  type="text"
+                  className="input flex-1"
+                  value={newMessage}
+                  onChange={e => setNewMessage(e.target.value)}
+                  placeholder={t('messages.placeholder', lang)}
+                  maxLength={2000}
+                />
+                <button type="submit" disabled={!newMessage.trim() || sending} className="btn-primary px-4 gap-2 disabled:opacity-40">
+                  <Send className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageSquare className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+              <p className="text-sm text-gray-400">{t('messages.select_patient', lang)}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
