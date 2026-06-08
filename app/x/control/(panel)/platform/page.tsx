@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { Settings, ToggleLeft, ToggleRight, Save } from 'lucide-react'
+import { useLang } from '@/lib/use-lang'
+import { t } from '@/lib/i18n'
 
 type Flag = { id: string; flag_key: string; display_name: string; description: string; is_enabled: boolean; applies_to: string[] }
 type Setting = { key: string; value: string; updated_at: string }
 
 export default function AdminPlatformPage() {
+  const lang = useLang()
   const [flags, setFlags] = useState<Flag[]>([])
   const [settings, setSettings] = useState<Setting[]>([])
   const [settingEdits, setSettingEdits] = useState<Record<string, string>>({})
@@ -31,13 +34,13 @@ export default function AdminPlatformPage() {
 
   async function toggleFlag(id: string, current: boolean) {
     await fetch('/api/admin/flags', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_enabled: !current }) })
-    flash(`Feature ${!current ? 'enabled' : 'disabled'}`)
+    flash(t(!current ? 'admin.platform.feature_enabled' : 'admin.platform.feature_disabled', lang))
     load()
   }
 
   async function saveSetting(key: string) {
     await fetch('/api/admin/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: settingEdits[key] }) })
-    flash('Setting saved')
+    flash(t('admin.platform.setting_saved', lang))
     load()
   }
 
@@ -45,8 +48,8 @@ export default function AdminPlatformPage() {
     <div className="p-8 max-w-4xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Platform Settings</h1>
-          <p className="text-gray-500 mt-1">Feature flags, section visibility, and platform configuration</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('admin.platform.title', lang)}</h1>
+          <p className="text-gray-500 mt-1">{t('admin.platform.subtitle', lang)}</p>
         </div>
         <Settings className="w-6 h-6 text-gray-400" />
       </div>
@@ -55,11 +58,11 @@ export default function AdminPlatformPage() {
 
       {/* Feature Flags */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Feature Flags</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">{t('admin.platform.flags', lang)}</h2>
         {loading ? (
-          <p className="text-sm text-gray-400">Loading…</p>
+          <p className="text-sm text-gray-400">{t('admin.loading', lang)}</p>
         ) : flags.length === 0 ? (
-          <p className="text-sm text-gray-400">No feature flags configured. Add them via Supabase.</p>
+          <p className="text-sm text-gray-400">{t('admin.platform.no_flags', lang)}</p>
         ) : (
           <div className="divide-y divide-gray-50">
             {flags.map(f => (
@@ -91,18 +94,18 @@ export default function AdminPlatformPage() {
 
       {/* Platform Settings */}
       <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Platform Configuration</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">{t('admin.platform.config', lang)}</h2>
         {loading ? (
-          <p className="text-sm text-gray-400">Loading…</p>
+          <p className="text-sm text-gray-400">{t('admin.loading', lang)}</p>
         ) : settings.length === 0 ? (
-          <p className="text-sm text-gray-400">No settings configured.</p>
+          <p className="text-sm text-gray-400">{t('admin.platform.no_settings', lang)}</p>
         ) : (
           <div className="space-y-4">
             {settings.map(s => (
               <div key={s.key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   <code className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded mr-2">{s.key}</code>
-                  <span className="text-gray-400 text-xs">Updated {new Date(s.updated_at).toLocaleDateString()}</span>
+                  <span className="text-gray-400 text-xs">{t('admin.platform.updated', lang)} {new Date(s.updated_at).toLocaleDateString()}</span>
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -113,7 +116,7 @@ export default function AdminPlatformPage() {
                   <button onClick={() => saveSetting(s.key)}
                     className="flex items-center gap-1.5 bg-indigo-600 text-white text-sm px-3 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
                     <Save className="w-3.5 h-3.5" />
-                    Save
+                    {t('admin.platform.save', lang)}
                   </button>
                 </div>
               </div>

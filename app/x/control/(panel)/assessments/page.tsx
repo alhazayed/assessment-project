@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { ClipboardList, ToggleLeft, ToggleRight, CheckCircle, XCircle } from 'lucide-react'
+import { useLang } from '@/lib/use-lang'
+import { t } from '@/lib/i18n'
 
 type Assessment = { id: string; code: string; name_en: string; name_ar: string; total_questions: number; is_active: boolean; submission_count: number }
 
 export default function AdminAssessmentsPage() {
+  const lang = useLang()
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
@@ -24,7 +27,7 @@ export default function AdminAssessmentsPage() {
   async function toggle(id: string, current: boolean) {
     setUpdating(id)
     await fetch('/api/admin/assessments', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_active: !current }) })
-    setMsg(`Assessment ${!current ? 'enabled' : 'disabled'}`)
+    setMsg(t(!current ? 'admin.assessments.enabled' : 'admin.assessments.disabled', lang))
     setTimeout(() => setMsg(''), 3000)
     load()
     setUpdating(null)
@@ -38,8 +41,8 @@ export default function AdminAssessmentsPage() {
     <div className="p-8 max-w-5xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Assessment Control</h1>
-          <p className="text-gray-500 mt-1">{active}/{assessments.length} active · {totalSubs} total submissions</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('admin.assessments.title', lang)}</h1>
+          <p className="text-gray-500 mt-1">{active}/{assessments.length} {t('admin.assessments.active', lang)} · {totalSubs} {t('admin.assessments.total_subs', lang)}</p>
         </div>
         <ClipboardList className="w-6 h-6 text-gray-400" />
       </div>
@@ -50,17 +53,17 @@ export default function AdminAssessmentsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Assessment</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Code</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Questions</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Submissions</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-600">Toggle</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.assessments.col.assessment', lang)}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.assessments.col.code', lang)}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.assessments.col.questions', lang)}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.assessments.col.submissions', lang)}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.assessments.col.status', lang)}</th>
+              <th className="text-right px-4 py-3 font-medium text-gray-600">{t('admin.assessments.col.toggle', lang)}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {loading ? (
-              <tr><td colSpan={6} className="text-center py-12 text-gray-400">Loading…</td></tr>
+              <tr><td colSpan={6} className="text-center py-12 text-gray-400">{t('admin.loading', lang)}</td></tr>
             ) : assessments.map(a => (
               <tr key={a.id} className={`hover:bg-gray-50 ${updating === a.id ? 'opacity-50' : ''}`}>
                 <td className="px-4 py-3">
@@ -80,7 +83,7 @@ export default function AdminAssessmentsPage() {
                 <td className="px-4 py-3">
                   <span className={`flex items-center gap-1 w-fit text-xs font-medium ${a.is_active ? 'text-green-600' : 'text-gray-400'}`}>
                     {a.is_active ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                    {a.is_active ? 'Visible' : 'Hidden'}
+                    {a.is_active ? t('admin.assessments.visible', lang) : t('admin.assessments.hidden', lang)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right">

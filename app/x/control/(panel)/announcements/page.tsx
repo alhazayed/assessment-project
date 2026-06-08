@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { Megaphone, Plus, Trash2, ToggleLeft, ToggleRight, X } from 'lucide-react'
+import { useLang } from '@/lib/use-lang'
+import { t } from '@/lib/i18n'
 
 type Announcement = {
   id: string; title_en: string; title_ar: string; body_en: string; body_ar: string
@@ -15,6 +17,7 @@ const TYPES = ['info', 'warning', 'success', 'error']
 const defaultForm = { title_en: '', title_ar: '', body_en: '', body_ar: '', type: 'info', target_roles: [] as string[], is_dismissible: true, starts_at: '', ends_at: '' }
 
 export default function AdminAnnouncementsPage() {
+  const lang = useLang()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -37,21 +40,21 @@ export default function AdminAnnouncementsPage() {
     e.preventDefault()
     setSaving(true)
     await fetch('/api/admin/announcements', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
-    flash('Announcement created')
+    flash(t('admin.announcements.created', lang))
     setShowForm(false); setForm(defaultForm); load()
     setSaving(false)
   }
 
   async function toggleActive(id: string, current: boolean) {
     await fetch('/api/admin/announcements', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_active: !current }) })
-    flash(`Announcement ${!current ? 'activated' : 'deactivated'}`)
+    flash(t(!current ? 'admin.announcements.activated' : 'admin.announcements.deactivated', lang))
     load()
   }
 
   async function remove(id: string) {
-    if (!confirm('Delete this announcement?')) return
+    if (!confirm(t('admin.announcements.confirm_delete', lang))) return
     await fetch('/api/admin/announcements', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
-    flash('Deleted')
+    flash(t('admin.announcements.deleted', lang))
     load()
   }
 
@@ -65,11 +68,11 @@ export default function AdminAnnouncementsPage() {
     <div className="p-8 max-w-4xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Announcements</h1>
-          <p className="text-gray-500 mt-1">Platform-wide messages shown to users</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('admin.announcements.title', lang)}</h1>
+          <p className="text-gray-500 mt-1">{t('admin.announcements.subtitle', lang)}</p>
         </div>
         <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-          <Plus className="w-4 h-4" />New Announcement
+          <Plus className="w-4 h-4" />{t('admin.announcements.new', lang)}
         </button>
       </div>
 
@@ -78,48 +81,48 @@ export default function AdminAnnouncementsPage() {
       {showForm && (
         <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">New Announcement</h2>
+            <h2 className="text-base font-semibold text-gray-900">{t('admin.announcements.form.title', lang)}</h2>
             <button onClick={() => { setShowForm(false); setForm(defaultForm) }}><X className="w-5 h-5 text-gray-400" /></button>
           </div>
           <form onSubmit={create} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label">Title (EN)</label>
+                <label className="label">{t('admin.announcements.form.title_en', lang)}</label>
                 <input className="input" required value={form.title_en} onChange={e => setForm(p => ({ ...p, title_en: e.target.value }))} />
               </div>
               <div>
-                <label className="label">Title (AR)</label>
+                <label className="label">{t('admin.announcements.form.title_ar', lang)}</label>
                 <input className="input" dir="rtl" value={form.title_ar} onChange={e => setForm(p => ({ ...p, title_ar: e.target.value }))} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label">Body (EN)</label>
+                <label className="label">{t('admin.announcements.form.body_en', lang)}</label>
                 <textarea className="input resize-none" rows={3} value={form.body_en} onChange={e => setForm(p => ({ ...p, body_en: e.target.value }))} />
               </div>
               <div>
-                <label className="label">Body (AR)</label>
+                <label className="label">{t('admin.announcements.form.body_ar', lang)}</label>
                 <textarea className="input resize-none" rows={3} dir="rtl" value={form.body_ar} onChange={e => setForm(p => ({ ...p, body_ar: e.target.value }))} />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="label">Type</label>
+                <label className="label">{t('admin.announcements.form.type', lang)}</label>
                 <select className="input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
-                  {TYPES.map(t => <option key={t} value={t} className="capitalize">{t}</option>)}
+                  {TYPES.map(tp => <option key={tp} value={tp} className="capitalize">{tp}</option>)}
                 </select>
               </div>
               <div>
-                <label className="label">Starts at</label>
+                <label className="label">{t('admin.announcements.form.starts_at', lang)}</label>
                 <input type="datetime-local" className="input" value={form.starts_at} onChange={e => setForm(p => ({ ...p, starts_at: e.target.value }))} />
               </div>
               <div>
-                <label className="label">Ends at</label>
+                <label className="label">{t('admin.announcements.form.ends_at', lang)}</label>
                 <input type="datetime-local" className="input" value={form.ends_at} onChange={e => setForm(p => ({ ...p, ends_at: e.target.value }))} />
               </div>
             </div>
             <div>
-              <label className="label">Target Roles (leave empty = all)</label>
+              <label className="label">{t('admin.announcements.form.target_roles', lang)}</label>
               <div className="flex gap-2 mt-1">
                 {ROLES.map(r => (
                   <button key={r} type="button" onClick={() => toggleRole(r)}
@@ -131,12 +134,12 @@ export default function AdminAnnouncementsPage() {
             </div>
             <div className="flex items-center gap-2">
               <input type="checkbox" id="dismissible" checked={form.is_dismissible} onChange={e => setForm(p => ({ ...p, is_dismissible: e.target.checked }))} className="rounded text-indigo-600" />
-              <label htmlFor="dismissible" className="text-sm text-gray-700">Dismissible by users</label>
+              <label htmlFor="dismissible" className="text-sm text-gray-700">{t('admin.announcements.form.dismissible', lang)}</label>
             </div>
             <div className="flex justify-end gap-3">
-              <button type="button" onClick={() => { setShowForm(false); setForm(defaultForm) }} className="btn-secondary">Cancel</button>
+              <button type="button" onClick={() => { setShowForm(false); setForm(defaultForm) }} className="btn-secondary">{t('admin.announcements.form.cancel', lang)}</button>
               <button type="submit" disabled={saving} className="bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-                {saving ? 'Saving…' : 'Create'}
+                {saving ? t('admin.announcements.form.saving', lang) : t('admin.announcements.form.create', lang)}
               </button>
             </div>
           </form>
@@ -144,11 +147,11 @@ export default function AdminAnnouncementsPage() {
       )}
 
       <div className="space-y-3">
-        {loading ? <p className="text-sm text-gray-400">Loading…</p>
+        {loading ? <p className="text-sm text-gray-400">{t('admin.loading', lang)}</p>
           : announcements.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
               <Megaphone className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="text-sm text-gray-400">No announcements yet</p>
+              <p className="text-sm text-gray-400">{t('admin.announcements.empty', lang)}</p>
             </div>
           ) : announcements.map(a => (
             <div key={a.id} className={`bg-white border rounded-xl p-5 ${a.is_active ? 'border-gray-200' : 'border-gray-100 opacity-60'}`}>
@@ -157,7 +160,7 @@ export default function AdminAnnouncementsPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${typeBadge(a.type)}`}>{a.type}</span>
                     {a.target_roles?.map(r => <span key={r} className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded capitalize">{r}</span>)}
-                    {!a.is_active && <span className="text-xs text-gray-400">Inactive</span>}
+                    {!a.is_active && <span className="text-xs text-gray-400">{t('admin.announcements.inactive', lang)}</span>}
                   </div>
                   <p className="font-semibold text-gray-900">{a.title_en}</p>
                   {a.title_ar && <p className="text-sm text-gray-400 text-right" dir="rtl">{a.title_ar}</p>}
