@@ -10,6 +10,7 @@ import {
   BarChart3, Heart, Shield, Users, ChevronRight,
   Sparkles, Clock, Lock, Globe
 } from 'lucide-react'
+import AIAssessmentFinder from '@/components/ai-assessment-finder'
 
 const DOMAIN_COLORS: Record<string, string> = {
   PHQ9:   'bg-blue-50 text-blue-700 border-blue-200',
@@ -183,6 +184,23 @@ export default async function LandingPage() {
           <p className="mt-5 text-sm text-gray-400">
             {assessments.length}{t('landing.count.suffix', lang)}
           </p>
+        </div>
+      </section>
+
+      {/* ── AI Recommender ──────────────────────────────────────────────── */}
+      <section className="py-16 px-6 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
+              <Sparkles className="w-3.5 h-3.5" />
+              {t('landing.ai.badge', lang)}
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              {t('landing.ai.title', lang)}
+            </h2>
+            <p className="text-gray-500">{t('landing.ai.sub', lang)}</p>
+          </div>
+          <AIAssessmentFinder />
         </div>
       </section>
 

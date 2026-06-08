@@ -33,6 +33,9 @@ const dict = {
     'landing.cta.assess': 'Take a free assessment',
     'landing.cta.register': 'Create free account',
     'landing.count.suffix': ' validated scales available · No login required to take any assessment',
+    'landing.ai.badge': 'AI-Powered',
+    'landing.ai.title': 'Not sure where to start?',
+    'landing.ai.sub': 'Describe how you\'ve been feeling and our AI will suggest the most relevant assessments for you.',
 
     // Trust strip
     'trust.validated': 'Clinically validated tools',
@@ -314,6 +317,14 @@ const dict = {
     'assessment.result.saved': 'Results saved to your account',
     'assessment.unanswered': 'question(s) still need an answer',
     'assessment.result.clinician_note': 'Only a qualified clinician can provide a diagnosis.',
+    'assessment.result.promo.title': 'Your results aren\'t saved yet',
+    'assessment.result.promo.sub': 'Create a free account to save this result and build your personal mental health timeline.',
+    'assessment.result.promo.history': 'Full history of all your assessments',
+    'assessment.result.promo.tracking': 'Track changes in your scores over time',
+    'assessment.result.promo.assigned': 'Receive clinician-assigned assessments',
+    'assessment.result.promo.secure': 'Private, secure, and always free',
+    'assessment.result.promo.cta': 'Create free account',
+    'assessment.result.promo.signin': 'Already have one? Sign in',
 
     // Admin panel — nav
     'admin.panel': 'Admin Panel',
@@ -556,6 +567,9 @@ const dict = {
     'landing.cta.assess': 'أجرِ تقييماً مجانياً',
     'landing.cta.register': 'أنشئ حساباً مجانياً',
     'landing.count.suffix': ' مقياساً معتمداً متاحاً · لا يلزم تسجيل دخول لإجراء أي تقييم',
+    'landing.ai.badge': 'مدعوم بالذكاء الاصطناعي',
+    'landing.ai.title': 'لست متأكداً من أين تبدأ؟',
+    'landing.ai.sub': 'صف كيف تشعر وسيقترح ذكاؤنا الاصطناعي التقييمات الأنسب لك.',
 
     // Trust strip
     'trust.validated': 'أدوات معتمدة سريرياً',
@@ -837,6 +851,14 @@ const dict = {
     'assessment.result.saved': 'تم حفظ النتائج في حسابك',
     'assessment.unanswered': 'سؤال (أسئلة) لم تتم الإجابة عليها',
     'assessment.result.clinician_note': 'لا يستطيع تقديم التشخيص إلا اختصاصي مؤهل.',
+    'assessment.result.promo.title': 'نتائجك لم تُحفظ بعد',
+    'assessment.result.promo.sub': 'أنشئ حساباً مجانياً لحفظ هذه النتيجة وبناء جدولك الزمني الشخصي للصحة النفسية.',
+    'assessment.result.promo.history': 'سجل كامل لجميع تقييماتك',
+    'assessment.result.promo.tracking': 'تتبع التغيرات في نتائجك مع مرور الوقت',
+    'assessment.result.promo.assigned': 'استلام التقييمات المُعيَّنة من اختصاصيك',
+    'assessment.result.promo.secure': 'خاص وآمن ومجاني دائماً',
+    'assessment.result.promo.cta': 'أنشئ حساباً مجانياً',
+    'assessment.result.promo.signin': 'لديك حساب بالفعل؟ سجّل الدخول',
 
     // Admin panel — nav
     'admin.panel': 'لوحة الإدارة',

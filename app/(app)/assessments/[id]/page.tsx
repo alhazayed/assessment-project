@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle,
   LogIn, BookOpen, FlaskConical, ArrowRight, Brain,
+  History, TrendingUp, UserPlus, Lock,
 } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentItem, ResponseOption, ScoringBand } from '@/lib/types'
 import { getAssessmentContent, getBandContent, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
@@ -193,19 +194,10 @@ export default function TakeAssessmentPage() {
           )}
 
           {!isLoggedIn && (
-            <div className={`mt-4 p-4 bg-brand-50 border border-brand-200 rounded-xl ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-              <div className="flex items-start gap-3">
-                <LogIn className="w-5 h-5 text-brand-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-brand-800">{t('assessment.result.save.title', lang)}</p>
-                  <p className="text-sm text-brand-600 mt-1">{t('assessment.result.save.desc', lang)}</p>
-                  <div className="flex gap-2 mt-3">
-                    <Link href="/register" className="btn-primary text-xs px-3 py-1.5">{t('assessment.result.save.signup', lang)}</Link>
-                    <Link href="/login" className="btn-secondary text-xs px-3 py-1.5">{t('assessment.result.save.login', lang)}</Link>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <p className="mt-4 text-xs text-amber-600 flex items-center justify-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg py-2 px-3">
+              <LogIn className="w-3.5 h-3.5 flex-shrink-0" />
+              {t('assessment.result.save.title', lang)}
+            </p>
           )}
           {isLoggedIn && (
             <p className="mt-4 text-sm text-green-600 flex items-center justify-center gap-1.5">
@@ -213,6 +205,55 @@ export default function TakeAssessmentPage() {
             </p>
           )}
         </div>
+
+        {/* Profile creation promo for guests */}
+        {!isLoggedIn && (
+          <div className="rounded-2xl overflow-hidden border border-brand-200 shadow-sm">
+            <div className="bg-gradient-to-br from-brand-600 to-brand-700 px-8 py-7 text-white">
+              <div className="flex items-start gap-4">
+                <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className={`text-lg font-bold mb-1 ${lang === 'ar' ? 'text-right' : ''}`}>
+                    {t('assessment.result.promo.title', lang)}
+                  </h2>
+                  <p className={`text-brand-100 text-sm leading-relaxed ${lang === 'ar' ? 'text-right' : ''}`}>
+                    {t('assessment.result.promo.sub', lang)}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white px-8 py-6">
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {([
+                  { icon: History,   key: 'assessment.result.promo.history'  as const },
+                  { icon: TrendingUp,key: 'assessment.result.promo.tracking' as const },
+                  { icon: UserPlus,  key: 'assessment.result.promo.assigned' as const },
+                  { icon: Lock,      key: 'assessment.result.promo.secure'   as const },
+                ] as const).map(({ icon: Icon, key }) => (
+                  <div key={key} className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
+                      <Icon className="w-3.5 h-3.5 text-brand-600" />
+                    </div>
+                    <span className="text-sm text-gray-700">{t(key, lang)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/register"
+                  className="flex-1 flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors text-sm">
+                  <UserPlus className="w-4 h-4" />
+                  {t('assessment.result.promo.cta', lang)}
+                </Link>
+                <Link href="/login"
+                  className="flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-3 px-4 rounded-xl transition-colors text-sm">
+                  {t('assessment.result.promo.signin', lang)}
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* IPIP-NEO Domain Scores */}
         {definition.code === 'IPIP120' && domainScores && (
