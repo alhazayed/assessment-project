@@ -8,6 +8,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        arabic: ['var(--font-arabic)', 'IBM Plex Sans Arabic', 'Cairo', 'Noto Sans Arabic', 'sans-serif'],
+        latin: ['var(--font-latin)', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
       colors: {
         brand: {
           50: '#f0f9ff',

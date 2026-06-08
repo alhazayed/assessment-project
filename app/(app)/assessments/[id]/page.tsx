@@ -169,21 +169,21 @@ export default function TakeAssessmentPage() {
           <p className="text-sm text-gray-500 mb-6">{defName}</p>
           <div className="bg-gray-50 rounded-xl p-6 mb-4 inline-block min-w-48">
             <p className="text-5xl font-bold text-gray-900 mb-1">{result.score}</p>
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">{t('assessment.result.score', lang)}</p>
+            <p className={`text-xs text-gray-400 mb-3 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`}>{t('assessment.result.score', lang)}</p>
             <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold border ${severityColor(result.band_en)}`}>
               {displayBand}
             </span>
           </div>
 
           {isHighRisk && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-left">
+            <div className={`mt-4 p-4 bg-red-50 border border-red-200 rounded-xl ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
               <p className="text-sm font-semibold text-red-700 mb-1">⚠ {t('assessment.high_risk_note', lang)}</p>
               <p className="text-sm text-red-600">{t('assessment.result.high_risk', lang)}</p>
             </div>
           )}
 
           {!isLoggedIn && (
-            <div className="mt-4 p-4 bg-brand-50 border border-brand-200 rounded-xl text-left">
+            <div className={`mt-4 p-4 bg-brand-50 border border-brand-200 rounded-xl ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
               <div className="flex items-start gap-3">
                 <LogIn className="w-5 h-5 text-brand-600 flex-shrink-0 mt-0.5" />
                 <div>
@@ -233,7 +233,7 @@ export default function TakeAssessmentPage() {
 
             {bandContent.whatThisMeans.length > 0 && (
               <div className="mb-5">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{t('assessment.result.key_points', lang)}</p>
+                <p className={`text-xs font-semibold text-gray-500 mb-2 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`}>{t('assessment.result.key_points', lang)}</p>
                 <ul className="space-y-2">
                   {bandContent.whatThisMeans.map((point, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
@@ -247,7 +247,7 @@ export default function TakeAssessmentPage() {
 
             {bandContent.recommendations.length > 0 && (
               <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2">{t('assessment.result.recommendations', lang)}</p>
+                <p className={`text-xs font-semibold text-blue-700 mb-2 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`}>{t('assessment.result.recommendations', lang)}</p>
                 <ul className="space-y-2">
                   {bandContent.recommendations.map((rec, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-blue-800">
@@ -355,10 +355,10 @@ export default function TakeAssessmentPage() {
       )}
 
       <div className="card p-8 mb-6">
-        <p className="text-gray-500 text-xs font-medium uppercase tracking-wide mb-3">
+        <p className={`text-gray-500 text-xs font-medium mb-3 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`}>
           {t('assessment.question', lang)} {currentIndex + 1}
         </p>
-        <h2 className="text-lg font-medium text-gray-900 mb-6 leading-relaxed">{question}</h2>
+        <h2 className={`text-lg font-medium text-gray-900 mb-6 ${lang === 'ar' ? 'leading-loose text-right' : 'leading-relaxed'}`}>{question}</h2>
         <div className="space-y-3">
           {(currentItem.response_options as ResponseOption[]).map((opt) => {
             const optLabel = lang === 'ar' && opt.label_ar ? opt.label_ar : opt.label_en
@@ -369,13 +369,13 @@ export default function TakeAssessmentPage() {
                   ...prev,
                   [currentItem.id]: { value: opt.value, label_en: opt.label_en, label_ar: opt.label_ar }
                 }))}
-                className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                className={`w-full p-4 rounded-lg border-2 transition-all ${lang === 'ar' ? 'text-right' : 'text-left'} ${
                   currentAnswer?.value === opt.value
                     ? 'border-brand-500 bg-brand-50 text-brand-900'
                     : 'border-gray-200 hover:border-gray-300 text-gray-700'
                 }`}
               >
-                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold mr-3 ${
+                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold ${lang === 'ar' ? 'ml-3' : 'mr-3'} ${
                   currentAnswer?.value === opt.value ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-500'
                 }`}>
                   {opt.value}
