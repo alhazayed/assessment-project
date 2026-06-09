@@ -46,8 +46,9 @@ const STRINGS = {
   },
 }
 
-export default function AIAssessmentFinder() {
-  const lang = useLang()
+export default function AIAssessmentFinder({ lang: propLang }: { lang?: 'en' | 'ar' }) {
+  const hookLang = useLang()
+  const lang = propLang ?? hookLang
   const s = STRINGS[lang]
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)

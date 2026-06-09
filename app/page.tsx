@@ -200,7 +200,7 @@ export default async function LandingPage() {
             </h2>
             <p className="text-gray-500">{t('landing.ai.sub', lang)}</p>
           </div>
-          <AIAssessmentFinder />
+          <AIAssessmentFinder lang={lang} />
         </div>
       </section>
 
