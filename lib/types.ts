@@ -140,6 +140,7 @@ export interface Message {
   clinician_id: string
   sender_id: string
   body: string
+  is_urgent: boolean
   read_at: string | null
   created_at: string
 }

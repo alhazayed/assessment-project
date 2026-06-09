@@ -83,7 +83,7 @@ export default function AdminPlatformPage() {
                 </div>
                 <button onClick={() => toggleFlag(f.id, f.is_enabled)} className="flex-shrink-0">
                   {f.is_enabled
-                    ? <ToggleRight className="w-8 h-8 text-indigo-600" />
+                    ? <ToggleRight className="w-8 h-8 text-brand-600" />
                     : <ToggleLeft className="w-8 h-8 text-gray-300" />}
                 </button>
               </div>
@@ -114,7 +114,7 @@ export default function AdminPlatformPage() {
                     onChange={e => setSettingEdits(p => ({ ...p, [s.key]: e.target.value }))}
                   />
                   <button onClick={() => saveSetting(s.key)}
-                    className="flex items-center gap-1.5 bg-indigo-600 text-white text-sm px-3 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                    className="flex items-center gap-1.5 bg-brand-600 text-white text-sm px-3 py-2 rounded-lg hover:bg-brand-700 transition-colors">
                     <Save className="w-3.5 h-3.5" />
                     {t('admin.platform.save', lang)}
                   </button>

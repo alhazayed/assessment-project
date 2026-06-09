@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Send, MessageSquare } from 'lucide-react'
+import { Send, MessageSquare, AlertCircle } from 'lucide-react'
 import type { Message, Profile } from '@/lib/types'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
@@ -18,6 +18,7 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true)
   const [newMessage, setNewMessage] = useState('')
   const [sending, setSending] = useState(false)
+  const [isUrgent, setIsUrgent] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   async function loadMessages(patientId: string, clinicianId: string) {
@@ -111,9 +112,25 @@ export default function MessagesPage() {
       clinician_id: clinicianId,
       sender_id: user.id,
       body: newMessage.trim(),
+      is_urgent: isUrgent,
     })
 
+    // Fire notification for the other party when urgent
+    if (isUrgent) {
+      const recipientId = profile.role === 'patient' ? clinicianId : patientId
+      await supabase.from('notifications').insert({
+        user_id: recipientId,
+        type: 'message',
+        title_en: '⚠ Urgent message received',
+        title_ar: '⚠ رسالة عاجلة',
+        body_en: newMessage.trim().slice(0, 100),
+        body_ar: newMessage.trim().slice(0, 100),
+        link: '/messages',
+      })
+    }
+
     setNewMessage('')
+    setIsUrgent(false)
     setSending(false)
     loadMessages(patientId, clinicianId)
   }
@@ -164,10 +181,10 @@ export default function MessagesPage() {
                 <button
                   key={p.id}
                   onClick={() => setSelectedPatient(p)}
-                  className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors ${selectedPatient?.id === p.id ? 'bg-indigo-50' : 'hover:bg-gray-50'}`}
+                  className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors ${selectedPatient?.id === p.id ? 'bg-brand-50' : 'hover:bg-gray-50'}`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-semibold text-indigo-700">{name.charAt(0)}</span>
+                  <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-semibold text-brand-700">{name.charAt(0)}</span>
                   </div>
                   <span className="text-sm font-medium text-gray-800 truncate">{name}</span>
                 </button>
@@ -201,10 +218,26 @@ export default function MessagesPage() {
               ) : messages.map(msg => {
                 const isMine = msg.sender_id === profile?.id
                 return (
-                  <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-md px-4 py-3 rounded-2xl text-sm ${isMine ? 'bg-brand-600 text-white rounded-br-sm' : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm'}`}>
+                  <div key={msg.id} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                    {msg.is_urgent && (
+                      <div className="flex items-center gap-1 mb-1 px-1">
+                        <AlertCircle className="w-3 h-3" style={{ color: '#F3650A' }} />
+                        <span className="text-xs font-semibold" style={{ color: '#F3650A' }}>
+                          {lang === 'ar' ? 'عاجل' : 'Urgent'}
+                        </span>
+                      </div>
+                    )}
+                    <div className={`max-w-md px-4 py-3 rounded-2xl text-sm ${
+                      msg.is_urgent
+                        ? 'text-white rounded-br-sm'
+                        : isMine
+                          ? 'bg-brand-600 text-white rounded-br-sm'
+                          : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm'
+                    }`}
+                      style={msg.is_urgent ? { backgroundColor: '#F3650A', borderRadius: isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px' } : {}}
+                    >
                       <p className="leading-relaxed">{msg.body}</p>
-                      <p className={`text-xs mt-1.5 ${isMine ? 'text-brand-200' : 'text-gray-400'}`}>
+                      <p className={`text-xs mt-1.5 ${isMine || msg.is_urgent ? 'text-white/60' : 'text-gray-400'}`}>
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
@@ -215,17 +248,31 @@ export default function MessagesPage() {
             </div>
 
             <div className="px-6 py-4 border-t border-gray-200 bg-white flex-shrink-0">
-              <form onSubmit={handleSend} className="flex gap-3">
-                <input
-                  type="text"
-                  className="input flex-1"
-                  value={newMessage}
-                  onChange={e => setNewMessage(e.target.value)}
-                  placeholder={t('messages.placeholder', lang)}
-                  maxLength={2000}
-                />
-                <button type="submit" disabled={!newMessage.trim() || sending} className="btn-primary px-4 gap-2 disabled:opacity-40">
-                  <Send className="w-4 h-4" />
+              <form onSubmit={handleSend} className="space-y-2">
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    className="input flex-1"
+                    value={newMessage}
+                    onChange={e => setNewMessage(e.target.value)}
+                    placeholder={t('messages.placeholder', lang)}
+                    maxLength={2000}
+                  />
+                  <button type="submit" disabled={!newMessage.trim() || sending}
+                    className="px-4 gap-2 inline-flex items-center justify-center rounded-lg text-sm font-medium text-white disabled:opacity-40 transition-opacity hover:opacity-90"
+                    style={{ backgroundColor: isUrgent ? '#F3650A' : '#1D6296' }}
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsUrgent(v => !v)}
+                  className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg transition-colors ${isUrgent ? 'text-white' : 'text-gray-500 hover:text-gray-700 bg-gray-100'}`}
+                  style={isUrgent ? { backgroundColor: '#F3650A' } : {}}
+                >
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {lang === 'ar' ? 'تعليم كعاجل' : 'Mark as urgent'}
                 </button>
               </form>
             </div>

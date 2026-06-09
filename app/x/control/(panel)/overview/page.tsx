@@ -142,7 +142,7 @@ export default async function AdminOverviewPage() {
       label: t('admin.overview.active_assessments', lang),
       value: activeAssessmentCount ?? '–',
       icon: ShieldAlert,
-      color: 'bg-indigo-50 text-indigo-600',
+      color: 'bg-brand-50 text-brand-600',
       sub: t('admin.overview.active_note', lang),
       change: null,
     },
@@ -157,7 +157,7 @@ export default async function AdminOverviewPage() {
         </div>
         <Link href="/x/control/analytics"
           className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-          <Brain className="w-4 h-4 text-indigo-500" />
+          <Brain className="w-4 h-4 text-brand-500" />
           {t('admin.overview.deep_analytics', lang)}
         </Link>
       </div>
@@ -229,7 +229,7 @@ export default async function AdminOverviewPage() {
         <div className="col-span-2 bg-white border border-gray-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-700">{t('admin.overview.top_assessments', lang)}</h2>
-            <Link href="/x/control/analytics" className="text-xs text-indigo-500 hover:underline">{t('admin.overview.view_analytics', lang)}</Link>
+            <Link href="/x/control/analytics" className="text-xs text-brand-500 hover:underline">{t('admin.overview.view_analytics', lang)}</Link>
           </div>
           <div className="space-y-3">
             {top5.length === 0 && <p className="text-sm text-gray-400">{t('admin.overview.no_submissions', lang)}</p>}
@@ -245,7 +245,7 @@ export default async function AdminOverviewPage() {
                     <span className="text-sm font-semibold text-gray-900">{a.count.toLocaleString()}</span>
                   </div>
                   <div className="bg-gray-100 rounded-full h-1.5">
-                    <div className="bg-indigo-500 h-1.5 rounded-full transition-all"
+                    <div className="bg-brand-500 h-1.5 rounded-full transition-all"
                       style={{ width: `${Math.min(100, (a.count / (top5[0]?.count || 1)) * 100)}%` }} />
                   </div>
                 </div>
@@ -259,7 +259,7 @@ export default async function AdminOverviewPage() {
       <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-700">{t('admin.overview.recent', lang)}</h2>
-          <Link href="/x/control/results" className="text-xs text-indigo-500 hover:underline">{t('admin.overview.view_all', lang)}</Link>
+          <Link href="/x/control/results" className="text-xs text-brand-500 hover:underline">{t('admin.overview.view_all', lang)}</Link>
         </div>
         <div className="divide-y divide-gray-50">
           {(recentSubmissions || []).map((s: any) => (
@@ -283,7 +283,7 @@ export default async function AdminOverviewPage() {
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-700">{t('admin.overview.audit', lang)}</h2>
-            <Link href="/x/control/audit" className="text-xs text-indigo-500 hover:underline">{t('admin.overview.view_all', lang)}</Link>
+            <Link href="/x/control/audit" className="text-xs text-brand-500 hover:underline">{t('admin.overview.view_all', lang)}</Link>
           </div>
           <div className="divide-y divide-gray-50">
             {(recentAudit || []).map((e: any) => (

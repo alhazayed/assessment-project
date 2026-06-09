@@ -28,7 +28,7 @@ const TYPE_ICON = {
 
 const TYPE_COLOR = {
   assignment: 'text-brand-600 bg-brand-50',
-  message:    'text-indigo-600 bg-indigo-50',
+  message:    'text-brand-600 bg-brand-50',
   high_risk:  'text-red-600 bg-red-50',
   system:     'text-gray-600 bg-gray-100',
 }
@@ -43,19 +43,27 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
   const unread = items.filter(n => !n.read_at).length
 
   useEffect(() => {
-    loadNotifications()
+    let channel: ReturnType<typeof supabase.channel>
 
-    // Real-time subscription
-    const channel = supabase
-      .channel('notifications-bell')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-      }, () => loadNotifications())
-      .subscribe()
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-    return () => { supabase.removeChannel(channel) }
+      await loadNotifications()
+
+      channel = supabase
+        .channel(`notifications-bell-${user.id}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        }, () => loadNotifications())
+        .subscribe()
+    }
+
+    init()
+    return () => { if (channel) supabase.removeChannel(channel) }
   }, [])
 
   // Close panel on outside click

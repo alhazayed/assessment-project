@@ -163,7 +163,7 @@ export default function ProfilePage() {
         {/* Identity */}
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-5">
-            <User className="w-4 h-4 text-indigo-500" />
+            <User className="w-4 h-4 text-brand-500" />
             <h2 className="text-base font-semibold text-gray-900">{t('profile.identity.title', lang)}</h2>
           </div>
           <div className="space-y-4">
@@ -192,7 +192,7 @@ export default function ProfilePage() {
         {/* Demographics — all roles */}
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-5">
-            <MapPin className="w-4 h-4 text-indigo-500" />
+            <MapPin className="w-4 h-4 text-brand-500" />
             <h2 className="text-base font-semibold text-gray-900">{t('profile.demographics.title', lang)}</h2>
           </div>
           <div className="space-y-4">
@@ -257,7 +257,7 @@ export default function ProfilePage() {
           <>
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-5">
-                <Briefcase className="w-4 h-4 text-indigo-500" />
+                <Briefcase className="w-4 h-4 text-brand-500" />
                 <h2 className="text-base font-semibold text-gray-900">{t('profile.employment', lang)}</h2>
               </div>
               <div className="space-y-4">
@@ -283,7 +283,7 @@ export default function ProfilePage() {
 
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-1">
-                <Pill className="w-4 h-4 text-indigo-500" />
+                <Pill className="w-4 h-4 text-brand-500" />
                 <h2 className="text-base font-semibold text-gray-900">{t('profile.meds.title', lang)}</h2>
               </div>
               <p className="text-sm text-gray-500 mb-5 ml-6">{t('profile.meds.subtitle', lang)}</p>
@@ -335,7 +335,7 @@ export default function ProfilePage() {
       {/* Account info */}
       <div className="card p-6 mt-6">
         <div className="flex items-center gap-2 mb-4">
-          <BookOpen className="w-4 h-4 text-indigo-500" />
+          <BookOpen className="w-4 h-4 text-brand-500" />
           <h2 className="text-base font-semibold text-gray-900">{t('profile.account.title', lang)}</h2>
         </div>
         <div className="space-y-2 text-sm">

@@ -101,8 +101,8 @@ export default function DemographicsCard({ isLoggedIn, lang }: Props) {
     <div className="card p-6">
       <div className="flex items-start justify-between mb-5">
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
-            <User className="w-4 h-4 text-indigo-600" />
+          <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+            <User className="w-4 h-4 text-brand-600" />
           </div>
           <div>
             <h3 className="text-base font-semibold text-gray-900">{t('demo.title', lang)}</h3>
@@ -179,8 +179,8 @@ export default function DemographicsCard({ isLoggedIn, lang }: Props) {
             </button>
           </div>
         ) : (
-          <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-            <p className="text-sm text-indigo-700 mb-3">{t('demo.guest.note', lang)}</p>
+          <div className="p-4 bg-brand-50 border border-brand-100 rounded-xl">
+            <p className="text-sm text-brand-700 mb-3">{t('demo.guest.note', lang)}</p>
             <div className="flex items-center gap-3">
               <Link href="/register" className="flex items-center gap-1.5 btn-primary text-xs px-3 py-2">
                 <UserPlus className="w-3.5 h-3.5" />

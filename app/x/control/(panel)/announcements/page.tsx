@@ -71,7 +71,7 @@ export default function AdminAnnouncementsPage() {
           <h1 className="text-2xl font-bold text-gray-900">{t('admin.announcements.title', lang)}</h1>
           <p className="text-gray-500 mt-1">{t('admin.announcements.subtitle', lang)}</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors">
           <Plus className="w-4 h-4" />{t('admin.announcements.new', lang)}
         </button>
       </div>
@@ -126,19 +126,19 @@ export default function AdminAnnouncementsPage() {
               <div className="flex gap-2 mt-1">
                 {ROLES.map(r => (
                   <button key={r} type="button" onClick={() => toggleRole(r)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize ${form.target_roles.includes(r) ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize ${form.target_roles.includes(r) ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
                     {r}
                   </button>
                 ))}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <input type="checkbox" id="dismissible" checked={form.is_dismissible} onChange={e => setForm(p => ({ ...p, is_dismissible: e.target.checked }))} className="rounded text-indigo-600" />
+              <input type="checkbox" id="dismissible" checked={form.is_dismissible} onChange={e => setForm(p => ({ ...p, is_dismissible: e.target.checked }))} className="rounded text-brand-600" />
               <label htmlFor="dismissible" className="text-sm text-gray-700">{t('admin.announcements.form.dismissible', lang)}</label>
             </div>
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => { setShowForm(false); setForm(defaultForm) }} className="btn-secondary">{t('admin.announcements.form.cancel', lang)}</button>
-              <button type="submit" disabled={saving} className="bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+              <button type="submit" disabled={saving} className="bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-700 disabled:opacity-50">
                 {saving ? t('admin.announcements.form.saving', lang) : t('admin.announcements.form.create', lang)}
               </button>
             </div>
@@ -169,7 +169,7 @@ export default function AdminAnnouncementsPage() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button onClick={() => toggleActive(a.id, a.is_active)}>
-                    {a.is_active ? <ToggleRight className="w-7 h-7 text-indigo-600" /> : <ToggleLeft className="w-7 h-7 text-gray-300" />}
+                    {a.is_active ? <ToggleRight className="w-7 h-7 text-brand-600" /> : <ToggleLeft className="w-7 h-7 text-gray-300" />}
                   </button>
                   <button onClick={() => remove(a.id)} className="text-gray-300 hover:text-red-400 transition-colors">
                     <Trash2 className="w-4 h-4" />

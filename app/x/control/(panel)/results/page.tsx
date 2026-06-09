@@ -140,7 +140,7 @@ export default function AdminResultsPage() {
             {exporting === 'risk' ? t('admin.results.exporting', lang) : t('admin.results.export_risk', lang)}
           </button>
           <button onClick={() => exportCsv('detailed')} disabled={!!exporting || results.length === 0}
-            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors">
+            className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 disabled:opacity-40 text-white text-sm font-medium px-3 py-2 rounded-lg transition-colors">
             <Download className="w-4 h-4" />
             {exporting === 'detailed' ? t('admin.results.exporting', lang) : t('admin.results.export_csv', lang)}
           </button>
@@ -150,12 +150,12 @@ export default function AdminResultsPage() {
       {/* Filters */}
       <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-3 items-center">
         <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
-        <select className="input flex-1 min-w-36 text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        <select className="input flex-1 min-w-36 text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
           value={assessment} onChange={e => setAssessment(e.target.value)}>
           <option value="">{t('admin.results.all_assessments', lang)}</option>
           {assessmentList.map(a => <option key={a.code} value={a.code}>{a.name} ({a.code})</option>)}
         </select>
-        <select className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-40"
+        <select className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 w-40"
           value={severity} onChange={e => setSeverity(e.target.value)}>
           <option value="">{t('admin.results.all_severities', lang)}</option>
           <option value="high_risk">{t('admin.results.high_risk_only', lang)}</option>
@@ -165,10 +165,10 @@ export default function AdminResultsPage() {
           <option value="severe">{t('admin.results.severe', lang)}</option>
         </select>
         <div className="flex items-center gap-2">
-          <input type="date" className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-36"
+          <input type="date" className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 w-36"
             value={from} onChange={e => setFrom(e.target.value)} />
           <span className="text-gray-400 text-sm">–</span>
-          <input type="date" className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-36"
+          <input type="date" className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 w-36"
             value={to} onChange={e => setTo(e.target.value)} />
         </div>
         {(assessment || severity || from || to) && (
@@ -211,13 +211,13 @@ export default function AdminResultsPage() {
             <tr className="bg-gray-50 border-b border-gray-200">
               <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.results.col.patient', lang)}</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.results.col.assessment', lang)}</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600 cursor-pointer hover:text-indigo-600 select-none"
+              <th className="text-left px-4 py-3 font-medium text-gray-600 cursor-pointer hover:text-brand-600 select-none"
                 onClick={() => toggleSort('total_score')}>
                 {t('admin.results.col.score', lang)} {sortKey === 'total_score' && (sortDir === 'asc' ? '↑' : '↓')}
               </th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.results.col.severity', lang)}</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.results.col.risk', lang)}</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600 cursor-pointer hover:text-indigo-600 select-none"
+              <th className="text-left px-4 py-3 font-medium text-gray-600 cursor-pointer hover:text-brand-600 select-none"
                 onClick={() => toggleSort('submitted_at')}>
                 {t('admin.results.col.date', lang)} {sortKey === 'submitted_at' && (sortDir === 'asc' ? '↑' : '↓')}
               </th>
