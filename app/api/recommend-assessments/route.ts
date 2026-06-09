@@ -1,20 +1,19 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+const GEMINI_API_URL =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
 
 export async function POST(request: Request) {
   try {
-    const { text, lang } = await request.json()
+    const { text } = await request.json()
 
     if (!text?.trim()) {
       return NextResponse.json({ error: 'No input provided' }, { status: 400 })
     }
 
-    if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'your-anthropic-api-key-here') {
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey || apiKey === 'your-gemini-api-key-here') {
       return NextResponse.json({ error: 'AI service not configured' }, { status: 503 })
     }
 
@@ -33,18 +32,17 @@ export async function POST(request: Request) {
       .map(a => `- ID: ${a.id} | Code: ${a.code} | Name: ${a.name_en} | Description: ${a.description_en || 'N/A'}`)
       .join('\n')
 
-    const systemPrompt = `You are a clinical psychologist assistant helping match users to appropriate psychological assessments.
-Your role is to analyze how a user is feeling and recommend the 2-4 most clinically relevant assessments from the provided list.
-Be empathetic, non-judgmental, and focus on what would genuinely help the user understand themselves better.
-Always respond with valid JSON only — no markdown, no explanation outside JSON.`
+    const prompt = `You are a clinical psychologist assistant helping match users to appropriate psychological assessments.
+Analyze how this user is feeling and recommend the 2-4 most clinically relevant assessments from the provided list.
+Be empathetic and focus on what would genuinely help the user understand themselves better.
+Return ONLY a valid JSON array — no markdown, no explanation outside JSON.
 
-    const userPrompt = `The user says: "${text.trim()}"
+The user says: "${text.trim()}"
 
 Available assessments:
 ${assessmentList}
 
-Based on what the user shared, recommend the 2-4 most relevant assessments.
-Return a JSON array with this exact structure:
+Return a JSON array:
 [
   {
     "id": "<assessment UUID>",
@@ -58,14 +56,23 @@ Return a JSON array with this exact structure:
 ]
 Only include assessments from the provided list. Order by relevance (highest first).`
 
-    const response = await anthropic.messages.create({
-      model: 'claude-opus-4-8',
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
+    const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
+      }),
     })
 
-    const raw = response.content[0].type === 'text' ? response.content[0].text : ''
+    if (!res.ok) {
+      const err = await res.text()
+      console.error('Gemini API error:', res.status, err)
+      return NextResponse.json({ error: 'AI service error' }, { status: 502 })
+    }
+
+    const data = await res.json()
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
 
     let recommendations
     try {

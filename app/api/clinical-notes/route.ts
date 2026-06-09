@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+
+const GEMINI_API_URL =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
 
 export async function GET(request: Request) {
   const supabase = createClient()
@@ -67,8 +69,10 @@ export async function PUT(request: Request) {
   const { patient_id } = await request.json()
   if (!patient_id) return NextResponse.json({ error: 'patient_id required' }, { status: 400 })
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'AI unavailable' }, { status: 503 })
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey || apiKey === 'your-gemini-api-key-here') {
+    return NextResponse.json({ error: 'AI unavailable' }, { status: 503 })
+  }
 
   // Gather context: recent submissions + mood logs for this patient
   const [subsRes, moodRes] = await Promise.all([
@@ -92,14 +96,7 @@ export async function PUT(request: Request) {
     `- ${new Date(m.logged_at).toLocaleDateString()}: mood ${m.mood_score}/10, anxiety ${m.anxiety_score}/10, sleep ${m.sleep_hours}h${m.notes ? `, note: "${m.notes}"` : ''}`
   ).join('\n')
 
-  const anthropic = new Anthropic({ apiKey })
-  const msg = await anthropic.messages.create({
-    model: 'claude-opus-4-8',
-    max_tokens: 600,
-    thinking: { type: 'adaptive' },
-    messages: [{
-      role: 'user',
-      content: `You are a clinical assistant helping a mental health clinician write a brief session note. Based on the following patient data, draft a concise clinical note (3-5 sentences) in professional clinical language. Focus on observable patterns, do not diagnose.
+  const prompt = `You are a clinical assistant helping a mental health clinician write a brief session note. Based on the following patient data, draft a concise clinical note (3-5 sentences) in professional clinical language. Focus on observable patterns, do not diagnose.
 
 Recent assessment results:
 ${submissions || 'No recent assessments.'}
@@ -107,10 +104,22 @@ ${submissions || 'No recent assessments.'}
 Recent mood logs:
 ${moods || 'No recent mood data.'}
 
-Write the note now. Start directly with the clinical content, no preamble.`,
-    }],
+Write the note now. Start directly with the clinical content, no preamble.`
+
+  const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.4, maxOutputTokens: 600 },
+    }),
   })
 
-  const draft = msg.content.filter(b => b.type === 'text').map((b: any) => b.text).join('')
+  if (!res.ok) {
+    return NextResponse.json({ error: 'AI service error' }, { status: 502 })
+  }
+
+  const data = await res.json()
+  const draft = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
   return NextResponse.json({ draft })
 }
