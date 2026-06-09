@@ -9,13 +9,29 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const patientId = searchParams.get('patient_id')
 
+  // Determine the caller's role so we can apply the correct default filter
+  const { data: profile } = await supabase
+    .from('profiles').select('role').eq('id', user.id).single()
+  const role = profile?.role ?? 'patient'
+  const isClinician = ['clinician', 'admin', 'superadmin'].includes(role)
+
   let query = supabase
     .from('assessment_assignments')
     .select('*, assessment_definitions(id, code, name_en, name_ar)')
     .order('assigned_at', { ascending: false })
 
-  if (patientId) query = query.eq('patient_id', patientId)
-  else query = query.eq('clinician_id', user.id)
+  if (patientId) {
+    // Clinicians/admins may query any patient; patients may only query themselves
+    if (!isClinician && patientId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    query = query.eq('patient_id', patientId)
+  } else if (isClinician) {
+    query = query.eq('clinician_id', user.id)
+  } else {
+    // Patients with no patient_id param → return their own assignments
+    query = query.eq('patient_id', user.id)
+  }
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -69,6 +85,8 @@ export async function POST(request: Request) {
   return NextResponse.json({ assignment: data })
 }
 
+const ALLOWED_STATUSES = ['pending', 'completed', 'expired'] as const
+
 export async function PATCH(request: Request) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -76,15 +94,20 @@ export async function PATCH(request: Request) {
 
   const { id, status } = await request.json()
   if (!id || !status) return NextResponse.json({ error: 'id and status are required' }, { status: 400 })
+  if (!ALLOWED_STATUSES.includes(status)) {
+    return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+  }
 
-  const { data, error } = await supabase
-    .from('assessment_assignments')
-    .update({ status })
-    .eq('id', id)
-    .eq('clinician_id', user.id)
-    .select()
-    .single()
+  const { data: profile } = await supabase
+    .from('profiles').select('role').eq('id', user.id).single()
+  const isClinician = profile && ['clinician', 'admin', 'superadmin'].includes(profile.role)
 
+  // Clinicians update via clinician_id; patients update via patient_id (e.g., completing assignment)
+  const filter = isClinician
+    ? supabase.from('assessment_assignments').update({ status }).eq('id', id).eq('clinician_id', user.id)
+    : supabase.from('assessment_assignments').update({ status }).eq('id', id).eq('patient_id', user.id)
+
+  const { data, error } = await filter.select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ assignment: data })
 }

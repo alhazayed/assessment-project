@@ -1,15 +1,28 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
 
 export async function POST(request: Request) {
   try {
+    // Rate-limit: 20 AI requests per minute per IP (protect free-tier quota)
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+    const rl = checkRateLimit(`ai-recommend:${ip}`, { limit: 20, windowMs: 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
+    }
+
     const { text } = await request.json()
 
     if (!text?.trim()) {
       return NextResponse.json({ error: 'No input provided' }, { status: 400 })
+    }
+
+    // Limit input length to prevent prompt injection with huge payloads
+    if (text.length > 1000) {
+      return NextResponse.json({ error: 'Input too long (max 1000 characters)' }, { status: 400 })
     }
 
     const apiKey = process.env.GEMINI_API_KEY

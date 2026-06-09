@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { computeHmac } from '@/lib/admin-auth'
+import { checkRateLimit } from '@/lib/rate-limit'
 import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
   try {
+    // Rate-limit: 5 attempts per 15 minutes per IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+    const rl = checkRateLimit(`admin-login:${ip}`, { limit: 5, windowMs: 15 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many login attempts. Try again in 15 minutes.' }, { status: 429 })
+    }
+
     const { email, password, pin } = await request.json()
 
     const expectedPin = process.env.ADMIN_PIN

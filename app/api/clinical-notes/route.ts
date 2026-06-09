@@ -66,6 +66,13 @@ export async function PUT(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Only clinicians and admins may generate AI clinical note drafts
+  const { data: callerProfile } = await supabase
+    .from('profiles').select('role').eq('id', user.id).single()
+  if (!callerProfile || !['clinician', 'admin', 'superadmin'].includes(callerProfile.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const { patient_id } = await request.json()
   if (!patient_id) return NextResponse.json({ error: 'patient_id required' }, { status: 400 })
 
@@ -82,9 +89,9 @@ export async function PUT(request: Request) {
       .order('submitted_at', { ascending: false })
       .limit(5),
     supabase.from('mood_logs')
-      .select('logged_at, mood_score, anxiety_score, sleep_hours, notes')
+      .select('log_date, mood_score, anxiety_score, sleep_hours, mood_note')
       .eq('patient_id', patient_id)
-      .order('logged_at', { ascending: false })
+      .order('log_date', { ascending: false })
       .limit(7),
   ])
 
@@ -93,7 +100,7 @@ export async function PUT(request: Request) {
   ).join('\n')
 
   const moods = (moodRes.data || []).map((m: any) =>
-    `- ${new Date(m.logged_at).toLocaleDateString()}: mood ${m.mood_score}/10, anxiety ${m.anxiety_score}/10, sleep ${m.sleep_hours}h${m.notes ? `, note: "${m.notes}"` : ''}`
+    `- ${m.log_date}: mood ${m.mood_score}/10, anxiety ${m.anxiety_score}/10, sleep ${m.sleep_hours}h${m.mood_note ? `, note: "${m.mood_note}"` : ''}`
   ).join('\n')
 
   const prompt = `You are a clinical assistant helping a mental health clinician write a brief session note. Based on the following patient data, draft a concise clinical note (3-5 sentences) in professional clinical language. Focus on observable patterns, do not diagnose.

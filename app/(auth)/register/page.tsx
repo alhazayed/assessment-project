@@ -23,6 +23,22 @@ export default function RegisterPage() {
     setLoading(true)
     setError(null)
 
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      setError(lang === 'ar' ? 'يرجى إدخال اسم كامل صحيح' : 'Please enter a valid full name')
+      setLoading(false)
+      return
+    }
+    if (password.length < 8) {
+      setError(lang === 'ar' ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters')
+      setLoading(false)
+      return
+    }
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      setError(lang === 'ar' ? 'كلمة المرور يجب أن تحتوي على حروف وأرقام' : 'Password must contain both letters and numbers')
+      setLoading(false)
+      return
+    }
+
     const supabase = createClient()
     const { data, error } = await supabase.auth.signUp({
       email,

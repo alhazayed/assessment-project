@@ -3,7 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
 export async function computeHmac(userId: string): Promise<string> {
-  const pin = process.env.ADMIN_PIN || 'changeme'
+  const pin = process.env.ADMIN_PIN
+  if (!pin) throw new Error('ADMIN_PIN environment variable is not configured')
   const enc = new TextEncoder()
   const keyMaterial = enc.encode(pin + '_vwelfare_admin')
   const key = await crypto.subtle.importKey('raw', keyMaterial, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])

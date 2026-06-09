@@ -13,12 +13,30 @@ export async function GET() {
   }
 }
 
+// Only existing keys may be updated — no new arbitrary keys can be inserted via API
 export async function PATCH(request: Request) {
   try {
     const { user } = await requireAdmin()
     const { key, value } = await request.json()
+
+    if (!key || typeof key !== 'string' || key.length > 128) {
+      return NextResponse.json({ error: 'Invalid key' }, { status: 400 })
+    }
+    if (value === undefined || value === null) {
+      return NextResponse.json({ error: 'Value is required' }, { status: 400 })
+    }
+
     const db = createAdminClient()
-    await db.from('platform_settings').upsert({ key, value, updated_at: new Date().toISOString(), updated_by: user.id }, { onConflict: 'key' })
+
+    // Ensure the key already exists — prevents injection of arbitrary config keys
+    const { data: existing } = await db.from('platform_settings').select('key').eq('key', key).single()
+    if (!existing) return NextResponse.json({ error: 'Setting not found' }, { status: 404 })
+
+    await db.from('platform_settings').update({
+      value,
+      updated_at: new Date().toISOString(),
+      updated_by: user.id,
+    }).eq('key', key)
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

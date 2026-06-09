@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+// Prevent CSV formula injection (DDE attack) — prefix cells starting with formula chars
+function csvSafe(value: string): string {
+  if (/^[=+\-@|%\t\r]/.test(value)) return `'${value}`
+  return value
+}
+
 function computeStats(values: number[]) {
   if (!values.length) return { avg: 0, median: 0, stddev: 0, min: 0, max: 0, count: 0 }
   const sorted = [...values].sort((a, b) => a - b)
@@ -78,8 +84,8 @@ export async function GET(request: Request) {
         const topBand = Object.entries(d.bands).sort((a, b) => b[1] - a[1])[0]?.[0] || ''
         const hrPct = st.count ? +((d.highRisk / st.count) * 100).toFixed(1) : 0
         return [
-          code, `"${d.name}"`, st.count, st.avg, st.median, st.stddev, st.min, st.max,
-          d.highRisk, hrPct, `"${topBand}"`,
+          csvSafe(code), `"${csvSafe(d.name)}"`, st.count, st.avg, st.median, st.stddev, st.min, st.max,
+          d.highRisk, hrPct, `"${csvSafe(topBand)}"`,
         ].join(',')
       }).sort()
 
@@ -96,8 +102,8 @@ export async function GET(request: Request) {
       const riskRows = rows.filter(r => r.high_risk === 'YES')
       const headers = ['Submission ID', 'Patient', 'Assessment', 'Code', 'Score', 'Severity', 'Submitted At']
       const dataRows = riskRows.map(r => [
-        r.id, `"${r.patient}"`, `"${r.assessment}"`, r.code,
-        r.score, `"${r.severity}"`, new Date(r.submitted_at).toISOString(),
+        r.id, `"${csvSafe(r.patient)}"`, `"${csvSafe(r.assessment)}"`, csvSafe(r.code),
+        r.score, `"${csvSafe(r.severity)}"`, new Date(r.submitted_at).toISOString(),
       ].join(','))
 
       csv = [
@@ -113,8 +119,8 @@ export async function GET(request: Request) {
       // Detailed row-by-row export
       const headers = ['ID', 'Patient', 'Assessment', 'Code', 'Score', 'Severity', 'High Risk', 'Submitted At']
       const dataRows = rows.map(r => [
-        r.id, `"${r.patient}"`, `"${r.assessment}"`, r.code,
-        r.score, `"${r.severity}"`, r.high_risk, new Date(r.submitted_at).toISOString(),
+        r.id, `"${csvSafe(r.patient)}"`, `"${csvSafe(r.assessment)}"`, csvSafe(r.code),
+        r.score, `"${csvSafe(r.severity)}"`, r.high_risk, new Date(r.submitted_at).toISOString(),
       ].join(','))
 
       csv = [headers.join(','), ...dataRows].join('\n')

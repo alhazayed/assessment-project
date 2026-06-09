@@ -13,18 +13,31 @@ export async function GET() {
   }
 }
 
+const ALLOWED_TYPES = ['info', 'warning', 'success', 'error'] as const
+
 export async function POST(request: Request) {
   try {
     const { user } = await requireAdmin()
     const body = await request.json()
+
+    if (!body.title_en?.trim() || body.title_en.length > 200) {
+      return NextResponse.json({ error: 'title_en is required and must be ≤200 characters' }, { status: 400 })
+    }
+    if (!body.body_en?.trim() || body.body_en.length > 2000) {
+      return NextResponse.json({ error: 'body_en is required and must be ≤2000 characters' }, { status: 400 })
+    }
+    if (body.type && !ALLOWED_TYPES.includes(body.type)) {
+      return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
+    }
+
     const db = createAdminClient()
     await db.from('platform_announcements').insert({
-      title_en: body.title_en,
-      title_ar: body.title_ar || null,
-      body_en: body.body_en,
-      body_ar: body.body_ar || null,
+      title_en: body.title_en.trim(),
+      title_ar: body.title_ar?.trim() || null,
+      body_en: body.body_en.trim(),
+      body_ar: body.body_ar?.trim() || null,
       type: body.type || 'info',
-      target_roles: body.target_roles?.length > 0 ? body.target_roles : null,
+      target_roles: Array.isArray(body.target_roles) && body.target_roles.length > 0 ? body.target_roles : null,
       is_active: true,
       is_dismissible: body.is_dismissible ?? true,
       starts_at: body.starts_at || null,

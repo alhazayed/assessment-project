@@ -98,6 +98,14 @@ export async function GET(request: Request) {
   const patientId = searchParams.get('patient_id')
   if (!patientId) return NextResponse.json({ error: 'patient_id required' }, { status: 400 })
 
+  // Authorization: only the patient themselves OR admin/superadmin may access this report
+  if (user.id !== patientId) {
+    const { data: profile } = await supabase
+      .from('profiles').select('role').eq('id', user.id).single()
+    const privileged = profile && ['admin', 'superadmin'].includes(profile.role)
+    if (!privileged) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const [profileRes, submissionsRes, moodRes] = await Promise.all([
     supabase.from('profiles').select('full_name_en, full_name_ar, date_of_birth, gender, country_of_residence, created_at').eq('id', patientId).single(),
     supabase.from('assessment_submissions')
@@ -108,7 +116,7 @@ export async function GET(request: Request) {
     supabase.from('mood_logs')
       .select('mood_score, anxiety_score')
       .eq('patient_id', patientId)
-      .gte('logged_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+      .gte('log_date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
   ])
 
   const profile = profileRes.data

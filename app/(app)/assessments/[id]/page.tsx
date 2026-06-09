@@ -171,25 +171,17 @@ export default function TakeAssessmentPage() {
       })
       await supabase.from('assessment_responses').insert(responses)
 
-      // Notify all admins/superadmins when a high-risk flag is raised
+      // Notify admins via server endpoint (admin client bypasses RLS for cross-user inserts)
       if (highRisk) {
-        const { data: admins } = await supabase
-          .from('profiles')
-          .select('id')
-          .in('role', ['admin', 'superadmin'])
-        if (admins && admins.length > 0) {
-          await supabase.from('notifications').insert(
-            admins.map(a => ({
-              user_id: a.id,
-              type: 'high_risk',
-              title_en: '⚠ High-risk flag raised',
-              title_ar: '⚠ تم رفع علامة خطورة عالية',
-              body_en: `Assessment: ${definition.name_en}`,
-              body_ar: `التقييم: ${definition.name_ar || definition.name_en}`,
-              link: '/x/control/results',
-            }))
-          )
-        }
+        fetch('/api/notify-high-risk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            submission_id: submission.id,
+            assessment_name: definition.name_en,
+            assessment_name_ar: definition.name_ar,
+          }),
+        }).catch(() => {}) // Fire-and-forget — don't block result display
       }
     }
 
