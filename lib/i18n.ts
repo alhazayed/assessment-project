@@ -644,6 +644,41 @@ const dict = {
 
     // Unread messages
     'messages.unread': 'unread',
+
+    // Insights — remaining hardcoded
+    'insights.last_30_days': 'last 30 days',
+
+    // Profile — emergency contact
+    'profile.emergency.title': 'Emergency Contact',
+    'profile.emergency.name': 'Contact Name',
+    'profile.emergency.name.ph': 'Full name',
+    'profile.emergency.phone': 'Contact Phone',
+    'profile.emergency.relation': 'Relationship',
+    'profile.emergency.relation.select': 'Select relationship',
+    'profile.emergency.relation.family': 'Family',
+    'profile.emergency.relation.friend': 'Friend',
+    'profile.emergency.relation.colleague': 'Colleague',
+    'profile.emergency.relation.other': 'Other',
+
+    // Profile — privacy preferences
+    'profile.privacy.title': 'Privacy Preferences',
+    'profile.privacy.share_mood': 'Share my mood check-in notes with my clinician',
+    'profile.privacy.share_journal': 'Share new journal entries with my clinician by default',
+
+    // Profile — consent
+    'profile.consent.title': 'Data Consent',
+    'profile.consent.given_on': 'Consent given on',
+    'profile.consent.text': 'I agree to share my assessment results and health information with assigned clinicians for the purpose of my care.',
+    'profile.consent.confirm': 'Give Consent',
+    'profile.consent.confirmed': 'Consent recorded',
+
+    // 404 / error pages
+    'error.404.title': 'Page not found',
+    'error.404.sub': 'The page you are looking for does not exist or has been moved.',
+    'error.404.back': 'Go back home',
+    'error.generic.title': 'Something went wrong',
+    'error.generic.sub': 'An unexpected error occurred. Please try refreshing the page.',
+    'error.generic.retry': 'Try again',
   },
 
   ar: {
@@ -1289,6 +1324,41 @@ const dict = {
 
     // Unread messages
     'messages.unread': 'غير مقروءة',
+
+    // Insights — remaining hardcoded
+    'insights.last_30_days': 'آخر 30 يوم',
+
+    // Profile — emergency contact
+    'profile.emergency.title': 'جهة الاتصال للطوارئ',
+    'profile.emergency.name': 'اسم جهة الاتصال',
+    'profile.emergency.name.ph': 'الاسم الكامل',
+    'profile.emergency.phone': 'رقم هاتف جهة الاتصال',
+    'profile.emergency.relation': 'صلة القرابة',
+    'profile.emergency.relation.select': 'اختر الصلة',
+    'profile.emergency.relation.family': 'عائلة',
+    'profile.emergency.relation.friend': 'صديق',
+    'profile.emergency.relation.colleague': 'زميل',
+    'profile.emergency.relation.other': 'أخرى',
+
+    // Profile — privacy preferences
+    'profile.privacy.title': 'إعدادات الخصوصية',
+    'profile.privacy.share_mood': 'مشاركة ملاحظات متابعة المزاج مع طبيبي',
+    'profile.privacy.share_journal': 'مشاركة مدخلات اليومية الجديدة مع طبيبي افتراضياً',
+
+    // Profile — consent
+    'profile.consent.title': 'الموافقة على البيانات',
+    'profile.consent.given_on': 'تمت الموافقة في',
+    'profile.consent.text': 'أوافق على مشاركة نتائج تقييماتي ومعلوماتي الصحية مع الاختصاصيين المعيّنين لأغراض الرعاية.',
+    'profile.consent.confirm': 'تأكيد الموافقة',
+    'profile.consent.confirmed': 'تم تسجيل الموافقة',
+
+    // 404 / error pages
+    'error.404.title': 'الصفحة غير موجودة',
+    'error.404.sub': 'الصفحة التي تبحث عنها غير موجودة أو تم نقلها.',
+    'error.404.back': 'العودة إلى الصفحة الرئيسية',
+    'error.generic.title': 'حدث خطأ ما',
+    'error.generic.sub': 'حدث خطأ غير متوقع. يرجى تحديث الصفحة.',
+    'error.generic.retry': 'حاول مرة أخرى',
   },
 } as const
 

@@ -22,6 +22,7 @@ export default function MessagesPage() {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   async function loadMessages(patientId: string, clinicianId: string) {
+    const { data: { user } } = await supabase.auth.getUser()
     const { data: msgs } = await supabase
       .from('messages')
       .select('*')
@@ -29,6 +30,19 @@ export default function MessagesPage() {
       .eq('clinician_id', clinicianId)
       .order('created_at')
     setMessages(msgs as Message[] || [])
+
+    // Mark unread messages sent by the other party as read
+    if (user) {
+      const unreadIds = (msgs || [])
+        .filter(m => m.sender_id !== user.id && !m.read_at)
+        .map(m => m.id)
+      if (unreadIds.length > 0) {
+        await supabase
+          .from('messages')
+          .update({ read_at: new Date().toISOString() })
+          .in('id', unreadIds)
+      }
+    }
   }
 
   async function load() {
@@ -115,19 +129,18 @@ export default function MessagesPage() {
       is_urgent: isUrgent,
     })
 
-    // Fire notification for the other party when urgent
-    if (isUrgent) {
-      const recipientId = profile.role === 'patient' ? clinicianId : patientId
-      await supabase.from('notifications').insert({
-        user_id: recipientId,
-        type: 'message',
-        title_en: '⚠ Urgent message received',
-        title_ar: '⚠ رسالة عاجلة',
-        body_en: newMessage.trim().slice(0, 100),
-        body_ar: newMessage.trim().slice(0, 100),
-        link: '/messages',
-      })
-    }
+    // Notify the recipient for every message
+    const recipientId = profile.role === 'patient' ? clinicianId : patientId
+    const senderName = lang === 'ar' && profile.full_name_ar ? profile.full_name_ar : profile.full_name_en
+    await supabase.from('notifications').insert({
+      user_id: recipientId,
+      type: 'message',
+      title_en: isUrgent ? '⚠ Urgent message received' : 'New message',
+      title_ar: isUrgent ? '⚠ رسالة عاجلة' : 'رسالة جديدة',
+      body_en: `${senderName}: ${newMessage.trim().slice(0, 80)}`,
+      body_ar: `${senderName}: ${newMessage.trim().slice(0, 80)}`,
+      link: '/messages',
+    })
 
     setNewMessage('')
     setIsUrgent(false)

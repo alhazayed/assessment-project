@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Save, CheckCircle2, User, MapPin, BookOpen, Briefcase, Pill } from 'lucide-react'
+import { Save, CheckCircle2, User, MapPin, BookOpen, Briefcase, Pill, Phone, Shield } from 'lucide-react'
 import type { Profile, PatientProfile } from '@/lib/types'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
@@ -66,6 +66,19 @@ export default function ProfilePage() {
   const [medicationDetails, setMedicationDetails] = useState('')
   const [medicationDuration, setMedicationDuration] = useState('')
 
+  // Emergency contact
+  const [emergencyName, setEmergencyName] = useState('')
+  const [emergencyPhone, setEmergencyPhone] = useState('')
+  const [emergencyRelation, setEmergencyRelation] = useState<'family' | 'friend' | 'colleague' | 'other' | ''>('')
+
+  // Privacy preferences
+  const [shareMoodNotes, setShareMoodNotes] = useState(false)
+  const [shareJournalDefault, setShareJournalDefault] = useState(false)
+
+  // Consent
+  const [consentGivenAt, setConsentGivenAt] = useState<string | null>(null)
+  const [givingConsent, setGivingConsent] = useState(false)
+
   async function load() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -93,6 +106,12 @@ export default function ProfilePage() {
         setHasMedications(pat.has_psychiatric_medications || false)
         setMedicationDetails(pat.psychiatric_medication_details || '')
         setMedicationDuration(pat.psychiatric_medication_duration || '')
+        setEmergencyName(pat.emergency_contact_name || '')
+        setEmergencyPhone(pat.emergency_contact_phone || '')
+        setEmergencyRelation(pat.emergency_contact_relation || '')
+        setShareMoodNotes(pat.share_mood_notes ?? false)
+        setShareJournalDefault(pat.share_journal_default ?? false)
+        setConsentGivenAt(pat.consent_given_at)
 
         // Back-fill demographics from patient_profiles if profiles columns are empty
         if (!dob && pat.date_of_birth) setDob(pat.date_of_birth)
@@ -132,12 +151,27 @@ export default function ProfilePage() {
         has_psychiatric_medications: hasMedications,
         psychiatric_medication_details: hasMedications ? (medicationDetails || null) : null,
         psychiatric_medication_duration: hasMedications ? (medicationDuration || null) : null,
+        emergency_contact_name: emergencyName || null,
+        emergency_contact_phone: emergencyPhone || null,
+        emergency_contact_relation: emergencyRelation || null,
+        share_mood_notes: shareMoodNotes,
+        share_journal_default: shareJournalDefault,
       })
     }
 
     setSaved(true)
     setSaving(false)
     setTimeout(() => setSaved(false), 3000)
+  }
+
+  async function handleGiveConsent() {
+    setGivingConsent(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const now = new Date().toISOString()
+    await supabase.from('patient_profiles').upsert({ id: user.id, consent_given_at: now })
+    setConsentGivenAt(now)
+    setGivingConsent(false)
   }
 
   const isAr = lang === 'ar'
@@ -321,6 +355,66 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
+            {/* Emergency contact */}
+            <div className="card p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Phone className="w-4 h-4 text-brand-500" />
+                <h2 className="text-base font-semibold text-gray-900">{t('profile.emergency.title', lang)}</h2>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">{t('profile.emergency.name', lang)}</label>
+                    <input type="text" className="input" value={emergencyName}
+                      onChange={e => setEmergencyName(e.target.value)}
+                      placeholder={t('profile.emergency.name.ph', lang)} />
+                  </div>
+                  <div>
+                    <label className="label">{t('profile.emergency.phone', lang)}</label>
+                    <input type="tel" className="input" value={emergencyPhone}
+                      onChange={e => setEmergencyPhone(e.target.value)}
+                      placeholder="+1 234 567 8900" />
+                  </div>
+                </div>
+                <div>
+                  <label className="label">{t('profile.emergency.relation', lang)}</label>
+                  <select className="input" value={emergencyRelation}
+                    onChange={e => setEmergencyRelation(e.target.value as typeof emergencyRelation)}>
+                    <option value="">{t('profile.emergency.relation.select', lang)}</option>
+                    <option value="family">{t('profile.emergency.relation.family', lang)}</option>
+                    <option value="friend">{t('profile.emergency.relation.friend', lang)}</option>
+                    <option value="colleague">{t('profile.emergency.relation.colleague', lang)}</option>
+                    <option value="other">{t('profile.emergency.relation.other', lang)}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Privacy preferences */}
+            <div className="card p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Shield className="w-4 h-4 text-brand-500" />
+                <h2 className="text-base font-semibold text-gray-900">{t('profile.privacy.title', lang)}</h2>
+              </div>
+              <div className="space-y-4">
+                {[
+                  { label: t('profile.privacy.share_mood', lang), checked: shareMoodNotes, onChange: setShareMoodNotes },
+                  { label: t('profile.privacy.share_journal', lang), checked: shareJournalDefault, onChange: setShareJournalDefault },
+                ].map(item => (
+                  <label key={item.label} className="flex items-start gap-3 cursor-pointer group">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={item.checked}
+                        onChange={e => item.onChange(e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                      />
+                    </div>
+                    <span className="text-sm text-gray-700 group-hover:text-gray-900">{item.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           </>
         )}
 
@@ -331,6 +425,36 @@ export default function ProfilePage() {
           </button>
         </div>
       </form>
+
+      {/* Consent — patient only, outside the form */}
+      {profile?.role === 'patient' && (
+        <div className="card p-6 mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="w-4 h-4 text-brand-500" />
+            <h2 className="text-base font-semibold text-gray-900">{t('profile.consent.title', lang)}</h2>
+          </div>
+          {consentGivenAt ? (
+            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+              {t('profile.consent.given_on', lang)}{' '}
+              {new Date(consentGivenAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 leading-relaxed">{t('profile.consent.text', lang)}</p>
+              <button
+                type="button"
+                onClick={handleGiveConsent}
+                disabled={givingConsent}
+                className="btn-primary gap-2 disabled:opacity-40"
+              >
+                <Shield className="w-4 h-4" />
+                {givingConsent ? '...' : t('profile.consent.confirm', lang)}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Account info */}
       <div className="card p-6 mt-6">

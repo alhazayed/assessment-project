@@ -148,7 +148,7 @@ export default function InsightsPage() {
             <div className="flex items-center gap-2 mb-5">
               <Calendar className="w-4 h-4 text-gray-500" />
               <h2 className="text-base font-semibold text-gray-900">{t('insights.mood_cal', lang)}</h2>
-              <span className="text-xs text-gray-400 ml-1">— {isAr ? 'آخر 30 يوم' : 'last 30 days'}</span>
+              <span className="text-xs text-gray-400 ml-1">— {t('insights.last_30_days', lang)}</span>
             </div>
 
             {moodLogs.length === 0 ? (

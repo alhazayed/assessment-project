@@ -26,7 +26,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register')
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/forgot-password')
   const isAdminLogin = pathname === '/x/control/login'
   const isAdminArea = pathname.startsWith('/x/control') && !isAdminLogin
 
@@ -43,7 +43,9 @@ export async function middleware(request: NextRequest) {
     isAdminLogin ||
     pathname === '/' ||
     pathname.startsWith('/assessments') ||
-    pathname.startsWith('/api/')
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/reset-password')
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()

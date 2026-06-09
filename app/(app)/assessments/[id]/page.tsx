@@ -170,6 +170,27 @@ export default function TakeAssessmentPage() {
         }
       })
       await supabase.from('assessment_responses').insert(responses)
+
+      // Notify all admins/superadmins when a high-risk flag is raised
+      if (highRisk) {
+        const { data: admins } = await supabase
+          .from('profiles')
+          .select('id')
+          .in('role', ['admin', 'superadmin'])
+        if (admins && admins.length > 0) {
+          await supabase.from('notifications').insert(
+            admins.map(a => ({
+              user_id: a.id,
+              type: 'high_risk',
+              title_en: '⚠ High-risk flag raised',
+              title_ar: '⚠ تم رفع علامة خطورة عالية',
+              body_en: `Assessment: ${definition.name_en}`,
+              body_ar: `التقييم: ${definition.name_ar || definition.name_en}`,
+              link: '/x/control/results',
+            }))
+          )
+        }
+      }
     }
 
     // Clear saved progress on successful submission
