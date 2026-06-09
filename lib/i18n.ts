@@ -614,6 +614,36 @@ const dict = {
     'report.download': 'Download Report',
     'report.generating': 'Generating…',
     'nav.insights': 'My Insights',
+
+    // Forgot / reset password
+    'auth.login.forgot_password': 'Forgot password?',
+    'auth.forgot.title': 'Reset your password',
+    'auth.forgot.submit': 'Send reset link',
+    'auth.forgot.submitting': 'Sending...',
+    'auth.forgot.success': 'Check your email for a password reset link.',
+    'auth.forgot.back': 'Back to sign in',
+    'auth.reset.title': 'Set new password',
+    'auth.reset.password': 'New password',
+    'auth.reset.submit': 'Update password',
+    'auth.reset.submitting': 'Updating...',
+    'auth.reset.success': 'Password updated! Redirecting to sign in...',
+
+    // Footer contact
+    'footer.contact': 'Contact',
+
+    // In-progress assessments
+    'assessments.in_progress': 'In Progress',
+    'assessments.in_progress.resume': 'Resume',
+
+    // Insights — previously hardcoded strings
+    'insights.trend_min_needed': 'Complete this assessment at least once more to see a trend.',
+    'insights.mood_stats': 'Mood Stats (last 30 days)',
+    'insights.avg_mood': 'Avg Mood',
+    'insights.avg_anxiety': 'Avg Anxiety',
+    'insights.days_logged': 'Days Logged',
+
+    // Unread messages
+    'messages.unread': 'unread',
   },
 
   ar: {
@@ -1229,6 +1259,36 @@ const dict = {
     'report.download': 'تنزيل التقرير',
     'report.generating': 'جارٍ الإنشاء…',
     'nav.insights': 'رؤاي',
+
+    // Forgot / reset password
+    'auth.login.forgot_password': 'نسيت كلمة المرور؟',
+    'auth.forgot.title': 'إعادة تعيين كلمة المرور',
+    'auth.forgot.submit': 'إرسال رابط الإعادة',
+    'auth.forgot.submitting': 'جارٍ الإرسال...',
+    'auth.forgot.success': 'تحقق من بريدك الإلكتروني للحصول على رابط إعادة التعيين.',
+    'auth.forgot.back': 'العودة إلى تسجيل الدخول',
+    'auth.reset.title': 'تعيين كلمة مرور جديدة',
+    'auth.reset.password': 'كلمة المرور الجديدة',
+    'auth.reset.submit': 'تحديث كلمة المرور',
+    'auth.reset.submitting': 'جارٍ التحديث...',
+    'auth.reset.success': 'تم تحديث كلمة المرور! سيتم توجيهك لتسجيل الدخول...',
+
+    // Footer contact
+    'footer.contact': 'تواصل معنا',
+
+    // In-progress assessments
+    'assessments.in_progress': 'قيد التنفيذ',
+    'assessments.in_progress.resume': 'متابعة',
+
+    // Insights — previously hardcoded strings
+    'insights.trend_min_needed': 'أكمل هذا التقييم مرة أخرى على الأقل لرؤية الاتجاه.',
+    'insights.mood_stats': 'إحصائيات المزاج (آخر 30 يوم)',
+    'insights.avg_mood': 'متوسط المزاج',
+    'insights.avg_anxiety': 'متوسط القلق',
+    'insights.days_logged': 'أيام مسجلة',
+
+    // Unread messages
+    'messages.unread': 'غير مقروءة',
   },
 } as const
 

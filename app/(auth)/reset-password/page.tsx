@@ -2,16 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Eye, EyeOff, LogIn } from 'lucide-react'
+import { KeyRound, Eye, EyeOff } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
-export default function LoginPage() {
-  const router = useRouter()
+export default function ResetPasswordPage() {
   const lang = useLang()
-  const [email, setEmail] = useState('')
+  const router = useRouter()
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -23,20 +21,19 @@ export default function LoginPage() {
     setError(null)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.updateUser({ password })
 
     if (error) {
       setError(error.message)
       setLoading(false)
     } else {
-      router.push('/dashboard')
-      router.refresh()
+      setTimeout(() => router.push('/login'), 1500)
     }
   }
 
   return (
     <div className="card p-8">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('auth.login.title', lang)}</h2>
+      <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('auth.reset.title', lang)}</h2>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -46,26 +43,7 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="label" htmlFor="email">{t('auth.login.email', lang)}</label>
-          <input
-            id="email"
-            type="email"
-            className="input"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            placeholder="you@example.com"
-          />
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="label mb-0" htmlFor="password">{t('auth.login.password', lang)}</label>
-            <Link href="/forgot-password" className="text-xs text-brand-600 hover:text-brand-700 font-medium">
-              {t('auth.login.forgot_password', lang)}
-            </Link>
-          </div>
+          <label className="label" htmlFor="password">{t('auth.reset.password', lang)}</label>
           <div className="relative">
             <input
               id="password"
@@ -74,7 +52,8 @@ export default function LoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              autoComplete="current-password"
+              minLength={8}
+              autoComplete="new-password"
               placeholder="••••••••"
             />
             <button
@@ -87,18 +66,15 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <button type="submit" className="btn-primary w-full gap-2" disabled={loading}>
-          <LogIn className="w-4 h-4" />
-          {loading ? t('auth.login.submitting', lang) : t('auth.login.submit', lang)}
+        <button
+          type="submit"
+          className="btn-primary w-full gap-2"
+          disabled={loading || password.length < 8}
+        >
+          <KeyRound className="w-4 h-4" />
+          {loading ? t('auth.reset.submitting', lang) : t('auth.reset.submit', lang)}
         </button>
       </form>
-
-      <p className="mt-6 text-center text-sm text-gray-500">
-        {t('auth.login.no_account', lang)}{' '}
-        <Link href="/register" className="font-medium text-brand-600 hover:text-brand-700">
-          {t('auth.login.register', lang)}
-        </Link>
-      </p>
     </div>
   )
 }

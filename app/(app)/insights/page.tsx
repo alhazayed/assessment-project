@@ -211,7 +211,7 @@ export default function InsightsPage() {
               <p className="text-sm text-gray-400 py-4 text-center">{t('insights.no_scores', lang)}</p>
             ) : trendData.length < 2 ? (
               <p className="text-sm text-gray-400 py-4 text-center">
-                {isAr ? 'أكمل هذا التقييم مرة أخرى على الأقل لرؤية الاتجاه.' : 'Complete this assessment at least once more to see a trend.'}
+                {t('insights.trend_min_needed', lang)}
               </p>
             ) : (
               <div className="relative">
@@ -269,24 +269,24 @@ export default function InsightsPage() {
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-4">
                 <BarChart2 className="w-4 h-4 text-gray-500" />
-                <h2 className="text-base font-semibold text-gray-900">{isAr ? 'إحصائيات المزاج (آخر 30 يوم)' : 'Mood Stats (last 30 days)'}</h2>
+                <h2 className="text-base font-semibold text-gray-900">{t('insights.mood_stats', lang)}</h2>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 {[
                   {
-                    label: isAr ? 'متوسط المزاج' : 'Avg Mood',
+                    label: t('insights.avg_mood', lang),
                     value: (moodLogs.reduce((s, l) => s + l.mood_score, 0) / moodLogs.length).toFixed(1),
                     unit: '/10',
                     color: '#1D6296',
                   },
                   {
-                    label: isAr ? 'متوسط القلق' : 'Avg Anxiety',
+                    label: t('insights.avg_anxiety', lang),
                     value: (moodLogs.reduce((s, l) => s + l.anxiety_score, 0) / moodLogs.length).toFixed(1),
                     unit: '/10',
                     color: '#F3650A',
                   },
                   {
-                    label: isAr ? 'أيام مسجلة' : 'Days Logged',
+                    label: t('insights.days_logged', lang),
                     value: new Set(moodLogs.map(l => l.logged_at.split('T')[0])).size,
                     unit: '',
                     color: '#12273C',

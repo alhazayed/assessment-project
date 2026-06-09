@@ -21,6 +21,7 @@ import type { Lang } from '@/lib/i18n'
 import { t } from '@/lib/i18n'
 import LanguageToggle from '@/components/language-toggle'
 import NotificationBell from '@/components/notification-bell'
+import UnreadMessagesBadge from '@/components/unread-messages-badge'
 
 interface SidebarProps {
   profile: Profile | null
@@ -118,6 +119,7 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
             >
               <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-brand-600' : 'text-gray-400'}`} />
               {item.label}
+              {item.href === '/messages' && <UnreadMessagesBadge />}
             </Link>
           )
         })}

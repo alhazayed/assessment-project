@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ClipboardList, CheckCircle2, Clock, AlertCircle, LogIn } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentAssignment, AssessmentSubmission } from '@/lib/types'
 import AIAssessmentFinder from '@/components/ai-assessment-finder'
+import InProgressAssessments from '@/components/in-progress-assessments'
 
 function severityColor(band: string) {
   const b = band.toLowerCase()
@@ -102,6 +103,8 @@ export default async function AssessmentsPage() {
           </div>
         </div>
       )}
+
+      {user && <InProgressAssessments definitions={allDefinitions} lang={lang} />}
 
       <AIAssessmentFinder />
 
