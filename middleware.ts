@@ -26,9 +26,9 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/forgot-password')
   const isAdminLogin = pathname === '/x/control/login'
   const isAdminArea = pathname.startsWith('/x/control') && !isAdminLogin
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register') || pathname.startsWith('/forgot-password')
 
   // Admin area: must be authenticated (cookie-based admin session is verified in each page/route)
   if (isAdminArea && !user) {
@@ -37,22 +37,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // These routes are publicly accessible without login
-  const isPublicRoute =
-    isAuthPage ||
-    isAdminLogin ||
-    pathname === '/' ||
-    pathname.startsWith('/assessments') ||
-    pathname.startsWith('/api/') ||
-    pathname.startsWith('/auth/') ||
-    pathname.startsWith('/reset-password')
+  // Private routes require Supabase authentication
+  const isPrivateRoute =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/profile') ||
+    pathname.startsWith('/journal') ||
+    pathname.startsWith('/insights') ||
+    pathname.startsWith('/messages') ||
+    pathname.startsWith('/onboarding')
 
-  if (!user && !isPublicRoute) {
+  if (!user && isPrivateRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
+  // Auth pages redirect logged-in users away
   if (user && isAuthPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
