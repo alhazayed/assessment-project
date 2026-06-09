@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">Admin Control</h1>
-            <p className="text-sm text-slate-400">vWelfare Platform</p>
+            <p className="text-sm text-slate-400">Welfare Platform</p>
           </div>
         </div>
 
