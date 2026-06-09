@@ -38,8 +38,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(redirectTo)
   }
 
-  // type=recovery → send to reset-password; everything else → intended next
-  redirectTo.pathname = type === 'recovery' ? '/reset-password' : next
+  // type=recovery → reset-password; type=email (new signup) → onboarding; custom next → honoured
+  if (type === 'recovery') {
+    redirectTo.pathname = '/reset-password'
+  } else if (next === '/dashboard' || next === '/') {
+    // default next — send new users to onboarding
+    redirectTo.pathname = '/onboarding'
+  } else {
+    redirectTo.pathname = next
+  }
   redirectTo.searchParams.delete('token_hash')
   redirectTo.searchParams.delete('type')
   redirectTo.searchParams.delete('next')

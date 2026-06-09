@@ -615,6 +615,26 @@ const dict = {
     'report.generating': 'Generating…',
     'nav.insights': 'My Insights',
 
+    // Onboarding wizard
+    'onboarding.title': 'Welcome to V Welfare',
+    'onboarding.subtitle': 'Before we get started, tell us a little about yourself.',
+    'onboarding.step': 'Step',
+    'onboarding.of': 'of',
+    'onboarding.next': 'Continue',
+    'onboarding.back': 'Back',
+    'onboarding.finish': 'Get Started',
+    'onboarding.finishing': 'Saving…',
+    'onboarding.skip': 'Skip for now',
+    'onboarding.step1.title': 'About You',
+    'onboarding.step1.sub': 'Basic identity and language preferences.',
+    'onboarding.step2.title': 'Your Background',
+    'onboarding.step2.sub': 'Helps us give you better-contextualised information.',
+    'onboarding.step3.title': 'Health & Safety',
+    'onboarding.step3.sub': 'Kept private — only visible to you and your assigned clinician.',
+    'onboarding.name_ar': 'Full Name in Arabic (optional)',
+    'onboarding.name_ar.ph': 'الاسم بالعربية',
+    'onboarding.optional': 'optional',
+
     // Forgot / reset password
     'auth.login.forgot_password': 'Forgot password?',
     'auth.forgot.title': 'Reset your password',
@@ -1294,6 +1314,26 @@ const dict = {
     'report.download': 'تنزيل التقرير',
     'report.generating': 'جارٍ الإنشاء…',
     'nav.insights': 'رؤاي',
+
+    // Onboarding wizard
+    'onboarding.title': 'مرحباً بك في V Welfare',
+    'onboarding.subtitle': 'قبل أن نبدأ، أخبرنا قليلاً عن نفسك.',
+    'onboarding.step': 'الخطوة',
+    'onboarding.of': 'من',
+    'onboarding.next': 'متابعة',
+    'onboarding.back': 'رجوع',
+    'onboarding.finish': 'ابدأ الآن',
+    'onboarding.finishing': 'جارٍ الحفظ…',
+    'onboarding.skip': 'تخطي الآن',
+    'onboarding.step1.title': 'عنك',
+    'onboarding.step1.sub': 'الهوية الأساسية وتفضيلات اللغة.',
+    'onboarding.step2.title': 'خلفيتك',
+    'onboarding.step2.sub': 'يساعدنا على تقديم معلومات أكثر ملاءمةً لك.',
+    'onboarding.step3.title': 'الصحة والسلامة',
+    'onboarding.step3.sub': 'خاص بك — يظهر فقط لك وللاختصاصي المعيّن لك.',
+    'onboarding.name_ar': 'الاسم الكامل بالعربية (اختياري)',
+    'onboarding.name_ar.ph': 'الاسم بالعربية',
+    'onboarding.optional': 'اختياري',
 
     // Forgot / reset password
     'auth.login.forgot_password': 'نسيت كلمة المرور؟',

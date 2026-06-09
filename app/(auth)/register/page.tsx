@@ -24,22 +24,24 @@ export default function RegisterPage() {
     setError(null)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          full_name_en: fullName,
-        },
+        data: { full_name_en: fullName },
+        emailRedirectTo: `${location.origin}/auth/confirm?next=/onboarding`,
       },
     })
 
     if (error) {
       setError(error.message)
       setLoading(false)
+    } else if (data.session) {
+      // Email confirmation disabled — user is signed in immediately
+      router.push('/onboarding')
     } else {
+      // Email confirmation required — show "check your email" screen
       setSuccess(true)
-      setTimeout(() => router.push('/login'), 3000)
     }
   }
 
@@ -52,7 +54,14 @@ export default function RegisterPage() {
           </svg>
         </div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('auth.register.success.title', lang)}</h2>
-        <p className="text-gray-500 text-sm">{t('auth.register.success.msg', lang)}</p>
+        <p className="text-gray-500 text-sm mb-6">
+          {lang === 'ar'
+            ? `تم إرسال رابط التحقق إلى ${email}. انقر على الرابط في بريدك الإلكتروني للمتابعة.`
+            : `A verification link was sent to ${email}. Click the link in your email to continue.`}
+        </p>
+        <p className="text-xs text-gray-400">
+          {lang === 'ar' ? 'لم تستلم البريد؟ تحقق من مجلد الرسائل غير المرغوب فيها.' : "Didn't receive it? Check your spam folder."}
+        </p>
       </div>
     )
   }
