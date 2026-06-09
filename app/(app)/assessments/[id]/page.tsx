@@ -49,6 +49,17 @@ export default function TakeAssessmentPage() {
   const [result, setResult] = useState<{ score: number; band_en: string; band_ar: string; high_risk: boolean } | null>(null)
   const [domainScores, setDomainScores] = useState<Record<string, number> | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [hasSavedProgress, setHasSavedProgress] = useState(false)
+
+  const storageKey = `vw_assessment_${id}`
+
+  // Persist answers to localStorage whenever they change
+  useEffect(() => {
+    if (Object.keys(answers).length === 0) return
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ answers, currentIndex }))
+    } catch {}
+  }, [answers, currentIndex])
 
   useEffect(() => {
     async function load() {
@@ -60,9 +71,37 @@ export default function TakeAssessmentPage() {
       ])
       if (defRes.data) setDefinition(defRes.data as AssessmentDefinition)
       if (itemsRes.data) setItems(itemsRes.data as AssessmentItem[])
+
+      // Restore saved progress
+      try {
+        const saved = localStorage.getItem(`vw_assessment_${id}`)
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (parsed.answers && Object.keys(parsed.answers).length > 0) {
+            setHasSavedProgress(true)
+          }
+        }
+      } catch {}
     }
     load()
   }, [id])
+
+  function resumeSavedProgress() {
+    try {
+      const saved = localStorage.getItem(storageKey)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        setAnswers(parsed.answers ?? {})
+        setCurrentIndex(parsed.currentIndex ?? 0)
+      }
+    } catch {}
+    setHasSavedProgress(false)
+  }
+
+  function discardSavedProgress() {
+    try { localStorage.removeItem(storageKey) } catch {}
+    setHasSavedProgress(false)
+  }
 
   async function loadRelated(code: string) {
     const content = getAssessmentContent(code)
@@ -132,6 +171,9 @@ export default function TakeAssessmentPage() {
       })
       await supabase.from('assessment_responses').insert(responses)
     }
+
+    // Clear saved progress on successful submission
+    try { localStorage.removeItem(storageKey) } catch {}
 
     setResult({
       score: totalScore,
@@ -438,6 +480,22 @@ export default function TakeAssessmentPage() {
           <div className="bg-brand-600 h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
         </div>
       </div>
+
+      {hasSavedProgress && (
+        <div className="mb-4 p-3 rounded-xl border flex items-center justify-between gap-3" style={{ backgroundColor: '#EEF5FB', borderColor: '#1D6296' }}>
+          <p className="text-sm font-medium" style={{ color: '#1D6296' }}>
+            {lang === 'ar' ? 'لديك تقدم محفوظ في هذا التقييم.' : 'You have saved progress for this assessment.'}
+          </p>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={resumeSavedProgress} className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white transition-opacity hover:opacity-90" style={{ backgroundColor: '#1D6296' }}>
+              {lang === 'ar' ? 'استئناف' : 'Resume'}
+            </button>
+            <button onClick={discardSavedProgress} className="text-xs text-gray-500 hover:text-gray-700 transition-colors">
+              {lang === 'ar' ? 'بدء من جديد' : 'Start over'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>

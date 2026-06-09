@@ -32,6 +32,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'patient_id and definition_id are required' }, { status: 400 })
   }
 
+  // Fetch assessment name for notification
+  const { data: def } = await supabase
+    .from('assessment_definitions')
+    .select('name_en, name_ar')
+    .eq('id', definition_id)
+    .single()
+
   const { data, error } = await supabase
     .from('assessment_assignments')
     .insert({
@@ -47,6 +54,18 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Fire notification to patient
+  await supabase.from('notifications').insert({
+    user_id: patient_id,
+    type: 'assignment',
+    title_en: 'New assessment assigned',
+    title_ar: 'تم تعيين تقييم جديد',
+    body_en: `You have been assigned: ${def?.name_en ?? 'an assessment'}`,
+    body_ar: `تم تعيينك لإجراء: ${def?.name_ar ?? 'تقييم'}`,
+    link: '/assessments',
+  })
+
   return NextResponse.json({ assignment: data })
 }
 

@@ -3,7 +3,7 @@ export type Lang = 'en' | 'ar'
 const dict = {
   en: {
     // App
-    'app.name': 'vWelfare',
+    'app.name': 'V Welfare',
     'app.tagline': 'Mental Health Platform',
 
     // Nav (public)
@@ -109,7 +109,7 @@ const dict = {
 
     // About section
     'about.title': 'Built for real mental health care',
-    'about.p1': 'vWelfare is a bilingual (Arabic & English) mental health platform designed to bridge the gap between evidence-based screening tools and everyday access to mental health support.',
+    'about.p1': 'V Welfare is a bilingual (Arabic & English) mental health platform designed to bridge the gap between evidence-based screening tools and everyday access to mental health support.',
     'about.p2': 'Every assessment on this platform is a validated, open-source psychological scale used by clinicians and researchers worldwide. Results are explained in plain language with scientific context, clinical recommendations, and suggested next steps.',
     'about.bullet1': 'All screening tools are free and publicly accessible without registration',
     'about.bullet2': 'Results include scientific explanations, not just scores',
@@ -576,11 +576,49 @@ const dict = {
     'admin.announcements.deleted': 'Deleted',
     'admin.announcements.confirm_delete': 'Delete this announcement?',
     'admin.announcements.inactive': 'Inactive',
+
+    // Notifications
+    'notif.title': 'Notifications',
+    'notif.mark_all': 'Mark all read',
+    'notif.empty': 'You\'re all caught up',
+
+    // Crisis banner
+    'crisis.title': 'We noticed you may be going through a difficult time',
+    'crisis.body': 'Your recent assessment flagged some concerns. Please know that support is available — reaching out is a sign of strength.',
+    'crisis.more': 'Find more helplines',
+
+    // Insights page
+    'insights.title': 'Your Insights',
+    'insights.subtitle': 'Patterns from your mood check-ins and assessments',
+    'insights.mood_cal': 'Mood Calendar',
+    'insights.score_trend': 'Assessment Score Trends',
+    'insights.streak': 'Current Streak',
+    'insights.streak.days': 'days',
+    'insights.streak.none': 'Start your streak — log your mood today',
+    'insights.no_mood': 'No mood data yet. Start checking in daily.',
+    'insights.no_scores': 'No completed assessments yet.',
+
+    // Clinical notes
+    'notes.title': 'Clinical Notes',
+    'notes.new': 'New Note',
+    'notes.ai_draft': 'Generate AI Draft',
+    'notes.ai_drafting': 'Generating…',
+    'notes.placeholder': 'Write your clinical note here…',
+    'notes.save': 'Save Note',
+    'notes.saving': 'Saving…',
+    'notes.empty': 'No notes yet for this patient',
+    'notes.ai_badge': 'AI Draft',
+    'notes.delete': 'Delete',
+
+    // PDF report
+    'report.download': 'Download Report',
+    'report.generating': 'Generating…',
+    'nav.insights': 'My Insights',
   },
 
   ar: {
     // App
-    'app.name': 'vWelfare',
+    'app.name': 'V Welfare',
     'app.tagline': 'منصة الصحة النفسية',
 
     // Nav (public)
@@ -686,7 +724,7 @@ const dict = {
 
     // About section
     'about.title': 'بُني لرعاية صحة نفسية حقيقية',
-    'about.p1': 'vWelfare منصة للصحة النفسية ثنائية اللغة (عربية وإنجليزية) صُممت لتقليص الفجوة بين أدوات الفحص المستندة إلى الأدلة والوصول اليومي إلى دعم الصحة النفسية.',
+    'about.p1': 'V Welfare منصة للصحة النفسية ثنائية اللغة (عربية وإنجليزية) صُممت لتقليص الفجوة بين أدوات الفحص المستندة إلى الأدلة والوصول اليومي إلى دعم الصحة النفسية.',
     'about.p2': 'كل تقييم في المنصة هو مقياس نفسي معتمد ومفتوح المصدر يستخدمه الاختصاصيون والباحثون حول العالم. تُشرح النتائج بلغة واضحة مع السياق العلمي والتوصيات السريرية والخطوات التالية.',
     'about.bullet1': 'جميع أدوات الفحص مجانية ومتاحة للعموم دون تسجيل',
     'about.bullet2': 'النتائج تتضمن تفسيرات علمية وليس أرقاماً فقط',
@@ -1153,6 +1191,44 @@ const dict = {
     'admin.announcements.deleted': 'تم الحذف',
     'admin.announcements.confirm_delete': 'هل تريد حذف هذا الإعلان؟',
     'admin.announcements.inactive': 'غير نشط',
+
+    // Notifications
+    'notif.title': 'الإشعارات',
+    'notif.mark_all': 'تعليم الكل كمقروء',
+    'notif.empty': 'لا توجد إشعارات جديدة',
+
+    // Crisis banner
+    'crisis.title': 'لاحظنا أنك قد تمر بوقت صعب',
+    'crisis.body': 'أشارت نتائج تقييمك الأخير إلى بعض المخاوف. تذكر أن الدعم متاح — طلب المساعدة دليل على القوة.',
+    'crisis.more': 'ابحث عن المزيد من خطوط المساعدة',
+
+    // Insights page
+    'insights.title': 'رؤاك',
+    'insights.subtitle': 'أنماط من تسجيلات مزاجك وتقييماتك',
+    'insights.mood_cal': 'تقويم المزاج',
+    'insights.score_trend': 'اتجاهات درجات التقييم',
+    'insights.streak': 'سلسلة الأيام الحالية',
+    'insights.streak.days': 'أيام',
+    'insights.streak.none': 'ابدأ سلسلتك — سجّل مزاجك اليوم',
+    'insights.no_mood': 'لا توجد بيانات مزاج بعد. ابدأ بتسجيل مزاجك يومياً.',
+    'insights.no_scores': 'لا توجد تقييمات مكتملة بعد.',
+
+    // Clinical notes
+    'notes.title': 'الملاحظات السريرية',
+    'notes.new': 'ملاحظة جديدة',
+    'notes.ai_draft': 'إنشاء مسودة بالذكاء الاصطناعي',
+    'notes.ai_drafting': 'جارٍ الإنشاء…',
+    'notes.placeholder': 'اكتب ملاحظتك السريرية هنا…',
+    'notes.save': 'حفظ الملاحظة',
+    'notes.saving': 'جارٍ الحفظ…',
+    'notes.empty': 'لا توجد ملاحظات لهذا المريض بعد',
+    'notes.ai_badge': 'مسودة ذكاء اصطناعي',
+    'notes.delete': 'حذف',
+
+    // PDF report
+    'report.download': 'تنزيل التقرير',
+    'report.generating': 'جارٍ الإنشاء…',
+    'nav.insights': 'رؤاي',
   },
 } as const
 

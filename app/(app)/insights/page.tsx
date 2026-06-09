@@ -1,0 +1,308 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { LineChart, Flame, TrendingUp, Calendar, BarChart2 } from 'lucide-react'
+import { useLang } from '@/lib/use-lang'
+import { t } from '@/lib/i18n'
+
+type MoodLog = {
+  logged_at: string
+  mood_score: number
+  anxiety_score: number
+  sleep_hours: number | null
+}
+
+type ScoreHistory = {
+  submitted_at: string
+  total_score: number
+  severity_band: string
+  assessment_definitions: { name_en: string; name_ar: string; code: string } | null
+}
+
+const MOOD_COLORS = ['#EF4444', '#F97316', '#EAB308', '#22C55E', '#10B981']
+const MOOD_LABELS_EN = ['Very Low', 'Low', 'Okay', 'Good', 'Great']
+const MOOD_LABELS_AR = ['منخفض جداً', 'منخفض', 'مقبول', 'جيد', 'ممتاز']
+
+function moodColor(score: number) {
+  if (score <= 2) return MOOD_COLORS[0]
+  if (score <= 4) return MOOD_COLORS[1]
+  if (score <= 6) return MOOD_COLORS[2]
+  if (score <= 8) return MOOD_COLORS[3]
+  return MOOD_COLORS[4]
+}
+
+function calcStreak(logs: MoodLog[]): number {
+  if (!logs.length) return 0
+  const dates = new Set(logs.map(l => l.logged_at.split('T')[0]))
+  let streak = 0
+  const today = new Date()
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - i)
+    const key = d.toISOString().split('T')[0]
+    if (dates.has(key)) { streak++ } else if (i > 0) break
+  }
+  return streak
+}
+
+function getLast30Days() {
+  const days: string[] = []
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    days.push(d.toISOString().split('T')[0])
+  }
+  return days
+}
+
+export default function InsightsPage() {
+  const supabase = createClient()
+  const lang = useLang()
+  const isAr = lang === 'ar'
+
+  const [moodLogs, setMoodLogs] = useState<MoodLog[]>([])
+  const [scoreHistory, setScoreHistory] = useState<ScoreHistory[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedAssessmentCode, setSelectedAssessmentCode] = useState<string>('')
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const since90 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+      const [moodRes, scoreRes] = await Promise.all([
+        supabase.from('mood_logs').select('logged_at, mood_score, anxiety_score, sleep_hours')
+          .eq('patient_id', user.id).gte('logged_at', since90).order('logged_at'),
+        supabase.from('assessment_submissions')
+          .select('submitted_at, total_score, severity_band, assessment_definitions(name_en, name_ar, code)')
+          .eq('patient_id', user.id).order('submitted_at').limit(100),
+      ])
+      const logs = (moodRes.data || []) as MoodLog[]
+      const scores = (scoreRes.data || []) as unknown as ScoreHistory[]
+      setMoodLogs(logs)
+      setScoreHistory(scores)
+
+      // Default to first assessment with multiple entries
+      const codes = Array.from(new Set(scores.map(s => s.assessment_definitions?.code).filter((c): c is string => Boolean(c))))
+      const firstWithMultiple = codes.find(code => scores.filter(s => s.assessment_definitions?.code === code).length > 1)
+      setSelectedAssessmentCode(firstWithMultiple ?? codes[0] ?? '')
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  const streak = calcStreak(moodLogs)
+  const last30 = getLast30Days()
+  const moodByDay = Object.fromEntries(
+    moodLogs.map(l => [l.logged_at.split('T')[0], l.mood_score])
+  )
+
+  // Available assessments with enough data for a trend line
+  const uniqueAssessments = Array.from(new Map(
+    scoreHistory
+      .filter(s => s.assessment_definitions)
+      .map(s => [s.assessment_definitions!.code, s.assessment_definitions!])
+  ).values())
+
+  const trendData = scoreHistory.filter(s => s.assessment_definitions?.code === selectedAssessmentCode)
+
+  const maxScore = trendData.length > 0 ? Math.max(...trendData.map(s => s.total_score)) : 1
+  const minScore = trendData.length > 0 ? Math.min(...trendData.map(s => s.total_score)) : 0
+  const scoreRange = maxScore - minScore || 1
+
+  return (
+    <div className="p-8 max-w-4xl">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">{t('insights.title', lang)}</h1>
+        <p className="text-gray-500 mt-1">{t('insights.subtitle', lang)}</p>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#1D6296', borderTopColor: 'transparent' }} />
+        </div>
+      ) : (
+        <div className="space-y-6">
+
+          {/* Streak card */}
+          <div className="card p-6 flex items-center gap-5">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#FEF2EC' }}>
+              <Flame className="w-7 h-7" style={{ color: '#F3650A' }} />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">{t('insights.streak', lang)}</p>
+              {streak > 0 ? (
+                <p className="text-3xl font-bold text-gray-900">
+                  {streak} <span className="text-lg font-medium text-gray-500">{t('insights.streak.days', lang)}</span>
+                </p>
+              ) : (
+                <p className="text-sm text-gray-500">{t('insights.streak.none', lang)}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Mood calendar */}
+          <div className="card p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Calendar className="w-4 h-4 text-gray-500" />
+              <h2 className="text-base font-semibold text-gray-900">{t('insights.mood_cal', lang)}</h2>
+              <span className="text-xs text-gray-400 ml-1">— {isAr ? 'آخر 30 يوم' : 'last 30 days'}</span>
+            </div>
+
+            {moodLogs.length === 0 ? (
+              <p className="text-sm text-gray-400 py-4 text-center">{t('insights.no_mood', lang)}</p>
+            ) : (
+              <div className="grid grid-cols-10 gap-1.5">
+                {last30.map(day => {
+                  const score = moodByDay[day]
+                  const color = score != null ? moodColor(score) : '#F3F4F6'
+                  const label = score != null
+                    ? (isAr ? MOOD_LABELS_AR : MOOD_LABELS_EN)[Math.min(4, Math.floor((score - 1) / 2))]
+                    : (isAr ? 'لا يوجد' : 'No data')
+                  return (
+                    <div
+                      key={day}
+                      title={`${day}: ${label}${score != null ? ` (${score}/10)` : ''}`}
+                      className="aspect-square rounded-md cursor-default transition-transform hover:scale-110"
+                      style={{ backgroundColor: color }}
+                    />
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="flex items-center gap-4 mt-4">
+              <span className="text-xs text-gray-400">{isAr ? 'أقل' : 'Less'}</span>
+              {MOOD_COLORS.map((c, i) => (
+                <div key={i} className="flex items-center gap-1">
+                  <div className="w-3.5 h-3.5 rounded" style={{ backgroundColor: c }} />
+                  <span className="text-[10px] text-gray-400">{(isAr ? MOOD_LABELS_AR : MOOD_LABELS_EN)[i]}</span>
+                </div>
+              ))}
+              <span className="text-xs text-gray-400">{isAr ? 'أكثر' : 'More'}</span>
+            </div>
+          </div>
+
+          {/* Score trend chart */}
+          <div className="card p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-gray-500" />
+                <h2 className="text-base font-semibold text-gray-900">{t('insights.score_trend', lang)}</h2>
+              </div>
+              {uniqueAssessments.length > 1 && (
+                <select
+                  className="input text-xs py-1 max-w-48"
+                  value={selectedAssessmentCode}
+                  onChange={e => setSelectedAssessmentCode(e.target.value)}
+                >
+                  {uniqueAssessments.map(a => (
+                    <option key={a.code} value={a.code}>
+                      {isAr ? a.name_ar : a.name_en}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {scoreHistory.length === 0 ? (
+              <p className="text-sm text-gray-400 py-4 text-center">{t('insights.no_scores', lang)}</p>
+            ) : trendData.length < 2 ? (
+              <p className="text-sm text-gray-400 py-4 text-center">
+                {isAr ? 'أكمل هذا التقييم مرة أخرى على الأقل لرؤية الاتجاه.' : 'Complete this assessment at least once more to see a trend.'}
+              </p>
+            ) : (
+              <div className="relative">
+                {/* Simple SVG line chart */}
+                <svg viewBox={`0 0 ${trendData.length * 60} 120`} className="w-full h-32" preserveAspectRatio="none">
+                  {/* Grid lines */}
+                  {[0, 0.5, 1].map(pct => (
+                    <line
+                      key={pct}
+                      x1={0} y1={pct * 100 + 10}
+                      x2={trendData.length * 60} y2={pct * 100 + 10}
+                      stroke="#F3F4F6" strokeWidth={1}
+                    />
+                  ))}
+                  {/* Line */}
+                  <polyline
+                    fill="none"
+                    stroke="#1D6296"
+                    strokeWidth={2.5}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    points={trendData.map((s, i) => {
+                      const x = i * 60 + 30
+                      const y = 110 - ((s.total_score - minScore) / scoreRange) * 90
+                      return `${x},${y}`
+                    }).join(' ')}
+                  />
+                  {/* Dots */}
+                  {trendData.map((s, i) => {
+                    const x = i * 60 + 30
+                    const y = 110 - ((s.total_score - minScore) / scoreRange) * 90
+                    return (
+                      <g key={i}>
+                        <circle cx={x} cy={y} r={5} fill="#1D6296" />
+                        <circle cx={x} cy={y} r={3} fill="white" />
+                        <text x={x} y={y - 10} textAnchor="middle" fontSize={9} fill="#6B7280">{s.total_score}</text>
+                      </g>
+                    )
+                  })}
+                </svg>
+                {/* X-axis labels */}
+                <div className="flex justify-between mt-1 px-1">
+                  {trendData.map((s, i) => (
+                    <span key={i} className="text-[10px] text-gray-400" style={{ width: `${100 / trendData.length}%`, textAlign: 'center' }}>
+                      {new Date(s.submitted_at).toLocaleDateString(isAr ? 'ar' : 'en', { month: 'short', day: 'numeric' })}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Recent mood stats */}
+          {moodLogs.length > 0 && (
+            <div className="card p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart2 className="w-4 h-4 text-gray-500" />
+                <h2 className="text-base font-semibold text-gray-900">{isAr ? 'إحصائيات المزاج (آخر 30 يوم)' : 'Mood Stats (last 30 days)'}</h2>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  {
+                    label: isAr ? 'متوسط المزاج' : 'Avg Mood',
+                    value: (moodLogs.reduce((s, l) => s + l.mood_score, 0) / moodLogs.length).toFixed(1),
+                    unit: '/10',
+                    color: '#1D6296',
+                  },
+                  {
+                    label: isAr ? 'متوسط القلق' : 'Avg Anxiety',
+                    value: (moodLogs.reduce((s, l) => s + l.anxiety_score, 0) / moodLogs.length).toFixed(1),
+                    unit: '/10',
+                    color: '#F3650A',
+                  },
+                  {
+                    label: isAr ? 'أيام مسجلة' : 'Days Logged',
+                    value: new Set(moodLogs.map(l => l.logged_at.split('T')[0])).size,
+                    unit: '',
+                    color: '#12273C',
+                  },
+                ].map(stat => (
+                  <div key={stat.label} className="p-4 rounded-xl bg-gray-50 text-center">
+                    <p className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}<span className="text-base font-medium text-gray-400">{stat.unit}</span></p>
+                    <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+      )}
+    </div>
+  )
+}

@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ClipboardList, Heart, BookOpen, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import type { Profile, AssessmentSubmission, MoodLog, AssessmentAssignment } from '@/lib/types'
+import CrisisBanner from '@/components/crisis-banner'
 
 async function getPatientDashboard(supabase: ReturnType<typeof createClient>, userId: string) {
   const [submissions, moods, assignments] = await Promise.all([
@@ -101,6 +102,7 @@ export default async function DashboardPage() {
 
     return (
       <div className="p-8 max-w-6xl">
+        <CrisisBanner lang={lang} />
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">
             {t('dashboard.welcome', lang)}, {firstName}
