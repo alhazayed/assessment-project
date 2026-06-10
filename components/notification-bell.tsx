@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Bell, X, CheckCheck, AlertTriangle, ClipboardList, MessageSquare, Info } from 'lucide-react'
 import Link from 'next/link'
@@ -38,6 +38,8 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<Notification[]>([])
   const panelRef = useRef<HTMLDivElement>(null)
+  const bellButtonRef = useRef<HTMLButtonElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
   const isAr = lang === 'ar'
 
   const unread = items.filter(n => !n.read_at).length
@@ -66,6 +68,15 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
     return () => { if (channel) supabase.removeChannel(channel) }
   }, [])
 
+  // Focus the close button when panel opens; return focus to bell when it closes
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => closeButtonRef.current?.focus(), 50)
+    } else {
+      bellButtonRef.current?.focus()
+    }
+  }, [open])
+
   // Close panel on outside click
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -76,6 +87,23 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
     if (open) document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [open])
+
+  // Trap focus inside panel while open
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') { setOpen(false); return }
+    if (e.key !== 'Tab' || !panelRef.current) return
+    const focusable = Array.from(
+      panelRef.current.querySelectorAll<HTMLElement>('button, a, [tabindex="0"]')
+    ).filter(el => !el.hasAttribute('disabled'))
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus() }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
+  }, [])
 
   async function loadNotifications() {
     const res = await fetch('/api/notifications')
@@ -108,9 +136,12 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
   return (
     <div className="relative" ref={panelRef}>
       <button
+        ref={bellButtonRef}
         onClick={() => setOpen(v => !v)}
         className="relative flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
         aria-label="Notifications"
+        aria-haspopup="dialog"
+        aria-expanded={open}
       >
         <Bell className="w-4 h-4" />
         {unread > 0 && (
@@ -122,7 +153,13 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
       </button>
 
       {open && (
-        <div className={`absolute ${isAr ? 'left-0' : 'right-0'} top-10 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden`}>
+        <div
+          className={`absolute ${isAr ? 'left-0' : 'right-0'} top-10 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden`}
+          role="dialog"
+          aria-modal="true"
+          aria-label={isAr ? 'الإشعارات' : 'Notifications'}
+          onKeyDown={handleKeyDown}
+        >
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <p className="text-sm font-semibold text-gray-900">{t('notif.title', lang)}</p>
             <div className="flex items-center gap-2">
@@ -132,7 +169,7 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
                   {t('notif.mark_all', lang)}
                 </button>
               )}
-              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button ref={closeButtonRef} onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600" aria-label={isAr ? 'إغلاق' : 'Close notifications'}>
                 <X className="w-4 h-4" />
               </button>
             </div>

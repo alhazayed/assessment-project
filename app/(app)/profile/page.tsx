@@ -159,6 +159,14 @@ export default function ProfilePage() {
       })
     }
 
+    // Audit log — fire-and-forget
+    supabase.from('audit_log').insert({
+      actor_id: user.id,
+      action: 'profile_updated',
+      target_type: 'profile',
+      target_id: user.id,
+    }).then(() => {})
+
     setSaved(true)
     setSaving(false)
     setTimeout(() => setSaved(false), 3000)
@@ -172,6 +180,12 @@ export default function ProfilePage() {
     await supabase.from('patient_profiles').upsert({ id: user.id, consent_given_at: now })
     setConsentGivenAt(now)
     setGivingConsent(false)
+    supabase.from('audit_log').insert({
+      actor_id: user.id,
+      action: 'consent_given',
+      target_type: 'patient_profile',
+      target_id: user.id,
+    }).then(() => {})
   }
 
   const isAr = lang === 'ar'

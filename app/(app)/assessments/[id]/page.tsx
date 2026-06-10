@@ -126,10 +126,7 @@ export default function TakeAssessmentPage() {
     setSubmitting(true)
     setError(null)
 
-    const totalScore = Object.values(answers).reduce((sum, a) => sum + a.value, 0)
-    const band = calcBand(definition.scoring_logic, totalScore)
-    const highRisk = definition.high_risk_threshold !== null && totalScore >= definition.high_risk_threshold
-
+    // IPIP-120 domain breakdown is display-only — compute on client before submit
     if (definition.code === 'IPIP120') {
       const scores: Record<string, number> = { N: 0, E: 0, O: 0, A: 0, C: 0 }
       items.forEach(item => {
@@ -140,52 +137,60 @@ export default function TakeAssessmentPage() {
     }
 
     const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const { data: submission, error: subError } = await supabase
-        .from('assessment_submissions')
-        .insert({
-          patient_id: user.id,
-          definition_id: definition.id,
-          total_score: totalScore,
-          severity_band: band?.severity_en || 'Unknown',
-          high_risk_flag: highRisk,
-          is_self_initiated: true,
-        })
-        .select()
-        .single()
 
-      if (subError || !submission) {
+    if (user) {
+      // Server-side scoring: send raw item responses, let server validate + calculate
+      const responsePayload = items
+        .filter(item => answers[item.id] !== undefined)
+        .map(item => ({ item_id: item.id, value: answers[item.id].value }))
+
+      const res = await fetch('/api/submit-assessment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ definition_id: definition.id, responses: responsePayload }),
+      })
+
+      if (!res.ok) {
         setError(t('assessment.save_error', lang))
         setSubmitting(false)
         return
       }
-      const responses = items.map(item => {
-        const ans = answers[item.id]
-        return {
-          submission_id: submission.id,
-          item_id: item.id,
-          response_value: ans?.value ?? 0,
-          response_label_en: ans?.label_en ?? '',
-          response_label_ar: ans?.label_ar ?? '',
-        }
-      })
-      await supabase.from('assessment_responses').insert(responses)
 
-      // Notify admins via server endpoint (admin client bypasses RLS for cross-user inserts)
-      if (highRisk) {
+      const data = await res.json()
+
+      // Notify admins if high-risk (fire-and-forget)
+      if (data.high_risk) {
         fetch('/api/notify-high-risk', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            submission_id: submission.id,
+            submission_id: data.submission_id,
             assessment_name: definition.name_en,
             assessment_name_ar: definition.name_ar,
           }),
-        }).catch(() => {}) // Fire-and-forget — don't block result display
+        }).catch(() => {})
       }
+
+      // Clear saved progress on successful submission
+      try { localStorage.removeItem(storageKey) } catch {}
+
+      setResult({
+        score: data.score,
+        band_en: data.band_en,
+        band_ar: data.band_ar,
+        high_risk: data.high_risk,
+      })
+      setSubmitted(true)
+      setSubmitting(false)
+      await loadRelated(definition.code)
+      return
     }
 
-    // Clear saved progress on successful submission
+    // Guest path: score client-side for display only (not saved)
+    const totalScore = Object.values(answers).reduce((sum, a) => sum + a.value, 0)
+    const band = calcBand(definition.scoring_logic, totalScore)
+    const highRisk = definition.high_risk_threshold !== null && totalScore >= definition.high_risk_threshold
+
     try { localStorage.removeItem(storageKey) } catch {}
 
     setResult({

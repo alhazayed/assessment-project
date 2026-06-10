@@ -463,6 +463,10 @@ const dict = {
     'admin.results.col.date': 'Date',
     'admin.results.empty': 'No results match filters',
     'admin.results.high_risk': 'High risk',
+    'admin.results.showing': 'Showing',
+    'admin.results.of': 'of',
+    'admin.results.prev': 'Previous',
+    'admin.results.next': 'Next',
 
     // Admin — analytics
     'admin.analytics.title': 'Analytics & Statistics',
@@ -1163,6 +1167,10 @@ const dict = {
     'admin.results.col.date': 'التاريخ',
     'admin.results.empty': 'لا توجد نتائج تطابق الفلاتر',
     'admin.results.high_risk': 'خطورة عالية',
+    'admin.results.showing': 'عرض',
+    'admin.results.of': 'من',
+    'admin.results.prev': 'السابق',
+    'admin.results.next': 'التالي',
 
     // Admin — analytics
     'admin.analytics.title': 'التحليلات والإحصاءات',

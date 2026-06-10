@@ -35,6 +35,8 @@ function severityColor(band: string) {
   return 'bg-red-100 text-red-700'
 }
 
+type Pagination = { page: number; pageSize: number; total: number; totalPages: number }
+
 export default function AdminResultsPage() {
   const lang = useLang()
   const [results, setResults] = useState<Submission[]>([])
@@ -43,6 +45,8 @@ export default function AdminResultsPage() {
   const [severity, setSeverity] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState<Pagination | null>(null)
   const [assessmentList, setAssessmentList] = useState<{ code: string; name: string }[]>([])
   const [exporting, setExporting] = useState<string | null>(null)
   const [sortKey, setSortKey] = useState<'submitted_at' | 'total_score'>('submitted_at')
@@ -55,12 +59,17 @@ export default function AdminResultsPage() {
     if (severity) params.set('severity', severity)
     if (from) params.set('from', from)
     if (to) params.set('to', to)
+    params.set('page', String(page))
     const res = await fetch(`/api/admin/results?${params}`)
     const data = await res.json()
     setResults(data.results || [])
     if (data.assessments) setAssessmentList(data.assessments)
+    if (data.pagination) setPagination(data.pagination)
     setLoading(false)
-  }, [assessment, severity, from, to])
+  }, [assessment, severity, from, to, page])
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setPage(1) }, [assessment, severity, from, to])
 
   useEffect(() => { load() }, [load])
 
@@ -252,6 +261,34 @@ export default function AdminResultsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-gray-500">
+            {t('admin.results.showing', lang)} {((pagination.page - 1) * pagination.pageSize) + 1}–{Math.min(pagination.page * pagination.pageSize, pagination.total)} {t('admin.results.of', lang)} {pagination.total.toLocaleString()}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={pagination.page <= 1 || loading}
+              className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              ← {t('admin.results.prev', lang)}
+            </button>
+            <span className="text-sm text-gray-600 px-2">
+              {pagination.page} / {pagination.totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+              disabled={pagination.page >= pagination.totalPages || loading}
+              className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {t('admin.results.next', lang)} →
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
