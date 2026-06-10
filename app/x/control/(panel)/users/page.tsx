@@ -21,6 +21,7 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState('')
   const [updating, setUpdating] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
+  const [msgError, setMsgError] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -34,18 +35,26 @@ export default function AdminUsersPage() {
 
   async function toggleActive(id: string, current: boolean) {
     setUpdating(id)
-    await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_active: !current }) })
-    setMsg(t(!current ? 'admin.users.activated' : 'admin.users.deactivated', lang))
-    setTimeout(() => setMsg(''), 3000)
+    const res = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_active: !current }) })
+    setMsgError(!res.ok)
+    setMsg(res.ok ? t(!current ? 'admin.users.activated' : 'admin.users.deactivated', lang) : 'Failed to update user')
+    setTimeout(() => setMsg(''), 4000)
     load()
     setUpdating(null)
   }
 
   async function changeRole(id: string, role: string) {
     setUpdating(id)
-    await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, role }) })
-    setMsg(t('admin.users.role_updated', lang))
-    setTimeout(() => setMsg(''), 3000)
+    const res = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, role }) })
+    if (res.ok) {
+      setMsgError(false)
+      setMsg(t('admin.users.role_updated', lang))
+    } else {
+      const data = await res.json().catch(() => ({}))
+      setMsgError(true)
+      setMsg(data.error || 'Failed to update role')
+    }
+    setTimeout(() => setMsg(''), 4000)
     load()
     setUpdating(null)
   }
@@ -65,7 +74,9 @@ export default function AdminUsersPage() {
         <Users className="w-6 h-6 text-gray-400" />
       </div>
 
-      {msg && <div className="mb-4 p-3 bg-green-50 border border-green-200 text-sm text-green-700 rounded-lg">{msg}</div>}
+      {msg && (
+        <div className={`mb-4 p-3 text-sm rounded-lg border ${msgError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>{msg}</div>
+      )}
 
       <div className="flex gap-3 mb-6">
         <div className="relative flex-1">

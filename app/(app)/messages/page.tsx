@@ -129,18 +129,20 @@ export default function MessagesPage() {
       is_urgent: isUrgent,
     })
 
-    // Notify the recipient for every message
+    // Notify recipient via server endpoint (admin client bypasses RLS for cross-user notification inserts)
     const recipientId = profile.role === 'patient' ? clinicianId : patientId
     const senderName = lang === 'ar' && profile.full_name_ar ? profile.full_name_ar : profile.full_name_en
-    await supabase.from('notifications').insert({
-      user_id: recipientId,
-      type: 'message',
-      title_en: isUrgent ? '⚠ Urgent message received' : 'New message',
-      title_ar: isUrgent ? '⚠ رسالة عاجلة' : 'رسالة جديدة',
-      body_en: `${senderName}: ${newMessage.trim().slice(0, 80)}`,
-      body_ar: `${senderName}: ${newMessage.trim().slice(0, 80)}`,
-      link: '/messages',
-    })
+    fetch('/api/notify-message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        recipient_id: recipientId,
+        title_en: isUrgent ? '⚠ Urgent message received' : 'New message',
+        title_ar: isUrgent ? '⚠ رسالة عاجلة' : 'رسالة جديدة',
+        body_en: `${senderName}: ${newMessage.trim().slice(0, 80)}`,
+        body_ar: `${senderName}: ${newMessage.trim().slice(0, 80)}`,
+      }),
+    }).catch(() => {})
 
     setNewMessage('')
     setIsUrgent(false)

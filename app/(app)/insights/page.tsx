@@ -7,7 +7,7 @@ import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
 type MoodLog = {
-  logged_at: string
+  log_date: string
   mood_score: number
   anxiety_score: number
   sleep_hours: number | null
@@ -34,7 +34,7 @@ function moodColor(score: number) {
 
 function calcStreak(logs: MoodLog[]): number {
   if (!logs.length) return 0
-  const dates = new Set(logs.map(l => l.logged_at.split('T')[0]))
+  const dates = new Set(logs.map(l => l.log_date))
   let streak = 0
   const today = new Date()
   for (let i = 0; i < 365; i++) {
@@ -73,8 +73,8 @@ export default function InsightsPage() {
 
       const since90 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
       const [moodRes, scoreRes] = await Promise.all([
-        supabase.from('mood_logs').select('logged_at, mood_score, anxiety_score, sleep_hours')
-          .eq('patient_id', user.id).gte('logged_at', since90).order('logged_at'),
+        supabase.from('mood_logs').select('log_date, mood_score, anxiety_score, sleep_hours')
+          .eq('patient_id', user.id).gte('log_date', since90.split('T')[0]).order('log_date'),
         supabase.from('assessment_submissions')
           .select('submitted_at, total_score, severity_band, assessment_definitions(name_en, name_ar, code)')
           .eq('patient_id', user.id).order('submitted_at').limit(100),
@@ -96,7 +96,7 @@ export default function InsightsPage() {
   const streak = calcStreak(moodLogs)
   const last30 = getLast30Days()
   const moodByDay = Object.fromEntries(
-    moodLogs.map(l => [l.logged_at.split('T')[0], l.mood_score])
+    moodLogs.map(l => [l.log_date, l.mood_score])
   )
 
   // Available assessments with enough data for a trend line
@@ -287,7 +287,7 @@ export default function InsightsPage() {
                   },
                   {
                     label: t('insights.days_logged', lang),
-                    value: new Set(moodLogs.map(l => l.logged_at.split('T')[0])).size,
+                    value: new Set(moodLogs.map(l => l.log_date)).size,
                     unit: '',
                     color: '#12273C',
                   },
