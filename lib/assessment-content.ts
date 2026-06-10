@@ -1718,26 +1718,45 @@ export const ASSESSMENT_CONTENT: Record<string, AssessmentContent> = {
     relatedCodes: ['LSAS', 'GAD7', 'PSWQ', 'ASI3', 'PCL5'],
   },
 
+  IPIP120: {
+    overview: 'The IPIP-NEO-120 is a 120-item public-domain personality inventory measuring the five major personality domains — Neuroticism, Extraversion, Openness to Experience, Agreeableness, and Conscientiousness — and 30 specific facets (six per domain). Developed from the International Personality Item Pool (IPIP) by Goldberg et al. as a free alternative to the commercial NEO-PI-R, the IPIP-NEO shows comparable validity and reliability. Each domain captures a broad dimension of personality; the 30 facets provide the granular picture. Domain scores range from 24 to 120; the midpoint is 72. Results are descriptive, not diagnostic — there is no "good" or "bad" personality profile.',
+    measuresDomain: 'Five major personality domains (OCEAN) and 30 specific personality facets',
+    bands: {},
+    relatedCodes: ['BFI44', 'RSES', 'PSS10', 'SWLS'],
+  },
+
   BFI44: {
-    overview: 'The Big Five Inventory (BFI-44) is a 44-item personality scale developed by John, Donahue & Kentle (1991). It measures the five major personality dimensions — Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism (OCEAN). Unlike clinical scales, the BFI-44 is descriptive rather than diagnostic; no score range is inherently "good" or "bad".',
-    measuresDomain: 'Stable personality traits across five major dimensions',
+    overview: 'The Big Five Inventory (BFI-44; John, Donahue & Kentle, 1991) measures the five major personality dimensions — Openness to Experience, Conscientiousness, Extraversion, Agreeableness, and Neuroticism (OCEAN). Unlike clinical scales, the BFI-44 is descriptive rather than diagnostic; no profile is inherently "good" or "bad". The five factors are among the most replicated findings in personality psychology, showing cross-cultural stability and consistent associations with life outcomes. Subscale scores are more informative than the total, which reflects the overall level of engagement, organisation, and openness vs. emotional reactivity and introversion.',
+    measuresDomain: 'Five stable personality dimensions: Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism (OCEAN)',
     bands: {
-      'Low range': {
-        explanation: 'A low overall BFI-44 score reflects lower Openness, Extraversion, Agreeableness, and/or Conscientiousness, and/or higher Neuroticism. Individual subscale scores are far more meaningful than the total for interpretation.',
-        whatThisMeans: ['Personality traits are at the lower end across several dimensions', 'Individual subscale scores are more meaningful than the total', 'This profile may reflect introversion, practicality, emotional sensitivity, or flexibility'],
-        recommendations: ['Review your individual subscale scores for a nuanced understanding', 'Personality traits are relatively stable but can be developed through intentional practice', 'Consider working with a psychologist or coach to explore how your personality profile interacts with your goals'],
+      'Reserved & Structured Profile': {
+        explanation: 'This profile (total score 44–109) reflects a personality orientation that tends toward introversion, practicality, emotional sensitivity, and/or more structured or conventional approaches. Individual subscale patterns tell the real story — for example, high Conscientiousness with low Extraversion describes many highly effective and disciplined individuals who prefer working independently.',
+        whatThisMeans: ['You likely prefer familiar environments, routine, and depth over breadth in social connection', 'Practicality and conscientiousness may be strengths even with a lower total score', 'High Neuroticism within this profile indicates emotional sensitivity that can be both a source of depth and of distress', 'This is a common and functional personality profile — the total score does not indicate a problem'],
+        recommendations: ['Review your individual OCEAN subscale scores for a more meaningful picture', 'High introversion paired with high Conscientiousness predicts strong performance in focused, independent work', 'If Neuroticism is elevated, evidence-based approaches (CBT, mindfulness) can help manage emotional reactivity', 'The full IPIP-120 provides richer domain-level detail if you want to explore your personality further'],
         relatedDisorders: [],
       },
-      'Average range': {
-        explanation: 'An average BFI-44 score reflects a balanced personality profile. Most people score in this range with moderate levels of each trait.',
-        whatThisMeans: ['A broadly balanced personality profile is indicated', 'You have a mix of strengths across the five personality dimensions', 'Individual subscale patterns will reveal more specific insights'],
-        recommendations: ['Explore your subscale profile to identify your strongest traits', 'High Conscientiousness and Agreeableness scores are linked to career and relationship success', 'Consider how your personality profile aligns with your career and relationship choices'],
+      'Moderate Trait Expression': {
+        explanation: 'A total score of 110–132 reflects moderate expression across the Big Five traits. You show a mix of introversion and extraversion, emotional stability and sensitivity, and a blend of open and conventional tendencies. Moderate profiles are the most common in population samples.',
+        whatThisMeans: ['You adapt reasonably well across social, work, and personal contexts', 'Extreme tendencies in any single dimension are unlikely — your profile is relatively balanced', 'Strengths and challenges depend on which specific traits are higher vs. lower within this range'],
+        recommendations: ['Explore your individual subscale scores to identify your strongest and lowest traits', 'Moderate Conscientiousness suggests there may be room to strengthen organisation, goal-setting habits, or follow-through', 'Moderate Agreeableness indicates you can be both collaborative and assertive depending on context — a valuable combination'],
         relatedDisorders: [],
       },
-      'High range': {
-        explanation: 'A high overall BFI-44 score typically reflects high Openness, Conscientiousness, Extraversion, and/or Agreeableness — associated with intellectual curiosity, organisational strength, and social engagement.',
-        whatThisMeans: ['Your personality profile scores are at the higher end across multiple dimensions', 'High Openness, Extraversion, and Agreeableness are associated with creativity and warm relationships', 'High Conscientiousness is consistently linked to career achievement and health behaviours'],
-        recommendations: ['Leverage your strengths — high Openness suits creative and intellectually demanding roles', 'High Agreeableness may benefit from assertiveness development', 'Explore the IPIP-120 for a deeper personality profile with domain-level breakdowns'],
+      'Balanced Personality Profile': {
+        explanation: 'A total score of 133–154 reflects broadly balanced personality expression. You show meaningful engagement across multiple dimensions — likely a combination of openness, social engagement, warmth, and organisation — while Neuroticism is moderate or below average. This profile is associated with adaptability and wellbeing.',
+        whatThisMeans: ['You engage positively across social and intellectual domains with moderate emotional stability', 'A balance of openness and conscientiousness supports both creative thinking and follow-through', 'Agreeableness at this level supports healthy, cooperative relationships without necessarily being conflict-avoidant'],
+        recommendations: ['Identify your two or three highest subscales — these are your personality strengths to leverage', 'Balanced profiles tend to adapt well across roles; consider how your particular trait combination fits your career and relationships', 'High Openness + Conscientiousness is particularly associated with creativity paired with the discipline to execute'],
+        relatedDisorders: [],
+      },
+      'Expressive & Engaged Profile': {
+        explanation: 'A total score of 155–176 reflects high expression across the Big Five dimensions. You likely show above-average Openness, Extraversion, Agreeableness, and Conscientiousness, with lower Neuroticism. This profile is associated with intellectual curiosity, social energy, warmth, and organised goal-pursuit.',
+        whatThisMeans: ['You tend to be socially engaged, intellectually curious, warm, and organised', 'This combination is associated with leadership effectiveness, relationship satisfaction, and creative achievement', 'High Extraversion with high Agreeableness predicts strong interpersonal skills and team contribution', 'Very high Openness may lead to difficulty finishing projects — balancing novelty-seeking with follow-through is useful'],
+        recommendations: ['Leverage high Openness and Conscientiousness in creative, intellectually demanding roles', 'High Agreeableness may sometimes lead to over-accommodating others — assertiveness skills can complement this strength', 'If Extraversion is very high, ensure you build in recovery time and solitude to prevent overstimulation'],
+        relatedDisorders: [],
+      },
+      'Highly Active & Open Profile': {
+        explanation: 'A total score of 177–220 reflects very high expression across most Big Five dimensions — particularly Openness, Extraversion, Agreeableness, and Conscientiousness — with minimal Neuroticism. This is the highest-engagement personality profile and is associated with intellectual vitality, social drive, and organisational strength.',
+        whatThisMeans: ['You are likely highly socially engaged, intellectually curious, warm, and achievement-oriented', 'This profile is found more often in leadership, entrepreneurial, creative, and helping professions', 'Very high Openness can mean breadth of interests over depth in any single area — intentional focus is valuable', 'Very high Agreeableness may sometimes conflict with assertiveness and boundary-setting needs'],
+        recommendations: ['Identify the 1–2 subscales where your score is highest and explore careers and roles that leverage them most directly', 'Very high Extraversion and Openness with high Conscientiousness is characteristic of highly effective leaders and innovators', 'Watch for the "too much of a good thing" effect: very high Agreeableness can lead to difficulty saying no; very high Openness can lead to scattered attention', 'Explore the IPIP-120 for a detailed 30-facet breakdown of your personality'],
         relatedDisorders: [],
       },
     },

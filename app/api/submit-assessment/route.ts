@@ -19,7 +19,8 @@ interface SubmitBody {
   responses: Array<{ item_id: string; value: number }>
 }
 
-function calcBand(scoringLogic: ScoringBand[], score: number): ScoringBand {
+function calcBand(scoringLogic: ScoringBand[], score: number): ScoringBand | null {
+  if (!scoringLogic || scoringLogic.length === 0) return null
   for (const band of scoringLogic) {
     if (score >= band.min && score <= band.max) return band
   }
@@ -99,7 +100,7 @@ export async function POST(request: Request) {
         patient_id: user.id,
         definition_id,
         total_score: totalScore,
-        severity_band: band.severity_en,
+        severity_band: band?.severity_en ?? null,
         high_risk_flag: highRisk,
         is_self_initiated: true,
       })
@@ -127,14 +128,14 @@ export async function POST(request: Request) {
       action: 'assessment_submitted',
       target_type: 'assessment_submission',
       target_id: submission.id,
-      reason: `${def.name_en} — score ${totalScore} (${band.severity_en})${highRisk ? ' HIGH RISK' : ''}`,
+      reason: `${def.name_en} — score ${totalScore}${band ? ` (${band.severity_en})` : ''}${highRisk ? ' HIGH RISK' : ''}`,
     }).then(() => {}) // fire-and-forget; don't block response
 
     return NextResponse.json({
       submission_id: submission.id,
       score: totalScore,
-      band_en: band.severity_en,
-      band_ar: band.severity_ar,
+      band_en: band?.severity_en ?? null,
+      band_ar: band?.severity_ar ?? null,
       high_risk: highRisk,
     })
   } catch (err) {
