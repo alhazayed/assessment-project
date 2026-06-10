@@ -1623,6 +1623,365 @@ export const ASSESSMENT_CONTENT: Record<string, AssessmentContent> = {
     },
     relatedCodes: ['GAD7', 'DASS21', 'RSES', 'PHQ9', 'OCIR'],
   },
+
+  CESD: {
+    overview: 'The CES-D (Center for Epidemiologic Studies Depression Scale) is a 20-item public domain instrument developed by Radloff (1977). It is one of the most widely used depression screening tools in population research, with a clinical threshold of ≥16 yielding sensitivity of ~91% and specificity of 72% for major depression.',
+    measuresDomain: 'Frequency of depressive symptoms experienced in the past week',
+    bands: {
+      'No significant symptoms': {
+        explanation: 'A score below 10 reflects minimal or no depressive symptomatology. Any mood fluctuations at this level are within the normal range of everyday emotional experience.',
+        whatThisMeans: ['No clinically significant depressive episode is indicated', 'Mood fluctuations at this level are typical and adaptive', 'Your emotional functioning appears to be within the healthy range'],
+        recommendations: ['Maintain current healthy habits — regular exercise, sleep, and social connection are protective factors', 'Consider rescreening during periods of significant life stress'],
+        relatedDisorders: [],
+      },
+      'Mild depressive symptoms': {
+        explanation: 'Scores of 10–15 indicate subthreshold depressive symptoms. Research shows that even mild depression is associated with meaningful functional impairment and elevated risk for progression to a full depressive episode if left unaddressed.',
+        whatThisMeans: ['Some depressive features are present but below the clinical threshold', 'Low mood, fatigue, or reduced enjoyment may be mildly affecting daily life', 'Watchful waiting with lifestyle intervention is the recommended first step'],
+        recommendations: ['Structured exercise has meta-analytic support equivalent to antidepressants for mild depression', 'Behavioural activation — scheduling rewarding activities — is evidence-based at this level', 'Consider a follow-up screen in 4–6 weeks', 'Speak to a GP or counsellor if symptoms persist for more than 2 weeks'],
+        relatedDisorders: [
+          { name: 'Adjustment Disorder with Depressed Mood', description: 'Stress-related depressive symptoms arising after an identifiable stressor.' },
+          { name: 'Persistent Depressive Disorder (Dysthymia)', description: 'A chronic low-grade depressive condition often missed because it feels like "just how I am".' },
+        ],
+      },
+      'Moderate depressive symptoms': {
+        explanation: 'A CES-D score of 16–23 crosses the validated clinical threshold for probable depression. Scores in this range are associated with significant impairment in work, relationships, and daily activities.',
+        whatThisMeans: ['Your score meets the screening threshold for probable major depressive disorder', 'Functional impairment in daily life, concentration, and social engagement is likely', 'Professional evaluation is strongly recommended'],
+        recommendations: ['Seek evaluation from a GP, psychiatrist, or licensed psychologist', 'Cognitive Behavioural Therapy (CBT) has a strong evidence base for moderate depression', 'Antidepressant medication (SSRIs) may be considered in consultation with a clinician', 'Also complete the PHQ-9 for a second clinical perspective on severity'],
+        relatedDisorders: [
+          { name: 'Major Depressive Disorder (MDD)', description: 'Characterised by persistent low mood, anhedonia, and related symptoms causing significant impairment.' },
+          { name: 'Bipolar Disorder', description: 'Depressive episodes can occur within Bipolar I or II — important to screen for manic history.' },
+          { name: 'Anxiety Disorders', description: 'Comorbid anxiety is present in up to 60% of people with MDD — consider the GAD-7.' },
+        ],
+      },
+      'Severe depressive symptoms': {
+        explanation: 'Scores of 24 or above reflect severe and likely pervasive depressive symptoms requiring urgent clinical attention.',
+        whatThisMeans: ['A severe depressive episode is strongly indicated', 'Functional impairment is expected across multiple life domains', 'Urgent clinical evaluation is recommended — do not attempt to manage this alone'],
+        recommendations: ['Seek immediate mental health care — contact a crisis line or emergency services if you are in danger', 'Combined treatment (psychotherapy + medication) is superior to either alone at this severity', 'Safety assessment (suicidal ideation) should be conducted by a clinician', 'Contact info@vwelfare.com if you need help navigating mental health resources'],
+        relatedDisorders: [
+          { name: 'Severe Major Depressive Disorder', description: 'A severe episode with broad functional collapse, potentially including suicidal ideation.' },
+          { name: 'Bipolar Disorder', description: 'Severe depressive episodes can be the presenting phase of Bipolar I or II.' },
+          { name: 'PTSD', description: 'Trauma history should be explored as a comorbid or contributing factor.' },
+        ],
+      },
+    },
+    relatedCodes: ['PHQ9', 'DASS21', 'GAD7', 'ISI', 'MDQ'],
+  },
+
+  SPIN: {
+    overview: 'The Social Phobia Inventory (SPIN) is a 17-item validated self-report scale developed by Connor et al. (2000) at Duke University. It measures fear, avoidance, and physiological distress in social situations, with sensitivity of 79% and specificity of 90% at the clinical cutoff of ≥19.',
+    measuresDomain: 'Social anxiety symptoms (fear, avoidance, physiological arousal) in the past week',
+    bands: {
+      'None/Minimal social anxiety': {
+        explanation: 'A SPIN score of 0–20 indicates no clinically significant social anxiety. Social nervousness in novel situations is normal and adaptive at this level.',
+        whatThisMeans: ['No clinically significant social anxiety disorder is indicated', 'Some social nervousness is entirely normal and adaptive', 'Your social functioning appears to be in the healthy range'],
+        recommendations: ['No clinical action is required at this level', 'Mindfulness practice can further enhance comfort in social situations if desired'],
+        relatedDisorders: [],
+      },
+      'Mild social anxiety': {
+        explanation: 'Scores of 21–30 reflect mild but clinically meaningful social anxiety. Avoidance and distress in social situations may cause minor but noticeable interference.',
+        whatThisMeans: ['Mild social anxiety features are present that may limit your participation in some situations', 'Social avoidance or distress is present but not yet severely impairing', 'Self-help approaches are often effective at this level'],
+        recommendations: ['Gradual exposure to feared social situations is the evidence-based first step', 'Self-help CBT resources targeting social anxiety may be helpful', 'Consider a single session with a therapist for skills introduction if avoidance is increasing'],
+        relatedDisorders: [
+          { name: 'Social Anxiety Disorder', description: 'A persistent pattern of intense fear and avoidance of social situations.' },
+        ],
+      },
+      'Moderate social anxiety': {
+        explanation: 'A SPIN score of 31–40 indicates moderate social anxiety disorder features causing significant interference in social, occupational, or academic domains.',
+        whatThisMeans: ['Moderate social anxiety disorder features are present', 'Avoidance of social situations is likely affecting your career, relationships, or daily activities', 'Professional support is recommended'],
+        recommendations: ['CBT with exposure components has the strongest evidence base for social anxiety', 'Group CBT is particularly effective and provides direct social exposure practice', 'SSRIs (sertraline, paroxetine) have strong evidence for SAD — discuss with a clinician'],
+        relatedDisorders: [
+          { name: 'Social Anxiety Disorder (SAD)', description: 'Meets the clinical threshold for SAD, previously called Social Phobia.' },
+          { name: 'Generalised Anxiety Disorder', description: 'Social anxiety often co-occurs with GAD — consider the GAD-7.' },
+        ],
+      },
+      'Severe social anxiety': {
+        explanation: 'Scores of 41–55 indicate severe social anxiety disorder. Significant avoidance, fear, and physiological distress are causing substantial impairment in multiple life areas.',
+        whatThisMeans: ['Severe social anxiety disorder features are indicated', 'Social avoidance is likely severely limiting your life opportunities', 'Urgent professional evaluation is recommended'],
+        recommendations: ['Seek evaluation from a clinical psychologist or psychiatrist specialising in anxiety disorders', 'CBT + SSRI combination therapy is most effective at this severity', 'Avoid continuing to accommodate avoidance — each avoidance episode reinforces the fear'],
+        relatedDisorders: [
+          { name: 'Social Anxiety Disorder — Severe', description: 'Pervasive social fear causing substantial impairment.' },
+          { name: 'Panic Disorder', description: 'Panic attacks in social situations often co-occur — consider the PDSS.' },
+          { name: 'Depression', description: 'Social isolation from SAD frequently leads to secondary depression.' },
+        ],
+      },
+      'Very severe social anxiety': {
+        explanation: 'A score of 56 or above reflects very severe social phobia with pervasive and debilitating fear and avoidance of nearly all social situations.',
+        whatThisMeans: ['Very severe social anxiety disorder is indicated', 'Social functioning is likely severely compromised across all domains', 'Urgent specialist referral is required'],
+        recommendations: ['Seek urgent evaluation from a psychiatrist or specialist anxiety clinic', 'Intensive outpatient CBT programmes may be indicated', 'Combined pharmacological and psychological treatment is the standard of care at this level'],
+        relatedDisorders: [
+          { name: 'Social Anxiety Disorder — Very Severe', description: 'Near-complete social avoidance causing life-wide impairment.' },
+          { name: 'Agoraphobia', description: 'Avoidance can extend to public places when social fear is this pervasive.' },
+          { name: 'Major Depressive Disorder', description: 'Secondary depression due to chronic isolation is common at this severity.' },
+        ],
+      },
+    },
+    relatedCodes: ['LSAS', 'GAD7', 'PSWQ', 'ASI3', 'PCL5'],
+  },
+
+  BFI44: {
+    overview: 'The Big Five Inventory (BFI-44) is a 44-item personality scale developed by John, Donahue & Kentle (1991). It measures the five major personality dimensions — Openness, Conscientiousness, Extraversion, Agreeableness, and Neuroticism (OCEAN). Unlike clinical scales, the BFI-44 is descriptive rather than diagnostic; no score range is inherently "good" or "bad".',
+    measuresDomain: 'Stable personality traits across five major dimensions',
+    bands: {
+      'Low range': {
+        explanation: 'A low overall BFI-44 score reflects lower Openness, Extraversion, Agreeableness, and/or Conscientiousness, and/or higher Neuroticism. Individual subscale scores are far more meaningful than the total for interpretation.',
+        whatThisMeans: ['Personality traits are at the lower end across several dimensions', 'Individual subscale scores are more meaningful than the total', 'This profile may reflect introversion, practicality, emotional sensitivity, or flexibility'],
+        recommendations: ['Review your individual subscale scores for a nuanced understanding', 'Personality traits are relatively stable but can be developed through intentional practice', 'Consider working with a psychologist or coach to explore how your personality profile interacts with your goals'],
+        relatedDisorders: [],
+      },
+      'Average range': {
+        explanation: 'An average BFI-44 score reflects a balanced personality profile. Most people score in this range with moderate levels of each trait.',
+        whatThisMeans: ['A broadly balanced personality profile is indicated', 'You have a mix of strengths across the five personality dimensions', 'Individual subscale patterns will reveal more specific insights'],
+        recommendations: ['Explore your subscale profile to identify your strongest traits', 'High Conscientiousness and Agreeableness scores are linked to career and relationship success', 'Consider how your personality profile aligns with your career and relationship choices'],
+        relatedDisorders: [],
+      },
+      'High range': {
+        explanation: 'A high overall BFI-44 score typically reflects high Openness, Conscientiousness, Extraversion, and/or Agreeableness — associated with intellectual curiosity, organisational strength, and social engagement.',
+        whatThisMeans: ['Your personality profile scores are at the higher end across multiple dimensions', 'High Openness, Extraversion, and Agreeableness are associated with creativity and warm relationships', 'High Conscientiousness is consistently linked to career achievement and health behaviours'],
+        recommendations: ['Leverage your strengths — high Openness suits creative and intellectually demanding roles', 'High Agreeableness may benefit from assertiveness development', 'Explore the IPIP-120 for a deeper personality profile with domain-level breakdowns'],
+        relatedDisorders: [],
+      },
+    },
+    relatedCodes: ['IPIP120', 'RSES', 'PSS10'],
+  },
+
+  PSWQ: {
+    overview: 'The Penn State Worry Questionnaire (PSWQ) is a 16-item validated scale developed by Meyer, Miller, Metzger & Borkovec (1990) measuring the trait of pathological worry — uncontrollable, excessive worry. It is the gold-standard self-report measure of the worry component of GAD, with high internal consistency (α ≈ 0.94).',
+    measuresDomain: 'Trait-level tendency to worry excessively and uncontrollably',
+    bands: {
+      'Low pathological worry': {
+        explanation: 'A PSWQ score of 16–35 indicates low pathological worry. Worry at this level is adaptive, purposeful, and controllable — a normal part of problem-solving.',
+        whatThisMeans: ['Your worry is within the normal, adaptive range', 'You are generally able to dismiss worrisome thoughts when they are not productive', 'No clinical intervention is indicated for worry specifically'],
+        recommendations: ['Continue current stress-management practices', 'Mindfulness practices can further develop the ability to relate to thoughts without fusing with them'],
+        relatedDisorders: [],
+      },
+      'Moderate worry': {
+        explanation: 'Scores of 36–52 reflect moderate pathological worry — beginning to feel less controllable with some interference in daily functioning, sleep, or concentration.',
+        whatThisMeans: ['Worry is becoming more difficult to control and may be affecting your daily life', 'You may find yourself worrying about multiple domains simultaneously', 'Preventive action is recommended to avoid escalation'],
+        recommendations: ['Worry postponement techniques (scheduling a "worry time") are evidence-based at this level', 'Progressive Muscle Relaxation and deep breathing can reduce the physiological component of worry', 'Self-help CBT workbooks for GAD/worry are effective for this severity'],
+        relatedDisorders: [
+          { name: 'Generalised Anxiety Disorder (GAD)', description: 'Excessive uncontrollable worry about multiple domains — the core feature measured by the PSWQ.' },
+          { name: 'Health Anxiety', description: 'Worry may focus specifically on physical symptoms and health concerns.' },
+        ],
+      },
+      'High worry': {
+        explanation: 'A PSWQ score of 53–67 indicates high, clinically significant pathological worry strongly associated with GAD and expected to cause significant distress and functional interference.',
+        whatThisMeans: ['Your worry level is clinically high and is likely causing significant distress', 'Worry may feel completely uncontrollable and pervasive', 'Professional support is recommended'],
+        recommendations: ['CBT for GAD — particularly the worry intolerance model — has the strongest evidence base', 'Acceptance and Commitment Therapy (ACT) is effective for reducing experiential avoidance', 'Consider completing the GAD-7 for a complementary clinical perspective', 'Discuss medication options (SSRIs, venlafaxine) with a clinician if worry is severely impairing'],
+        relatedDisorders: [
+          { name: 'Generalised Anxiety Disorder', description: 'High PSWQ scores are a hallmark feature of GAD; clinical evaluation is recommended.' },
+          { name: 'Major Depressive Disorder', description: 'Comorbid depression is present in over 60% of GAD cases.' },
+          { name: 'Panic Disorder', description: 'Worry about having panic attacks is a common maintaining factor.' },
+        ],
+      },
+      'Pathological worry': {
+        explanation: 'A PSWQ score of 68 or above indicates pathological, uncontrollable worry at its most severe — pervasive, consuming large amounts of time, and causing severe distress and functional impairment.',
+        whatThisMeans: ['Your worry is at a pathological level causing severe distress', 'Worry likely dominates much of your waking time and disrupts sleep', 'Urgent professional evaluation and treatment are required'],
+        recommendations: ['Seek evaluation from a psychologist or psychiatrist specialising in anxiety disorders', 'CBT + pharmacotherapy combination is most effective at this severity level', 'Avoid caffeine, excessive work, and social isolation — all of which amplify pathological worry', 'Contact info@vwelfare.com for a guided referral to appropriate care'],
+        relatedDisorders: [
+          { name: 'Generalised Anxiety Disorder — Severe', description: 'Severe, pervasive uncontrollable worry causing life-wide impairment.' },
+          { name: 'OCD', description: 'Worry and obsessions can overlap; OCI-R can help differentiate.' },
+          { name: 'PTSD', description: 'Hypervigilance and intrusive worry are features of both GAD and PTSD.' },
+        ],
+      },
+    },
+    relatedCodes: ['GAD7', 'DASS21', 'ASI3', 'PSS10', 'OCIR'],
+  },
+
+  OLBI: {
+    overview: 'The Oldenburg Burnout Inventory (OLBI) is a 16-item validated occupational burnout scale developed by Demerouti et al. (2001). It measures two core burnout dimensions: Exhaustion (physical, cognitive, and affective depletion) and Disengagement (distancing from work content). It is considered one of the most psychometrically robust burnout measures available.',
+    measuresDomain: 'Occupational burnout across exhaustion and disengagement dimensions',
+    bands: {
+      'Low burnout': {
+        explanation: 'A score of 16–28 on the OLBI indicates low occupational burnout. You appear to have adequate resources to meet your work demands, maintaining both energy and engagement.',
+        whatThisMeans: ['Your energy and engagement levels at work are healthy', 'Work demands are not currently overwhelming your resources', 'Your current work-life balance appears to be sustainable'],
+        recommendations: ['Maintain current protective practices — regular breaks, varied tasks, and social support at work are key buffers', 'Periodic reassessment during periods of increased workload is recommended'],
+        relatedDisorders: [],
+      },
+      'Moderate burnout': {
+        explanation: 'OLBI scores of 29–42 reflect moderate burnout — notable exhaustion and/or disengagement that, if left unaddressed, is likely to escalate with significant health and performance consequences.',
+        whatThisMeans: ['Significant exhaustion or disengagement from work is present', 'Your work performance, motivation, or health may already be affected', 'Action is needed now — moderate burnout rarely resolves without active change'],
+        recommendations: ['Identify and reduce the primary work stressors (workload, lack of control, unfairness)', 'Take regular recovery time — daily micro-breaks and longer restorative breaks', 'Discuss workload adjustments with a manager or HR', 'Consider a few sessions with an occupational therapist or psychologist specialising in workplace wellbeing'],
+        relatedDisorders: [
+          { name: 'Adjustment Disorder', description: 'Work-related stress causing clinically significant distress or impairment.' },
+          { name: 'Major Depressive Disorder', description: 'Chronic burnout has a well-documented pathway to clinical depression.' },
+        ],
+      },
+      'High burnout': {
+        explanation: 'An OLBI score of 43 or above indicates high burnout. At this level, both exhaustion and disengagement are severe, with substantially elevated risk of clinical depression, anxiety disorders, and cardiovascular problems.',
+        whatThisMeans: ['Severe occupational burnout is indicated — this is a serious concern', 'Your physical and mental health are at significant risk if the current situation continues', 'Urgent action to reduce job demands and increase recovery is required'],
+        recommendations: ['Consult a GP or mental health professional — burnout at this level often requires medical leave', 'Consider whether a temporary or permanent change in role, hours, or employer is necessary', 'Complete the PHQ-9 and GAD-7 to check for comorbid depression and anxiety', 'Contact info@vwelfare.com for support navigating workplace wellness resources'],
+        relatedDisorders: [
+          { name: 'Major Depressive Disorder', description: 'High burnout and MDD are frequently comorbid and mutually reinforcing.' },
+          { name: 'Generalised Anxiety Disorder', description: 'Chronic work stress maintains high anxiety that meets GAD criteria in many burnout cases.' },
+          { name: 'Cardiovascular Disease', description: 'Chronic burnout is an independent risk factor for hypertension and coronary heart disease.' },
+        ],
+      },
+    },
+    relatedCodes: ['PSS10', 'DASS21', 'PHQ9', 'GAD7', 'ISI'],
+  },
+
+  UCLA: {
+    overview: 'The UCLA Loneliness Scale (Version 3) is a 20-item validated measure of subjective loneliness developed by Russell (1996). It is the most widely used and psychometrically robust loneliness measure for adults, with demonstrated reliability (α ≈ 0.89–0.94) across cultures.',
+    measuresDomain: 'Subjective loneliness and perceived social isolation',
+    bands: {
+      'Low loneliness': {
+        explanation: 'A score of 20–34 indicates low loneliness. You perceive your social relationships as generally satisfying and feel connected to those around you.',
+        whatThisMeans: ['Your perceived social connectedness is in the healthy range', 'You feel generally understood and close to others', 'Your social support network appears adequate for your needs'],
+        recommendations: ['Nurture existing relationships — quality of social connection matters more than quantity', 'Continue investing in close relationships; they are a primary buffer against stress and illness'],
+        relatedDisorders: [],
+      },
+      'Moderate loneliness': {
+        explanation: 'Scores of 35–49 reflect moderate loneliness. Research consistently shows that chronic loneliness at this level has health consequences comparable to smoking 15 cigarettes per day.',
+        whatThisMeans: ['You are experiencing meaningful loneliness that is likely affecting your wellbeing', 'You may feel misunderstood, disconnected, or that your relationships lack depth', 'Active effort to expand or deepen social connections is warranted'],
+        recommendations: ['Identify barriers to social connection — anxiety, busyness, or past relational hurt are the most common', 'Consider joining activity-based groups aligned with your interests', 'If social anxiety is a barrier, consider the SPIN assessment and CBT-based social skills work', 'Volunteering is one of the most consistently effective loneliness interventions in the research literature'],
+        relatedDisorders: [
+          { name: 'Social Anxiety Disorder', description: 'Fear of social situations often drives loneliness even when the person desires connection.' },
+          { name: 'Major Depressive Disorder', description: 'Loneliness and depression are bidirectionally reinforcing.' },
+        ],
+      },
+      'High loneliness': {
+        explanation: 'A UCLA score of 50–64 indicates high loneliness — a clinically concerning level with well-documented links to depression, sleep disruption, elevated cortisol, and increased all-cause mortality risk.',
+        whatThisMeans: ['Your loneliness is at a clinically concerning level', 'You may feel fundamentally disconnected from others, even when people are physically present', 'Professional support is recommended alongside active social reconnection efforts'],
+        recommendations: ['Seek support from a psychologist or counsellor to address both the loneliness and underlying barriers', 'Complete the PHQ-9 and PSS-10 to check for comorbid depression and stress', 'Consider whether grief, relocation, relationship breakdown, or social anxiety are maintaining the loneliness', 'Structured community involvement provides low-pressure social contact'],
+        relatedDisorders: [
+          { name: 'Major Depressive Disorder', description: 'Chronic loneliness is one of the strongest predictors of depression onset.' },
+          { name: 'Social Anxiety Disorder', description: 'The desire for connection combined with fear of judgment creates the loneliness trap.' },
+          { name: 'Prolonged Grief Disorder', description: 'Bereavement and the loss of a primary relationship are leading causes of severe loneliness.' },
+        ],
+      },
+      'Very high loneliness': {
+        explanation: 'A score of 65 or above indicates very high loneliness — a serious public health concern causing significant distress and health risk.',
+        whatThisMeans: ['Very high loneliness is causing significant distress and health risk', 'You may feel that no one truly knows or understands you', 'Urgent clinical support and social reconnection are required'],
+        recommendations: ['Seek immediate support from a mental health professional', 'Complete the PHQ-9 to screen for comorbid depression, which is highly likely at this score', 'Contact info@vwelfare.com for guidance on social support resources in your area'],
+        relatedDisorders: [
+          { name: 'Major Depressive Disorder — Severe', description: 'Very high loneliness and severe depression are frequently concurrent.' },
+          { name: 'Suicidality', description: 'Chronic loneliness is a significant risk factor for suicidal ideation — professional assessment is essential.' },
+        ],
+      },
+    },
+    relatedCodes: ['PHQ9', 'GAD7', 'SPIN', 'RSES', 'PSS10'],
+  },
+
+  ASI3: {
+    overview: 'The Anxiety Sensitivity Index-3 (ASI-3) is an 18-item validated scale developed by Taylor et al. (2007) measuring anxiety sensitivity — the fear of anxiety-related sensations based on beliefs they will have harmful physical, psychological, or social consequences. High AS is one of the strongest known risk factors for panic disorder and social anxiety.',
+    measuresDomain: 'Fear of anxiety sensations across physical, cognitive, and social domains',
+    bands: {
+      'Low anxiety sensitivity': {
+        explanation: 'An ASI-3 score of 0–17 indicates low anxiety sensitivity. You are unlikely to catastrophise physical sensations of anxiety, which is associated with lower risk of anxiety disorders.',
+        whatThisMeans: ['You do not tend to fear your own anxiety responses', 'Physical symptoms of anxiety do not typically frighten you', 'This is a protective profile for anxiety disorders'],
+        recommendations: ['Your low anxiety sensitivity is a protective factor — maintain it through continued tolerance of normal discomfort'],
+        relatedDisorders: [],
+      },
+      'Moderate anxiety sensitivity': {
+        explanation: 'Scores of 18–35 reflect moderate anxiety sensitivity — some tendency to interpret anxiety symptoms as more threatening than they are.',
+        whatThisMeans: ['Some tendency to fear anxiety-related sensations is present', 'Certain physical or cognitive symptoms of anxiety may feel alarming', 'You may sometimes misinterpret normal bodily sensations as signs of serious illness or danger'],
+        recommendations: ['Interoceptive awareness exercises can reduce fear of internal sensations', 'Psychoeducation about the fight-or-flight response helps demystify anxiety sensations', 'If panic episodes are occurring, consider an evaluation for panic disorder'],
+        relatedDisorders: [
+          { name: 'Panic Disorder', description: 'Catastrophic misinterpretation of physical sensations is the central mechanism of panic disorder.' },
+          { name: 'Health Anxiety (Somatic Symptom Disorder)', description: 'High anxiety sensitivity contributes to health-related worry and somatic monitoring.' },
+        ],
+      },
+      'High anxiety sensitivity': {
+        explanation: 'An ASI-3 score of 36–53 indicates high anxiety sensitivity with substantially elevated risk for panic disorder, social phobia, and PTSD. The "fear of fear" cycle is likely active.',
+        whatThisMeans: ['High anxiety sensitivity is present and is likely fuelling anxiety symptoms', 'You may fear that anxiety sensations signal dangerous physical illness or mental breakdown', 'This level of AS is associated with panic attacks and health anxiety in many individuals'],
+        recommendations: ['Interoceptive exposure (deliberately inducing mild anxiety sensations safely) is the gold-standard treatment for high AS', 'CBT for panic disorder is highly effective — even without a formal diagnosis', 'Consider also completing the GAD-7 and PDSS'],
+        relatedDisorders: [
+          { name: 'Panic Disorder', description: 'High ASI-3 scores are the primary cognitive risk factor for developing panic disorder.' },
+          { name: 'Social Anxiety Disorder', description: 'Social AS subscale items specifically predict social anxiety.' },
+          { name: 'PTSD', description: 'Anxiety sensitivity elevates reactivity to trauma-related physiological cues.' },
+        ],
+      },
+      'Very high anxiety sensitivity': {
+        explanation: 'A score of 54 or above represents very high anxiety sensitivity — a significant clinical risk factor likely contributing to or maintaining current anxiety disorder symptoms.',
+        whatThisMeans: ['Very high anxiety sensitivity is causing significant distress and fuelling anxiety symptoms', 'You are likely experiencing frequent fear responses to your own physical or mental states', 'Urgent clinical evaluation and treatment are recommended'],
+        recommendations: ['Seek evaluation from a clinical psychologist specialising in anxiety disorders', 'Interoceptive exposure and CBT have high success rates even at this severity', 'Avoid excessive body checking and reassurance-seeking — these behaviours maintain high AS', 'Contact info@vwelfare.com for a referral to anxiety disorder specialists'],
+        relatedDisorders: [
+          { name: 'Panic Disorder — Severe', description: 'Very high ASI-3 scores at this level are almost always associated with active panic disorder.' },
+          { name: 'Agoraphobia', description: 'Fear of having panic attacks in public places develops from severe anxiety sensitivity.' },
+          { name: 'Illness Anxiety Disorder', description: 'Physical anxiety sensitivity can manifest as health-focused worry.' },
+        ],
+      },
+    },
+    relatedCodes: ['GAD7', 'PDSS', 'SPIN', 'PSWQ', 'PCL5'],
+  },
+
+  CDRISC: {
+    overview: 'The Connor-Davidson Resilience Scale (CD-RISC-25) is a 25-item validated resilience measure developed by Connor & Davidson (2003) at Duke University. HIGHER scores indicate GREATER resilience — the ability to thrive despite adversity. The published general population mean is approximately 80 out of 100.',
+    measuresDomain: 'Psychological resilience — the capacity to adapt and recover from adversity',
+    bands: {
+      'Low resilience': {
+        explanation: 'A CD-RISC-25 score below 50 indicates low resilience — associated with greater vulnerability to depression, anxiety, and PTSD following adversity. Resilience is a modifiable trait that can be actively built.',
+        whatThisMeans: ['Your current resilience capacity is lower than average', 'Stressful events may feel overwhelming and harder to recover from', 'You may feel less confident in your ability to handle new challenges'],
+        recommendations: ['Resilience is a learnable skill — evidence-based interventions can meaningfully increase CD-RISC scores', 'Building secure social relationships is the single most evidence-supported resilience factor', 'Consider completing the PHQ-9 and GAD-7 — low resilience is associated with elevated depression and anxiety', 'Trauma-focused therapy (EMDR, TF-CBT) is recommended if past trauma is contributing to low resilience'],
+        relatedDisorders: [
+          { name: 'Major Depressive Disorder', description: 'Low resilience is both a risk factor for and a consequence of chronic depression.' },
+          { name: 'PTSD', description: 'Low pre-trauma resilience is the strongest predictor of PTSD development after trauma exposure.' },
+          { name: 'Adjustment Disorder', description: 'Difficulty adapting to stressors is the defining feature of low resilience.' },
+        ],
+      },
+      'Moderate resilience': {
+        explanation: 'A CD-RISC-25 score of 50–69 reflects moderate resilience. You have meaningful resilience resources but may still find significant adversity challenging to navigate without support.',
+        whatThisMeans: ['You have some resilience resources but also areas for development', 'You can manage everyday stressors but may struggle with major adversity', 'Targeted development of specific resilience skills can meaningfully improve outcomes'],
+        recommendations: ['Identify your specific resilience strengths and build on them', 'Physical fitness, sleep quality, and social connection are the three strongest modifiable resilience factors', 'Cognitive reappraisal training — finding meaning or growth in adversity — is effective at this level'],
+        relatedDisorders: [
+          { name: 'Adjustment Disorder', description: 'Moderate resilience can still be overwhelmed by acute stressors.' },
+          { name: 'Burnout', description: 'Moderate resilience may not be sufficient for high-demand work environments.' },
+        ],
+      },
+      'Good resilience': {
+        explanation: 'Scores of 70–84 indicate good resilience — above the general population mean. You have well-developed capacities for adapting to stress and adversity.',
+        whatThisMeans: ['Your resilience is above average', 'You generally recover well from setbacks and adapt to change', 'Your sense of purpose, social support, and problem-solving skills are likely well-developed'],
+        recommendations: ['Continue investing in your resilience foundations — relationships, purpose, and physical health', 'Consider mentoring others or taking on roles that leverage your resilience strengths', 'Even high resilience can be depleted by chronic, severe adversity — monitor stress levels proactively'],
+        relatedDisorders: [],
+      },
+      'Very high resilience': {
+        explanation: 'A CD-RISC-25 score of 85–100 places you in the top range of resilience — associated with exceptional recovery from adversity and high psychological flourishing.',
+        whatThisMeans: ['Your resilience capacity is exceptional', 'You likely feel confident managing adversity and find ways to grow through challenges', 'This profile is associated with leadership capacity and psychological flourishing'],
+        recommendations: ['Your resilience is a significant strength — leverage it in roles that involve leading others through change', 'Even very high resilience benefits from maintenance — continued investment in relationships, meaning, and health is key'],
+        relatedDisorders: [],
+      },
+    },
+    relatedCodes: ['PSS10', 'DASS21', 'PCL5', 'WHO5', 'WEMWBS'],
+  },
+
+  WHOQOL: {
+    overview: 'The WHOQOL-BREF is a 26-item quality of life instrument developed by the WHO WHOQOL Group (1998). It assesses QoL across four domains: Physical Health, Psychological, Social Relationships, and Environment. HIGHER scores indicate BETTER quality of life. Validated in over 40 countries.',
+    measuresDomain: 'Quality of life across physical, psychological, social, and environmental domains',
+    bands: {
+      'Poor quality of life': {
+        explanation: 'A WHOQOL-BREF score of 26–65 indicates poor quality of life. Significant impairment in physical health, psychological wellbeing, social functioning, and/or environmental conditions is indicated.',
+        whatThisMeans: ['Your quality of life is currently significantly impaired', 'Multiple life domains may be contributing to low wellbeing', 'Comprehensive evaluation of specific domain scores will help identify the primary areas to address'],
+        recommendations: ['Identify which domains (physical, psychological, social, environmental) are contributing most to the low score', 'Complete domain-specific assessments — PHQ-9 for psychological, ISI for sleep, UCLA for social', 'Seek professional support across the relevant domains — a holistic care plan is needed', 'Contact info@vwelfare.com for guidance on accessing integrated care'],
+        relatedDisorders: [
+          { name: 'Major Depressive Disorder', description: 'Low psychological domain scores are strongly linked to depression.' },
+          { name: 'Chronic Physical Illness', description: 'Low physical domain scores often co-occur with chronic health conditions.' },
+          { name: 'Social Isolation', description: 'Low social domain scores are associated with loneliness and lack of support.' },
+        ],
+      },
+      'Below average quality of life': {
+        explanation: 'Scores of 66–91 reflect below-average quality of life. Your wellbeing across one or more domains is lower than typical and may be causing meaningful distress.',
+        whatThisMeans: ['Your quality of life is below average across the assessed domains', 'One or two domains are likely pulling your overall score down', 'Targeted intervention in the weakest domains can meaningfully improve overall QoL'],
+        recommendations: ['Review domain-specific scores to identify priority areas', 'Psychological domain improvements tend to have the largest impact on overall QoL', 'Community resources, health services, and social activities can address environmental and social domain gaps'],
+        relatedDisorders: [
+          { name: 'Persistent Depressive Disorder', description: 'Chronic low-grade depression that significantly erodes quality of life.' },
+          { name: 'Chronic Stress', description: 'Sustained stress across multiple domains cumulatively reduces QoL.' },
+        ],
+      },
+      'Average to good quality of life': {
+        explanation: 'A WHOQOL-BREF score of 92–117 indicates average to good quality of life. You are generally functioning well across the four domains.',
+        whatThisMeans: ['Your quality of life is broadly in the healthy range', 'Individual domains may vary — check which areas are strongest and which could be improved', 'You have a solid foundation of wellbeing across most life areas'],
+        recommendations: ['Focus on the specific domain with the lowest score for targeted improvement', 'Positive psychology interventions (gratitude practices, strengths-based work) can improve scores further', 'Continue investing in social relationships — the most robust predictor of sustained QoL'],
+        relatedDisorders: [],
+      },
+      'Good quality of life': {
+        explanation: 'A score of 118–130 indicates good to excellent quality of life. You report high levels of physical functioning, psychological wellbeing, social satisfaction, and environmental resources.',
+        whatThisMeans: ['Your quality of life is excellent across the assessed domains', 'You have strong resources and satisfaction across all four dimensions', 'This profile is associated with high resilience, health longevity, and life satisfaction'],
+        recommendations: ['Maintain the conditions that support your current QoL — these are your protective factors', 'Consider completing the WEMWBS or WHO-5 for a positive wellbeing perspective that complements QoL measurement'],
+        relatedDisorders: [],
+      },
+    },
+    relatedCodes: ['WHO5', 'WEMWBS', 'PHQ9', 'PSS10', 'CDRISC'],
+  },
 }
 
 export interface IpipDomainInfo {
@@ -1695,7 +2054,6 @@ export function getIpipDomainLevel(score: number): 'low' | 'average' | 'high' {
   if (score <= 88) return 'average'
   return 'high'
 }
-
 export function getAssessmentContent(code: string): AssessmentContent | null {
   return ASSESSMENT_CONTENT[code] ?? null
 }
