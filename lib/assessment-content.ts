@@ -1982,6 +1982,167 @@ export const ASSESSMENT_CONTENT: Record<string, AssessmentContent> = {
     },
     relatedCodes: ['WHO5', 'WEMWBS', 'PHQ9', 'PSS10', 'CDRISC'],
   },
+
+  // ─── DERS ──────────────────────────────────────────────────────────────────
+  DERS: {
+    overview: 'The Difficulties in Emotion Regulation Scale (DERS; Gratz & Roemer, 2004) is a 36-item measure of six functionally distinct dimensions of emotion dysregulation. Unlike scales that count emotional symptoms, the DERS probes the mechanisms of emotional dysfunction: whether emotions are noticed and understood (Awareness, Clarity), accepted without self-judgment (Nonacceptance), tolerated so that goals and actions can be maintained (Goals, Impulse), and managed through effective coping (Strategies). The DERS is the most cited measure of emotion dysregulation in the psychological literature and is widely used in research on borderline personality disorder, PTSD, eating disorders, and substance misuse.',
+    measuresDomain: 'Six facets of emotion dysregulation: emotional clarity, awareness, nonacceptance, goal disruption, impulse control, and access to regulation strategies',
+    bands: {
+      'Minimal difficulties': {
+        explanation: 'A DERS total in the 36–52 range indicates few significant difficulties regulating emotions. Emotional responses are generally experienced with awareness, accepted without harsh self-judgment, and managed through effective strategies. Upsets resolve without substantial behavioural disruption.',
+        whatThisMeans: ['Emotional awareness and clarity are intact — you can usually name and understand what you feel', 'You are unlikely to feel overwhelmed or out of control by emotional responses', 'You have access to a repertoire of effective regulation strategies and use them flexibly'],
+        recommendations: ['Continue practices that support emotional wellbeing — mindfulness, physical activity, and social connection all buffer against dysregulation', 'Rescreening during significant life changes (bereavement, relationship breakdown, burnout) can catch early shifts'],
+        relatedDisorders: [],
+      },
+      'Average range': {
+        explanation: 'A DERS score of 53–76 falls within the typical range for community adults. Some difficulties managing emotions in challenging circumstances may occur, but these are not currently causing pervasive or severe impairment. Subscale profiles are informative — elevations on specific subscales (e.g., Impulse, Nonacceptance) warrant attention even within an average total score.',
+        whatThisMeans: ['Some emotional challenges are present, particularly under high stress', 'Occasional difficulties accepting or tolerating distress may emerge', 'Regulation capacity may be uneven — more limited under pressure'],
+        recommendations: ['Emotion regulation skills training (DBT skills, ACT defusion techniques) can strengthen weaker facets', 'Review the subscale profile to identify the most clinically relevant dimensions', 'Mindfulness-based interventions and cognitive emotion regulation strategies have strong evidence for this range'],
+        relatedDisorders: [
+          { name: 'Adjustment Disorder', description: 'Difficulties regulating emotions in response to an identifiable stressor.' },
+          { name: 'Generalised Anxiety Disorder', description: 'Chronic worry and difficulty tolerating uncertain emotional states.' },
+        ],
+      },
+      'Elevated difficulties': {
+        explanation: 'A DERS score of 77–95 is above the community average and approaching the range seen in clinical outpatient populations. Meaningful interference from emotional dysregulation in daily functioning is likely — in relationships, work performance, or subjective wellbeing. Research identifies this zone as clinically significant, particularly when accompanied by elevated Impulse and Strategies subscales.',
+        whatThisMeans: ['Emotional experiences are often intense and feel difficult to influence', 'Strong emotions may disrupt goal-directed behaviour and concentration', 'You may react impulsively or shut down when distressed rather than accessing adaptive coping', 'Self-judgment and shame around emotions can prolong and intensify distress'],
+        recommendations: ['Individual psychotherapy — particularly DBT, ACT, or Emotion-Focused Therapy — has strong evidence for reducing dysregulation', 'DBT Skills Training groups targeting specific elevated subscales are highly effective', 'Physical exercise and structured daily routines reduce emotional reactivity by stabilising baseline arousal', 'A professional consultation is recommended to discuss the profile in depth'],
+        relatedDisorders: [
+          { name: 'Borderline Personality Disorder', description: 'Intense and unstable emotional responses with marked impulse dyscontrol.' },
+          { name: 'PTSD', description: 'Trauma-related emotion dysregulation including emotional numbing and reactivity.' },
+          { name: 'Major Depressive Disorder', description: 'Depression frequently involves both emotional blunting and uncontrollable negative affect.' },
+          { name: 'Eating Disorders', description: 'Binge eating, restriction, and purging are often driven by emotion dysregulation.' },
+        ],
+      },
+      'Significant difficulties': {
+        explanation: 'A DERS total of 96 or above falls in the range typically observed in clinical inpatient and high-severity outpatient samples. Emotional experiences at this level are likely pervasive, intense, and significantly interfering with multiple life domains. This level of dysregulation is associated with elevated risk for self-harm, substance misuse, interpersonal conflict, and occupational impairment.',
+        whatThisMeans: ['Emotions feel overwhelming, uncontrollable, or intolerable much of the time', 'Shame, anger, or despair about your emotional responses themselves is likely frequent', 'Goal-directed behaviour, concentration, and impulse control are substantially compromised', 'Access to effective coping strategies feels very limited when emotionally activated'],
+        recommendations: ['Dialectical Behaviour Therapy (DBT) is the gold-standard intervention for severe emotion dysregulation — seek a DBT-trained clinician', 'Prioritise professional mental health support; this level of dysregulation benefits from structured clinical guidance', 'Crisis safety planning may be warranted if emotional distress reaches unsafe levels', 'Pharmacological consultation may help stabilise affect as an adjunct to psychotherapy'],
+        relatedDisorders: [
+          { name: 'Borderline Personality Disorder', description: 'Severe emotion dysregulation with impulsivity and identity instability — the condition most studied with the DERS.' },
+          { name: 'Complex PTSD', description: 'Severe, pervasive dysregulation arising from prolonged interpersonal trauma.' },
+          { name: 'Bipolar Disorder', description: 'Affective instability including extreme mood episodes with dysregulated behaviour.' },
+          { name: 'Substance Use Disorder', description: 'Many individuals use substances as an emotion regulation strategy at this severity level.' },
+          { name: 'Non-suicidal Self-Injury', description: 'Self-harm as a short-term emotion regulation tactic is strongly linked to elevated DERS scores.' },
+        ],
+      },
+    },
+    relatedCodes: ['DASS21', 'GAD7', 'PHQ9', 'PCL5', 'RSES', 'FFMQ'],
+  },
+
+  // ─── PANAS ─────────────────────────────────────────────────────────────────
+  PANAS: {
+    overview: 'The Positive and Negative Affect Schedule (PANAS; Watson, Clark & Tellegen, 1988) is a 20-item measure of two orthogonal mood dimensions: Positive Affect (PA) and Negative Affect (NA). PA reflects the extent to which a person feels enthusiastic, active, and alert — high PA is a marker of active engagement with life and is associated with wellbeing, energy, and social connection. NA reflects subjective distress and aversive mood states — high NA is associated with anxiety, depression, and perceived stress. Crucially, PA and NA are independent: a person can be simultaneously high on both, low on both, or high on one and low on the other. The PANAS is the most widely used measure of affective valence in psychological research.',
+    measuresDomain: 'Two independent mood dimensions: Positive Affect (energy, enthusiasm, alertness) and Negative Affect (distress, fear, irritability)',
+    bands: {
+      'Low positive affect': {
+        explanation: 'A Positive Affect score below 25 indicates markedly low engagement with positive emotional states. Low PA is one of the clearest psychological markers of depression — specifically the anhedonic subtype characterised by loss of energy, motivation, and pleasure rather than sadness alone. Research by Watson & Clark shows that low PA is more strongly associated with depression than with anxiety.',
+        whatThisMeans: ['Energy, enthusiasm, and motivation feel consistently low', 'Positive experiences may feel flat, empty, or hard to engage with', 'This profile is associated with anhedonia — the absence of positive emotion rather than presence of negative emotion', 'Low PA can persist even when acute distress has subsided'],
+        recommendations: ['Behavioural activation — systematically scheduling rewarding activities — is the evidence-based first step for increasing PA', 'Physical exercise has the strongest evidence for increasing positive affect, with effects appearing within a single session', 'Social engagement and connection are powerful PA-boosters; isolation deepens the low-PA cycle', 'Assessment for depressive disorder is recommended at this level'],
+        relatedDisorders: [
+          { name: 'Major Depressive Disorder (anhedonic subtype)', description: 'Characterised by emptiness and low energy rather than sadness alone.' },
+          { name: 'Persistent Depressive Disorder', description: 'Chronic low-grade low PA with loss of enjoyment over years.' },
+        ],
+      },
+      'Moderate positive affect': {
+        explanation: 'A Positive Affect score in the 25–35 range reflects moderate engagement with positive emotional experience. This is near the population mean and suggests that positive emotional states are accessible, though perhaps not consistently vivid or frequent.',
+        whatThisMeans: ['Positive emotions are present but may not be consistently vivid', 'Motivation and energy fluctuate with circumstances', 'This range reflects typical emotional functioning and is not clinically concerning in isolation'],
+        recommendations: ['Activities that reliably generate flow, meaning, or connection strengthen PA over time', 'Mindfulness-based savouring practices increase PA by amplifying awareness of positive experiences', 'Review NA score alongside this — moderate PA with high NA suggests anxiety or stress worth addressing'],
+        relatedDisorders: [],
+      },
+      'High positive affect': {
+        explanation: 'A Positive Affect score above 35 indicates strong, consistent positive engagement. High PA is a robust predictor of subjective wellbeing, life satisfaction, physical health, and social connectedness. It is a protective factor against depression and burnout.',
+        whatThisMeans: ['You consistently experience energy, enthusiasm, and active engagement with life', 'High PA is associated with resilience, better health outcomes, and more satisfying relationships', 'If NA is also elevated, the high activation may partly reflect stress-driven arousal rather than flourishing'],
+        recommendations: ['Maintain the conditions that support your current PA level — regular meaningful activity, social connection, and adequate sleep', 'If NA is also elevated, explore stress-reduction and whether the high arousal is sustainable'],
+        relatedDisorders: [],
+      },
+    },
+    relatedCodes: ['WHO5', 'WEMWBS', 'PHQ9', 'GAD7', 'SWLS', 'CESD'],
+  },
+
+  // ─── ECRR ──────────────────────────────────────────────────────────────────
+  ECRR: {
+    overview: 'The Experiences in Close Relationships – Revised (ECR-R; Fraley, Waller & Brennan, 2000) is a 36-item assessment of adult romantic attachment on two dimensions derived from Bowlby\'s attachment theory. The Avoidance subscale captures discomfort with closeness and dependency — high scorers value self-reliance and suppress attachment needs. The Anxiety subscale captures fear of abandonment and hyperactivation of attachment needs — high scorers are vigilant to rejection and crave reassurance. Together these dimensions produce four attachment profiles: Secure (low avoidance + low anxiety), Preoccupied (low avoidance + high anxiety), Dismissing (high avoidance + low anxiety), and Fearful (high avoidance + high anxiety). Attachment style shapes relational communication, emotional regulation, and relationship satisfaction.',
+    measuresDomain: 'Adult romantic attachment: Avoidance (discomfort with closeness and dependency) and Anxiety (fear of abandonment and need for reassurance)',
+    bands: {
+      'Secure attachment': {
+        explanation: 'A profile with low scores on both Avoidance and Anxiety (subscale means below 2.5) suggests a secure attachment orientation. Secure attachment — the most common style, found in roughly 55–65% of adults — is characterised by comfort with emotional intimacy, a positive working model of both self and others, and the capacity to depend on partners without losing autonomy.',
+        whatThisMeans: ['You feel generally comfortable with closeness, dependency, and emotional vulnerability in relationships', 'You have a positive view of both yourself and your partners as reliably available and well-intentioned', 'You can soothe yourself during relationship difficulties without excessive reassurance-seeking or withdrawal', 'Conflict is generally approached as a problem to solve rather than a threat to the relationship'],
+        recommendations: ['Secure attachment makes you a strong relational partner — understanding your partner\'s attachment style can help bridge communication gaps', 'Significant trauma, loss, or betrayal can temporarily destabilise even secure attachment — periodic awareness is useful'],
+        relatedDisorders: [],
+      },
+      'Preoccupied attachment': {
+        explanation: 'A profile with low Avoidance but elevated Anxiety (avoidance below 2.5, anxiety above 3.5) suggests preoccupied attachment. Preoccupied individuals deeply desire closeness but are hypervigilant to rejection. Relationships feel emotionally intense and often consuming — small signals of distance can trigger significant anxiety.',
+        whatThisMeans: ['You crave intimacy but often worry that partners don\'t feel as strongly', 'Small signals of distance or disapproval can trigger intense anxiety and reassurance-seeking', 'You may find it difficult to self-regulate emotionally when the relationship feels uncertain', 'Relationships can feel all-consuming with significant energy invested in monitoring the connection'],
+        recommendations: ['Individual therapy — particularly Emotion-Focused Therapy (EFT) or attachment-based approaches — can develop self-soothing capacity', 'Learning to tolerate uncertainty and self-regulate without immediate reassurance breaks the anxious cycle', 'Understanding the anxious-avoidant relationship spiral can prevent escalation with a dismissing partner', 'Mindfulness and somatic practices help create pause between attachment trigger and response'],
+        relatedDisorders: [
+          { name: 'Dependent Personality Features', description: 'Excessive need for reassurance and fear of separation from close others.' },
+          { name: 'Generalised Anxiety Disorder', description: 'Attachment anxiety often co-occurs with general anxiety about loss and safety.' },
+          { name: 'Borderline Personality Disorder', description: 'Intense fear of abandonment is a core feature of BPD and strongly linked to anxious attachment.' },
+        ],
+      },
+      'Dismissing attachment': {
+        explanation: 'A profile with elevated Avoidance but low Anxiety (avoidance above 3.5, anxiety below 2.5) suggests dismissing attachment. Dismissing individuals value independence and self-reliance, tend to minimise attachment needs, and feel uncomfortable with emotional vulnerability and dependency.',
+        whatThisMeans: ['You tend to rely on yourself and feel uncomfortable depending on others emotionally', 'Intimacy and vulnerability may feel threatening rather than rewarding', 'Partners may experience you as emotionally distant or difficult to connect with deeply', 'Under stress, your tendency is to withdraw rather than seek support'],
+        recommendations: ['Recognising the early experiences that shaped avoidance can reduce its power over current relationships', 'Gradual experiments in emotional vulnerability — sharing something personal, asking for help — can rewire avoidant responses', 'Attachment-focused therapy helps access underlying attachment needs that have been suppressed'],
+        relatedDisorders: [
+          { name: 'Avoidant Personality Features', description: 'Emotional withdrawal and difficulty with intimacy driven by underlying fear of rejection.' },
+          { name: 'Alexithymia', description: 'Difficulty identifying and expressing emotions, common in dismissing attachment.' },
+        ],
+      },
+      'Fearful attachment': {
+        explanation: 'A profile with both elevated Avoidance and elevated Anxiety (both subscale means above 3.5) suggests fearful attachment. Fearful individuals simultaneously desire closeness and fear intimacy — they approach and avoid connection in the same relationship. Past relational pain, betrayal, or trauma is commonly associated with this profile.',
+        whatThisMeans: ['You simultaneously want and fear intimacy — closeness feels both desirable and threatening', 'The risk of emotional hurt, rejection, or dependency feels ever-present', 'You may oscillate between emotional closeness and sudden withdrawal within the same relationship', 'Past relational trauma or betrayal is commonly associated with fearful attachment'],
+        recommendations: ['Trauma-informed therapy (EMDR, EFT, schema therapy) addresses the underlying relational wound driving the conflict', 'Developing earned security through corrective emotional experiences in therapy or trusted relationships is the core therapeutic goal', 'Psychoeducation about attachment theory helps normalise the experience and reduce shame', 'Group therapy can provide a safe relational context for practicing secure relating'],
+        relatedDisorders: [
+          { name: 'Complex PTSD', description: 'Fearful attachment is closely linked to chronic interpersonal trauma and C-PTSD.' },
+          { name: 'Borderline Personality Disorder', description: 'Approach-avoidance relational patterns are central to BPD phenomenology.' },
+          { name: 'Dissociation', description: 'Emotional and relational dissociation can develop as a self-protective response in fearful attachment.' },
+        ],
+      },
+    },
+    relatedCodes: ['RSES', 'GAD7', 'PHQ9', 'UCLA', 'DERS', 'IESR'],
+  },
+
+  // ─── FFMQ ──────────────────────────────────────────────────────────────────
+  FFMQ: {
+    overview: 'The Five Facet Mindfulness Questionnaire (FFMQ; Baer et al., 2006) is a 39-item measure of dispositional mindfulness across five empirically derived facets: (1) Observing — noticing internal and external sensory experiences; (2) Describing — labelling experiences with words; (3) Acting with Awareness — attending to present-moment activity rather than functioning on autopilot; (4) Non-judging of inner experience — refraining from evaluating thoughts and feelings as good or bad; and (5) Non-reacting to inner experience — allowing thoughts and feelings to pass without getting caught up in them. The FFMQ was developed by factor-analysing five existing mindfulness scales, and is widely used to evaluate mindfulness-based interventions (MBSR, MBCT) and as an individual profile of psychological flexibility and wellbeing.',
+    measuresDomain: 'Five facets of dispositional mindfulness: observing, describing, acting with awareness, non-judging of inner experience, and non-reacting to inner experience',
+    bands: {
+      'Low mindfulness': {
+        explanation: 'An FFMQ total below 86 indicates low dispositional mindfulness. This range is typical of individuals who have not engaged in formal mindfulness practice and who tend to engage with life on autopilot, react automatically to emotional triggers, and evaluate inner experiences harshly. Baer et al. (2006) found scores in this range in community samples with no meditation history.',
+        whatThisMeans: ['Much of daily activity occurs on autopilot, with limited deliberate awareness of the present moment', 'Thoughts and feelings are often judged as good, bad, right, or wrong rather than simply observed', 'Emotional reactions tend to be automatic and unexamined, driven by habit rather than choice', 'The subscale profile will identify specific strengths and gaps — not all facets are equally underdeveloped'],
+        recommendations: ['Structured mindfulness training (MBSR 8-week programme or MBCT) is the evidence-based approach for building all five facets systematically', 'Daily mindfulness practice — as little as 10 minutes per day — produces measurable changes within 8 weeks', 'Body-scan and breath-awareness practices specifically target the Observing and Acting with Awareness facets', 'Labelling emotions and sensations in words (Describe facet) is a key skill in both mindfulness and DBT'],
+        relatedDisorders: [
+          { name: 'PTSD / Hypervigilance', description: 'Low mindfulness is associated with trauma-related reactivity and avoidance of internal experience.' },
+          { name: 'Generalised Anxiety Disorder', description: 'Rumination and difficulty with present-moment focus are hallmarks of both low mindfulness and GAD.' },
+          { name: 'Depression', description: 'Low mindfulness correlates with depressive rumination and lack of present-moment engagement.' },
+        ],
+      },
+      'Below average': {
+        explanation: 'An FFMQ total in the 86–117 range falls below the average for community samples (mean ~118; Baer et al., 2006). Some mindful capacities are present but inconsistently applied. There may be pockets of awareness alongside substantial automatic reactivity, self-judgment, or present-moment inattention.',
+        whatThisMeans: ['Mindfulness is present as an occasional capacity rather than a consistent orientation', 'Certain facets may be relatively strong while others are underdeveloped — consult the subscale profile', 'Automatic pilot, self-criticism about emotions, and difficulty non-reacting are likely present'],
+        recommendations: ['Identify your strongest and weakest facets from the subscale profile for targeted skill development', 'Brief informal mindfulness practices throughout the day (3-minute breathing space) can be easier entry points than formal sitting practice', 'MBCT is particularly effective if low scores appear on the Non-judging or Acting with Awareness facets'],
+        relatedDisorders: [
+          { name: 'Anxiety Disorders', description: 'Cognitive reactivity and worry reflect below-average Non-reacting and Acting with Awareness.' },
+          { name: 'Stress-Related Conditions', description: 'Chronic stress reduces present-moment awareness and increases automaticity.' },
+        ],
+      },
+      'Average to above average': {
+        explanation: 'An FFMQ total in the 118–155 range falls at or above the community average. This reflects a meaningful capacity for present-moment awareness, non-reactive observation of internal experience, and emotional labelling. Research shows individuals in this range benefit further from continued practice and stress-reduction programmes.',
+        whatThisMeans: ['You have a solid foundation of mindful awareness accessible in daily life', 'You can usually observe your thoughts and feelings without being completely swept away by them', 'Some facets are likely well-developed; others may have room to grow', 'This level is associated with lower stress reactivity, better emotion regulation, and higher wellbeing'],
+        recommendations: ['Continue any existing mindfulness practice and explore deepening it', 'Explore advanced practices — loving-kindness, Vipassana, or mindful movement — to develop lower-scoring facets', 'Teaching or sharing mindfulness with others consolidates your own development'],
+        relatedDisorders: [],
+      },
+      'High mindfulness': {
+        explanation: 'An FFMQ total above 155 — substantially above the community mean and approaching the range typical of experienced meditators and meditation teachers — reflects a deeply developed mindfulness orientation across multiple facets. This level is associated with significantly lower psychological distress, higher wellbeing, and greater emotional regulation capacity.',
+        whatThisMeans: ['Mindful awareness is a consistent feature of your daily experience, not just an occasional skill', 'You can observe thoughts and feelings with equanimity, without needing to suppress or act on them', 'Research links high dispositional mindfulness to better stress response, emotional regulation, and interpersonal functioning'],
+        recommendations: ['Continue and deepen your practice — long-term meditators show sustained benefits that accumulate over years', 'Consider sharing or teaching mindfulness, which consolidates your own development', 'Note: a very high Observe score without correspondingly high Non-judging or Non-reacting may indicate heightened sensory sensitivity rather than mindful integration'],
+        relatedDisorders: [],
+      },
+    },
+    relatedCodes: ['PSS10', 'DASS21', 'GAD7', 'DERS', 'WHO5', 'OLBI'],
+  },
 }
 
 export interface IpipDomainInfo {
