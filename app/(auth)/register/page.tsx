@@ -45,7 +45,7 @@ export default function RegisterPage() {
       password,
       options: {
         data: { full_name_en: fullName },
-        emailRedirectTo: `${location.origin}/auth/confirm?next=/onboarding`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vwelfare.vercel.app'}/auth/confirm?next=/onboarding`,
       },
     })
 

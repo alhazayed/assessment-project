@@ -7,13 +7,20 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
+  const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/dashboard'
 
-  const redirectTo = request.nextUrl.clone()
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vwelfare.vercel.app'
+  const redirectBase = new URL(siteUrl)
 
-  if (!token_hash || !type) {
-    redirectTo.pathname = '/login'
-    return NextResponse.redirect(redirectTo)
+  function redirectTo(pathname: string, errorMsg?: string) {
+    redirectBase.pathname = pathname
+    redirectBase.searchParams.delete('token_hash')
+    redirectBase.searchParams.delete('type')
+    redirectBase.searchParams.delete('code')
+    redirectBase.searchParams.delete('next')
+    if (errorMsg) redirectBase.searchParams.set('error', errorMsg)
+    return NextResponse.redirect(redirectBase)
   }
 
   const cookieStore = cookies()
@@ -30,25 +37,22 @@ export async function GET(request: NextRequest) {
     }
   )
 
+  // PKCE flow: Supabase redirects here with ?code=... after server-side verification
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) return redirectTo('/login', 'verification_failed')
+    // New signups → onboarding; recovery → reset-password
+    if (next === '/onboarding') return redirectTo('/onboarding')
+    if (type === 'recovery') return redirectTo('/reset-password')
+    return redirectTo(next !== '/dashboard' ? next : '/onboarding')
+  }
+
+  // OTP / token_hash flow (email link goes directly to app)
+  if (!token_hash || !type) return redirectTo('/login')
+
   const { error } = await supabase.auth.verifyOtp({ type, token_hash })
+  if (error) return redirectTo('/login', 'verification_failed')
 
-  if (error) {
-    redirectTo.pathname = '/login'
-    redirectTo.searchParams.set('error', 'verification_failed')
-    return NextResponse.redirect(redirectTo)
-  }
-
-  // type=recovery → reset-password; type=email (new signup) → onboarding; custom next → honoured
-  if (type === 'recovery') {
-    redirectTo.pathname = '/reset-password'
-  } else if (next === '/dashboard' || next === '/') {
-    // default next — send new users to onboarding
-    redirectTo.pathname = '/onboarding'
-  } else {
-    redirectTo.pathname = next
-  }
-  redirectTo.searchParams.delete('token_hash')
-  redirectTo.searchParams.delete('type')
-  redirectTo.searchParams.delete('next')
-  return NextResponse.redirect(redirectTo)
+  if (type === 'recovery') return redirectTo('/reset-password')
+  return redirectTo(next !== '/dashboard' && next !== '/' ? next : '/onboarding')
 }
