@@ -6,6 +6,7 @@ import { ClipboardList, CheckCircle2, Clock, AlertCircle, LogIn } from 'lucide-r
 import type { AssessmentDefinition, AssessmentAssignment, AssessmentSubmission } from '@/lib/types'
 import AIAssessmentFinder from '@/components/ai-assessment-finder'
 import InProgressAssessments from '@/components/in-progress-assessments'
+import RescreeningTrigger from '@/components/rescreening-trigger'
 
 function severityColor(band: string) {
   const b = band.toLowerCase()
@@ -104,6 +105,7 @@ export default async function AssessmentsPage() {
         </div>
       )}
 
+      {user && <RescreeningTrigger />}
       {user && <InProgressAssessments definitions={allDefinitions} lang={lang} />}
 
       <AIAssessmentFinder />

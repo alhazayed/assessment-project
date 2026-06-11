@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { LineChart, Flame, TrendingUp, Calendar, BarChart2 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import SynthesisCard from '@/components/synthesis-card'
+import MentalHealthRadar from '@/components/mental-health-radar'
 
 type MoodLog = {
   log_date: string
@@ -84,6 +86,9 @@ export default function InsightsPage() {
       setMoodLogs(logs)
       setScoreHistory(scores)
 
+      // Fire rescreening check in background
+      fetch('/api/check-rescreening', { method: 'POST' }).catch(() => {})
+
       // Default to first assessment with multiple entries
       const codes = Array.from(new Set(scores.map(s => s.assessment_definitions?.code).filter((c): c is string => Boolean(c))))
       const firstWithMultiple = codes.find(code => scores.filter(s => s.assessment_definitions?.code === code).length > 1)
@@ -125,6 +130,14 @@ export default function InsightsPage() {
         </div>
       ) : (
         <div className="space-y-6">
+
+          {/* AI Synthesis */}
+          <SynthesisCard isAr={isAr} />
+
+          {/* Mental Health Radar */}
+          {scoreHistory.length > 0 && (
+            <MentalHealthRadar scoreHistory={scoreHistory} isAr={isAr} />
+          )}
 
           {/* Streak card */}
           <div className="card p-6 flex items-center gap-5">
