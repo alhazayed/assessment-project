@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   CloudRain, Zap, Wind, ShieldAlert, Sparkles,
-  Moon, FlaskConical, MoreHorizontal, ChevronRight,
+  Moon, FlaskConical, MoreHorizontal, ChevronRight, Brain,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Lang } from '@/lib/i18n'
@@ -38,7 +38,7 @@ const CATEGORIES: Category[] = [
     icon: CloudRain,
     accent: 'bg-blue-600 text-white',
     badge: 'bg-blue-50 text-blue-700 border-blue-200',
-    codes: ['PHQ9', 'GDS15', 'MDQ', 'DASS21', 'CESD', 'ASRM'],
+    codes: ['PHQ9', 'GDS15', 'MDQ', 'DASS21', 'CESD', 'ASRM', 'PANAS'],
   },
   {
     id: 'anxiety',
@@ -47,7 +47,7 @@ const CATEGORIES: Category[] = [
     icon: Zap,
     accent: 'bg-purple-600 text-white',
     badge: 'bg-purple-50 text-purple-700 border-purple-200',
-    codes: ['GAD7', 'LSAS', 'OCIR', 'SPIN', 'PDSS'],
+    codes: ['GAD7', 'LSAS', 'OCIR', 'SPIN', 'PDSS', 'PSWQ', 'ASI3'],
   },
   {
     id: 'stress',
@@ -74,7 +74,7 @@ const CATEGORIES: Category[] = [
     icon: Sparkles,
     accent: 'bg-emerald-600 text-white',
     badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    codes: ['WHO5', 'SWLS', 'RSES', 'BRS'],
+    codes: ['WHO5', 'SWLS', 'RSES', 'BRS', 'CDRISC', 'WHOQOL', 'UCLA'],
   },
   {
     id: 'sleep',
@@ -95,13 +95,22 @@ const CATEGORIES: Category[] = [
     codes: ['AUDIT', 'CAGE'],
   },
   {
+    id: 'personality',
+    labelEn: 'Personality & Mindfulness',
+    labelAr: 'الشخصية واليقظة الذهنية',
+    icon: Brain,
+    accent: 'bg-violet-600 text-white',
+    badge: 'bg-violet-50 text-violet-700 border-violet-200',
+    codes: ['BFI44', 'IPIP120', 'FFMQ', 'ECRR'],
+  },
+  {
     id: 'other',
     labelEn: 'Other',
     labelAr: 'أخرى',
     icon: MoreHorizontal,
     accent: 'bg-gray-700 text-white',
     badge: 'bg-gray-100 text-gray-700 border-gray-200',
-    codes: ['ASRS', 'EAT26', 'PHQ15', 'BFI44', 'IPIP120'],
+    codes: ['ASRS', 'EAT26', 'PHQ15', 'DERS', 'OLBI'],
   },
 ]
 
