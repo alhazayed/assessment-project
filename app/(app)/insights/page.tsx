@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { LineChart, Flame, TrendingUp, Calendar, BarChart2 } from 'lucide-react'
+import { Flame, TrendingUp, Calendar, BarChart2 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 import SynthesisCard from '@/components/synthesis-card'

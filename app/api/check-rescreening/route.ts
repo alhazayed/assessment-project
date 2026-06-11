@@ -70,7 +70,7 @@ export async function POST() {
 
     for (const s of submissions) {
       const def = s.assessment_definitions as unknown as { code: string; name_en: string; name_ar: string } | null
-      if (!def?.code || seenDefs.has(s.definition_id)) continue
+      if (!def?.code || !def.name_en || seenDefs.has(s.definition_id)) continue
       seenDefs.add(s.definition_id)
       latest.push({
         defId: s.definition_id,
