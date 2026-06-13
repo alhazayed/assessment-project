@@ -1,22 +1,20 @@
 import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
 import LanguageToggle from '@/components/language-toggle'
+import BrandLogo from '@/components/brand-logo'
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const lang = getLanguage()
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100/30 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex justify-end mb-4">
           <LanguageToggle lang={lang} />
         </div>
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-600 shadow-lg mb-4">
-            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
+          <div className="flex justify-center mb-3">
+            <BrandLogo variant="full" size={100} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('app.name', lang)}</h1>
           <p className="text-sm text-gray-500 mt-1">{t('app.tagline', lang)}</p>
         </div>
         {children}

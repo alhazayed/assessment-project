@@ -7,11 +7,12 @@ import LanguageToggle from '@/components/language-toggle'
 import type { AssessmentDefinition } from '@/lib/types'
 import {
   ClipboardList, Brain, BookOpen, MessageSquare,
-  BarChart3, Heart, Shield, Users, ChevronRight,
-  Sparkles, Clock, Lock, Globe
+  BarChart3, Heart, Users, ChevronRight,
+  Sparkles, Clock, Lock, Globe, Shield
 } from 'lucide-react'
 import AIAssessmentFinder from '@/components/ai-assessment-finder'
 import AssessmentsByCategory from '@/components/assessments-by-category'
+import BrandLogo from '@/components/brand-logo'
 
 
 export default async function LandingPage() {
@@ -32,7 +33,7 @@ export default async function LandingPage() {
   const services = [
     {
       icon: ClipboardList,
-      color: 'bg-blue-50 text-blue-600',
+      color: 'bg-brand-50 text-brand-600',
       titleKey: 'service.assessments.title' as const,
       descPre: `${assessments.length} `,
       descKey: 'service.assessments.desc.pre' as const,
@@ -41,7 +42,7 @@ export default async function LandingPage() {
     },
     {
       icon: BarChart3,
-      color: 'bg-purple-50 text-purple-600',
+      color: 'bg-brand-100 text-brand-700',
       titleKey: 'service.mood.title' as const,
       descKey: 'service.mood.desc' as const,
       ctaKey: 'service.mood.cta' as const,
@@ -49,7 +50,7 @@ export default async function LandingPage() {
     },
     {
       icon: BookOpen,
-      color: 'bg-emerald-50 text-emerald-600',
+      color: 'bg-accent-50 text-accent-600',
       titleKey: 'service.journal.title' as const,
       descKey: 'service.journal.desc' as const,
       ctaKey: 'service.journal.cta' as const,
@@ -57,7 +58,7 @@ export default async function LandingPage() {
     },
     {
       icon: MessageSquare,
-      color: 'bg-orange-50 text-orange-600',
+      color: 'bg-brand-50 text-brand-500',
       titleKey: 'service.messages.title' as const,
       descKey: 'service.messages.desc' as const,
       ctaKey: 'service.messages.cta' as const,
@@ -65,7 +66,7 @@ export default async function LandingPage() {
     },
     {
       icon: Brain,
-      color: 'bg-rose-50 text-rose-600',
+      color: 'bg-accent-50 text-accent-500',
       titleKey: 'service.results.title' as const,
       descKey: 'service.results.desc' as const,
       ctaKey: 'service.results.cta' as const,
@@ -73,7 +74,7 @@ export default async function LandingPage() {
     },
     {
       icon: Users,
-      color: 'bg-teal-50 text-teal-600',
+      color: 'bg-brand-900/10 text-brand-600',
       titleKey: 'service.clinicians.title' as const,
       descKey: 'service.clinicians.desc' as const,
       ctaKey: 'service.clinicians.cta' as const,
@@ -88,9 +89,7 @@ export default async function LandingPage() {
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center shadow-sm">
-              <Heart className="w-4 h-4 text-white" />
-            </div>
+            <BrandLogo variant="icon" size={40} />
             <span className="font-bold text-gray-900 text-lg tracking-tight">{t('app.name', lang)}</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm text-gray-600">
@@ -112,7 +111,7 @@ export default async function LandingPage() {
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 to-white pt-20 pb-24 px-6">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(14,165,233,0.12),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(29,98,150,0.12),transparent)]" />
         <div className="relative max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-brand-100 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
             <Sparkles className="w-3.5 h-3.5" />
@@ -145,7 +144,7 @@ export default async function LandingPage() {
       <section className="py-16 px-6 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
+            <div className="inline-flex items-center gap-2 bg-accent-50 text-accent-600 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
               <Sparkles className="w-3.5 h-3.5" />
               {t('landing.ai.badge', lang)}
             </div>
@@ -288,9 +287,7 @@ export default async function LandingPage() {
       <footer className="bg-gray-900 py-10 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-white">
-            <div className="w-7 h-7 rounded-lg bg-brand-500 flex items-center justify-center">
-              <Heart className="w-4 h-4 text-white" />
-            </div>
+            <BrandLogo variant="icon" size={32} />
             <span className="font-semibold">{t('app.name', lang)}</span>
             <span className="text-gray-500 text-sm ml-2">{t('app.tagline', lang)}</span>
           </div>
