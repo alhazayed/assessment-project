@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
@@ -114,6 +115,19 @@ export async function PUT(request: Request) {
     if (patientProfile?.assigned_clinician_id !== user.id) {
       return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
     }
+  }
+
+  // Burst: 5/min; Hourly: 20/hr — AI draft is ~1K tokens/call
+  const [burstRl, hourlyRl] = await Promise.all([
+    checkRateLimit(`ai-clinical-notes:burst:${user.id}`, { limit: 5, windowMs: 60 * 1000 }),
+    checkRateLimit(`ai-clinical-notes:hourly:${user.id}`, { limit: 20, windowMs: 60 * 60 * 1000 }),
+  ])
+  if (!burstRl.allowed || !hourlyRl.allowed) {
+    const retryAfter = !hourlyRl.allowed ? '3600' : '60'
+    return NextResponse.json(
+      { error: !hourlyRl.allowed ? 'Hourly AI limit reached. Try again later.' : 'Too many requests. Please wait.' },
+      { status: 429, headers: { 'Retry-After': retryAfter } }
+    )
   }
 
   const apiKey = process.env.GEMINI_API_KEY

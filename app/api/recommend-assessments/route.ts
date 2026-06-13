@@ -5,24 +5,33 @@ import { checkRateLimit } from '@/lib/rate-limit'
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
 
+// Max chars for each description field sent to Gemini (controls token spend)
+const MAX_DESC_CHARS = 80
+
 export async function POST(request: Request) {
   try {
-    // Rate-limit: 20 AI requests per minute per IP (protect free-tier quota)
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
-    const rl = await checkRateLimit(`ai-recommend:${ip}`, { limit: 20, windowMs: 60 * 1000 })
-    if (!rl.allowed) {
-      return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
+
+    // Burst: 3/min per IP; Daily: 30/day per IP
+    const [burstRl, dailyRl] = await Promise.all([
+      checkRateLimit(`ai-recommend:burst:${ip}`, { limit: 3, windowMs: 60 * 1000 }),
+      checkRateLimit(`ai-recommend:daily:${ip}`, { limit: 30, windowMs: 24 * 60 * 60 * 1000 }),
+    ])
+    if (!burstRl.allowed || !dailyRl.allowed) {
+      const retryAfter = !dailyRl.allowed ? '86400' : '60'
+      return NextResponse.json(
+        { error: !dailyRl.allowed ? 'Daily limit reached. Try again tomorrow.' : 'Too many requests. Please slow down.' },
+        { status: 429, headers: { 'Retry-After': retryAfter } }
+      )
     }
 
-    const { text } = await request.json()
-
+    const body = await request.json().catch(() => null)
+    const text = body?.text
     if (!text?.trim()) {
       return NextResponse.json({ error: 'No input provided' }, { status: 400 })
     }
-
-    // Limit input length to prevent prompt injection with huge payloads
-    if (text.length > 1000) {
-      return NextResponse.json({ error: 'Input too long (max 1000 characters)' }, { status: 400 })
+    if (typeof text !== 'string' || text.length > 500) {
+      return NextResponse.json({ error: 'Input too long (max 500 characters)' }, { status: 400 })
     }
 
     const apiKey = process.env.GEMINI_API_KEY
@@ -33,39 +42,35 @@ export async function POST(request: Request) {
     const supabase = createClient()
     const { data: assessments } = await supabase
       .from('assessment_definitions')
-      .select('id, code, name_en, name_ar, description_en, description_ar')
+      .select('id, code, name_en, name_ar, description_en')
       .eq('is_active', true)
       .order('name_en')
+      .limit(30) // cap number of assessments sent to Gemini
 
     if (!assessments?.length) {
       return NextResponse.json({ error: 'No assessments available' }, { status: 500 })
     }
 
+    // Truncate descriptions to cap token spend
     const assessmentList = assessments
-      .map(a => `- ID: ${a.id} | Code: ${a.code} | Name: ${a.name_en} | Description: ${a.description_en || 'N/A'}`)
+      .map(a => {
+        const desc = a.description_en
+          ? a.description_en.slice(0, MAX_DESC_CHARS) + (a.description_en.length > MAX_DESC_CHARS ? '…' : '')
+          : ''
+        return `${a.code}: ${a.name_en}${desc ? ` — ${desc}` : ''}`
+      })
       .join('\n')
 
     const systemInstruction = `You are a clinical psychologist assistant helping match users to appropriate psychological assessments.
-Analyze how the user is feeling and recommend the 2-4 most clinically relevant assessments from the provided list.
-Be empathetic and focus on what would genuinely help the user understand themselves better.
+Analyze how the user is feeling and recommend the 2-3 most clinically relevant assessments from the provided list.
 Return ONLY a valid JSON array — no markdown, no explanation outside JSON.
 
 Available assessments:
 ${assessmentList}
 
-Return a JSON array:
-[
-  {
-    "id": "<assessment UUID from the list above>",
-    "code": "<assessment code>",
-    "name_en": "<English name>",
-    "name_ar": "<Arabic name>",
-    "reason_en": "<1-2 sentence explanation in English of why this assessment fits>",
-    "reason_ar": "<1-2 sentence explanation in Arabic of why this assessment fits>",
-    "relevance": "high" | "medium"
-  }
-]
-Only include assessments from the provided list. Order by relevance (highest first).`
+Return a JSON array (max 3 items):
+[{"code":"<code>","name_en":"<name>","name_ar":"<arabic name>","reason_en":"<1 sentence>","reason_ar":"<1 sentence>","relevance":"high"|"medium"}]
+Only include assessments from the provided list.`
 
     const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
       method: 'POST',
@@ -73,34 +78,34 @@ Only include assessments from the provided list. Order by relevance (highest fir
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemInstruction }] },
         contents: [{ role: 'user', parts: [{ text: text.trim() }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
+        generationConfig: { temperature: 0.3, maxOutputTokens: 512 },
       }),
     })
 
     if (!res.ok) {
-      const err = await res.text()
-      console.error('Gemini API error:', res.status, err)
+      console.error('Gemini API error:', res.status)
       return NextResponse.json({ error: 'AI service error' }, { status: 502 })
     }
 
     const data = await res.json()
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
 
-    const validIds = new Set(assessments.map(a => a.id))
+    const validCodes = new Set(assessments.map(a => a.code))
+    const codeToId = new Map(assessments.map(a => [a.code, a.id]))
     let recommendations: Array<{ id: string; code: string; name_en: string; name_ar: string; reason_en: string; reason_ar: string; relevance: string }> = []
     try {
-      const jsonMatch = raw.match(/\[[\s\S]*\]/)
+      const jsonMatch = raw.match(/\[[\s\S]*?\]/)
       const parsed: unknown[] = jsonMatch ? JSON.parse(jsonMatch[0]) : []
-      recommendations = parsed
-        .filter((r): r is typeof recommendations[number] =>
+      recommendations = (parsed
+        .filter((r): r is Record<string, unknown> =>
           r !== null &&
           typeof r === 'object' &&
-          typeof (r as Record<string, unknown>).id === 'string' &&
-          validIds.has((r as Record<string, unknown>).id as string) &&
+          typeof (r as Record<string, unknown>).code === 'string' &&
+          validCodes.has((r as Record<string, unknown>).code as string) &&
           typeof (r as Record<string, unknown>).name_en === 'string' &&
           typeof (r as Record<string, unknown>).reason_en === 'string'
         )
-        .slice(0, 4)
+        .map(r => ({ ...r, id: codeToId.get(r.code as string) ?? '' })) as typeof recommendations).slice(0, 3)
     } catch {
       recommendations = []
     }

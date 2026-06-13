@@ -11,9 +11,17 @@ export async function GET(_request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const rl = await checkRateLimit(`ai-synthesis:${user.id}`, { limit: 3, windowMs: 60 * 1000 })
-    if (!rl.allowed) {
-      return NextResponse.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429 })
+    // Burst: 2/min; Daily cap: 10/day — synthesis is expensive (~3K tokens/call)
+    const [burstRl, dailyRl] = await Promise.all([
+      checkRateLimit(`ai-synthesis:burst:${user.id}`, { limit: 2, windowMs: 60 * 1000 }),
+      checkRateLimit(`ai-synthesis:daily:${user.id}`, { limit: 10, windowMs: 24 * 60 * 60 * 1000 }),
+    ])
+    if (!burstRl.allowed || !dailyRl.allowed) {
+      const retryAfter = !dailyRl.allowed ? '86400' : '60'
+      return NextResponse.json(
+        { error: !dailyRl.allowed ? 'Daily AI limit reached. Try again tomorrow.' : 'Too many requests. Please wait a moment.' },
+        { status: 429, headers: { 'Retry-After': retryAfter } }
+      )
     }
 
     const apiKey = process.env.GEMINI_API_KEY
@@ -95,7 +103,7 @@ Rules:
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemInstruction }] },
         contents: [{ role: 'user', parts: [{ text: `Assessment Results:\n${resultsSummary}` }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 2048 },
+        generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
       }),
     })
 
