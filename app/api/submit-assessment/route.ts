@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 import type { ScoringBand } from '@/lib/types'
 
 interface ResponseOption {
@@ -32,6 +33,12 @@ export async function POST(request: Request) {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // 20 submissions per hour per user
+    const rl = await checkRateLimit(`submit:${user.id}`, { limit: 20, windowMs: 60 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+    }
 
     const body: SubmitBody = await request.json()
     const { definition_id, responses } = body

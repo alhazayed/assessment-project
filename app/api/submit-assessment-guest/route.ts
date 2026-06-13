@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit } from '@/lib/rate-limit'
 import type { ScoringBand } from '@/lib/types'
 
 interface ResponseOption {
@@ -38,6 +39,13 @@ function calcBand(scoringLogic: ScoringBand[], score: number): ScoringBand | nul
 
 export async function POST(request: Request) {
   try {
+    // IP-based rate limiting: 10 submissions per hour per IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+    const rl = await checkRateLimit(`guest-submit:${ip}`, { limit: 10, windowMs: 60 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+    }
+
     // Reject if the caller is already authenticated — they should use the regular endpoint
     const anonClient = createClient()
     const { data: { user } } = await anonClient.auth.getUser()

@@ -8,22 +8,41 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { submission_id, assessment_name, assessment_name_ar } = await request.json()
+    const { submission_id } = await request.json()
     if (!submission_id) return NextResponse.json({ error: 'submission_id required' }, { status: 400 })
 
     // Verify the submission belongs to this user before notifying admins
     const { data: submission } = await supabase
       .from('assessment_submissions')
-      .select('id, high_risk_flag, patient_id')
+      .select('id, high_risk_flag, patient_id, definition_id')
       .eq('id', submission_id)
       .eq('patient_id', user.id)
       .single()
 
     if (!submission) return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
-    if (!submission.high_risk_flag) return NextResponse.json({ ok: true }) // No-op if not high risk
+    if (!submission.high_risk_flag) return NextResponse.json({ ok: true })
 
-    // Use admin client to insert notifications for admin/superadmin users (bypasses RLS)
     const db = createAdminClient()
+
+    // Deduplication: skip if any admin was already notified for this submission
+    const { count: existingCount } = await db
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('type', 'high_risk')
+      .contains('link', submission_id)
+
+    if ((existingCount ?? 0) > 0) return NextResponse.json({ ok: true, deduplicated: true })
+
+    // Fetch assessment name from DB — never trust client-supplied strings
+    const { data: def } = await db
+      .from('assessment_definitions')
+      .select('name_en, name_ar')
+      .eq('id', submission.definition_id)
+      .single()
+
+    const nameEn = def?.name_en ?? 'Unknown'
+    const nameAr = def?.name_ar ?? nameEn
+
     const { data: admins } = await db
       .from('profiles')
       .select('id')
@@ -36,9 +55,9 @@ export async function POST(request: Request) {
           type: 'high_risk',
           title_en: '⚠ High-risk flag raised',
           title_ar: '⚠ تم رفع علامة خطورة عالية',
-          body_en: `Assessment: ${assessment_name ?? 'Unknown'}`,
-          body_ar: `التقييم: ${assessment_name_ar ?? assessment_name ?? 'Unknown'}`,
-          link: '/x/control/results',
+          body_en: `Assessment: ${nameEn} — submission ${submission_id}`,
+          body_ar: `التقييم: ${nameAr} — رمز التقديم ${submission_id}`,
+          link: `/x/control/results?submission=${submission_id}`,
         }))
       )
     }

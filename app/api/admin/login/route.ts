@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   try {
     // Rate-limit: 5 attempts per 15 minutes per IP
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
-    const rl = checkRateLimit(`admin-login:${ip}`, { limit: 5, windowMs: 15 * 60 * 1000 })
+    const rl = await checkRateLimit(`admin-login:${ip}`, { limit: 5, windowMs: 15 * 60 * 1000 })
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many login attempts. Try again in 15 minutes.' }, { status: 429 })
     }

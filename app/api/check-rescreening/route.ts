@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 type RescreenRule = {
   intervalDays: number
@@ -43,11 +44,17 @@ function isConcerning(score: number, rule: RescreenRule): boolean {
   return rule.higherIsBetter ? score < rule.concernThreshold : score >= rule.concernThreshold
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // 5 calls per hour per user — this endpoint triggers DB writes
+    const rl = await checkRateLimit(`rescreen:${user.id}`, { limit: 5, windowMs: 60 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests', created: 0 }, { status: 429 })
+    }
 
     const { data: submissions } = await supabase
       .from('assessment_submissions')

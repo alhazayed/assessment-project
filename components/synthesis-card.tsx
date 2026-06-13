@@ -193,8 +193,17 @@ export default function SynthesisCard({ isAr }: { isAr: boolean }) {
             </div>
           )}
 
+          {/* Non-diagnostic disclaimer */}
+          <div className="pt-1 pb-1 px-3 py-2 rounded-lg bg-gray-50 border border-gray-100">
+            <p className="text-[11px] text-gray-400 leading-relaxed">
+              {isAr
+                ? 'هذا التحليل أداة دعم للتوعية الذاتية فقط، وليس تشخيصاً طبياً أو نفسياً. إذا كنت تعاني من ضائقة، يرجى التواصل مع متخصص مؤهل.'
+                : 'This analysis is a self-awareness support tool only — not a clinical diagnosis. If you are in distress, please consult a qualified mental health professional.'}
+            </p>
+          </div>
+
           {/* Regenerate */}
-          <div className="pt-2 flex justify-end">
+          <div className="pt-1 flex justify-end">
             <button
               onClick={generate}
               disabled={loading}

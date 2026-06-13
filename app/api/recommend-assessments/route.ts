@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   try {
     // Rate-limit: 20 AI requests per minute per IP (protect free-tier quota)
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
-    const rl = checkRateLimit(`ai-recommend:${ip}`, { limit: 20, windowMs: 60 * 1000 })
+    const rl = await checkRateLimit(`ai-recommend:${ip}`, { limit: 20, windowMs: 60 * 1000 })
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests. Please slow down.' }, { status: 429 })
     }
@@ -87,10 +87,21 @@ Only include assessments from the provided list. Order by relevance (highest fir
     const data = await res.json()
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
 
-    let recommendations
+    const validIds = new Set(assessments.map(a => a.id))
+    let recommendations: Array<{ id: string; code: string; name_en: string; name_ar: string; reason_en: string; reason_ar: string; relevance: string }> = []
     try {
       const jsonMatch = raw.match(/\[[\s\S]*\]/)
-      recommendations = jsonMatch ? JSON.parse(jsonMatch[0]) : []
+      const parsed: unknown[] = jsonMatch ? JSON.parse(jsonMatch[0]) : []
+      recommendations = parsed
+        .filter((r): r is typeof recommendations[number] =>
+          r !== null &&
+          typeof r === 'object' &&
+          typeof (r as Record<string, unknown>).id === 'string' &&
+          validIds.has((r as Record<string, unknown>).id as string) &&
+          typeof (r as Record<string, unknown>).name_en === 'string' &&
+          typeof (r as Record<string, unknown>).reason_en === 'string'
+        )
+        .slice(0, 4)
     } catch {
       recommendations = []
     }

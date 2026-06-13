@@ -5,13 +5,13 @@ import { checkRateLimit } from '@/lib/rate-limit'
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
 
-export async function GET() {
+export async function GET(_request: Request) {
   try {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const rl = checkRateLimit(`ai-synthesis:${user.id}`, { limit: 3, windowMs: 60 * 1000 })
+    const rl = await checkRateLimit(`ai-synthesis:${user.id}`, { limit: 3, windowMs: 60 * 1000 })
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429 })
     }
@@ -109,10 +109,29 @@ Rules:
     const data = await res.json()
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
 
-    let synthesis
+    let synthesis: {
+      summary: string
+      patterns: string[]
+      strengths: string[]
+      areas_of_concern: string[]
+      recommendations: string[]
+      overall_tone: string
+      high_priority_scale: string | null
+    } | null = null
     try {
       const jsonMatch = raw.match(/\{[\s\S]*\}/)
-      synthesis = jsonMatch ? JSON.parse(jsonMatch[0]) : null
+      const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null
+      if (
+        parsed &&
+        typeof parsed.summary === 'string' &&
+        Array.isArray(parsed.patterns) &&
+        Array.isArray(parsed.strengths) &&
+        Array.isArray(parsed.areas_of_concern) &&
+        Array.isArray(parsed.recommendations) &&
+        ['positive', 'cautionary', 'urgent'].includes(parsed.overall_tone)
+      ) {
+        synthesis = parsed
+      }
     } catch {
       synthesis = null
     }

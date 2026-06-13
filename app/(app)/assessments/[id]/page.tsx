@@ -85,8 +85,10 @@ export default function TakeAssessmentPage() {
   const [guestEducation, setGuestEducation] = useState('')
   const [guestCountry, setGuestCountry] = useState('')
   const [guestFormError, setGuestFormError] = useState('')
+  const [userId, setUserId] = useState<string | null>(null)
 
-  const storageKey = `vw_assessment_${id}`
+  // Include userId to prevent cross-user data leaks on shared devices
+  const storageKey = `vw_assessment_${id}_${userId ?? 'guest'}`
 
   // Persist answers to localStorage whenever they change
   useEffect(() => {
@@ -94,12 +96,13 @@ export default function TakeAssessmentPage() {
     try {
       localStorage.setItem(storageKey, JSON.stringify({ answers, currentIndex }))
     } catch {}
-  }, [answers, currentIndex])
+  }, [answers, currentIndex, storageKey])
 
   useEffect(() => {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       setIsLoggedIn(!!user)
+      setUserId(user?.id ?? null)
       const [defRes, itemsRes] = await Promise.all([
         supabase.from('assessment_definitions').select('*').eq('id', id).single(),
         supabase.from('assessment_items').select('*').eq('definition_id', id).order('item_number'),
@@ -107,9 +110,10 @@ export default function TakeAssessmentPage() {
       if (defRes.data) setDefinition(defRes.data as AssessmentDefinition)
       if (itemsRes.data) setItems(itemsRes.data as AssessmentItem[])
 
-      // Restore saved progress
+      // Restore saved progress — key is scoped to user to prevent cross-user leaks
       try {
-        const saved = localStorage.getItem(`vw_assessment_${id}`)
+        const key = `vw_assessment_${id}_${user?.id ?? 'guest'}`
+        const saved = localStorage.getItem(key)
         if (saved) {
           const parsed = JSON.parse(saved)
           if (parsed.answers && Object.keys(parsed.answers).length > 0) {
