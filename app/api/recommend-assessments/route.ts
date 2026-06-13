@@ -8,9 +8,21 @@ const GEMINI_API_URL =
 // Max chars for each description field sent to Gemini (controls token spend)
 const MAX_DESC_CHARS = 80
 
+/** Extract the real client IP, preferring Cloudflare's trusted header. */
+function extractIp(request: Request): string {
+  const cfIp = request.headers.get('cf-connecting-ip')?.trim()
+  if (cfIp && /^[\d.:a-fA-F]{2,45}$/.test(cfIp)) return cfIp
+  const xff = request.headers.get('x-forwarded-for')
+  if (xff) {
+    const first = xff.split(',')[0]?.trim()
+    if (first && /^[\d.:a-fA-F]{2,45}$/.test(first)) return first
+  }
+  return 'unknown'
+}
+
 export async function POST(request: Request) {
   try {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+    const ip = extractIp(request)
 
     // Burst: 3/min per IP; Daily: 30/day per IP
     const [burstRl, dailyRl] = await Promise.all([
