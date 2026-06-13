@@ -8,7 +8,7 @@ import type { AssessmentDefinition } from '@/lib/types'
 import {
   ClipboardList, Brain, BookOpen, MessageSquare,
   BarChart3, Heart, Users, ChevronRight,
-  Sparkles, Clock, Lock, Globe
+  Sparkles, Clock, Lock, Globe, Shield
 } from 'lucide-react'
 import AIAssessmentFinder from '@/components/ai-assessment-finder'
 import AssessmentsByCategory from '@/components/assessments-by-category'
