@@ -15,6 +15,7 @@ import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 import DemographicsCard from '@/components/demographics-card'
 import { COUNTRIES } from '@/lib/countries'
+import TurnstileWidget from '@/components/TurnstileWidget'
 
 function severityColor(band: string) {
   const b = band.toLowerCase()
@@ -85,6 +86,7 @@ export default function TakeAssessmentPage() {
   const [guestEducation, setGuestEducation] = useState('')
   const [guestCountry, setGuestCountry] = useState('')
   const [guestFormError, setGuestFormError] = useState('')
+  const [guestTurnstileToken, setGuestTurnstileToken] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
 
   // Include userId to prevent cross-user data leaks on shared devices
@@ -190,18 +192,7 @@ export default function TakeAssessmentPage() {
 
       const data = await res.json()
 
-      // Notify admins if high-risk (fire-and-forget)
-      if (data.high_risk) {
-        fetch('/api/notify-high-risk', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            submission_id: data.submission_id,
-            assessment_name: definition.name_en,
-            assessment_name_ar: definition.name_ar,
-          }),
-        }).catch(() => {})
-      }
+      // High-risk admin notification is now triggered server-side in submit-assessment route.
 
       // Clear saved progress on successful submission
       try { localStorage.removeItem(storageKey) } catch {}
@@ -227,7 +218,12 @@ export default function TakeAssessmentPage() {
       const res = await fetch('/api/submit-assessment-guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ definition_id: definition.id, responses: responsePayload, demographics: guestDemographics }),
+        body: JSON.stringify({
+          definition_id: definition.id,
+          responses: responsePayload,
+          demographics: guestDemographics,
+          turnstile_token: guestTurnstileToken,
+        }),
       })
 
       if (!res.ok) {
@@ -371,7 +367,18 @@ export default function TakeAssessmentPage() {
                   </select>
                 </div>
               </div>
-              <button onClick={handleGuestContinue} className="btn-primary w-full mt-1">
+              <TurnstileWidget
+                onToken={token => setGuestTurnstileToken(token)}
+                onError={() => setGuestTurnstileToken(null)}
+                onExpire={() => setGuestTurnstileToken(null)}
+                theme="light"
+                language={lang}
+              />
+              <button
+                onClick={handleGuestContinue}
+                className="btn-primary w-full mt-1"
+                disabled={!!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !guestTurnstileToken}
+              >
                 {isAr ? 'ابدأ التقييم' : 'Start Assessment'}
               </button>
             </div>

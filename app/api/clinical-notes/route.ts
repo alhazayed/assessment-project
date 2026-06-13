@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { scrubPHI } from '@/lib/security/anonymizePHI'
+import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
 
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
@@ -135,6 +137,12 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'AI unavailable' }, { status: 503 })
   }
 
+  // Global AI cost circuit breaker
+  const budget = await checkAiBudget()
+  if (!budget.allowed) {
+    return NextResponse.json({ error: 'AI services temporarily unavailable' }, { status: 503 })
+  }
+
   const [subsRes, moodRes] = await Promise.all([
     supabase.from('assessment_submissions')
       .select('submitted_at, total_score, severity_band, high_risk_flag, assessment_definitions(name_en)')
@@ -169,7 +177,7 @@ export async function PUT(request: Request) {
       contents: [{
         role: 'user',
         parts: [{
-          text: `Recent assessment results:\n${submissions || 'No recent assessments.'}\n\nRecent mood logs:\n${moods || 'No recent mood data.'}`,
+          text: scrubPHI(`Recent assessment results:\n${submissions || 'No recent assessments.'}\n\nRecent mood logs:\n${moods || 'No recent mood data.'}`),
         }],
       }],
       generationConfig: { temperature: 0.4, maxOutputTokens: 600 },

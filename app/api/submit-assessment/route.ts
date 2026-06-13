@@ -1,7 +1,46 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import type { ScoringBand } from '@/lib/types'
+
+async function notifyAdminsHighRisk(submissionId: string, definitionId: string, patientId: string) {
+  try {
+    const db = createAdminClient()
+    const dedupeLink = `/x/control/results?submission=${submissionId}`
+
+    const { count } = await db
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('type', 'high_risk')
+      .eq('link', dedupeLink)
+    if ((count ?? 0) > 0) return
+
+    const [defRes, adminsRes] = await Promise.all([
+      db.from('assessment_definitions').select('name_en, name_ar').eq('id', definitionId).single(),
+      db.from('profiles').select('id').in('role', ['admin', 'superadmin']),
+    ])
+
+    const nameEn = defRes.data?.name_en ?? 'Unknown'
+    const nameAr = defRes.data?.name_ar ?? nameEn
+
+    if (adminsRes.data && adminsRes.data.length > 0) {
+      await db.from('notifications').insert(
+        adminsRes.data.map(a => ({
+          user_id: a.id,
+          type: 'high_risk',
+          title_en: '⚠ High-risk flag raised',
+          title_ar: '⚠ تم رفع علامة خطورة عالية',
+          body_en: `Assessment: ${nameEn} — submission ${submissionId}`,
+          body_ar: `التقييم: ${nameAr} — رمز التقديم ${submissionId}`,
+          link: dedupeLink,
+        }))
+      )
+    }
+  } catch (err) {
+    console.error('[notifyAdminsHighRisk] error (non-fatal):', err)
+  }
+}
 
 interface ResponseOption {
   value: number
@@ -147,6 +186,11 @@ export async function POST(request: Request) {
       response_label_ar: r.label_ar,
     }))
     await supabase.from('assessment_responses').insert(responseRows)
+
+    // Server-side high-risk admin alert — idempotent, fire-and-forget
+    if (highRisk) {
+      notifyAdminsHighRisk(submission.id, definition_id, user.id).catch(() => {})
+    }
 
     // Log the submission in audit trail
     await supabase.from('audit_log').insert({

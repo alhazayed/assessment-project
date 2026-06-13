@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
 
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
@@ -27,6 +28,12 @@ export async function GET(_request: Request) {
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey || apiKey === 'your-gemini-api-key-here') {
       return NextResponse.json({ error: 'AI service not configured' }, { status: 503 })
+    }
+
+    // Global AI cost circuit breaker
+    const budget = await checkAiBudget()
+    if (!budget.allowed) {
+      return NextResponse.json({ error: 'AI services temporarily unavailable' }, { status: 503 })
     }
 
     const { data: submissions } = await supabase

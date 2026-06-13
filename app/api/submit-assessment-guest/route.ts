@@ -2,7 +2,46 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { verifyTurnstileToken } from '@/lib/security/verifyTurnstile'
 import type { ScoringBand } from '@/lib/types'
+
+async function notifyAdminsHighRiskGuest(submissionId: string, definitionId: string) {
+  try {
+    const db = createAdminClient()
+    const dedupeLink = `/x/control/results?submission=${submissionId}`
+
+    const { count } = await db
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('type', 'high_risk')
+      .eq('link', dedupeLink)
+    if ((count ?? 0) > 0) return
+
+    const [defRes, adminsRes] = await Promise.all([
+      db.from('assessment_definitions').select('name_en, name_ar').eq('id', definitionId).single(),
+      db.from('profiles').select('id').in('role', ['admin', 'superadmin']),
+    ])
+
+    const nameEn = defRes.data?.name_en ?? 'Unknown'
+    const nameAr = defRes.data?.name_ar ?? nameEn
+
+    if (adminsRes.data && adminsRes.data.length > 0) {
+      await db.from('notifications').insert(
+        adminsRes.data.map(a => ({
+          user_id: a.id,
+          type: 'high_risk',
+          title_en: '⚠ High-risk flag raised (guest)',
+          title_ar: '⚠ تم رفع علامة خطورة عالية (زائر)',
+          body_en: `Assessment: ${nameEn} — submission ${submissionId} (anonymous guest)`,
+          body_ar: `التقييم: ${nameAr} — رمز التقديم ${submissionId} (زائر مجهول)`,
+          link: dedupeLink,
+        }))
+      )
+    }
+  } catch (err) {
+    console.error('[notifyAdminsHighRiskGuest] error (non-fatal):', err)
+  }
+}
 
 interface ResponseOption {
   value: number
@@ -98,8 +137,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Authenticated users must use /api/submit-assessment' }, { status: 400 })
     }
 
-    const body: SubmitBody = await request.json()
+    const body: SubmitBody & { turnstile_token?: string } = await request.json()
     const { definition_id, responses, demographics } = body
+
+    // Cloudflare Turnstile CAPTCHA verification — fail closed
+    const turnstileResult = await verifyTurnstileToken(body.turnstile_token, ip !== 'unknown' ? ip : undefined)
+    if (!turnstileResult.success) {
+      return NextResponse.json(
+        { error: 'CAPTCHA verification failed. Please try again.' },
+        { status: 403 }
+      )
+    }
 
     if (!definition_id || typeof definition_id !== 'string' || definition_id.length > 100) {
       return NextResponse.json({ error: 'definition_id is required' }, { status: 400 })
@@ -263,6 +311,11 @@ export async function POST(request: Request) {
       response_label_ar: r.label_ar,
     }))
     await supabase.from('assessment_responses').insert(responseRows)
+
+    // Server-side high-risk admin alert — idempotent, fire-and-forget
+    if (highRisk) {
+      notifyAdminsHighRiskGuest(submission.id, definition_id).catch(() => {})
+    }
 
     return NextResponse.json({
       submission_id: submission.id,

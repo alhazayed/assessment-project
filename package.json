@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:security": "npx tsx --test __tests__/security/*.test.ts",
+    "test:phi": "npx tsx --test __tests__/security/phi.test.ts",
+    "load:100": "k6 run load-tests/scenarios/100vus.js",
+    "load:250": "k6 run load-tests/scenarios/250vus.js",
+    "load:500": "k6 run load-tests/scenarios/500vus.js",
+    "load:1000": "k6 run load-tests/scenarios/1000vus.js"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.5.1",
