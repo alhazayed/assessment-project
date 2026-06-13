@@ -257,7 +257,7 @@ export default function TakeAssessmentPage() {
     const returnUrl = `/assessments/${id}`
     const isAr = lang === 'ar'
 
-    function handleGuestContinue() {
+    const handleGuestContinue = () => {
       if (!guestGender || !guestCountry) {
         setGuestFormError(isAr ? 'يرجى تعبئة الجنس والبلد على الأقل' : 'Please fill in at least gender and country')
         return
