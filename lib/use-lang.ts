@@ -1,12 +1,16 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { Lang } from './i18n'
 
+function readLangCookie(): Lang {
+  if (typeof document === 'undefined') return 'en'
+  const match = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/)
+  return match?.[1] === 'ar' ? 'ar' : 'en'
+}
+
 export function useLang(): Lang {
-  const [lang, setLang] = useState<Lang>('en')
-  useEffect(() => {
-    const match = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/)
-    if (match?.[1] === 'ar') setLang('ar')
-  }, [])
+  // Lazy initialiser: reads the cookie synchronously on first render
+  // so client components get the correct language without a useEffect delay.
+  const [lang] = useState<Lang>(readLangCookie)
   return lang
 }

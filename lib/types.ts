@@ -12,6 +12,11 @@ export interface Profile {
   updated_at: string
   is_active: boolean
   deactivated_at: string | null
+  date_of_birth: string | null
+  gender: 'male' | 'female' | null
+  marital_status: 'single' | 'married' | 'divorced' | 'widowed' | null
+  educational_status: 'none' | 'primary' | 'secondary' | 'diploma' | 'bachelor' | 'master' | 'phd' | 'other' | null
+  country_of_residence: string | null
 }
 
 export interface PatientProfile {
@@ -67,6 +72,7 @@ export interface AssessmentItem {
   response_options: ResponseOption[]
   is_safety_item: boolean
   score_weight: number
+  subscale?: string | null
 }
 
 export interface ResponseOption {
@@ -134,6 +140,7 @@ export interface Message {
   clinician_id: string
   sender_id: string
   body: string
+  is_urgent: boolean
   read_at: string | null
   created_at: string
 }

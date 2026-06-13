@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { UserPlus } from 'lucide-react'
@@ -10,6 +10,8 @@ import { t } from '@/lib/i18n'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next')
   const lang = useLang()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -23,23 +25,41 @@ export default function RegisterPage() {
     setLoading(true)
     setError(null)
 
+    if (!fullName.trim() || fullName.trim().length < 2) {
+      setError(lang === 'ar' ? 'يرجى إدخال اسم كامل صحيح' : 'Please enter a valid full name')
+      setLoading(false)
+      return
+    }
+    if (password.length < 8) {
+      setError(lang === 'ar' ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters')
+      setLoading(false)
+      return
+    }
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      setError(lang === 'ar' ? 'كلمة المرور يجب أن تحتوي على حروف وأرقام' : 'Password must contain both letters and numbers')
+      setLoading(false)
+      return
+    }
+
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          full_name_en: fullName,
-        },
+        data: { full_name_en: fullName },
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vwelfare.vercel.app'}/auth/confirm?next=${encodeURIComponent(next || '/onboarding')}`,
       },
     })
 
     if (error) {
       setError(error.message)
       setLoading(false)
+    } else if (data.session) {
+      // Email confirmation disabled — user is signed in immediately
+      router.push(next || '/onboarding')
     } else {
+      // Email confirmation required — show "check your email" screen
       setSuccess(true)
-      setTimeout(() => router.push('/login'), 3000)
     }
   }
 
@@ -52,7 +72,14 @@ export default function RegisterPage() {
           </svg>
         </div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('auth.register.success.title', lang)}</h2>
-        <p className="text-gray-500 text-sm">{t('auth.register.success.msg', lang)}</p>
+        <p className="text-gray-500 text-sm mb-6">
+          {lang === 'ar'
+            ? `تم إرسال رابط التحقق إلى ${email}. انقر على الرابط في بريدك الإلكتروني للمتابعة.`
+            : `A verification link was sent to ${email}. Click the link in your email to continue.`}
+        </p>
+        <p className="text-xs text-gray-400">
+          {lang === 'ar' ? 'لم تستلم البريد؟ تحقق من مجلد الرسائل غير المرغوب فيها.' : "Didn't receive it? Check your spam folder."}
+        </p>
       </div>
     )
   }
@@ -116,7 +143,7 @@ export default function RegisterPage() {
 
       <p className="mt-6 text-center text-sm text-gray-500">
         {t('auth.register.have_account', lang)}{' '}
-        <Link href="/login" className="font-medium text-brand-600 hover:text-brand-700">
+        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="font-medium text-brand-600 hover:text-brand-700">
           {t('auth.register.signin', lang)}
         </Link>
       </p>

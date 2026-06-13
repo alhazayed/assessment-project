@@ -3,13 +3,131 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+  /* ── CSS custom properties ── */
+  :root {
+    --vw-primary:   #1D6296;   /* Lapis Lazuli */
+    --vw-accent:    #F3650A;   /* Spanish Orange */
+    --vw-dark:      #12273C;   /* Yankees Blue */
   }
 
-  [dir="rtl"] {
-    font-family: 'Segoe UI', Tahoma, 'Arabic Typesetting', 'Arabic UI Text', Arial, sans-serif;
+  /* ── Latin / LTR base ── */
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+    font-family: var(--font-latin, 'Jost'), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.6;
+    font-feature-settings: 'kern' 1, 'liga' 1;
+  }
+
+  /* ── Headings use Jost at heavier weight ── */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-latin, 'Jost'), ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── Arabic / RTL typography ── */
+  /*
+   * IBM Plex Sans Arabic is loaded via next/font and exposed as --font-arabic.
+   * All Arabic text properties are driven from this single block so that
+   * components don't need per-element font declarations.
+   */
+  [dir="rtl"] body {
+    font-family: var(--font-arabic, 'IBM Plex Sans Arabic'), 'Cairo', 'Tajawal',
+      'Noto Sans Arabic', ui-sans-serif, system-ui, sans-serif;
     letter-spacing: 0;
+    word-spacing: 0.025em;
+    line-height: 1.8;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Headings — Arabic needs slightly looser line-height than Latin */
+  [dir="rtl"] h1,
+  [dir="rtl"] h2,
+  [dir="rtl"] h3,
+  [dir="rtl"] h4,
+  [dir="rtl"] h5,
+  [dir="rtl"] h6 {
+    font-family: var(--font-arabic, 'IBM Plex Sans Arabic'), 'Cairo', sans-serif;
+    line-height: 1.55;
+    letter-spacing: 0;
+    font-weight: 700;
+  }
+
+  /* Body text */
+  [dir="rtl"] p,
+  [dir="rtl"] li {
+    line-height: 1.85;
+    letter-spacing: 0;
+  }
+
+  /* Small/muted text — Arabic at xs/sm sizes needs slightly more line-height */
+  [dir="rtl"] .text-xs,
+  [dir="rtl"] .text-sm {
+    line-height: 1.7;
+  }
+
+  /* ── Form inputs — RTL direction ── */
+
+  /* Text-like inputs read right-to-left */
+  [dir="rtl"] input[type="text"],
+  [dir="rtl"] input[type="search"],
+  [dir="rtl"] input[type="password"],
+  [dir="rtl"] input[type="tel"],
+  [dir="rtl"] textarea {
+    direction: rtl;
+    text-align: right;
+    font-family: var(--font-arabic, 'IBM Plex Sans Arabic'), sans-serif;
+  }
+
+  /* Numeric / date / technical inputs stay LTR */
+  [dir="rtl"] input[type="number"],
+  [dir="rtl"] input[type="date"],
+  [dir="rtl"] input[type="time"],
+  [dir="rtl"] input[type="email"],
+  [dir="rtl"] input[type="url"] {
+    direction: ltr;
+    text-align: left;
+  }
+
+  /* Placeholder text direction */
+  [dir="rtl"] input::placeholder,
+  [dir="rtl"] textarea::placeholder {
+    text-align: right;
+    direction: rtl;
+  }
+
+  /* Select dropdowns */
+  [dir="rtl"] select {
+    direction: rtl;
+    text-align: right;
+    font-family: var(--font-arabic, 'IBM Plex Sans Arabic'), sans-serif;
+  }
+
+  /* Labels */
+  [dir="rtl"] label {
+    font-family: var(--font-arabic, 'IBM Plex Sans Arabic'), sans-serif;
+    text-align: right;
+    letter-spacing: 0;
+  }
+
+  /* Buttons */
+  [dir="rtl"] button,
+  [dir="rtl"] [role="button"] {
+    font-family: var(--font-arabic, 'IBM Plex Sans Arabic'), sans-serif;
+    letter-spacing: 0;
+  }
+
+  /* Table cells */
+  [dir="rtl"] th,
+  [dir="rtl"] td {
+    text-align: right;
+    font-family: var(--font-arabic, 'IBM Plex Sans Arabic'), sans-serif;
+  }
+
+  /* RTL-aware focus ring — no visual change, but ensures consistency */
+  [dir="rtl"] :focus-visible {
+    outline-offset: 2px;
   }
 }
 
@@ -28,6 +146,12 @@
 
   .input {
     @apply block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm;
+  }
+
+  /* RTL-aware .input: inherits direction from [dir="rtl"] rules above */
+  [dir="rtl"] .input {
+    text-align: right;
+    font-family: var(--font-arabic, 'IBM Plex Sans Arabic'), sans-serif;
   }
 
   .label {

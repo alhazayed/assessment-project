@@ -10,53 +10,9 @@ import {
   BarChart3, Heart, Shield, Users, ChevronRight,
   Sparkles, Clock, Lock, Globe
 } from 'lucide-react'
+import AIAssessmentFinder from '@/components/ai-assessment-finder'
+import AssessmentsByCategory from '@/components/assessments-by-category'
 
-const DOMAIN_COLORS: Record<string, string> = {
-  PHQ9:   'bg-blue-50 text-blue-700 border-blue-200',
-  GAD7:   'bg-purple-50 text-purple-700 border-purple-200',
-  DASS21: 'bg-violet-50 text-violet-700 border-violet-200',
-  ISI:    'bg-indigo-50 text-indigo-700 border-indigo-200',
-  ASRS:   'bg-amber-50 text-amber-700 border-amber-200',
-  AUDITC: 'bg-orange-50 text-orange-700 border-orange-200',
-  DAST10: 'bg-rose-50 text-rose-700 border-rose-200',
-  MDQ:    'bg-yellow-50 text-yellow-700 border-yellow-200',
-  PCL5:   'bg-red-50 text-red-700 border-red-200',
-  WHO5:   'bg-green-50 text-green-700 border-green-200',
-  K10:    'bg-teal-50 text-teal-700 border-teal-200',
-  OCIR:   'bg-pink-50 text-pink-700 border-pink-200',
-  IESR:   'bg-red-50 text-red-700 border-red-200',
-  PSS10:  'bg-orange-50 text-orange-700 border-orange-200',
-  RSES:   'bg-sky-50 text-sky-700 border-sky-200',
-  GDS15:  'bg-blue-50 text-blue-700 border-blue-200',
-  ESS:    'bg-indigo-50 text-indigo-700 border-indigo-200',
-  EAT26:  'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
-  CAGE:   'bg-orange-50 text-orange-700 border-orange-200',
-  ACE:    'bg-rose-50 text-rose-700 border-rose-200',
-  PSS4:   'bg-amber-50 text-amber-700 border-amber-200',
-  PHQ15:  'bg-cyan-50 text-cyan-700 border-cyan-200',
-  WEMWBS: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  LSAS:   'bg-purple-50 text-purple-700 border-purple-200',
-}
-
-const DOMAIN_LABEL_EN: Record<string, string> = {
-  PHQ9: 'Depression', GAD7: 'Anxiety', DASS21: 'Depression · Anxiety · Stress',
-  ISI: 'Sleep', ASRS: 'ADHD', AUDITC: 'Alcohol', DAST10: 'Drug Use',
-  MDQ: 'Bipolar', PCL5: 'Trauma', WHO5: 'Well-being', K10: 'Distress',
-  OCIR: 'OCD', IESR: 'Trauma', PSS10: 'Stress', RSES: 'Self-esteem',
-  GDS15: 'Depression', ESS: 'Sleep', EAT26: 'Eating', CAGE: 'Alcohol',
-  ACE: 'Childhood Adversity', PSS4: 'Stress', PHQ15: 'Somatic', WEMWBS: 'Well-being',
-  LSAS: 'Social Anxiety',
-}
-
-const DOMAIN_LABEL_AR: Record<string, string> = {
-  PHQ9: 'الاكتئاب', GAD7: 'القلق', DASS21: 'الاكتئاب · القلق · الضغط',
-  ISI: 'النوم', ASRS: 'فرط الحركة', AUDITC: 'الكحول', DAST10: 'تعاطي المخدرات',
-  MDQ: 'ثنائي القطب', PCL5: 'الصدمة', WHO5: 'الرفاهية', K10: 'الضيق',
-  OCIR: 'الوسواس القهري', IESR: 'الصدمة', PSS10: 'الضغط', RSES: 'تقدير الذات',
-  GDS15: 'الاكتئاب', ESS: 'النوم', EAT26: 'الأكل', CAGE: 'الكحول',
-  ACE: 'الطفولة', PSS4: 'الضغط', PHQ15: 'جسدي', WEMWBS: 'الرفاهية',
-  LSAS: 'القلق الاجتماعي',
-}
 
 export default async function LandingPage() {
   const supabase = createClient()
@@ -72,7 +28,6 @@ export default async function LandingPage() {
     .order('name_en')
 
   const assessments = (definitions || []) as Pick<AssessmentDefinition, 'id' | 'code' | 'name_en' | 'name_ar' | 'description_en' | 'description_ar' | 'total_questions'>[]
-  const DOMAIN_LABEL = lang === 'ar' ? DOMAIN_LABEL_AR : DOMAIN_LABEL_EN
 
   const services = [
     {
@@ -186,6 +141,23 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ── AI Recommender ──────────────────────────────────────────────── */}
+      <section className="py-16 px-6 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 bg-purple-100 text-purple-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
+              <Sparkles className="w-3.5 h-3.5" />
+              {t('landing.ai.badge', lang)}
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              {t('landing.ai.title', lang)}
+            </h2>
+            <p className="text-gray-500">{t('landing.ai.sub', lang)}</p>
+          </div>
+          <AIAssessmentFinder lang={lang} />
+        </div>
+      </section>
+
       {/* ── Trust strip ─────────────────────────────────────────────────── */}
       <section className="border-y border-gray-100 bg-gray-50 py-5">
         <div className="max-w-5xl mx-auto px-6">
@@ -234,41 +206,15 @@ export default async function LandingPage() {
 
       {/* ── Assessments ─────────────────────────────────────────────────── */}
       <section id="assessments" className="py-24 px-6 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-14">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
             <h2 className="text-3xl font-bold text-gray-900 mb-3">{t('assessments.section.title', lang)}</h2>
-            <p className="text-gray-500 text-lg max-w-2xl mx-auto">
+            <p className="text-gray-500 text-lg max-w-xl mx-auto">
               {t('assessments.section.sub.pre', lang)} {assessments.length} {t('assessments.section.sub.post', lang)}
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {assessments.map((a) => {
-              const colorClass = DOMAIN_COLORS[a.code] ?? 'bg-gray-50 text-gray-600 border-gray-200'
-              const domainLabel = DOMAIN_LABEL[a.code] ?? 'Mental Health'
-              const name = lang === 'ar' && a.name_ar ? a.name_ar : a.name_en
-              const description = lang === 'ar' && a.description_ar ? a.description_ar : a.description_en
-              return (
-                <div key={a.id} className="card p-5 flex flex-col hover:shadow-md transition-all hover:-translate-y-0.5">
-                  <div className="flex items-start justify-between mb-3">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${colorClass}`}>
-                      {domainLabel}
-                    </span>
-                    <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md font-medium">
-                      {a.total_questions}{t('assessments.questions', lang)}
-                    </span>
-                  </div>
-                  <h3 className="font-semibold text-gray-900 leading-snug mb-2">{name}</h3>
-                  {description && (
-                    <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed flex-1">{description}</p>
-                  )}
-                  <Link href={`/assessments/${a.id}`} className="mt-4 btn-primary text-xs px-4 py-2 self-start">
-                    {t('assessments.start', lang)}
-                  </Link>
-                </div>
-              )
-            })}
-          </div>
+          <AssessmentsByCategory assessments={assessments} lang={lang} />
 
           <div className="mt-10 text-center">
             <div className="inline-flex items-center gap-3 bg-brand-50 border border-brand-100 rounded-xl px-6 py-4 text-sm text-brand-700">
@@ -352,6 +298,7 @@ export default async function LandingPage() {
             <Link href="/assessments" className="hover:text-white transition-colors">{t('nav.assessments', lang)}</Link>
             <Link href="/login" className="hover:text-white transition-colors">{t('nav.signin', lang)}</Link>
             <Link href="/register" className="hover:text-white transition-colors">{t('nav.create_account', lang)}</Link>
+            <a href="mailto:info@vwelfare.com" className="hover:text-white transition-colors">{t('footer.contact', lang)}</a>
           </div>
           <p className="text-xs text-gray-600 text-center md:text-right">
             {t('footer.disclaimer', lang)}

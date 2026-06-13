@@ -24,14 +24,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (user && profile) {
     return (
       <div className="flex min-h-screen">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium">
+          {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
+        </a>
         <Sidebar profile={profile} lang={lang} />
-        <main className={`flex-1 ${lang === 'ar' ? 'mr-64' : 'ml-64'} overflow-auto`}>{children}</main>
+        <main id="main-content" className={`flex-1 ${lang === 'ar' ? 'mr-64' : 'ml-64'} overflow-auto`}>{children}</main>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium">
+        {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
+      </a>
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-semibold text-gray-900">
@@ -49,7 +55,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </header>
-      <main>{children}</main>
+      <main id="main-content">{children}</main>
     </div>
   )
 }
