@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { UserPlus } from 'lucide-react'
@@ -10,6 +10,8 @@ import { t } from '@/lib/i18n'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const next = searchParams.get('next')
   const lang = useLang()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -45,7 +47,7 @@ export default function RegisterPage() {
       password,
       options: {
         data: { full_name_en: fullName },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vwelfare.vercel.app'}/auth/confirm?next=/onboarding`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vwelfare.vercel.app'}/auth/confirm?next=${encodeURIComponent(next || '/onboarding')}`,
       },
     })
 
@@ -54,7 +56,7 @@ export default function RegisterPage() {
       setLoading(false)
     } else if (data.session) {
       // Email confirmation disabled — user is signed in immediately
-      router.push('/onboarding')
+      router.push(next || '/onboarding')
     } else {
       // Email confirmation required — show "check your email" screen
       setSuccess(true)
@@ -141,7 +143,7 @@ export default function RegisterPage() {
 
       <p className="mt-6 text-center text-sm text-gray-500">
         {t('auth.register.have_account', lang)}{' '}
-        <Link href="/login" className="font-medium text-brand-600 hover:text-brand-700">
+        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="font-medium text-brand-600 hover:text-brand-700">
           {t('auth.register.signin', lang)}
         </Link>
       </p>

@@ -7,9 +7,9 @@ import { createClient } from '@/lib/supabase/client'
 import {
   ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle,
   LogIn, BookOpen, FlaskConical, ArrowRight, Brain,
-  History, TrendingUp, UserPlus, Lock,
+  UserPlus, Lock,
 } from 'lucide-react'
-import type { AssessmentDefinition, AssessmentItem, ResponseOption, ScoringBand } from '@/lib/types'
+import type { AssessmentDefinition, AssessmentItem, ResponseOption } from '@/lib/types'
 import { getAssessmentContent, getBandContent, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
@@ -114,13 +114,6 @@ export default function TakeAssessmentPage() {
     if (data) setRelatedAssessments(data as RelatedAssessment[])
   }
 
-  function calcBand(scoringLogic: ScoringBand[], totalScore: number) {
-    for (const band of scoringLogic) {
-      if (totalScore >= band.min && totalScore <= band.max) return band
-    }
-    return scoringLogic[scoringLogic.length - 1]
-  }
-
   async function handleSubmit() {
     if (!definition) return
     setSubmitting(true)
@@ -186,22 +179,6 @@ export default function TakeAssessmentPage() {
       return
     }
 
-    // Guest path: score client-side for display only (not saved)
-    const totalScore = Object.values(answers).reduce((sum, a) => sum + a.value, 0)
-    const band = calcBand(definition.scoring_logic, totalScore)
-    const highRisk = definition.high_risk_threshold !== null && totalScore >= definition.high_risk_threshold
-
-    try { localStorage.removeItem(storageKey) } catch {}
-
-    setResult({
-      score: totalScore,
-      band_en: band?.severity_en || 'Unknown',
-      band_ar: band?.severity_ar || band?.severity_en || 'Unknown',
-      high_risk: highRisk,
-    })
-    setSubmitted(true)
-    setSubmitting(false)
-    await loadRelated(definition.code)
   }
 
   if (!definition || items.length === 0 || isLoggedIn === null) {
@@ -210,6 +187,41 @@ export default function TakeAssessmentPage() {
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm text-gray-500">{t('assessment.loading', lang)}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoggedIn === false) {
+    const defName = lang === 'ar' && definition.name_ar ? definition.name_ar : definition.name_en
+    const defDesc = lang === 'ar' && definition.description_ar ? definition.description_ar : definition.description_en
+    const returnUrl = `/assessments/${id}`
+    return (
+      <div className="p-8 max-w-md mx-auto">
+        <div className="card p-8 text-center">
+          <div className="w-14 h-14 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-7 h-7 text-brand-600" />
+          </div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">{defName}</h1>
+          {defDesc && <p className="text-sm text-gray-500 mb-2 leading-relaxed">{defDesc}</p>}
+          <p className="text-xs text-gray-400 mb-6">{definition.total_questions} {t('assessments.questions', lang)}</p>
+          <p className="text-sm text-gray-700 mb-6">
+            {lang === 'ar'
+              ? 'يرجى تسجيل الدخول أو إنشاء حساب لإجراء هذا التقييم وحفظ نتائجك ومتابعتها.'
+              : 'Please sign in or create an account to take this assessment and track your results over time.'}
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link href={`/login?next=${encodeURIComponent(returnUrl)}`}
+              className="btn-primary w-full gap-2 justify-center flex items-center">
+              <LogIn className="w-4 h-4" />
+              {t('auth.login.submit', lang)}
+            </Link>
+            <Link href={`/register?next=${encodeURIComponent(returnUrl)}`}
+              className="btn-secondary w-full gap-2 justify-center flex items-center">
+              <UserPlus className="w-4 h-4" />
+              {t('auth.register.submit', lang)}
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -254,70 +266,14 @@ export default function TakeAssessmentPage() {
             </div>
           )}
 
-          {!isLoggedIn && (
-            <p className="mt-4 text-xs text-amber-600 flex items-center justify-center gap-1.5 bg-amber-50 border border-amber-200 rounded-lg py-2 px-3">
-              <LogIn className="w-3.5 h-3.5 flex-shrink-0" />
-              {t('assessment.result.save.title', lang)}
-            </p>
-          )}
-          {isLoggedIn && (
-            <p className="mt-4 text-sm text-green-600 flex items-center justify-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4" /> {t('assessment.result.saved', lang)}
-            </p>
-          )}
+          <p className="mt-4 text-sm text-green-600 flex items-center justify-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4" /> {t('assessment.result.saved', lang)}
+          </p>
         </div>
 
         {/* Demographics collection */}
         <DemographicsCard isLoggedIn={!!isLoggedIn} lang={lang} />
 
-        {/* Profile creation promo for guests */}
-        {!isLoggedIn && (
-          <div className="rounded-2xl overflow-hidden border border-brand-200 shadow-sm">
-            <div className="bg-gradient-to-br from-brand-600 to-brand-700 px-8 py-7 text-white">
-              <div className="flex items-start gap-4">
-                <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className={`text-lg font-bold mb-1 ${lang === 'ar' ? 'text-right' : ''}`}>
-                    {t('assessment.result.promo.title', lang)}
-                  </h2>
-                  <p className={`text-brand-100 text-sm leading-relaxed ${lang === 'ar' ? 'text-right' : ''}`}>
-                    {t('assessment.result.promo.sub', lang)}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white px-8 py-6">
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {([
-                  { icon: History,   key: 'assessment.result.promo.history'  as const },
-                  { icon: TrendingUp,key: 'assessment.result.promo.tracking' as const },
-                  { icon: UserPlus,  key: 'assessment.result.promo.assigned' as const },
-                  { icon: Lock,      key: 'assessment.result.promo.secure'   as const },
-                ] as const).map(({ icon: Icon, key }) => (
-                  <div key={key} className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-                      <Icon className="w-3.5 h-3.5 text-brand-600" />
-                    </div>
-                    <span className="text-sm text-gray-700">{t(key, lang)}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/register"
-                  className="flex-1 flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors text-sm">
-                  <UserPlus className="w-4 h-4" />
-                  {t('assessment.result.promo.cta', lang)}
-                </Link>
-                <Link href="/login"
-                  className="flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium py-3 px-4 rounded-xl transition-colors text-sm">
-                  {t('assessment.result.promo.signin', lang)}
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* IPIP-NEO Domain Scores */}
         {definition.code === 'IPIP120' && domainScores && (
@@ -467,7 +423,7 @@ export default function TakeAssessmentPage() {
 
         <div className="flex gap-3 justify-center pb-8">
           <Link href="/assessments" className="btn-secondary">{t('nav.assessments', lang)}</Link>
-          {isLoggedIn && <Link href="/dashboard" className="btn-primary">{t('nav.dashboard', lang)}</Link>}
+          <Link href="/dashboard" className="btn-primary">{t('nav.dashboard', lang)}</Link>
         </div>
       </div>
     )
@@ -486,11 +442,6 @@ export default function TakeAssessmentPage() {
         <div className="flex items-center justify-between mb-2">
           <div>
             <h1 className="text-lg font-semibold text-gray-900">{defName}</h1>
-            {!isLoggedIn && (
-              <p className="text-xs text-gray-400 mt-0.5">
-                <Link href="/register" className="text-brand-600 hover:underline">{t('assessment.result.save.signup', lang)}</Link>
-              </p>
-            )}
           </div>
           <span className="text-sm text-gray-400">{currentIndex + 1} {t('assessment.of', lang)} {items.length}</span>
         </div>
