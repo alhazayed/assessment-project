@@ -52,10 +52,29 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    await requireAdmin()
+    const { user, role } = await requireAdmin()
     const { id, is_active } = await request.json()
+    if (!id || typeof id !== 'string') {
+      return NextResponse.json({ error: 'id required' }, { status: 400 })
+    }
+
     const db = createAdminClient()
-    await db.from('platform_announcements').update({ is_active, updated_at: new Date().toISOString() }).eq('id', id)
+
+    // Superadmins may toggle any announcement; regular admins only their own
+    if (role !== 'superadmin') {
+      const { data: existing } = await db
+        .from('platform_announcements')
+        .select('created_by')
+        .eq('id', id)
+        .single()
+      if (!existing || existing.created_by !== user.id) {
+        return NextResponse.json({ error: 'Forbidden — you can only modify your own announcements' }, { status: 403 })
+      }
+    }
+
+    await db.from('platform_announcements')
+      .update({ is_active, updated_at: new Date().toISOString() })
+      .eq('id', id)
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -64,9 +83,26 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    await requireAdmin()
+    const { user, role } = await requireAdmin()
     const { id } = await request.json()
+    if (!id || typeof id !== 'string') {
+      return NextResponse.json({ error: 'id required' }, { status: 400 })
+    }
+
     const db = createAdminClient()
+
+    // Superadmins may delete any announcement; regular admins only their own
+    if (role !== 'superadmin') {
+      const { data: existing } = await db
+        .from('platform_announcements')
+        .select('created_by')
+        .eq('id', id)
+        .single()
+      if (!existing || existing.created_by !== user.id) {
+        return NextResponse.json({ error: 'Forbidden — you can only delete your own announcements' }, { status: 403 })
+      }
+    }
+
     await db.from('platform_announcements').delete().eq('id', id)
     return NextResponse.json({ ok: true })
   } catch {
