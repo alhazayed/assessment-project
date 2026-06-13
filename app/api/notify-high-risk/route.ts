@@ -1,12 +1,19 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
   try {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // 20 alerts per hour per user — deduplication below handles the real guard
+    const rl = await checkRateLimit(`notify-high-risk:${user.id}`, { limit: 20, windowMs: 60 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429, headers: { 'Retry-After': '3600' } })
+    }
 
     const { submission_id } = await request.json()
     if (!submission_id) return NextResponse.json({ error: 'submission_id required' }, { status: 400 })

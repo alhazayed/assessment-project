@@ -2,6 +2,7 @@ import React from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { renderToBuffer, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const BRAND = { primary: '#1D6296', accent: '#F3650A', dark: '#12273C' }
 
@@ -93,6 +94,12 @@ export async function GET(request: Request) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // 5 PDF reports per hour — renderToBuffer is CPU-intensive
+  const rl = await checkRateLimit(`reports:${user.id}`, { limit: 5, windowMs: 60 * 60 * 1000 })
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Report generation limit reached. Please try again later.' }, { status: 429, headers: { 'Retry-After': '3600' } })
+  }
 
   const { searchParams } = new URL(request.url)
   const patientId = searchParams.get('patient_id')

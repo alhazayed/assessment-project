@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 // Prevent CSV formula injection (DDE attack) — prefix cells starting with formula chars
 function csvSafe(value: string): string {
@@ -27,7 +28,13 @@ function computeStats(values: number[]) {
 
 export async function GET(request: Request) {
   try {
-    await requireAdmin()
+    const adminSession = await requireAdmin()
+    // 10 exports per hour per admin — 10k-row DB query, must be protected
+    const rl = await checkRateLimit(`admin-export:${adminSession.user.id}`, { limit: 10, windowMs: 60 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Export rate limit reached. Please wait before exporting again.' }, { status: 429, headers: { 'Retry-After': '3600' } })
+    }
+
     const { searchParams } = new URL(request.url)
     const assessment = searchParams.get('assessment') || ''
     const severity = searchParams.get('severity') || ''
