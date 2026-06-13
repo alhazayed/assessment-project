@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   try {
@@ -72,6 +73,23 @@ export async function PATCH(request: Request) {
     }
 
     await db.from('profiles').update(update).eq('id', id)
+
+    // Audit log — use caller's server client so actor_id = caller
+    const supabase = createClient()
+    const { data: { user: callerUser } } = await supabase.auth.getUser()
+    if (callerUser) {
+      const reason = Object.entries(update)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(', ')
+      await db.from('audit_log').insert({
+        actor_id: callerUser.id,
+        action: 'admin_user_update',
+        target_type: 'profile',
+        target_id: id,
+        reason,
+      })
+    }
+
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -13,6 +13,7 @@ interface ResponseOption {
 interface ItemRow {
   id: string
   response_options: ResponseOption[]
+  is_safety_item: boolean
 }
 
 interface GuestDemographics {
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
 
     const { data: items } = await supabase
       .from('assessment_items')
-      .select('id, response_options')
+      .select('id, response_options, is_safety_item')
       .eq('definition_id', definition_id)
 
     if (!items || items.length === 0) {
@@ -111,7 +112,12 @@ export async function POST(request: Request) {
 
     const scoringLogic = def.scoring_logic as ScoringBand[]
     const band = calcBand(scoringLogic, totalScore)
-    const highRisk = def.high_risk_threshold !== null && totalScore >= def.high_risk_threshold
+    // Safety items (e.g. PHQ-9 Q9) trigger high_risk regardless of total score
+    const safetyItemTriggered = validatedResponses.some(r => {
+      const item = itemMap.get(r.item_id)
+      return item?.is_safety_item && r.value > 0
+    })
+    const highRisk = safetyItemTriggered || (def.high_risk_threshold !== null && totalScore >= def.high_risk_threshold)
 
     const { data: submission, error: subErr } = await supabase
       .from('assessment_submissions')

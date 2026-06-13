@@ -68,10 +68,7 @@ export async function GET(_request: Request) {
       )
       .join('\n')
 
-    const prompt = `You are a compassionate clinical psychologist reviewing multiple psychological assessment results for a single patient. Synthesize these results into a coherent clinical picture that helps the patient understand their overall mental health across domains.
-
-Assessment Results:
-${resultsSummary}
+    const systemInstruction = `You are a compassionate clinical psychologist reviewing multiple psychological assessment results for a single patient. Synthesize these results into a coherent clinical picture that helps the patient understand their overall mental health across domains.
 
 Provide a synthesis in this exact JSON format (no markdown, no text outside JSON):
 {
@@ -96,7 +93,8 @@ Rules:
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        contents: [{ role: 'user', parts: [{ text: `Assessment Results:\n${resultsSummary}` }] }],
         generationConfig: { temperature: 0.2, maxOutputTokens: 2048 },
       }),
     })

@@ -25,11 +25,12 @@ export async function POST(request: Request) {
     const db = createAdminClient()
 
     // Deduplication: skip if any admin was already notified for this submission
+    const dedupeLink = `/x/control/results?submission=${submission_id}`
     const { count: existingCount } = await db
       .from('notifications')
       .select('*', { count: 'exact', head: true })
       .eq('type', 'high_risk')
-      .contains('link', submission_id)
+      .eq('link', dedupeLink)
 
     if ((existingCount ?? 0) > 0) return NextResponse.json({ ok: true, deduplicated: true })
 
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
           title_ar: '⚠ تم رفع علامة خطورة عالية',
           body_en: `Assessment: ${nameEn} — submission ${submission_id}`,
           body_ar: `التقييم: ${nameAr} — رمز التقديم ${submission_id}`,
-          link: `/x/control/results?submission=${submission_id}`,
+          link: dedupeLink,
         }))
       )
     }

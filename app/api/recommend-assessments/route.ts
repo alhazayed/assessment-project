@@ -45,12 +45,10 @@ export async function POST(request: Request) {
       .map(a => `- ID: ${a.id} | Code: ${a.code} | Name: ${a.name_en} | Description: ${a.description_en || 'N/A'}`)
       .join('\n')
 
-    const prompt = `You are a clinical psychologist assistant helping match users to appropriate psychological assessments.
-Analyze how this user is feeling and recommend the 2-4 most clinically relevant assessments from the provided list.
+    const systemInstruction = `You are a clinical psychologist assistant helping match users to appropriate psychological assessments.
+Analyze how the user is feeling and recommend the 2-4 most clinically relevant assessments from the provided list.
 Be empathetic and focus on what would genuinely help the user understand themselves better.
 Return ONLY a valid JSON array — no markdown, no explanation outside JSON.
-
-The user says: "${text.trim()}"
 
 Available assessments:
 ${assessmentList}
@@ -58,7 +56,7 @@ ${assessmentList}
 Return a JSON array:
 [
   {
-    "id": "<assessment UUID>",
+    "id": "<assessment UUID from the list above>",
     "code": "<assessment code>",
     "name_en": "<English name>",
     "name_ar": "<Arabic name>",
@@ -73,7 +71,8 @@ Only include assessments from the provided list. Order by relevance (highest fir
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        contents: [{ role: 'user', parts: [{ text: text.trim() }] }],
         generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
       }),
     })

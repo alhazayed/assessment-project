@@ -4,10 +4,19 @@ import { NextResponse } from 'next/server'
 const GEMINI_API_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
 
-export async function GET(request: Request) {
+async function requireClinician() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return null
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (!profile || !['clinician', 'admin', 'superadmin'].includes(profile.role)) return null
+  return { user, supabase }
+}
+
+export async function GET(request: Request) {
+  const ctx = await requireClinician()
+  if (!ctx) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { user, supabase } = ctx
 
   const { searchParams } = new URL(request.url)
   const patientId = searchParams.get('patient_id')
@@ -20,17 +29,23 @@ export async function GET(request: Request) {
     .eq('clinician_id', user.id)
     .order('created_at', { ascending: false })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('clinical-notes GET error:', error)
+    return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 })
+  }
   return NextResponse.json({ notes: data })
 }
 
 export async function POST(request: Request) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireClinician()
+  if (!ctx) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { user, supabase } = ctx
 
   const { patient_id, body, is_ai_draft } = await request.json()
   if (!patient_id || !body) return NextResponse.json({ error: 'patient_id and body required' }, { status: 400 })
+  if (typeof body !== 'string' || body.length > 10000) {
+    return NextResponse.json({ error: 'body must be a string under 10000 characters' }, { status: 400 })
+  }
 
   const { data, error } = await supabase
     .from('clinical_notes')
@@ -38,14 +53,17 @@ export async function POST(request: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('clinical-notes POST error:', error)
+    return NextResponse.json({ error: 'Failed to create note' }, { status: 500 })
+  }
   return NextResponse.json({ note: data })
 }
 
 export async function DELETE(request: Request) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const ctx = await requireClinician()
+  if (!ctx) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { user, supabase } = ctx
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
@@ -57,21 +75,17 @@ export async function DELETE(request: Request) {
     .eq('id', id)
     .eq('clinician_id', user.id)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('clinical-notes DELETE error:', error)
+    return NextResponse.json({ error: 'Failed to delete note' }, { status: 500 })
+  }
   return NextResponse.json({ ok: true })
 }
 
 export async function PUT(request: Request) {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  // Only clinicians and admins may generate AI clinical note drafts
-  const { data: callerProfile } = await supabase
-    .from('profiles').select('role').eq('id', user.id).single()
-  if (!callerProfile || !['clinician', 'admin', 'superadmin'].includes(callerProfile.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const ctx = await requireClinician()
+  if (!ctx) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { user, supabase } = ctx
 
   const { patient_id } = await request.json()
   if (!patient_id) return NextResponse.json({ error: 'patient_id required' }, { status: 400 })
@@ -81,7 +95,6 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'AI unavailable' }, { status: 503 })
   }
 
-  // Gather context: recent submissions + mood logs for this patient
   const [subsRes, moodRes] = await Promise.all([
     supabase.from('assessment_submissions')
       .select('submitted_at, total_score, severity_band, high_risk_flag, assessment_definitions(name_en)')
@@ -100,33 +113,36 @@ export async function PUT(request: Request) {
   ).join('\n')
 
   const moods = (moodRes.data || []).map((m: any) =>
-    `- ${m.log_date}: mood ${m.mood_score}/10, anxiety ${m.anxiety_score}/10, sleep ${m.sleep_hours}h${m.mood_note ? `, note: "${m.mood_note}"` : ''}`
+    `- ${m.log_date}: mood ${m.mood_score}/10, anxiety ${m.anxiety_score}/10, sleep ${m.sleep_hours}h`
   ).join('\n')
 
-  const prompt = `You are a clinical assistant helping a mental health clinician write a brief session note. Based on the following patient data, draft a concise clinical note (3-5 sentences) in professional clinical language. Focus on observable patterns, do not diagnose.
-
-Recent assessment results:
-${submissions || 'No recent assessments.'}
-
-Recent mood logs:
-${moods || 'No recent mood data.'}
-
-Write the note now. Start directly with the clinical content, no preamble.`
-
+  // Use systemInstruction to separate system context from data — prevents prompt injection
   const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
+      systemInstruction: {
+        parts: [{
+          text: 'You are a clinical assistant helping a mental health clinician write a brief session note. Based on provided patient data, draft a concise clinical note (3-5 sentences) in professional clinical language. Focus on observable patterns, do not diagnose. Start directly with the clinical content, no preamble.',
+        }],
+      },
+      contents: [{
+        role: 'user',
+        parts: [{
+          text: `Recent assessment results:\n${submissions || 'No recent assessments.'}\n\nRecent mood logs:\n${moods || 'No recent mood data.'}`,
+        }],
+      }],
       generationConfig: { temperature: 0.4, maxOutputTokens: 600 },
     }),
   })
 
   if (!res.ok) {
+    console.error('Gemini clinical-notes error:', res.status)
     return NextResponse.json({ error: 'AI service error' }, { status: 502 })
   }
 
   const data = await res.json()
   const draft = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+  if (!draft) return NextResponse.json({ error: 'AI returned empty response' }, { status: 502 })
   return NextResponse.json({ draft })
 }

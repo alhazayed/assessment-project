@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
     }
 
-    const token = await computeHmac(data.user.id)
+    const token = await computeHmac(data.user.id, profile.role)
     const store = cookies()
     store.set('admin_session', token, {
       httpOnly: true, secure: process.env.NODE_ENV === 'production',
