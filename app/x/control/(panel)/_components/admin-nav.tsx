@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, Shield, LogOut, TrendingUp } from 'lucide-react'
+import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, LogOut, TrendingUp } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import BrandLogo from '@/components/brand-logo'
 
 export default function AdminNav({ role }: { role: string }) {
   const pathname = usePathname()
@@ -28,14 +29,12 @@ export default function AdminNav({ role }: { role: string }) {
 
   return (
     <aside className="w-56 flex flex-col flex-shrink-0 min-h-screen" style={{ backgroundColor: '#12273C' }}>
-      <div className="px-4 py-5" style={{ borderBottom: '1px solid #1D6296' }}>
+      <div className="px-4 py-4" style={{ borderBottom: '1px solid #1D6296' }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#1D6296' }}>
-            <Shield className="w-4 h-4 text-white" />
-          </div>
+          <BrandLogo variant="icon" size={36} />
           <div>
             <p className="text-sm font-bold text-white leading-tight">{t('admin.panel', lang)}</p>
-            <p className="text-xs capitalize" style={{ color: '#7EB7DB' }}>{role}</p>
+            <p className="text-xs capitalize" style={{ color: '#F3650A' }}>{role}</p>
           </div>
         </div>
       </div>

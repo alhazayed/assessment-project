@@ -22,6 +22,7 @@ import { t } from '@/lib/i18n'
 import LanguageToggle from '@/components/language-toggle'
 import NotificationBell from '@/components/notification-bell'
 import UnreadMessagesBadge from '@/components/unread-messages-badge'
+import BrandLogo from '@/components/brand-logo'
 
 interface SidebarProps {
   profile: Profile | null
@@ -76,12 +77,8 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
   return (
     <aside className={`fixed inset-y-0 w-64 bg-white flex flex-col z-10 ${lang === 'ar' ? 'right-0 border-l' : 'left-0 border-r'} border-gray-200`}>
       <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#1D6296' }}>
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <BrandLogo variant="icon" size={38} />
           <span className="font-semibold text-gray-900">{t('app.name', lang)}</span>
         </div>
         <NotificationBell lang={lang} />
