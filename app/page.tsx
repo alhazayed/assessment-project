@@ -7,8 +7,8 @@ import LanguageToggle from '@/components/language-toggle'
 import type { AssessmentDefinition } from '@/lib/types'
 import {
   ClipboardList, Brain, BookOpen, MessageSquare,
-  BarChart3, Heart, Users, ChevronRight,
-  Sparkles, Clock, Lock, Globe
+  BarChart3, Users, ChevronRight,
+  Sparkles, Clock, Lock, Globe, Shield
 } from 'lucide-react'
 import AIAssessmentFinder from '@/components/ai-assessment-finder'
 import AssessmentsByCategory from '@/components/assessments-by-category'
