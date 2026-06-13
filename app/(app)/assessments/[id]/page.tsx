@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle,
   LogIn, BookOpen, FlaskConical, ArrowRight, Brain,
-  UserPlus, Lock,
+  UserPlus, Lock, ChevronDown,
 } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentItem, ResponseOption } from '@/lib/types'
 import { getAssessmentContent, getBandContent, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
@@ -21,6 +21,32 @@ function severityColor(band: string) {
   if (b.includes('mild') || b.includes('subthreshold') || b.includes('moderate risk')) return 'text-yellow-700 bg-yellow-50 border-yellow-200'
   if (b.includes('moderate') || b.includes('possible')) return 'text-orange-700 bg-orange-50 border-orange-200'
   return 'text-red-700 bg-red-50 border-red-200'
+}
+
+const MARITAL_OPTIONS = [
+  { value: 'single',   en: 'Single',   ar: 'أعزب / عزباء' },
+  { value: 'married',  en: 'Married',  ar: 'متزوج / متزوجة' },
+  { value: 'divorced', en: 'Divorced', ar: 'مطلق / مطلقة' },
+  { value: 'widowed',  en: 'Widowed',  ar: 'أرمل / أرملة' },
+]
+
+const EDUCATION_OPTIONS = [
+  { value: 'none',      en: 'No formal education',  ar: 'بدون تعليم رسمي' },
+  { value: 'primary',   en: 'Primary school',        ar: 'المرحلة الابتدائية' },
+  { value: 'secondary', en: 'Secondary school',      ar: 'المرحلة الثانوية' },
+  { value: 'diploma',   en: 'Diploma / Certificate', ar: 'دبلوم / شهادة' },
+  { value: 'bachelor',  en: "Bachelor's degree",     ar: 'بكالوريوس' },
+  { value: 'master',    en: "Master's degree",       ar: 'ماجستير' },
+  { value: 'phd',       en: 'PhD / Doctorate',       ar: 'دكتوراه' },
+  { value: 'other',     en: 'Other',                 ar: 'أخرى' },
+]
+
+interface GuestDemographics {
+  dob: string
+  gender: string
+  marital: string
+  education: string
+  country: string
 }
 
 interface RelatedAssessment {
@@ -50,6 +76,14 @@ export default function TakeAssessmentPage() {
   const [domainScores, setDomainScores] = useState<Record<string, number> | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [hasSavedProgress, setHasSavedProgress] = useState(false)
+  const [guestDemographics, setGuestDemographics] = useState<GuestDemographics | null>(null)
+  const [showGuestForm, setShowGuestForm] = useState(false)
+  const [guestDob, setGuestDob] = useState('')
+  const [guestGender, setGuestGender] = useState('')
+  const [guestMarital, setGuestMarital] = useState('')
+  const [guestEducation, setGuestEducation] = useState('')
+  const [guestCountry, setGuestCountry] = useState('')
+  const [guestFormError, setGuestFormError] = useState('')
 
   const storageKey = `vw_assessment_${id}`
 
@@ -179,6 +213,31 @@ export default function TakeAssessmentPage() {
       return
     }
 
+    // Guest path — submit with demographics for anonymous statistical recording
+    if (guestDemographics) {
+      const responsePayload = items
+        .filter(item => answers[item.id] !== undefined)
+        .map(item => ({ item_id: item.id, value: answers[item.id].value }))
+
+      const res = await fetch('/api/submit-assessment-guest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ definition_id: definition.id, responses: responsePayload, demographics: guestDemographics }),
+      })
+
+      if (!res.ok) {
+        setError(t('assessment.save_error', lang))
+        setSubmitting(false)
+        return
+      }
+
+      const data = await res.json()
+      try { localStorage.removeItem(storageKey) } catch {}
+      setResult({ score: data.score, band_en: data.band_en, band_ar: data.band_ar, high_risk: data.high_risk })
+      setSubmitted(true)
+      setSubmitting(false)
+      await loadRelated(definition.code)
+    }
   }
 
   if (!definition || items.length === 0 || isLoggedIn === null) {
@@ -192,36 +251,122 @@ export default function TakeAssessmentPage() {
     )
   }
 
-  if (isLoggedIn === false) {
+  if (isLoggedIn === false && guestDemographics === null) {
     const defName = lang === 'ar' && definition.name_ar ? definition.name_ar : definition.name_en
     const defDesc = lang === 'ar' && definition.description_ar ? definition.description_ar : definition.description_en
     const returnUrl = `/assessments/${id}`
+    const isAr = lang === 'ar'
+
+    function handleGuestContinue() {
+      if (!guestGender || !guestCountry) {
+        setGuestFormError(isAr ? 'يرجى تعبئة الجنس والبلد على الأقل' : 'Please fill in at least gender and country')
+        return
+      }
+      setGuestFormError('')
+      setGuestDemographics({ dob: guestDob, gender: guestGender, marital: guestMarital, education: guestEducation, country: guestCountry })
+    }
+
     return (
-      <div className="p-8 max-w-md mx-auto">
-        <div className="card p-8 text-center">
-          <div className="w-14 h-14 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-7 h-7 text-brand-600" />
+      <div className="py-8 px-4 max-w-lg mx-auto space-y-4">
+        {/* Assessment intro */}
+        <div className="card p-6 text-center">
+          <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <Lock className="w-6 h-6 text-brand-600" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">{defName}</h1>
+          <h1 className="text-lg font-bold text-gray-900 mb-1">{defName}</h1>
           {defDesc && <p className="text-sm text-gray-500 mb-2 leading-relaxed">{defDesc}</p>}
-          <p className="text-xs text-gray-400 mb-6">{definition.total_questions} {t('assessments.questions', lang)}</p>
-          <p className="text-sm text-gray-700 mb-6">
-            {lang === 'ar'
-              ? 'يرجى تسجيل الدخول أو إنشاء حساب لإجراء هذا التقييم وحفظ نتائجك ومتابعتها.'
-              : 'Please sign in or create an account to take this assessment and track your results over time.'}
+          <p className="text-xs text-gray-400">{definition.total_questions} {t('assessments.questions', lang)}</p>
+        </div>
+
+        {/* Option A — Sign in / Register */}
+        <div className="card p-5">
+          <p className="text-sm font-semibold text-gray-800 mb-3">
+            {isAr ? 'لديك حساب؟ سجّل الدخول لحفظ نتائجك ومتابعتها.' : 'Have an account? Sign in to save and track your results.'}
           </p>
-          <div className="flex flex-col gap-3">
+          <div className="flex gap-3">
             <Link href={`/login?next=${encodeURIComponent(returnUrl)}`}
-              className="btn-primary w-full gap-2 justify-center flex items-center">
+              className="flex-1 btn-primary gap-2 justify-center flex items-center text-sm">
               <LogIn className="w-4 h-4" />
               {t('auth.login.submit', lang)}
             </Link>
             <Link href={`/register?next=${encodeURIComponent(returnUrl)}`}
-              className="btn-secondary w-full gap-2 justify-center flex items-center">
+              className="flex-1 btn-secondary gap-2 justify-center flex items-center text-sm">
               <UserPlus className="w-4 h-4" />
-              {t('auth.register.submit', lang)}
+              {isAr ? 'إنشاء حساب' : 'Register'}
             </Link>
           </div>
+        </div>
+
+        {/* Divider */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-400 font-medium">{isAr ? 'أو' : 'OR'}</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+
+        {/* Option B — Guest with demographics */}
+        <div className="card p-5">
+          <button
+            onClick={() => setShowGuestForm(v => !v)}
+            className="w-full flex items-center justify-between text-sm font-semibold text-gray-800"
+          >
+            <span>{isAr ? 'المتابعة كزائر (مع إدخال بيانات مختصرة)' : 'Continue as guest (enter basic info)'}</span>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showGuestForm ? 'rotate-180' : ''}`} />
+          </button>
+          <p className="text-xs text-gray-400 mt-1">
+            {isAr
+              ? 'تُستخدم بياناتك بشكل مجهول للأغراض الإحصائية فقط.'
+              : 'Your data is used anonymously for statistical purposes only.'}
+          </p>
+
+          {showGuestForm && (
+            <div className="mt-4 space-y-3">
+              {guestFormError && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{guestFormError}</p>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">{t('profile.dob', lang)}</label>
+                  <input type="date" className="input" value={guestDob} onChange={e => setGuestDob(e.target.value)}
+                    max={new Date().toISOString().split('T')[0]} />
+                </div>
+                <div>
+                  <label className="label">{t('profile.gender', lang)} *</label>
+                  <select className="input" value={guestGender} onChange={e => setGuestGender(e.target.value)}>
+                    <option value="">{t('profile.gender.select', lang)}</option>
+                    <option value="male">{t('profile.gender.male', lang)}</option>
+                    <option value="female">{t('profile.gender.female', lang)}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">{t('profile.marital', lang)}</label>
+                  <select className="input" value={guestMarital} onChange={e => setGuestMarital(e.target.value)}>
+                    <option value="">{t('profile.marital.select', lang)}</option>
+                    {MARITAL_OPTIONS.map(o => (
+                      <option key={o.value} value={o.value}>{isAr ? o.ar : o.en}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">{t('profile.education', lang)}</label>
+                  <select className="input" value={guestEducation} onChange={e => setGuestEducation(e.target.value)}>
+                    <option value="">{t('profile.education.select', lang)}</option>
+                    {EDUCATION_OPTIONS.map(o => (
+                      <option key={o.value} value={o.value}>{isAr ? o.ar : o.en}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="label">{t('profile.country', lang)} *</label>
+                  <input type="text" className="input" value={guestCountry} onChange={e => setGuestCountry(e.target.value)}
+                    placeholder={t('profile.country.ph', lang)} />
+                </div>
+              </div>
+              <button onClick={handleGuestContinue} className="btn-primary w-full mt-1">
+                {isAr ? 'ابدأ التقييم' : 'Start Assessment'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -266,9 +411,25 @@ export default function TakeAssessmentPage() {
             </div>
           )}
 
-          <p className="mt-4 text-sm text-green-600 flex items-center justify-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4" /> {t('assessment.result.saved', lang)}
-          </p>
+          {isLoggedIn ? (
+            <p className="mt-4 text-sm text-green-600 flex items-center justify-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4" /> {t('assessment.result.saved', lang)}
+            </p>
+          ) : (
+            <div className="mt-4 flex flex-col gap-2">
+              <p className="text-xs text-gray-500">
+                {lang === 'ar'
+                  ? 'تم تسجيل نتيجتك بشكل مجهول. أنشئ حسابًا لتتبع نتائجك عبر الزمن.'
+                  : 'Your result was recorded anonymously. Create an account to track your results over time.'}
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Link href={`/register?next=/assessments/${id}`} className="btn-primary text-xs px-3 py-2 gap-1.5 flex items-center">
+                  <UserPlus className="w-3.5 h-3.5" />
+                  {lang === 'ar' ? 'إنشاء حساب' : 'Create Account'}
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Demographics collection */}
@@ -423,7 +584,7 @@ export default function TakeAssessmentPage() {
 
         <div className="flex gap-3 justify-center pb-8">
           <Link href="/assessments" className="btn-secondary">{t('nav.assessments', lang)}</Link>
-          <Link href="/dashboard" className="btn-primary">{t('nav.dashboard', lang)}</Link>
+          {isLoggedIn && <Link href="/dashboard" className="btn-primary">{t('nav.dashboard', lang)}</Link>}
         </div>
       </div>
     )
