@@ -140,13 +140,16 @@ export async function POST(request: Request) {
     const body: SubmitBody & { turnstile_token?: string } = await request.json()
     const { definition_id, responses, demographics } = body
 
-    // Cloudflare Turnstile CAPTCHA verification — fail closed
-    const turnstileResult = await verifyTurnstileToken(body.turnstile_token, ip !== 'unknown' ? ip : undefined)
-    if (!turnstileResult.success) {
-      return NextResponse.json(
-        { error: 'CAPTCHA verification failed. Please try again.' },
-        { status: 403 }
-      )
+    // Cloudflare Turnstile CAPTCHA — only enforced when TURNSTILE_SECRET_KEY is configured.
+    // Without the env var the widget is not shown on the frontend either, so no token arrives.
+    if (process.env.TURNSTILE_SECRET_KEY) {
+      const turnstileResult = await verifyTurnstileToken(body.turnstile_token, ip !== 'unknown' ? ip : undefined)
+      if (!turnstileResult.success) {
+        return NextResponse.json(
+          { error: 'CAPTCHA verification failed. Please try again.' },
+          { status: 403 }
+        )
+      }
     }
 
     if (!definition_id || typeof definition_id !== 'string' || definition_id.length > 100) {
