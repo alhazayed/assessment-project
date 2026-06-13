@@ -44,8 +44,8 @@ export async function POST(request: Request) {
     const body: SubmitBody = await request.json()
     const { definition_id, responses } = body
 
-    if (!definition_id || !Array.isArray(responses) || responses.length === 0) {
-      return NextResponse.json({ error: 'definition_id and responses are required' }, { status: 400 })
+    if (!definition_id || !Array.isArray(responses) || responses.length === 0 || responses.length > 200) {
+      return NextResponse.json({ error: 'definition_id and responses are required (max 200 items)' }, { status: 400 })
     }
 
     // Fetch definition
@@ -68,15 +68,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Assessment items not found' }, { status: 404 })
     }
 
+    if (responses.length > items.length) {
+      return NextResponse.json(
+        { error: `Too many responses: assessment has ${items.length} items` },
+        { status: 400 }
+      )
+    }
+
     const itemMap = new Map<string, ItemRow>(items.map(i => [i.id, i as ItemRow]))
 
-    // Validate and score
+    // Validate and score — deduplicate item_ids to prevent score inflation
     let totalScore = 0
+    const seenItemIds = new Set<string>()
     const validatedResponses: Array<{ item_id: string; value: number; label_en: string; label_ar: string }> = []
 
     for (const resp of responses) {
+      if (typeof resp.item_id !== 'string' || typeof resp.value !== 'number') {
+        return NextResponse.json({ error: 'Invalid response format' }, { status: 400 })
+      }
+      if (seenItemIds.has(resp.item_id)) continue // deduplicate — first response per item wins
       const item = itemMap.get(resp.item_id)
       if (!item) continue // skip unknown items silently
+      seenItemIds.add(resp.item_id)
 
       const validOption = item.response_options.find(o => o.value === resp.value)
       if (!validOption) {

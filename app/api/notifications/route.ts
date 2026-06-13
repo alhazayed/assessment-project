@@ -13,7 +13,10 @@ export async function GET() {
     .order('created_at', { ascending: false })
     .limit(30)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('notifications GET error:', error)
+    return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 })
+  }
   return NextResponse.json({ notifications: data })
 }
 
@@ -29,6 +32,9 @@ export async function PATCH(request: Request) {
     : supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('user_id', user.id).is('read_at', null)
 
   const { error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('notifications PATCH error:', error)
+    return NextResponse.json({ error: 'Failed to update notifications' }, { status: 500 })
+  }
   return NextResponse.json({ ok: true })
 }

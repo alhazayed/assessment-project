@@ -7,7 +7,9 @@ import { cookies } from 'next/headers'
 export async function POST(request: Request) {
   try {
     // Rate-limit: 5 attempts per 15 minutes per IP
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+    const cfIp = request.headers.get('cf-connecting-ip')?.trim()
+    const xff = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    const ip = (cfIp && /^[\d.:a-fA-F]{2,45}$/.test(cfIp) ? cfIp : xff) ?? 'unknown'
     const rl = await checkRateLimit(`admin-login:${ip}`, { limit: 5, windowMs: 15 * 60 * 1000 })
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many login attempts. Try again in 15 minutes.' }, { status: 429 })
@@ -17,7 +19,8 @@ export async function POST(request: Request) {
 
     const expectedPin = process.env.ADMIN_PIN
     if (!expectedPin) return NextResponse.json({ error: 'Admin PIN not configured on server' }, { status: 503 })
-    if (pin !== expectedPin) return NextResponse.json({ error: 'Invalid admin PIN' }, { status: 401 })
+    // Validate PIN and credentials with a unified error to prevent factor enumeration
+    if (pin !== expectedPin) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
 
     const supabase = createClient()
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
