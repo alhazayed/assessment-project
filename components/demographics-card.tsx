@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { User, CheckCircle2, X, UserPlus } from 'lucide-react'
 import { t } from '@/lib/i18n'
+import { COUNTRIES } from '@/lib/countries'
 
 const MARITAL_OPTIONS = [
   { value: 'single',   enLabel: 'Single',   arLabel: 'أعزب / عزباء' },
@@ -153,14 +154,12 @@ export default function DemographicsCard({ isLoggedIn, lang }: Props) {
         </div>
         <div className="col-span-2">
           <label className="label">{t('profile.country', lang)}</label>
-          <input
-            type="text"
-            className="input"
-            value={country}
-            onChange={e => setCountry(e.target.value)}
-            placeholder={t('profile.country.ph', lang)}
-            dir={isAr ? 'rtl' : 'ltr'}
-          />
+          <select className="input" value={country} onChange={e => setCountry(e.target.value)}>
+            <option value="">{t('profile.country.ph', lang)}</option>
+            {COUNTRIES.map(c => (
+              <option key={c.value} value={c.value}>{isAr ? c.ar : c.en}</option>
+            ))}
+          </select>
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import { Save, CheckCircle2, User, MapPin, BookOpen, Briefcase, Pill, Phone, Shi
 import type { Profile, PatientProfile } from '@/lib/types'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import { COUNTRIES } from '@/lib/countries'
 
 type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed'
 type EducationalStatus = 'none' | 'primary' | 'secondary' | 'diploma' | 'bachelor' | 'master' | 'phd' | 'other'
@@ -293,9 +294,12 @@ export default function ProfilePage() {
             {/* Country of residence */}
             <div>
               <label className="label">{t('profile.country', lang)}</label>
-              <input type="text" className="input" value={country}
-                onChange={e => setCountry(e.target.value)}
-                placeholder={t('profile.country.ph', lang)} />
+              <select className="input" value={country} onChange={e => setCountry(e.target.value)}>
+                <option value="">{t('profile.country.ph', lang)}</option>
+                {COUNTRIES.map(c => (
+                  <option key={c.value} value={c.value}>{lang === 'ar' ? c.ar : c.en}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -492,7 +496,9 @@ export default function ProfilePage() {
           {profile?.country_of_residence && (
             <div className="flex justify-between py-2 border-b border-gray-50">
               <span className="text-gray-500">{t('profile.country', lang)}</span>
-              <span className="font-medium text-gray-900">{profile.country_of_residence}</span>
+              <span className="font-medium text-gray-900">
+                {COUNTRIES.find(c => c.value === profile.country_of_residence)?.[lang === 'ar' ? 'ar' : 'en'] ?? profile.country_of_residence}
+              </span>
             </div>
           )}
           <div className="flex justify-between py-2">

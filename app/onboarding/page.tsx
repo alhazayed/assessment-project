@@ -7,6 +7,7 @@ import { Heart, ChevronRight, ChevronLeft, Check } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 import LanguageToggle from '@/components/language-toggle'
+import { COUNTRIES } from '@/lib/countries'
 
 type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed'
 type EducationalStatus = 'none' | 'primary' | 'secondary' | 'diploma' | 'bachelor' | 'master' | 'phd' | 'other'
@@ -234,13 +235,12 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">{t('profile.country', lang)}</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={country}
-                    onChange={e => setCountry(e.target.value)}
-                    placeholder={t('profile.country.ph', lang)}
-                  />
+                  <select className="input" value={country} onChange={e => setCountry(e.target.value)}>
+                    <option value="">{t('profile.country.ph', lang)}</option>
+                    {COUNTRIES.map(c => (
+                      <option key={c.value} value={c.value}>{lang === 'ar' ? c.ar : c.en}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="label">{t('profile.phone', lang)}</label>

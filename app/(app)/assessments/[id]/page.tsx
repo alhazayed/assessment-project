@@ -14,6 +14,7 @@ import { getAssessmentContent, getBandContent, IPIP_DOMAINS, getIpipDomainLevel 
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 import DemographicsCard from '@/components/demographics-card'
+import { COUNTRIES } from '@/lib/countries'
 
 function severityColor(band: string) {
   const b = band.toLowerCase()
@@ -358,8 +359,12 @@ export default function TakeAssessmentPage() {
                 </div>
                 <div className="col-span-2">
                   <label className="label">{t('profile.country', lang)} *</label>
-                  <input type="text" className="input" value={guestCountry} onChange={e => setGuestCountry(e.target.value)}
-                    placeholder={t('profile.country.ph', lang)} />
+                  <select className="input" value={guestCountry} onChange={e => setGuestCountry(e.target.value)}>
+                    <option value="">{t('profile.country.ph', lang)}</option>
+                    {COUNTRIES.map(c => (
+                      <option key={c.value} value={c.value}>{isAr ? c.ar : c.en}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <button onClick={handleGuestContinue} className="btn-primary w-full mt-1">
