@@ -155,13 +155,13 @@ export default function AdminAnalyticsPage() {
       label: t('admin.analytics.registered_users', lang),
       value: overallStats.totalUsers.toLocaleString(),
       sub: `+${overallStats.newUsersThisMonth} ${t('admin.analytics.new_this_month', lang)}`,
-      icon: Users, color: 'text-blue-600 bg-blue-50', extra: null,
+      icon: Users, color: 'text-brand-600 bg-brand-50', extra: null,
     },
     {
       label: t('admin.analytics.score_stddev', lang),
       value: overallStats.stddev.toString(),
       sub: `${t('admin.analytics.range', lang)}: ${overallStats.min} – ${overallStats.max}`,
-      icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50', extra: null,
+      icon: TrendingUp, color: 'text-accent-600 bg-accent-50', extra: null,
     },
   ]
 
@@ -383,10 +383,10 @@ export default function AdminAnalyticsPage() {
           <h2 className="text-sm font-semibold text-gray-700 mb-5">{t('admin.analytics.role_breakdown', lang)}</h2>
           <div className="space-y-3">
             {[
-              { role: 'patient', label: t('admin.analytics.patients', lang), color: 'bg-blue-500' },
-              { role: 'clinician', label: t('admin.analytics.clinicians', lang), color: 'bg-green-500' },
-              { role: 'admin', label: t('admin.analytics.admins', lang), color: 'bg-purple-500' },
-              { role: 'superadmin', label: t('admin.analytics.superadmins', lang), color: 'bg-red-500' },
+              { role: 'patient', label: t('admin.analytics.patients', lang), color: 'bg-brand-500' },
+              { role: 'clinician', label: t('admin.analytics.clinicians', lang), color: 'bg-brand-300' },
+              { role: 'admin', label: t('admin.analytics.admins', lang), color: 'bg-accent-500' },
+              { role: 'superadmin', label: t('admin.analytics.superadmins', lang), color: 'bg-accent-700' },
             ].map(({ role, label, color }) => {
               const count = overallStats.roleDistribution[role] || 0
               const pct = overallStats.totalUsers ? +((count / overallStats.totalUsers) * 100).toFixed(1) : 0

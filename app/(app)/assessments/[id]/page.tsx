@@ -528,8 +528,8 @@ export default function TakeAssessmentPage() {
             )}
 
             {bandContent.recommendations.length > 0 && (
-              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-                <p className={`text-xs font-semibold text-blue-700 mb-2 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`}>{t('assessment.result.recommendations', lang)}</p>
+              <div className="p-4 bg-brand-50 rounded-xl border border-brand-100">
+                <p className={`text-xs font-semibold text-brand-700 mb-2 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`}>{t('assessment.result.recommendations', lang)}</p>
                 <ul className="space-y-2">
                   {bandContent.recommendations.map((rec, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-blue-800">

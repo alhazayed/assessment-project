@@ -143,7 +143,7 @@ export default function JournalPage() {
                       })}
                     </span>
                     {entry.is_shared && (
-                      <span className="badge-minimal bg-blue-50 text-blue-600 border border-blue-200">
+                      <span className="badge-minimal bg-brand-50 text-brand-600 border border-brand-200">
                         {t('journal.shared', lang)}
                       </span>
                     )}
