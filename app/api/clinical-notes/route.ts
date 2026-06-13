@@ -22,6 +22,17 @@ export async function GET(request: Request) {
   const patientId = searchParams.get('patient_id')
   if (!patientId) return NextResponse.json({ error: 'patient_id required' }, { status: 400 })
 
+  // Clinicians may only fetch notes for their own assigned patients
+  const { data: callerProfile } = await supabase
+    .from('profiles').select('role').eq('id', user.id).single()
+  if (callerProfile?.role === 'clinician') {
+    const { data: patientProfile } = await supabase
+      .from('profiles').select('assigned_clinician_id').eq('id', patientId).single()
+    if (patientProfile?.assigned_clinician_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
+    }
+  }
+
   const { data, error } = await supabase
     .from('clinical_notes')
     .select('*')
@@ -89,6 +100,21 @@ export async function PUT(request: Request) {
 
   const { patient_id } = await request.json()
   if (!patient_id) return NextResponse.json({ error: 'patient_id required' }, { status: 400 })
+
+  // Verify caller's role — admins/superadmins may access any patient; clinicians only their own
+  const { data: callerProfile } = await supabase
+    .from('profiles').select('role').eq('id', user.id).single()
+  const callerRole = callerProfile?.role ?? ''
+  if (callerRole === 'clinician') {
+    const { data: patientProfile } = await supabase
+      .from('profiles')
+      .select('assigned_clinician_id')
+      .eq('id', patient_id)
+      .single()
+    if (patientProfile?.assigned_clinician_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
+    }
+  }
 
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey || apiKey === 'your-gemini-api-key-here') {

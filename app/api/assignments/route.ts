@@ -34,7 +34,10 @@ export async function GET(request: Request) {
   }
 
   const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('assignments GET error:', error)
+    return NextResponse.json({ error: 'Failed to fetch assignments' }, { status: 500 })
+  }
   return NextResponse.json({ assignments: data })
 }
 
@@ -43,9 +46,29 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Only clinicians and admins may create assignments
+  const { data: callerProfile } = await supabase
+    .from('profiles').select('role').eq('id', user.id).single()
+  const callerRole = callerProfile?.role ?? ''
+  if (!['clinician', 'admin', 'superadmin'].includes(callerRole)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const { patient_id, definition_id, due_date, note_en, note_ar } = await request.json()
   if (!patient_id || !definition_id) {
     return NextResponse.json({ error: 'patient_id and definition_id are required' }, { status: 400 })
+  }
+
+  // Clinicians may only assign to their own patients; admins/superadmins may assign to anyone
+  if (callerRole === 'clinician') {
+    const { data: patientProfile } = await supabase
+      .from('profiles')
+      .select('assigned_clinician_id')
+      .eq('id', patient_id)
+      .single()
+    if (patientProfile?.assigned_clinician_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
+    }
   }
 
   // Fetch assessment name for notification
@@ -69,7 +92,10 @@ export async function POST(request: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('assignment insert error:', error)
+    return NextResponse.json({ error: 'Failed to create assignment' }, { status: 500 })
+  }
 
   // Fire notification to patient
   await supabase.from('notifications').insert({
