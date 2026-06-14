@@ -289,7 +289,7 @@ export async function POST(request: Request) {
         patient_id: null,
         definition_id,
         total_score: totalScore,
-        severity_band: band?.severity_en ?? null,
+        severity_band: band?.severity_en ?? '',
         high_risk_flag: highRisk,
         is_self_initiated: true,
         guest_dob:       dob,
