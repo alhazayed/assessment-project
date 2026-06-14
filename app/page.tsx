@@ -234,6 +234,37 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ── ADHD Zone Tool promo ────────────────────────────────────────── */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-8 py-8 md:flex md:items-center md:justify-between gap-6">
+              <div className="mb-5 md:mb-0">
+                <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 text-xs font-semibold px-3 py-1.5 rounded-full mb-3">
+                  <Brain className="w-3.5 h-3.5" />
+                  {t('adhd.landing.badge', lang)}
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-2">{t('adhd.landing.title', lang)}</h2>
+                <p className="text-gray-400 text-sm leading-relaxed max-w-lg">{t('adhd.landing.sub', lang)}</p>
+                <div className="flex items-center gap-3 mt-4 text-xs text-gray-500">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /> Green — Online</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> Yellow — Fraying</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> Red — Hijacked</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-500 inline-block" /> Black — Shutdown</span>
+                </div>
+              </div>
+              <Link
+                href="/adhd-zones"
+                className="inline-flex items-center gap-2 px-5 py-3 bg-amber-500 hover:bg-amber-400 text-white font-semibold rounded-xl transition-colors text-sm whitespace-nowrap flex-shrink-0"
+              >
+                {t('adhd.landing.cta', lang)}
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── About ───────────────────────────────────────────────────────── */}
       <section id="about" className="py-24 px-6">
         <div className="max-w-4xl mx-auto">

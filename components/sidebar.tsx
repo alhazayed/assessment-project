@@ -16,6 +16,7 @@ import {
   Settings,
   LineChart,
   Shield,
+  Brain,
 } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 import type { Lang } from '@/lib/i18n'
@@ -37,6 +38,7 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
   const patientNav = [
     { href: '/dashboard', label: t('nav.dashboard', lang), icon: LayoutDashboard },
     { href: '/assessments', label: t('nav.assessments', lang), icon: ClipboardList },
+    { href: '/adhd-zones', label: t('nav.adhd_zones', lang), icon: Brain },
     { href: '/mood', label: t('nav.mood', lang), icon: Heart },
     { href: '/journal', label: t('nav.journal', lang), icon: BookOpen },
     { href: '/insights', label: t('nav.insights', lang), icon: LineChart },

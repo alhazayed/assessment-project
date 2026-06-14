@@ -25,6 +25,7 @@ const dict = {
     'nav.signout': 'Sign out',
     'nav.admin_patients': 'Patients',
     'nav.admin_panel': 'Admin Panel',
+    'nav.adhd_zones': 'ADHD Zone Check',
 
     // Patients page
     'patients.title': 'My Patients',
@@ -98,6 +99,12 @@ const dict = {
     'service.clinicians.title': 'Clinician Portal',
     'service.clinicians.desc': 'Clinicians can assign assessments, review patient results, monitor mood trends, flag high-risk cases, and maintain therapeutic relationships — all in one dashboard.',
     'service.clinicians.cta': 'For clinicians',
+
+    // ADHD Zone tool (landing)
+    'adhd.landing.badge': 'Free · No login required',
+    'adhd.landing.title': 'ADHD Zone Check-In',
+    'adhd.landing.sub': 'Based on Sara Al Shatarat\'s Zone Model for Focus & Regulation. 5 questions to identify your current regulation zone (Green / Yellow / Red / Black) and get exactly what to do in it.',
+    'adhd.landing.cta': 'Check my zone now',
 
     // Assessments section (landing)
     'assessments.section.title': 'Free assessments — start now',
@@ -730,6 +737,7 @@ const dict = {
     'nav.signout': 'تسجيل الخروج',
     'nav.admin_patients': 'المرضى',
     'nav.admin_panel': 'لوحة الإدارة',
+    'nav.adhd_zones': 'فحص منطقة ADHD',
 
     // Patients page
     'patients.title': 'مرضاي',
@@ -803,6 +811,12 @@ const dict = {
     'service.clinicians.title': 'بوابة الاختصاصيين',
     'service.clinicians.desc': 'يستطيع الاختصاصيون تعيين التقييمات ومراجعة النتائج وتتبع المزاج وتمييز الحالات عالية الخطورة — كل ذلك من لوحة تحكم واحدة.',
     'service.clinicians.cta': 'للاختصاصيين',
+
+    // ADHD Zone tool (landing)
+    'adhd.landing.badge': 'مجاني · بدون تسجيل',
+    'adhd.landing.title': 'فحص منطقة ADHD',
+    'adhd.landing.sub': 'استناداً إلى نموذج المناطق للتركيز والتنظيم بقلم سارة الشطرات. 5 أسئلة لتحديد منطقة التنظيم الحالية (خضراء / صفراء / حمراء / سوداء) ومعرفة ما يجب فعله بالضبط.',
+    'adhd.landing.cta': 'افحص منطقتي الآن',
 
     // Assessments section (landing)
     'assessments.section.title': 'تقييمات مجانية — ابدأ الآن',
