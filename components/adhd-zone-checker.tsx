@@ -269,7 +269,7 @@ export default function ADHDZoneChecker({ lang }: { lang: 'en' | 'ar' }) {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-3">Zone Check-In</h1>
           <p className="text-gray-500 leading-relaxed">
-            Based on Sara Al Shatarat's Zone Model for Focus &amp; Regulation. Answer 5 quick questions about how you feel <strong>right now</strong> — your body, brain, attention, behavior, and work capacity. You'll get your current zone and exactly what to do in it.
+            Based on Sara Al Shatarat&apos;s Zone Model for Focus &amp; Regulation. Answer 5 quick questions about how you feel <strong>right now</strong> — your body, brain, attention, behavior, and work capacity. You&apos;ll get your current zone and exactly what to do in it.
           </p>
         </div>
 
@@ -291,7 +291,7 @@ export default function ADHDZoneChecker({ lang }: { lang: 'en' | 'ar' }) {
 
         <div className="card p-5 mb-6 bg-amber-50 border-amber-200">
           <p className="text-sm text-amber-800 leading-relaxed">
-            <strong>Note:</strong> This tool is for self-awareness and daily regulation, not clinical diagnosis. If you're experiencing distress or crisis, please reach out to a mental health professional.
+            <strong>Note:</strong> This tool is for self-awareness and daily regulation, not clinical diagnosis. If you&apos;re experiencing distress or crisis, please reach out to a mental health professional.
           </p>
         </div>
 
