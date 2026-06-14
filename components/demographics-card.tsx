@@ -15,14 +15,14 @@ const MARITAL_OPTIONS = [
 ]
 
 const EDUCATION_OPTIONS = [
-  { value: 'none',      enLabel: 'No formal education',   arLabel: 'بدون تعليم رسمي' },
-  { value: 'primary',   enLabel: 'Primary school',         arLabel: 'المرحلة الابتدائية' },
-  { value: 'secondary', enLabel: 'Secondary school',       arLabel: 'المرحلة الثانوية' },
-  { value: 'diploma',   enLabel: 'Diploma / Certificate',  arLabel: 'دبلوم / شهادة' },
-  { value: 'bachelor',  enLabel: "Bachelor's degree",      arLabel: 'بكالوريوس' },
-  { value: 'master',    enLabel: "Master's degree",        arLabel: 'ماجستير' },
-  { value: 'phd',       enLabel: 'PhD / Doctorate',        arLabel: 'دكتوراه' },
-  { value: 'other',     enLabel: 'Other',                  arLabel: 'أخرى' },
+  { value: 'no_formal',         enLabel: 'No formal education',  arLabel: 'بدون تعليم رسمي' },
+  { value: 'primary',           enLabel: 'Primary school',        arLabel: 'المرحلة الابتدائية' },
+  { value: 'secondary',         enLabel: 'Secondary school',      arLabel: 'المرحلة الثانوية' },
+  { value: 'vocational',        enLabel: 'Diploma / Certificate', arLabel: 'دبلوم / شهادة' },
+  { value: 'bachelors',         enLabel: "Bachelor's degree",     arLabel: 'بكالوريوس' },
+  { value: 'masters',           enLabel: "Master's degree",       arLabel: 'ماجستير' },
+  { value: 'doctorate',         enLabel: 'PhD / Doctorate',       arLabel: 'دكتوراه' },
+  { value: 'prefer_not_to_say', enLabel: 'Prefer not to say',    arLabel: 'أفضل عدم الإجابة' },
 ]
 
 interface Props {

@@ -33,14 +33,14 @@ const MARITAL_OPTIONS = [
 ]
 
 const EDUCATION_OPTIONS = [
-  { value: 'none',      en: 'No formal education',  ar: 'بدون تعليم رسمي' },
-  { value: 'primary',   en: 'Primary school',        ar: 'المرحلة الابتدائية' },
-  { value: 'secondary', en: 'Secondary school',      ar: 'المرحلة الثانوية' },
-  { value: 'diploma',   en: 'Diploma / Certificate', ar: 'دبلوم / شهادة' },
-  { value: 'bachelor',  en: "Bachelor's degree",     ar: 'بكالوريوس' },
-  { value: 'master',    en: "Master's degree",       ar: 'ماجستير' },
-  { value: 'phd',       en: 'PhD / Doctorate',       ar: 'دكتوراه' },
-  { value: 'other',     en: 'Other',                 ar: 'أخرى' },
+  { value: 'no_formal',        en: 'No formal education',  ar: 'بدون تعليم رسمي' },
+  { value: 'primary',          en: 'Primary school',        ar: 'المرحلة الابتدائية' },
+  { value: 'secondary',        en: 'Secondary school',      ar: 'المرحلة الثانوية' },
+  { value: 'vocational',       en: 'Diploma / Certificate', ar: 'دبلوم / شهادة' },
+  { value: 'bachelors',        en: "Bachelor's degree",     ar: 'بكالوريوس' },
+  { value: 'masters',          en: "Master's degree",       ar: 'ماجستير' },
+  { value: 'doctorate',        en: 'PhD / Doctorate',       ar: 'دكتوراه' },
+  { value: 'prefer_not_to_say', en: 'Prefer not to say',   ar: 'أفضل عدم الإجابة' },
 ]
 
 interface GuestDemographics {
