@@ -115,7 +115,7 @@ Rules:
     })
 
     if (!res.ok) {
-      console.error('Gemini synthesis error:', res.status, await res.text())
+      console.error('[synthesis] Gemini API error:', res.status)
       return NextResponse.json({ error: 'AI service error' }, { status: 502 })
     }
 

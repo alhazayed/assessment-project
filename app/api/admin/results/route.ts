@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const severity = searchParams.get('severity') || ''
     const from = searchParams.get('from') || ''
     const to = searchParams.get('to') || ''
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
+    const page = Math.max(1, Math.min(parseInt(searchParams.get('page') || '1', 10), 10000))
     const offset = (page - 1) * PAGE_SIZE
 
     const db = createAdminClient()
