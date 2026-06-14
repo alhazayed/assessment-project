@@ -94,6 +94,8 @@ export default async function DashboardPage() {
 
   const p = profile as Profile | null
 
+  if (p?.role === 'admin' || p?.role === 'superadmin') redirect('/x/control')
+
   if (p?.role === 'patient') {
     const { submissions, moods, pendingAssignments } = await getPatientDashboard(supabase, user.id)
     const latestMood = moods[0] as MoodLog | undefined

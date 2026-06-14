@@ -24,6 +24,7 @@ const dict = {
     'nav.settings': 'Settings',
     'nav.signout': 'Sign out',
     'nav.admin_patients': 'Patients',
+    'nav.admin_panel': 'Admin Panel',
 
     // Patients page
     'patients.title': 'My Patients',
@@ -728,6 +729,7 @@ const dict = {
     'nav.settings': 'الإعدادات',
     'nav.signout': 'تسجيل الخروج',
     'nav.admin_patients': 'المرضى',
+    'nav.admin_panel': 'لوحة الإدارة',
 
     // Patients page
     'patients.title': 'مرضاي',

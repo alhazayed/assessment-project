@@ -20,7 +20,11 @@ export default async function LandingPage() {
   const lang = getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (user) redirect('/dashboard')
+  if (user) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (profile?.role === 'admin' || profile?.role === 'superadmin') redirect('/x/control')
+    redirect('/dashboard')
+  }
 
   const { data: definitions } = await supabase
     .from('assessment_definitions')

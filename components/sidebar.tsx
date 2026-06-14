@@ -15,6 +15,7 @@ import {
   Users,
   Settings,
   LineChart,
+  Shield,
 } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 import type { Lang } from '@/lib/i18n'
@@ -52,6 +53,7 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
   ]
 
   const adminNav = [
+    { href: '/x/control', label: t('nav.admin_panel', lang), icon: Shield },
     { href: '/dashboard', label: t('nav.dashboard', lang), icon: LayoutDashboard },
     { href: '/patients', label: t('nav.admin_patients', lang), icon: Users },
     { href: '/assessments', label: t('nav.assessments', lang), icon: ClipboardList },
