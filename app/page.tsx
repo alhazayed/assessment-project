@@ -327,7 +327,7 @@ export default async function LandingPage() {
             <span className="text-gray-500 text-sm ml-2">{t('app.tagline', lang)}</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-gray-400">
-            <Link href="/assessments" className="hover:text-white transition-colors">{t('nav.assessments', lang)}</Link>
+            <a href="#assessments" className="hover:text-white transition-colors">{t('nav.assessments', lang)}</a>
             <Link href="/login" className="hover:text-white transition-colors">{t('nav.signin', lang)}</Link>
             <Link href="/register" className="hover:text-white transition-colors">{t('nav.create_account', lang)}</Link>
             <a href="mailto:info@vwelfare.com" className="hover:text-white transition-colors">{t('footer.contact', lang)}</a>
