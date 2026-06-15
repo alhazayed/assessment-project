@@ -2,8 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
-
-const GLM_API_URL = 'https://open.bigmodel.cn/api/paige/v4/chat/completions'
+import { callAI, isAIConfigured, AIServiceError } from '@/lib/ai-client'
 
 export async function GET(_request: Request) {
   try {
@@ -24,8 +23,7 @@ export async function GET(_request: Request) {
       )
     }
 
-    const apiKey = process.env.GLM_API_KEY
-    if (!apiKey) {
+    if (!isAIConfigured()) {
       return NextResponse.json({ error: 'AI service not configured' }, { status: 503 })
     }
 
@@ -103,30 +101,24 @@ Rules:
 - Keep recommendations practical and achievable without professional help
 - Strengths list may be empty [] if none are evident`
 
-    const res = await fetch(GLM_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'glm-4-flash',
+    let raw: string
+    try {
+      const result = await callAI({
         messages: [
           { role: 'system', content: systemInstruction },
           { role: 'user', content: `Assessment Results:\n${resultsSummary}` },
         ],
         temperature: 0.2,
-        max_tokens: 1024,
-      }),
-    })
-
-    if (!res.ok) {
-      console.error('[synthesis] GLM API error:', res.status)
-      return NextResponse.json({ error: 'AI service error' }, { status: 502 })
+        maxTokens: 1024,
+      })
+      raw = result.content
+    } catch (err) {
+      if (err instanceof AIServiceError) {
+        console.error('[synthesis] all providers failed:', err.message)
+        return NextResponse.json({ error: 'AI service error' }, { status: 502 })
+      }
+      throw err
     }
-
-    const data = await res.json()
-    const raw = data?.choices?.[0]?.message?.content ?? ''
 
     let synthesis: {
       summary: string

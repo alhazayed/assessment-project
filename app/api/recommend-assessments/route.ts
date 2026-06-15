@@ -3,8 +3,7 @@ import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { scrubPHI } from '@/lib/security/anonymizePHI'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
-
-const GLM_API_URL = 'https://open.bigmodel.cn/api/paige/v4/chat/completions'
+import { callAI, isAIConfigured, AIServiceError } from '@/lib/ai-client'
 
 // Max chars for each description field sent to the AI model (controls token spend)
 const MAX_DESC_CHARS = 80
@@ -47,8 +46,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Input too long (max 500 characters)' }, { status: 400 })
     }
 
-    const apiKey = process.env.GLM_API_KEY
-    if (!apiKey) {
+    if (!isAIConfigured()) {
       return NextResponse.json({ error: 'AI service not configured' }, { status: 503 })
     }
 
@@ -91,30 +89,24 @@ Return a JSON array (max 3 items):
 [{"code":"<code>","name_en":"<name>","name_ar":"<arabic name>","reason_en":"<1 sentence>","reason_ar":"<1 sentence>","relevance":"high"|"medium"}]
 Only include assessments from the provided list.`
 
-    const res = await fetch(GLM_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'glm-4-flash',
+    let raw: string
+    try {
+      const result = await callAI({
         messages: [
           { role: 'system', content: systemInstruction },
           { role: 'user', content: scrubPHI(text.trim()) },
         ],
         temperature: 0.3,
-        max_tokens: 512,
-      }),
-    })
-
-    if (!res.ok) {
-      console.error('[recommend-assessments] GLM API error:', res.status)
-      return NextResponse.json({ error: 'AI service error' }, { status: 502 })
+        maxTokens: 512,
+      })
+      raw = result.content
+    } catch (err) {
+      if (err instanceof AIServiceError) {
+        console.error('[recommend-assessments] all providers failed:', err.message)
+        return NextResponse.json({ error: 'AI service error' }, { status: 502 })
+      }
+      throw err
     }
-
-    const data = await res.json()
-    const raw = data?.choices?.[0]?.message?.content ?? ''
 
     const validCodes = new Set(assessments.map(a => a.code))
     const codeToId = new Map(assessments.map(a => [a.code, a.id]))

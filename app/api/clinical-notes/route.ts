@@ -3,8 +3,7 @@ import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { scrubPHI } from '@/lib/security/anonymizePHI'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
-
-const GLM_API_URL = 'https://open.bigmodel.cn/api/paige/v4/chat/completions'
+import { callAI, isAIConfigured, AIServiceError } from '@/lib/ai-client'
 
 async function requireClinician() {
   const supabase = createClient()
@@ -131,8 +130,7 @@ export async function PUT(request: Request) {
     )
   }
 
-  const apiKey = process.env.GLM_API_KEY
-  if (!apiKey) {
+  if (!isAIConfigured()) {
     return NextResponse.json({ error: 'AI unavailable' }, { status: 503 })
   }
 
@@ -163,14 +161,9 @@ export async function PUT(request: Request) {
     `- ${m.log_date}: mood ${m.mood_score}/10, anxiety ${m.anxiety_score}/10, sleep ${m.sleep_hours}h`
   ).join('\n')
 
-  const res = await fetch(GLM_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'glm-4-flash',
+  let draft: string
+  try {
+    const result = await callAI({
       messages: [
         {
           role: 'system',
@@ -182,17 +175,15 @@ export async function PUT(request: Request) {
         },
       ],
       temperature: 0.4,
-      max_tokens: 600,
-    }),
-  })
-
-  if (!res.ok) {
-    console.error('[clinical-notes] GLM API error:', res.status)
-    return NextResponse.json({ error: 'AI service error' }, { status: 502 })
+      maxTokens: 600,
+    })
+    draft = result.content
+  } catch (err) {
+    if (err instanceof AIServiceError) {
+      console.error('[clinical-notes] all providers failed:', err.message)
+      return NextResponse.json({ error: 'AI service error' }, { status: 502 })
+    }
+    throw err
   }
-
-  const data = await res.json()
-  const draft = data?.choices?.[0]?.message?.content ?? ''
-  if (!draft) return NextResponse.json({ error: 'AI returned empty response' }, { status: 502 })
   return NextResponse.json({ draft })
 }
