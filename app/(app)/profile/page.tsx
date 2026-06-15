@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Save, CheckCircle2, User, MapPin, BookOpen, Briefcase, Pill, Phone, Shield } from 'lucide-react'
+import { Save, CheckCircle2, User, MapPin, BookOpen, Briefcase, Pill, Phone, Shield, AlertCircle, ClipboardList } from 'lucide-react'
 import type { Profile, PatientProfile } from '@/lib/types'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
@@ -40,13 +41,28 @@ const EMPLOYMENT_OPTIONS: { value: EmploymentStatus; enLabel: string; arLabel: s
   { value: 'other',        enLabel: 'Other',                            arLabel: 'أخرى' },
 ]
 
+interface AssessmentHistory {
+  id: string
+  submitted_at: string
+  total_score: number
+  severity_band: string
+  high_risk_flag: boolean
+  assessment_definitions: { name_en: string; name_ar: string | null } | null
+}
+
 export default function ProfilePage() {
   const supabase = createClient()
   const lang = useLang()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const needsCompletion = searchParams.get('complete') === 'true'
+  const nextUrl = searchParams.get('next')
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistory[]>([])
 
   // Identity
   const [fullNameEn, setFullNameEn] = useState('')
@@ -84,7 +100,17 @@ export default function ProfilePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    const [profileRes, historyRes] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', user.id).single(),
+      supabase
+        .from('assessment_submissions')
+        .select('id, submitted_at, total_score, severity_band, high_risk_flag, assessment_definitions(name_en, name_ar)')
+        .eq('patient_id', user.id)
+        .order('submitted_at', { ascending: false })
+        .limit(20),
+    ])
+
+    const p = profileRes.data
     if (p) {
       const prof = p as Profile
       setProfile(prof)
@@ -96,6 +122,10 @@ export default function ProfilePage() {
       setMaritalStatus(prof.marital_status || '')
       setEducationalStatus(prof.educational_status || '')
       setCountry(prof.country_of_residence || '')
+    }
+
+    if (historyRes.data) {
+      setAssessmentHistory(historyRes.data as unknown as AssessmentHistory[])
     }
 
     if (p?.role === 'patient') {
@@ -129,6 +159,17 @@ export default function ProfilePage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
+    setValidationError(null)
+
+    if (!dob || !gender || !maritalStatus || !educationalStatus || !country) {
+      setValidationError(
+        lang === 'ar'
+          ? 'يرجى تعبئة جميع الحقول المطلوبة: تاريخ الميلاد، الجنس، الحالة الاجتماعية، المستوى التعليمي، وبلد الإقامة.'
+          : 'Please complete all required fields: Date of Birth, Gender, Marital Status, Educational Status, and Country of Residence.'
+      )
+      return
+    }
+
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -168,9 +209,13 @@ export default function ProfilePage() {
       target_id: user.id,
     }).then(() => {})
 
-    setSaved(true)
     setSaving(false)
-    setTimeout(() => setSaved(false), 3000)
+    if (nextUrl) {
+      router.push(nextUrl)
+    } else {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    }
   }
 
   async function handleGiveConsent() {
@@ -200,10 +245,33 @@ export default function ProfilePage() {
         <p className="text-gray-500 mt-1">{t('profile.subtitle', lang)}</p>
       </div>
 
+      {needsCompletion && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-lg flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-800">
+              {lang === 'ar' ? 'أكمل ملفك الشخصي أولاً' : 'Complete your profile first'}
+            </p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              {lang === 'ar'
+                ? 'يرجى تعبئة الحقول المطلوبة أدناه (تاريخ الميلاد، الجنس، الحالة الاجتماعية، المستوى التعليمي، وبلد الإقامة) قبل إجراء أي تقييم.'
+                : 'Please fill in the required fields below (Date of Birth, Gender, Marital Status, Educational Status, and Country of Residence) before taking an assessment.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {saved && (
         <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-sm text-green-700">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           {t('profile.saved', lang)}
+        </div>
+      )}
+
+      {validationError && (
+        <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-sm text-red-700">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {validationError}
         </div>
       )}
 
@@ -248,14 +316,18 @@ export default function ProfilePage() {
             {/* DOB + Gender */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label">{t('profile.dob', lang)}</label>
-                <input type="date" className="input" value={dob}
+                <label className="label">
+                  {t('profile.dob', lang)} <span className="text-red-500">*</span>
+                </label>
+                <input type="date" className={`input ${!dob && needsCompletion ? 'border-red-400' : ''}`} value={dob}
                   onChange={e => setDob(e.target.value)}
                   max={new Date().toISOString().split('T')[0]} />
               </div>
               <div>
-                <label className="label">{t('profile.gender', lang)}</label>
-                <select className="input" value={gender} onChange={e => setGender(e.target.value as 'male' | 'female' | '')}>
+                <label className="label">
+                  {t('profile.gender', lang)} <span className="text-red-500">*</span>
+                </label>
+                <select className={`input ${!gender && needsCompletion ? 'border-red-400' : ''}`} value={gender} onChange={e => setGender(e.target.value as 'male' | 'female' | '')}>
                   <option value="">{t('profile.gender.select', lang)}</option>
                   <option value="male">{t('profile.gender.male', lang)}</option>
                   <option value="female">{t('profile.gender.female', lang)}</option>
@@ -265,8 +337,10 @@ export default function ProfilePage() {
 
             {/* Marital status */}
             <div>
-              <label className="label">{t('profile.marital', lang)}</label>
-              <select className="input" value={maritalStatus}
+              <label className="label">
+                {t('profile.marital', lang)} <span className="text-red-500">*</span>
+              </label>
+              <select className={`input ${!maritalStatus && needsCompletion ? 'border-red-400' : ''}`} value={maritalStatus}
                 onChange={e => setMaritalStatus(e.target.value as MaritalStatus | '')}>
                 <option value="">{t('profile.marital.select', lang)}</option>
                 {MARITAL_OPTIONS.map(o => (
@@ -279,8 +353,10 @@ export default function ProfilePage() {
 
             {/* Educational status */}
             <div>
-              <label className="label">{t('profile.education', lang)}</label>
-              <select className="input" value={educationalStatus}
+              <label className="label">
+                {t('profile.education', lang)} <span className="text-red-500">*</span>
+              </label>
+              <select className={`input ${!educationalStatus && needsCompletion ? 'border-red-400' : ''}`} value={educationalStatus}
                 onChange={e => setEducationalStatus(e.target.value as EducationalStatus | '')}>
                 <option value="">{t('profile.education.select', lang)}</option>
                 {EDUCATION_OPTIONS.map(o => (
@@ -293,8 +369,10 @@ export default function ProfilePage() {
 
             {/* Country of residence */}
             <div>
-              <label className="label">{t('profile.country', lang)}</label>
-              <select className="input" value={country} onChange={e => setCountry(e.target.value)}>
+              <label className="label">
+                {t('profile.country', lang)} <span className="text-red-500">*</span>
+              </label>
+              <select className={`input ${!country && needsCompletion ? 'border-red-400' : ''}`} value={country} onChange={e => setCountry(e.target.value)}>
                 <option value="">{t('profile.country.ph', lang)}</option>
                 {COUNTRIES.map(c => (
                   <option key={c.value} value={c.value}>{lang === 'ar' ? c.ar : c.en}</option>
@@ -471,6 +549,50 @@ export default function ProfilePage() {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Assessment history */}
+      {assessmentHistory.length > 0 && (
+        <div className="card p-6 mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ClipboardList className="w-4 h-4 text-brand-500" />
+            <h2 className="text-base font-semibold text-gray-900">
+              {lang === 'ar' ? 'سجل التقييمات' : 'Assessment History'}
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {assessmentHistory.map(sub => {
+              const name = lang === 'ar' && sub.assessment_definitions?.name_ar
+                ? sub.assessment_definitions.name_ar
+                : sub.assessment_definitions?.name_en ?? '—'
+              const date = new Date(sub.submitted_at).toLocaleDateString(
+                isAr ? 'ar-SA' : 'en-GB',
+                { year: 'numeric', month: 'short', day: 'numeric' }
+              )
+              return (
+                <div key={sub.id} className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{date}</p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                    <span className="text-sm font-bold text-gray-700">{sub.total_score}</span>
+                    {sub.severity_band && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                        {sub.severity_band}
+                      </span>
+                    )}
+                    {sub.high_risk_flag && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 font-medium">
+                        {lang === 'ar' ? 'خطورة عالية' : 'High Risk'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
 

@@ -51,8 +51,7 @@ export default function AssessmentContent({ id, userId }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [hasSavedProgress, setHasSavedProgress] = useState(false)
 
-  const isGuest = !userId
-  const storageKey = userId ? `vw_assessment_${id}_${userId}` : `vw_assessment_${id}_guest`
+  const storageKey = `vw_assessment_${id}_${userId}`
 
   useEffect(() => {
     if (Object.keys(answers).length === 0) return
@@ -129,8 +128,7 @@ export default function AssessmentContent({ id, userId }: Props) {
       .filter(item => answers[item.id] !== undefined)
       .map(item => ({ item_id: item.id, value: answers[item.id].value }))
 
-    const endpoint = isGuest ? '/api/score-assessment' : '/api/submit-assessment'
-    const res = await fetch(endpoint, {
+    const res = await fetch('/api/submit-assessment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ definition_id: definition.id, responses: responsePayload }),
@@ -199,20 +197,9 @@ export default function AssessmentContent({ id, userId }: Props) {
             </div>
           )}
 
-          {isGuest ? (
-            <div className="mt-4 p-4 bg-brand-50 border border-brand-100 rounded-xl text-center">
-              <p className="text-sm font-semibold text-brand-800 mb-1">{t('assessment.result.save.title', lang)}</p>
-              <p className="text-xs text-gray-500 mb-3">{t('assessment.result.save.desc', lang)}</p>
-              <div className="flex gap-2 justify-center flex-wrap">
-                <Link href="/register" className="btn-primary text-xs px-4 py-2">{t('assessment.result.save.signup', lang)}</Link>
-                <Link href="/login" className="btn-secondary text-xs px-4 py-2">{t('assessment.result.save.login', lang)}</Link>
-              </div>
-            </div>
-          ) : (
-            <p className="mt-4 text-sm text-green-600 flex items-center justify-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4" /> {t('assessment.result.saved', lang)}
-            </p>
-          )}
+          <p className="mt-4 text-sm text-green-600 flex items-center justify-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4" /> {t('assessment.result.saved', lang)}
+          </p>
         </div>
 
         {definition.code === 'IPIP120' && domainScores && (
@@ -357,17 +344,8 @@ export default function AssessmentContent({ id, userId }: Props) {
         )}
 
         <div className="flex gap-3 justify-center pb-8">
-          {isGuest ? (
-            <>
-              <Link href="/" className="btn-secondary">{t('error.404.back', lang)}</Link>
-              <Link href="/register" className="btn-primary">{t('landing.cta.register', lang)}</Link>
-            </>
-          ) : (
-            <>
-              <Link href="/assessments" className="btn-secondary">{t('nav.assessments', lang)}</Link>
-              <Link href="/dashboard" className="btn-primary">{t('nav.dashboard', lang)}</Link>
-            </>
-          )}
+          <Link href="/assessments" className="btn-secondary">{t('nav.assessments', lang)}</Link>
+          <Link href="/dashboard" className="btn-primary">{t('nav.dashboard', lang)}</Link>
         </div>
       </div>
     )
