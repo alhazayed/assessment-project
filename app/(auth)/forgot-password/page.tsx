@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="card p-8">
       <h2 className="text-xl font-semibold text-gray-900 mb-2">{t('auth.forgot.title', lang)}</h2>
-      <p className="text-sm text-gray-500 mb-6">{t('auth.login.email', lang)}</p>
+      <p className="text-sm text-gray-500 mb-6">{t('auth.forgot.desc', lang)}</p>
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
           />
         </div>
 
-        <button type="submit" className="btn-primary w-full gap-2" disabled={loading || !email.trim()}>
+        <button type="submit" className="btn-primary w-full gap-2" disabled={loading}>
           <Mail className="w-4 h-4" />
           {loading ? t('auth.forgot.submitting', lang) : t('auth.forgot.submit', lang)}
         </button>

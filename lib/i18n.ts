@@ -650,6 +650,7 @@ const dict = {
     // Forgot / reset password
     'auth.login.forgot_password': 'Forgot password?',
     'auth.forgot.title': 'Reset your password',
+    'auth.forgot.desc': "Enter your email and we'll send you a reset link.",
     'auth.forgot.submit': 'Send reset link',
     'auth.forgot.submitting': 'Sending...',
     'auth.forgot.success': 'Check your email for a password reset link.',
@@ -1362,6 +1363,7 @@ const dict = {
     // Forgot / reset password
     'auth.login.forgot_password': 'نسيت كلمة المرور؟',
     'auth.forgot.title': 'إعادة تعيين كلمة المرور',
+    'auth.forgot.desc': 'أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين.',
     'auth.forgot.submit': 'إرسال رابط الإعادة',
     'auth.forgot.submitting': 'جارٍ الإرسال...',
     'auth.forgot.success': 'تحقق من بريدك الإلكتروني للحصول على رابط إعادة التعيين.',

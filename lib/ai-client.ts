@@ -32,7 +32,7 @@ export interface AICallResult {
   provider: string
 }
 
-const PROVIDER_TIMEOUT_MS = 15_000
+const PROVIDER_TIMEOUT_MS = 8_000
 
 interface Provider {
   name: string
@@ -107,6 +107,7 @@ export async function callAI(options: AICallOptions): Promise<AICallResult> {
   const errors: string[] = []
 
   for (const provider of providers) {
+    console.log(`[ai-client] trying ${provider.name} (${provider.model})`)
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS)
 
@@ -159,6 +160,7 @@ export async function callAI(options: AICallOptions): Promise<AICallResult> {
     }
   }
 
+  console.error(`[ai-client] all ${providers.length} provider(s) exhausted — errors: ${errors.join(' | ')}`)
   throw new AIServiceError(`All AI providers failed: ${errors.join(' | ')}`)
 }
 
