@@ -9,7 +9,9 @@
  * Configure providers via environment variables:
  *   GLM_API_KEY              — Zhipu AI GLM (primary)
  *   OPENAI_API_KEY           — OpenAI (first fallback)
- *   FALLBACK_AI_API_KEY      — Any OpenAI-compatible endpoint (second fallback)
+ *   DEEPSEEK_API_KEY         — DeepSeek (second fallback)
+ *   XAI_API_KEY              — xAI Grok (third fallback)
+ *   FALLBACK_AI_API_KEY      — Any OpenAI-compatible endpoint (fourth fallback)
  *   FALLBACK_AI_API_URL      — Base URL for the fallback provider
  *   FALLBACK_AI_MODEL        — Model name for the fallback provider
  */
@@ -55,6 +57,22 @@ function getProviders(): Provider[] {
           url: 'https://api.openai.com/v1/chat/completions',
           apiKey: process.env.OPENAI_API_KEY,
           model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini',
+        }
+      : null,
+    process.env.DEEPSEEK_API_KEY
+      ? {
+          name: 'DeepSeek',
+          url: 'https://api.deepseek.com/v1/chat/completions',
+          apiKey: process.env.DEEPSEEK_API_KEY,
+          model: process.env.DEEPSEEK_MODEL ?? 'deepseek-chat',
+        }
+      : null,
+    process.env.XAI_API_KEY
+      ? {
+          name: 'xAI',
+          url: 'https://api.x.ai/v1/chat/completions',
+          apiKey: process.env.XAI_API_KEY,
+          model: process.env.XAI_MODEL ?? 'grok-3',
         }
       : null,
     process.env.FALLBACK_AI_API_KEY && process.env.FALLBACK_AI_API_URL
