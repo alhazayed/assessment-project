@@ -103,7 +103,7 @@ Only include assessments from the provided list.`
     } catch (err) {
       if (err instanceof AIServiceError) {
         console.error('[recommend-assessments] all providers failed:', err.message)
-        return NextResponse.json({ error: 'AI service error' }, { status: 502 })
+        return NextResponse.json({ error: 'AI service error', detail: err.message }, { status: 502 })
       }
       throw err
     }
