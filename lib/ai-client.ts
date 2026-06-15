@@ -128,9 +128,10 @@ export async function callAI(options: AICallOptions): Promise<AICallResult> {
       clearTimeout(timer)
 
       if (!res.ok) {
+        const body = await res.text().catch(() => '')
         const msg = `${provider.name}: HTTP ${res.status}`
         errors.push(msg)
-        console.warn(`[ai-client] ${msg} — trying next provider`)
+        console.warn(`[ai-client] ${msg} — ${body.slice(0, 200)} — trying next provider`)
         continue
       }
 
