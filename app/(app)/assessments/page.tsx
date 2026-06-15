@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
 import Link from 'next/link'
-import { ClipboardList, CheckCircle2, Clock, AlertCircle, LogIn } from 'lucide-react'
+import { ClipboardList, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentAssignment, AssessmentSubmission } from '@/lib/types'
 import AIAssessmentFinder from '@/components/ai-assessment-finder'
 import InProgressAssessments from '@/components/in-progress-assessments'
@@ -20,34 +21,25 @@ export default async function AssessmentsPage() {
   const supabase = createClient()
   const lang = getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login?next=/assessments')
 
-  const { data: definitions } = await supabase
-    .from('assessment_definitions')
-    .select('*')
-    .eq('is_active', true)
-    .order('name_en')
+  const [defsRes, aRes, sRes] = await Promise.all([
+    supabase.from('assessment_definitions').select('*').eq('is_active', true).order('name_en'),
+    supabase
+      .from('assessment_assignments')
+      .select('*, assessment_definitions(name_en, name_ar, description_en, description_ar)')
+      .eq('patient_id', user.id)
+      .eq('status', 'pending'),
+    supabase
+      .from('assessment_submissions')
+      .select('*, assessment_definitions(name_en, name_ar, code)')
+      .eq('patient_id', user.id)
+      .order('submitted_at', { ascending: false }),
+  ])
 
-  const allDefinitions = (definitions || []) as AssessmentDefinition[]
-
-  let assignments: (AssessmentAssignment & { assessment_definitions: any })[] = []
-  let submissions: (AssessmentSubmission & { assessment_definitions: any })[] = []
-
-  if (user) {
-    const [aRes, sRes] = await Promise.all([
-      supabase
-        .from('assessment_assignments')
-        .select('*, assessment_definitions(name_en, name_ar, description_en, description_ar)')
-        .eq('patient_id', user.id)
-        .eq('status', 'pending'),
-      supabase
-        .from('assessment_submissions')
-        .select('*, assessment_definitions(name_en, name_ar, code)')
-        .eq('patient_id', user.id)
-        .order('submitted_at', { ascending: false }),
-    ])
-    assignments = (aRes.data || []) as any
-    submissions = (sRes.data || []) as any
-  }
+  const allDefinitions = (defsRes.data || []) as AssessmentDefinition[]
+  const assignments = (aRes.data || []) as (AssessmentAssignment & { assessment_definitions: any })[]
+  const submissions = (sRes.data || []) as (AssessmentSubmission & { assessment_definitions: any })[]
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
@@ -56,22 +48,7 @@ export default async function AssessmentsPage() {
         <p className="text-gray-500 mt-1">{t('assessments.page.sub', lang)}</p>
       </div>
 
-      {!user && (
-        <div className="mb-8 p-4 bg-brand-50 border border-brand-200 rounded-xl flex items-start gap-3">
-          <LogIn className="w-5 h-5 text-brand-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-brand-800">{t('assessments.guest.title', lang)}</p>
-            <p className="text-sm text-brand-600 mt-0.5">
-              <Link href="/register" className="underline font-medium">{t('assessments.guest.create', lang)}</Link>{' '}
-              {t('assessments.guest.or', lang)}{' '}
-              <Link href="/login" className="underline font-medium">{t('assessments.guest.signin', lang)}</Link>{' '}
-              {t('assessments.guest.suffix', lang)}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {user && assignments.length > 0 && (
+      {assignments.length > 0 && (
         <div className="mb-8">
           <h2 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <Clock className="w-4 h-4 text-brand-600" />
@@ -105,8 +82,8 @@ export default async function AssessmentsPage() {
         </div>
       )}
 
-      {user && <RescreeningTrigger />}
-      {user && <InProgressAssessments definitions={allDefinitions} lang={lang} />}
+      <RescreeningTrigger />
+      <InProgressAssessments definitions={allDefinitions} lang={lang} />
 
       <AIAssessmentFinder />
 
@@ -159,7 +136,7 @@ export default async function AssessmentsPage() {
         </div>
       </div>
 
-      {user && submissions.length > 0 && (
+      {submissions.length > 0 && (
         <div>
           <h2 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-gray-500" />
