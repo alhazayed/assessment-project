@@ -98,6 +98,7 @@ export function isAIConfigured(): boolean {
  */
 export async function callAI(options: AICallOptions): Promise<AICallResult> {
   const providers = getProviders()
+  console.log(`[ai-client] providers: ${providers.length > 0 ? providers.map(p => p.name).join(', ') : 'NONE'}`)
   if (providers.length === 0) {
     throw new AIConfigError('No AI providers configured')
   }
