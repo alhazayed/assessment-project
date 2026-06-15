@@ -4,8 +4,7 @@ import { checkRateLimit } from '@/lib/rate-limit'
 import { scrubPHI } from '@/lib/security/anonymizePHI'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
 
-const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+const GLM_API_URL = 'https://open.bigmodel.cn/api/paige/v4/chat/completions'
 
 async function requireClinician() {
   const supabase = createClient()
@@ -132,8 +131,8 @@ export async function PUT(request: Request) {
     )
   }
 
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey || apiKey === 'your-gemini-api-key-here') {
+  const apiKey = process.env.GLM_API_KEY
+  if (!apiKey) {
     return NextResponse.json({ error: 'AI unavailable' }, { status: 503 })
   }
 
@@ -164,33 +163,36 @@ export async function PUT(request: Request) {
     `- ${m.log_date}: mood ${m.mood_score}/10, anxiety ${m.anxiety_score}/10, sleep ${m.sleep_hours}h`
   ).join('\n')
 
-  // Use systemInstruction to separate system context from data — prevents prompt injection
-  const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+  const res = await fetch(GLM_API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
     body: JSON.stringify({
-      systemInstruction: {
-        parts: [{
-          text: 'You are a clinical assistant helping a mental health clinician write a brief session note. Based on provided patient data, draft a concise clinical note (3-5 sentences) in professional clinical language. Focus on observable patterns, do not diagnose. Start directly with the clinical content, no preamble.',
-        }],
-      },
-      contents: [{
-        role: 'user',
-        parts: [{
-          text: scrubPHI(`Recent assessment results:\n${submissions || 'No recent assessments.'}\n\nRecent mood logs:\n${moods || 'No recent mood data.'}`),
-        }],
-      }],
-      generationConfig: { temperature: 0.4, maxOutputTokens: 600 },
+      model: 'glm-4-flash',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a clinical assistant helping a mental health clinician write a brief session note. Based on provided patient data, draft a concise clinical note (3-5 sentences) in professional clinical language. Focus on observable patterns, do not diagnose. Start directly with the clinical content, no preamble.',
+        },
+        {
+          role: 'user',
+          content: scrubPHI(`Recent assessment results:\n${submissions || 'No recent assessments.'}\n\nRecent mood logs:\n${moods || 'No recent mood data.'}`),
+        },
+      ],
+      temperature: 0.4,
+      max_tokens: 600,
     }),
   })
 
   if (!res.ok) {
-    console.error('Gemini clinical-notes error:', res.status)
+    console.error('[clinical-notes] GLM API error:', res.status)
     return NextResponse.json({ error: 'AI service error' }, { status: 502 })
   }
 
   const data = await res.json()
-  const draft = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+  const draft = data?.choices?.[0]?.message?.content ?? ''
   if (!draft) return NextResponse.json({ error: 'AI returned empty response' }, { status: 502 })
   return NextResponse.json({ draft })
 }

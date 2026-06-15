@@ -4,10 +4,9 @@ import { checkRateLimit } from '@/lib/rate-limit'
 import { scrubPHI } from '@/lib/security/anonymizePHI'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
 
-const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+const GLM_API_URL = 'https://open.bigmodel.cn/api/paige/v4/chat/completions'
 
-// Max chars for each description field sent to Gemini (controls token spend)
+// Max chars for each description field sent to the AI model (controls token spend)
 const MAX_DESC_CHARS = 80
 
 /** Extract the real client IP, preferring Cloudflare's trusted header. */
@@ -48,8 +47,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Input too long (max 500 characters)' }, { status: 400 })
     }
 
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey || apiKey === 'your-gemini-api-key-here') {
+    const apiKey = process.env.GLM_API_KEY
+    if (!apiKey) {
       return NextResponse.json({ error: 'AI service not configured' }, { status: 503 })
     }
 
@@ -92,23 +91,30 @@ Return a JSON array (max 3 items):
 [{"code":"<code>","name_en":"<name>","name_ar":"<arabic name>","reason_en":"<1 sentence>","reason_ar":"<1 sentence>","relevance":"high"|"medium"}]
 Only include assessments from the provided list.`
 
-    const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    const res = await fetch(GLM_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        contents: [{ role: 'user', parts: [{ text: scrubPHI(text.trim()) }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 512 },
+        model: 'glm-4-flash',
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: scrubPHI(text.trim()) },
+        ],
+        temperature: 0.3,
+        max_tokens: 512,
       }),
     })
 
     if (!res.ok) {
-      console.error('Gemini API error:', res.status)
+      console.error('[recommend-assessments] GLM API error:', res.status)
       return NextResponse.json({ error: 'AI service error' }, { status: 502 })
     }
 
     const data = await res.json()
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+    const raw = data?.choices?.[0]?.message?.content ?? ''
 
     const validCodes = new Set(assessments.map(a => a.code))
     const codeToId = new Map(assessments.map(a => [a.code, a.id]))

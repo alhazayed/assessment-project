@@ -3,8 +3,7 @@ import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
 
-const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+const GLM_API_URL = 'https://open.bigmodel.cn/api/paige/v4/chat/completions'
 
 export async function GET(_request: Request) {
   try {
@@ -25,8 +24,8 @@ export async function GET(_request: Request) {
       )
     }
 
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey || apiKey === 'your-gemini-api-key-here') {
+    const apiKey = process.env.GLM_API_KEY
+    if (!apiKey) {
       return NextResponse.json({ error: 'AI service not configured' }, { status: 503 })
     }
 
@@ -104,23 +103,30 @@ Rules:
 - Keep recommendations practical and achievable without professional help
 - Strengths list may be empty [] if none are evident`
 
-    const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+    const res = await fetch(GLM_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        contents: [{ role: 'user', parts: [{ text: `Assessment Results:\n${resultsSummary}` }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
+        model: 'glm-4-flash',
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: `Assessment Results:\n${resultsSummary}` },
+        ],
+        temperature: 0.2,
+        max_tokens: 1024,
       }),
     })
 
     if (!res.ok) {
-      console.error('[synthesis] Gemini API error:', res.status)
+      console.error('[synthesis] GLM API error:', res.status)
       return NextResponse.json({ error: 'AI service error' }, { status: 502 })
     }
 
     const data = await res.json()
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+    const raw = data?.choices?.[0]?.message?.content ?? ''
 
     let synthesis: {
       summary: string
