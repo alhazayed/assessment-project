@@ -25,6 +25,7 @@ import LanguageToggle from '@/components/language-toggle'
 import NotificationBell from '@/components/notification-bell'
 import UnreadMessagesBadge from '@/components/unread-messages-badge'
 import BrandLogo from '@/components/brand-logo'
+import DarkModeToggle from '@/components/dark-mode-toggle'
 
 interface SidebarProps {
   profile: Profile | null
@@ -79,26 +80,29 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
     : profile?.full_name_en ?? ''
 
   return (
-    <aside className={`fixed inset-y-0 w-64 bg-white flex flex-col z-10 ${lang === 'ar' ? 'right-0 border-l' : 'left-0 border-r'} border-gray-200`}>
-      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+    <aside className={`fixed inset-y-0 w-64 bg-white dark:!bg-[#0B1521] flex flex-col z-10 ${lang === 'ar' ? 'right-0 border-l' : 'left-0 border-r'} border-gray-200 dark:!border-[#1E2C3A]`}>
+      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-[#1E2C3A]">
         <div className="flex items-center gap-2.5">
           <BrandLogo variant="icon" size={38} />
-          <span className="font-semibold text-gray-900">{t('app.name', lang)}</span>
+          <span className="font-semibold text-gray-900 dark:text-[#F4F8FB]">{t('app.name', lang)}</span>
         </div>
-        <NotificationBell lang={lang} />
+        <div className="flex items-center gap-1">
+          <DarkModeToggle />
+          <NotificationBell lang={lang} />
+        </div>
       </div>
 
       {profile && (
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-[#1E2C3A]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-semibold text-brand-700">
+            <div className="w-9 h-9 rounded-full bg-brand-100 dark:bg-[#1A2E42] flex items-center justify-center flex-shrink-0">
+              <span className="text-sm font-semibold text-brand-700 dark:text-[#4C9BE0]">
                 {displayName.charAt(0).toUpperCase()}
               </span>
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{displayName}</p>
-              <p className="text-xs text-gray-500 capitalize">{profile.role}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-[#F4F8FB] truncate">{displayName}</p>
+              <p className="text-xs text-gray-500 dark:text-[#6E8093] capitalize">{profile.role}</p>
             </div>
           </div>
         </div>
@@ -114,11 +118,11 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-brand-50 text-brand-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-brand-50 dark:bg-[rgba(76,155,224,0.14)] text-brand-700 dark:text-[#EAF2FA]'
+                  : 'text-gray-600 dark:text-[#9DB0C2] hover:bg-gray-50 dark:hover:bg-[#122030] hover:text-gray-900 dark:hover:text-[#F4F8FB]'
               }`}
             >
-              <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-brand-600' : 'text-gray-400'}`} />
+              <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-brand-600 dark:text-[#4C9BE0]' : 'text-gray-400 dark:text-[#6E8093]'}`} />
               {item.label}
               {item.href === '/messages' && <UnreadMessagesBadge />}
             </Link>
@@ -130,12 +134,12 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
         <LanguageToggle lang={lang} className="w-full justify-center mb-1" />
       </div>
 
-      <div className="p-3 border-t border-gray-100">
+      <div className="p-3 border-t border-gray-100 dark:border-[#1E2C3A]">
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-[#9DB0C2] hover:bg-red-50 dark:hover:bg-[#2A1A1A] hover:text-red-600 dark:hover:text-red-400 transition-colors"
         >
-          <LogOut className="w-4 h-4 text-gray-400" />
+          <LogOut className="w-4 h-4 text-gray-400 dark:text-[#6E8093]" />
           {t('nav.signout', lang)}
         </button>
       </div>

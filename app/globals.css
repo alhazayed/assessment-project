@@ -12,7 +12,7 @@
 
   /* ── Latin / LTR base ── */
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply bg-gray-50 dark:bg-[#0A1019] text-gray-900 dark:text-[#F4F8FB] antialiased;
     font-family: var(--font-latin, 'Jost'), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     line-height: 1.6;
     font-feature-settings: 'kern' 1, 'liga' 1;
@@ -133,19 +133,19 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-brand-600 border border-transparent rounded-lg shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-brand-600 border border-transparent rounded-lg shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 dark:focus:ring-offset-[#0A1019] transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors;
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-[#C8D8E8] bg-white dark:bg-[#10202E] border border-gray-300 dark:border-[#233241] rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-[#1A2E42] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 dark:focus:ring-offset-[#0A1019] transition-colors;
   }
 
   .card {
-    @apply bg-white rounded-xl border border-gray-200 shadow-sm;
+    @apply bg-white dark:bg-[#10202E] rounded-xl border border-gray-200 dark:border-[#233241] shadow-sm dark:shadow-none;
   }
 
   .input {
-    @apply block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm;
+    @apply block w-full rounded-lg border-gray-300 dark:border-[#233241] bg-white dark:bg-[#10202E] text-gray-900 dark:text-[#F4F8FB] placeholder:text-gray-400 dark:placeholder:text-[#5B6E80] shadow-sm focus:border-brand-500 dark:focus:border-[#4C9BE0] focus:ring-brand-500 dark:focus:ring-[#4C9BE0] sm:text-sm;
   }
 
   /* RTL-aware .input: inherits direction from [dir="rtl"] rules above */
@@ -155,10 +155,53 @@
   }
 
   .label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
+    @apply block text-sm font-medium text-gray-700 dark:text-[#C8D8E8] mb-1;
   }
 
   .badge-minimal {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
 }
+
+/* ── Dark mode global overrides ── */
+/* These selectors have higher specificity (0,2,0) than single-class Tailwind utilities (0,1,0),
+   so they win without !important when .dark is on <html>. */
+html.dark { color-scheme: dark; }
+
+/* Backgrounds */
+.dark .bg-white                   { background-color: #10202E; }
+.dark .bg-gray-50                 { background-color: #0A1019; }
+.dark .bg-gray-100                { background-color: #122030; }
+.dark .bg-gray-200                { background-color: #1A2E42; }
+
+/* Text */
+.dark .text-gray-900              { color: #F4F8FB; }
+.dark .text-gray-800              { color: #E0EAF4; }
+.dark .text-gray-700              { color: #C8D8E8; }
+.dark .text-gray-600              { color: #9DB0C2; }
+.dark .text-gray-500              { color: #6E8093; }
+.dark .text-gray-400              { color: #5B6E80; }
+
+/* Borders */
+.dark .border-gray-100            { border-color: #1C2A38; }
+.dark .border-gray-200            { border-color: #233241; }
+.dark .border-gray-300            { border-color: #2A3D52; }
+
+/* Dividers */
+.dark .divide-gray-100 > * + *   { border-color: #1C2A38; }
+.dark .divide-gray-200 > * + *   { border-color: #233241; }
+
+/* Hover states */
+.dark .hover\:bg-gray-50:hover   { background-color: #122030; }
+.dark .hover\:bg-gray-100:hover  { background-color: #1A2E42; }
+.dark .hover\:bg-white:hover     { background-color: #1A2E42; }
+.dark .hover\:text-gray-900:hover { color: #F4F8FB; }
+
+/* Shadows become subtle in dark mode */
+.dark .shadow                     { box-shadow: 0 1px 3px 0 rgba(0,0,0,0.4), 0 1px 2px -1px rgba(0,0,0,0.4); }
+.dark .shadow-sm                  { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.4); }
+.dark .shadow-md                  { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5), 0 2px 4px -2px rgba(0,0,0,0.5); }
+.dark .shadow-lg                  { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5), 0 4px 6px -4px rgba(0,0,0,0.5); }
+
+/* Ring offsets */
+.dark .focus\:ring-offset-white:focus { --tw-ring-offset-color: #10202E; }
