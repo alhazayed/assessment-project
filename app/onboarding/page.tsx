@@ -89,29 +89,29 @@ export default function OnboardingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-blue-50 dark:from-[#0B1521] dark:via-[#0A1019] dark:to-[#0D1825] flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ backgroundColor: 'var(--page-bg)' }}>
 
       {/* Header */}
       <div className="w-full max-w-lg mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-brand-600 flex items-center justify-center shadow-sm">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--vw-blue)' }}>
               <Heart className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900">{t('app.name', lang)}</span>
+            <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{t('app.name', lang)}</span>
           </div>
           <LanguageToggle lang={lang} />
         </div>
       </div>
 
       {/* Card */}
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="w-full max-w-lg card overflow-hidden">
 
         {/* Progress bar */}
-        <div className="h-1.5 bg-gray-100">
+        <div className="progress-track rounded-none h-1.5">
           <div
-            className="h-full bg-brand-600 transition-all duration-500"
-            style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
+            className="progress-fill transition-all duration-500 h-1.5"
+            style={{ width: `${(step / TOTAL_STEPS) * 100}%`, backgroundColor: 'var(--vw-blue)' }}
           />
         </div>
 
@@ -122,21 +122,23 @@ export default function OnboardingPage() {
               {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
                 <div
                   key={i}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i + 1 <= step ? 'bg-brand-600 w-6' : 'bg-gray-200 w-3'
-                  }`}
+                  className="h-1.5 rounded-full transition-all"
+                  style={i + 1 <= step
+                    ? { backgroundColor: 'var(--vw-blue)', width: '24px' }
+                    : { backgroundColor: 'var(--surface-alt)', width: '12px' }
+                  }
                 />
               ))}
             </div>
-            <span className="text-xs text-gray-400 font-medium">
+            <span className="text-[11.5px] font-medium" style={{ color: 'var(--text-muted)' }}>
               {t('onboarding.step', lang)} {step} {t('onboarding.of', lang)} {TOTAL_STEPS}
             </span>
           </div>
 
           {/* Title */}
           <div className="mb-7">
-            <h1 className="text-xl font-bold text-gray-900">{stepTitles[step - 1].title}</h1>
-            <p className="text-sm text-gray-500 mt-1">{stepTitles[step - 1].sub}</p>
+            <h1 className="text-[19px] font-extrabold tracking-tight" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{stepTitles[step - 1].title}</h1>
+            <p className="text-[13.5px] mt-1" style={{ color: 'var(--text-secondary)' }}>{stepTitles[step - 1].sub}</p>
           </div>
 
           {/* ── Step 1: Identity ──────────────────────────────────── */}
@@ -261,7 +263,7 @@ export default function OnboardingPage() {
             <div className="space-y-6">
               {/* Emergency contact */}
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-3">{t('profile.emergency.title', lang)}</p>
+                <p className="text-[13.5px] font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>{t('profile.emergency.title', lang)}</p>
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -292,14 +294,14 @@ export default function OnboardingPage() {
 
               {/* Psychiatric medications */}
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-3">{t('profile.meds.title', lang)}</p>
-                <p className="text-xs text-gray-400 mb-3">{t('profile.meds.subtitle', lang)}</p>
+                <p className="text-[13.5px] font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>{t('profile.meds.title', lang)}</p>
+                <p className="text-[12px] mb-3" style={{ color: 'var(--text-muted)' }}>{t('profile.meds.subtitle', lang)}</p>
                 <div className="flex gap-4">
                   {[true, false].map(val => (
                     <label key={String(val)} className="flex items-center gap-2 cursor-pointer">
                       <input type="radio" name="hasMeds" checked={hasMedications === val}
                         onChange={() => setHasMedications(val)} className="text-brand-600" />
-                      <span className="text-sm text-gray-700">
+                      <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
                         {val ? t('profile.meds.yes', lang) : t('profile.meds.no', lang)}
                       </span>
                     </label>
@@ -324,13 +326,18 @@ export default function OnboardingPage() {
               </div>
 
               {/* Consent */}
-              <label className="flex items-start gap-3 cursor-pointer p-4 rounded-xl border border-gray-200 hover:border-brand-300 transition-colors">
-                <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors ${
-                  consent ? 'bg-brand-600 border-brand-600' : 'border-gray-300'
-                }`} onClick={() => setConsent(!consent)}>
+              <label className="flex items-start gap-3 cursor-pointer p-4 rounded-[12px] transition-colors"
+                style={{ border: '1px solid var(--border)' }}>
+                <div
+                  className="mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors"
+                  style={consent
+                    ? { backgroundColor: 'var(--vw-blue)', borderColor: 'var(--vw-blue)' }
+                    : { borderColor: 'var(--border)' }
+                  }
+                  onClick={() => setConsent(!consent)}>
                   {consent && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                 </div>
-                <span className="text-sm text-gray-600 leading-relaxed">
+                <span className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   {t('profile.consent.text', lang)}
                 </span>
               </label>
@@ -338,7 +345,7 @@ export default function OnboardingPage() {
           )}
 
           {/* Navigation buttons */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
+          <div className="flex items-center justify-between mt-8 pt-6" style={{ borderTop: '1px solid var(--divider)' }}>
             <div>
               {step > 1 ? (
                 <button
@@ -353,7 +360,8 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => router.push('/dashboard')}
-                  className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-[13px] hover:underline transition-colors"
+                  style={{ color: 'var(--text-muted)' }}
                 >
                   {t('onboarding.skip', lang)}
                 </button>
