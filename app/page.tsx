@@ -13,6 +13,7 @@ import {
 import AIAssessmentFinder from '@/components/ai-assessment-finder'
 import AssessmentsByCategory from '@/components/assessments-by-category'
 import BrandLogo from '@/components/brand-logo'
+import DarkModeToggle from '@/components/dark-mode-toggle'
 
 
 export default async function LandingPage() {
@@ -101,9 +102,10 @@ export default async function LandingPage() {
             <a href="#assessments" className="hover:text-gray-900 transition-colors">{t('nav.assessments', lang)}</a>
             <a href="#about" className="hover:text-gray-900 transition-colors">{t('nav.about', lang)}</a>
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <DarkModeToggle />
             <LanguageToggle lang={lang} />
-            <Link href="/login" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+            <Link href="/login" className="text-sm font-medium text-gray-700 dark:text-[#9DB0C2] hover:text-gray-900 dark:hover:text-[#F4F8FB] transition-colors">
               {t('nav.signin', lang)}
             </Link>
             <Link href="/register" className="btn-primary text-sm px-4 py-2">
@@ -114,7 +116,7 @@ export default async function LandingPage() {
       </header>
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 to-white pt-20 pb-24 px-6">
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 to-white dark:from-[#0B1521] dark:to-[#0A1019] pt-20 pb-24 px-6">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(29,98,150,0.12),transparent)]" />
         <div className="relative max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-brand-100 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
@@ -145,7 +147,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ── AI Recommender ──────────────────────────────────────────────── */}
-      <section className="py-16 px-6 bg-gradient-to-b from-white to-gray-50">
+      <section className="py-16 px-6 bg-gradient-to-b from-white to-gray-50 dark:from-[#0A1019] dark:to-[#0A1019]">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-accent-50 text-accent-600 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
