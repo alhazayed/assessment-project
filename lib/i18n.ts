@@ -660,6 +660,10 @@ const dict = {
     'auth.reset.submit': 'Update password',
     'auth.reset.submitting': 'Updating...',
     'auth.reset.success': 'Password updated! Redirecting to sign in...',
+    'auth.reset.subtitle': 'Enter your new password below.',
+    'auth.reset.hint': 'Use at least 8 characters.',
+    'auth.reset.done': 'Password updated!',
+    'auth.reset.redirecting': 'Redirecting you to sign in...',
 
     // Footer contact
     'footer.contact': 'Contact',
@@ -1373,6 +1377,10 @@ const dict = {
     'auth.reset.submit': 'تحديث كلمة المرور',
     'auth.reset.submitting': 'جارٍ التحديث...',
     'auth.reset.success': 'تم تحديث كلمة المرور! سيتم توجيهك لتسجيل الدخول...',
+    'auth.reset.subtitle': 'أدخل كلمة مرورك الجديدة أدناه.',
+    'auth.reset.hint': 'استخدم 8 أحرف على الأقل.',
+    'auth.reset.done': 'تم تحديث كلمة المرور!',
+    'auth.reset.redirecting': 'سيتم توجيهك لتسجيل الدخول...',
 
     // Footer contact
     'footer.contact': 'تواصل معنا',

@@ -180,7 +180,7 @@ export default function AssessmentContent({ id, userId }: Props) {
               <CheckCircle2 className={`w-8 h-8 ${isPositive ? 'text-green-600' : 'text-orange-500'}`} />
             </div>
           )}
-          <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.title', lang)}</h2>
+          <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.score', lang)}</h2>
           <p className="text-[13.5px] mb-6" style={{ color: 'var(--text-muted)' }}>{defName}</p>
           <div className="rounded-xl p-6 mb-4 inline-block min-w-48" style={{ backgroundColor: 'var(--surface-alt)' }}>
             <p className="text-5xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{result.score}</p>
