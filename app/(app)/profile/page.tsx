@@ -236,23 +236,25 @@ export default function ProfilePage() {
 
   const isAr = lang === 'ar'
 
-  if (loading) return <div className="p-8 text-gray-400">{t('mood.loading', lang)}</div>
+  if (loading) return <div className="p-7" style={{ color: 'var(--text-muted)' }}>{t('mood.loading', lang)}</div>
 
   return (
-    <div className="p-8 max-w-2xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{t('profile.title', lang)}</h1>
-        <p className="text-gray-500 mt-1">{t('profile.subtitle', lang)}</p>
+    <div className="p-7 max-w-2xl">
+      <div className="mb-7">
+        <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+          {t('profile.title', lang)}
+        </h1>
+        <p style={{ color: 'var(--text-secondary)' }}>{t('profile.subtitle', lang)}</p>
       </div>
 
       {needsCompletion && (
-        <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-lg flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <div className="alert-warning mb-6 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#B07A12' }} />
           <div>
-            <p className="text-sm font-semibold text-amber-800">
+            <p className="text-[13.5px] font-bold mb-0.5" style={{ color: '#B07A12' }}>
               {lang === 'ar' ? 'أكمل ملفك الشخصي أولاً' : 'Complete your profile first'}
             </p>
-            <p className="text-sm text-amber-700 mt-0.5">
+            <p className="text-[13px]" style={{ color: '#B07A12', opacity: 0.85 }}>
               {lang === 'ar'
                 ? 'يرجى تعبئة الحقول المطلوبة أدناه (تاريخ الميلاد، الجنس، الحالة الاجتماعية، المستوى التعليمي، وبلد الإقامة) قبل إجراء أي تقييم.'
                 : 'Please fill in the required fields below (Date of Birth, Gender, Marital Status, Educational Status, and Country of Residence) before taking an assessment.'}
@@ -262,14 +264,14 @@ export default function ProfilePage() {
       )}
 
       {saved && (
-        <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-sm text-green-700">
+        <div className="alert-success mb-6 flex items-center gap-2 text-[13.5px]" style={{ color: '#1B8A5A' }}>
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           {t('profile.saved', lang)}
         </div>
       )}
 
       {validationError && (
-        <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-sm text-red-700">
+        <div className="alert-error mb-6 flex items-center gap-2 text-[13.5px]" style={{ color: '#C02A2A' }}>
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           {validationError}
         </div>
@@ -280,8 +282,8 @@ export default function ProfilePage() {
         {/* Identity */}
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-5">
-            <User className="w-4 h-4 text-brand-500" />
-            <h2 className="text-base font-semibold text-gray-900">{t('profile.identity.title', lang)}</h2>
+            <User className="w-4 h-4" style={{ color: '#1D6296' }} />
+            <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.identity.title', lang)}</h2>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -309,8 +311,8 @@ export default function ProfilePage() {
         {/* Demographics — all roles */}
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-5">
-            <MapPin className="w-4 h-4 text-brand-500" />
-            <h2 className="text-base font-semibold text-gray-900">{t('profile.demographics.title', lang)}</h2>
+            <MapPin className="w-4 h-4" style={{ color: '#1D6296' }} />
+            <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.demographics.title', lang)}</h2>
           </div>
           <div className="space-y-4">
             {/* DOB + Gender */}
@@ -387,8 +389,8 @@ export default function ProfilePage() {
           <>
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-5">
-                <Briefcase className="w-4 h-4 text-brand-500" />
-                <h2 className="text-base font-semibold text-gray-900">{t('profile.employment', lang)}</h2>
+                <Briefcase className="w-4 h-4" style={{ color: '#1D6296' }} />
+                <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.employment', lang)}</h2>
               </div>
               <div className="space-y-4">
                 <div>
@@ -413,10 +415,10 @@ export default function ProfilePage() {
 
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-1">
-                <Pill className="w-4 h-4 text-brand-500" />
-                <h2 className="text-base font-semibold text-gray-900">{t('profile.meds.title', lang)}</h2>
+                <Pill className="w-4 h-4" style={{ color: '#1D6296' }} />
+                <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.meds.title', lang)}</h2>
               </div>
-              <p className="text-sm text-gray-500 mb-5 ml-6">{t('profile.meds.subtitle', lang)}</p>
+              <p className="text-[13px] mb-5 ms-6" style={{ color: 'var(--text-secondary)' }}>{t('profile.meds.subtitle', lang)}</p>
               <div className="space-y-4">
                 <div>
                   <label className="label">{t('profile.meds.question', lang)}</label>
@@ -424,12 +426,12 @@ export default function ProfilePage() {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="radio" name="hasMeds" checked={hasMedications === true}
                         onChange={() => setHasMedications(true)} className="text-brand-600" />
-                      <span className="text-sm text-gray-700">{t('profile.meds.yes', lang)}</span>
+                      <span className="text-[13.5px]" style={{ color: 'var(--text-primary)' }}>{t('profile.meds.yes', lang)}</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="radio" name="hasMeds" checked={hasMedications === false}
                         onChange={() => setHasMedications(false)} className="text-brand-600" />
-                      <span className="text-sm text-gray-700">{t('profile.meds.no', lang)}</span>
+                      <span className="text-[13.5px]" style={{ color: 'var(--text-primary)' }}>{t('profile.meds.no', lang)}</span>
                     </label>
                   </div>
                 </div>
@@ -454,8 +456,8 @@ export default function ProfilePage() {
             {/* Emergency contact */}
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-5">
-                <Phone className="w-4 h-4 text-brand-500" />
-                <h2 className="text-base font-semibold text-gray-900">{t('profile.emergency.title', lang)}</h2>
+                <Phone className="w-4 h-4" style={{ color: '#1D6296' }} />
+                <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.emergency.title', lang)}</h2>
               </div>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -489,8 +491,8 @@ export default function ProfilePage() {
             {/* Privacy preferences */}
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-5">
-                <Shield className="w-4 h-4 text-brand-500" />
-                <h2 className="text-base font-semibold text-gray-900">{t('profile.privacy.title', lang)}</h2>
+                <Shield className="w-4 h-4" style={{ color: '#1D6296' }} />
+                <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.privacy.title', lang)}</h2>
               </div>
               <div className="space-y-4">
                 {[
@@ -506,7 +508,7 @@ export default function ProfilePage() {
                         className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                       />
                     </div>
-                    <span className="text-sm text-gray-700 group-hover:text-gray-900">{item.label}</span>
+                    <span className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>{item.label}</span>
                   </label>
                 ))}
               </div>
@@ -515,7 +517,7 @@ export default function ProfilePage() {
         )}
 
         <div className="flex justify-end">
-          <button type="submit" disabled={saving} className="btn-primary gap-2">
+          <button type="submit" disabled={saving} className="btn-accent gap-2">
             <Save className="w-4 h-4" />
             {saving ? t('profile.saving', lang) : t('profile.save', lang)}
           </button>
@@ -526,23 +528,23 @@ export default function ProfilePage() {
       {profile?.role === 'patient' && (
         <div className="card p-6 mt-6">
           <div className="flex items-center gap-2 mb-4">
-            <Shield className="w-4 h-4 text-brand-500" />
-            <h2 className="text-base font-semibold text-gray-900">{t('profile.consent.title', lang)}</h2>
+            <Shield className="w-4 h-4" style={{ color: '#1D6296' }} />
+            <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.consent.title', lang)}</h2>
           </div>
           {consentGivenAt ? (
-            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+            <div className="alert-success flex items-center gap-2 text-[13.5px]" style={{ color: '#1B8A5A' }}>
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
               {t('profile.consent.given_on', lang)}{' '}
               {new Date(consentGivenAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-gray-600 leading-relaxed">{t('profile.consent.text', lang)}</p>
+              <p className="text-[13.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{t('profile.consent.text', lang)}</p>
               <button
                 type="button"
                 onClick={handleGiveConsent}
                 disabled={givingConsent}
-                className="btn-primary gap-2 disabled:opacity-40"
+                className="btn-accent gap-2 disabled:opacity-40"
               >
                 <Shield className="w-4 h-4" />
                 {givingConsent ? '...' : t('profile.consent.confirm', lang)}
@@ -556,8 +558,8 @@ export default function ProfilePage() {
       {assessmentHistory.length > 0 && (
         <div className="card p-6 mt-6">
           <div className="flex items-center gap-2 mb-4">
-            <ClipboardList className="w-4 h-4 text-brand-500" />
-            <h2 className="text-base font-semibold text-gray-900">
+            <ClipboardList className="w-4 h-4" style={{ color: '#1D6296' }} />
+            <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
               {lang === 'ar' ? 'سجل التقييمات' : 'Assessment History'}
             </h2>
           </div>
@@ -571,22 +573,18 @@ export default function ProfilePage() {
                 { year: 'numeric', month: 'short', day: 'numeric' }
               )
               return (
-                <div key={sub.id} className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+                <div key={sub.id} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--divider)' }}>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{date}</p>
+                    <p className="text-[13.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{name}</p>
+                    <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{date}</p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                    <span className="text-sm font-bold text-gray-700">{sub.total_score}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0 ms-4">
+                    <span className="text-[13px] font-bold" style={{ color: 'var(--text-secondary)' }}>{sub.total_score}</span>
                     {sub.severity_band && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                        {sub.severity_band}
-                      </span>
+                      <span className="badge-neutral">{sub.severity_band}</span>
                     )}
                     {sub.high_risk_flag && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 font-medium">
-                        {lang === 'ar' ? 'خطورة عالية' : 'High Risk'}
-                      </span>
+                      <span className="badge-severe">{lang === 'ar' ? 'خطورة عالية' : 'High Risk'}</span>
                     )}
                   </div>
                 </div>
@@ -599,36 +597,21 @@ export default function ProfilePage() {
       {/* Account info */}
       <div className="card p-6 mt-6">
         <div className="flex items-center gap-2 mb-4">
-          <BookOpen className="w-4 h-4 text-brand-500" />
-          <h2 className="text-base font-semibold text-gray-900">{t('profile.account.title', lang)}</h2>
+          <BookOpen className="w-4 h-4" style={{ color: '#1D6296' }} />
+          <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.account.title', lang)}</h2>
         </div>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between py-2 border-b border-gray-50">
-            <span className="text-gray-500">{t('profile.account.role', lang)}</span>
-            <span className="font-medium text-gray-900 capitalize">{profile?.role}</span>
-          </div>
-          {profile?.date_of_birth && (
-            <div className="flex justify-between py-2 border-b border-gray-50">
-              <span className="text-gray-500">{t('profile.dob', lang)}</span>
-              <span className="font-medium text-gray-900">
-                {new Date(profile.date_of_birth).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
-              </span>
+        <div className="space-y-0 text-[13.5px]">
+          {[
+            { label: t('profile.account.role', lang), value: <span className="capitalize">{profile?.role}</span> },
+            profile?.date_of_birth ? { label: t('profile.dob', lang), value: new Date(profile.date_of_birth).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) } : null,
+            profile?.country_of_residence ? { label: t('profile.country', lang), value: COUNTRIES.find(c => c.value === profile.country_of_residence)?.[lang === 'ar' ? 'ar' : 'en'] ?? profile.country_of_residence } : null,
+            { label: t('profile.account.status', lang), value: <span style={{ color: profile?.is_active ? '#1B8A5A' : '#C02A2A' }}>{profile?.is_active ? t('profile.account.active', lang) : t('profile.account.inactive', lang)}</span> },
+          ].filter(Boolean).map((item, i, arr) => item && (
+            <div key={i} className="flex justify-between py-3" style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--divider)' : 'none' }}>
+              <span style={{ color: 'var(--text-muted)' }}>{item.label}</span>
+              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{item.value}</span>
             </div>
-          )}
-          {profile?.country_of_residence && (
-            <div className="flex justify-between py-2 border-b border-gray-50">
-              <span className="text-gray-500">{t('profile.country', lang)}</span>
-              <span className="font-medium text-gray-900">
-                {COUNTRIES.find(c => c.value === profile.country_of_residence)?.[lang === 'ar' ? 'ar' : 'en'] ?? profile.country_of_residence}
-              </span>
-            </div>
-          )}
-          <div className="flex justify-between py-2">
-            <span className="text-gray-500">{t('profile.account.status', lang)}</span>
-            <span className={`font-medium ${profile?.is_active ? 'text-green-600' : 'text-red-600'}`}>
-              {profile?.is_active ? t('profile.account.active', lang) : t('profile.account.inactive', lang)}
-            </span>
-          </div>
+          ))}
         </div>
       </div>
     </div>
