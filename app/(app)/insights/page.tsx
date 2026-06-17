@@ -141,8 +141,8 @@ export default function InsightsPage() {
 
           {/* Streak card */}
           <div className="card p-6 flex items-center gap-5">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#FEF2EC' }}>
-              <Flame className="w-7 h-7" style={{ color: '#F3650A' }} />
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-accent-50">
+              <Flame className="w-7 h-7 text-accent-500" />
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">{t('insights.streak', lang)}</p>

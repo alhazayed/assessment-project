@@ -135,7 +135,7 @@ export default function AIAssessmentFinder({ lang: propLang }: { lang?: 'en' | '
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current) }, [])
 
   return (
-    <div className="bg-gradient-to-br from-brand-50 to-purple-50 border border-brand-100 rounded-2xl p-6 mb-8">
+    <div className="bg-gradient-to-br from-brand-50 to-purple-50 dark:from-[#0D1E30] dark:to-[#0F1A2E] border border-brand-100 dark:border-[#1E3A52] rounded-2xl p-6 mb-8">
       <div className="flex items-start gap-3 mb-4">
         <div className="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center flex-shrink-0">
           <Sparkles className="w-4 h-4 text-white" />

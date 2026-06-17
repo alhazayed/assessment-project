@@ -89,7 +89,7 @@ export default function OnboardingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-blue-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-blue-50 dark:from-[#0B1521] dark:via-[#0A1019] dark:to-[#0D1825] flex flex-col items-center justify-center p-4">
 
       {/* Header */}
       <div className="w-full max-w-lg mb-6">
