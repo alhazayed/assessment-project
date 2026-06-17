@@ -10,7 +10,6 @@ import {
   BarChart3, Heart, ChevronRight,
   Sparkles, Clock, Lock, Globe, Shield, Star
 } from 'lucide-react'
-import AIAssessmentFinder from '@/components/ai-assessment-finder'
 import AssessmentsByCategory from '@/components/assessments-by-category'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
@@ -137,23 +136,6 @@ export default async function LandingPage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── AI Recommender ──────────────────────────────────────────────── */}
-      <section className="py-20 px-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[12px] font-bold mb-4" style={{ background: '#FEF2EC', color: '#F3650A', border: '1px solid #FBC29D' }}>
-              <Sparkles className="w-3.5 h-3.5" />
-              {t('landing.ai.badge', lang)}
-            </div>
-            <h2 className="text-3xl font-extrabold mb-2" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
-              {t('landing.ai.title', lang)}
-            </h2>
-            <p style={{ color: 'var(--text-secondary)' }}>{t('landing.ai.sub', lang)}</p>
-          </div>
-          <AIAssessmentFinder lang={lang} />
         </div>
       </section>
 

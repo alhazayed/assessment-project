@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { Flame, TrendingUp, Calendar, BarChart2 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
-import SynthesisCard from '@/components/synthesis-card'
 import MentalHealthRadar from '@/components/mental-health-radar'
 
 type MoodLog = {
@@ -132,9 +131,6 @@ export default function InsightsPage() {
         </div>
       ) : (
         <div className="space-y-6">
-
-          {/* AI Synthesis */}
-          <SynthesisCard isAr={isAr} />
 
           {/* Mental Health Radar */}
           {scoreHistory.length > 0 && (

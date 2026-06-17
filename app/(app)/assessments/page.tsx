@@ -5,7 +5,6 @@ import { t } from '@/lib/i18n'
 import Link from 'next/link'
 import { ClipboardList, CheckCircle2, Clock, AlertCircle, ChevronRight } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentAssignment, AssessmentSubmission } from '@/lib/types'
-import AIAssessmentFinder from '@/components/ai-assessment-finder'
 import InProgressAssessments from '@/components/in-progress-assessments'
 import RescreeningTrigger from '@/components/rescreening-trigger'
 
@@ -92,8 +91,6 @@ export default async function AssessmentsPage() {
 
       <RescreeningTrigger />
       <InProgressAssessments definitions={allDefinitions} lang={lang} />
-
-      <AIAssessmentFinder lang={lang} />
 
       {/* Available assessments */}
       <div className="mb-7">
