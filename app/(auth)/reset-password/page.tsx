@@ -14,6 +14,7 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -27,28 +28,45 @@ export default function ResetPasswordPage() {
       setError(error.message)
       setLoading(false)
     } else {
+      setDone(true)
       setTimeout(() => router.push('/login'), 1500)
     }
   }
 
+  if (done) {
+    return (
+      <div className="card p-8 text-center">
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: '#E6F4F0' }}>
+          <KeyRound className="w-7 h-7 text-green-600" />
+        </div>
+        <h2 className="text-[18px] font-bold mb-1.5" style={{ color: 'var(--text-primary)' }}>{t('auth.reset.done', lang)}</h2>
+        <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>{t('auth.reset.redirecting', lang)}</p>
+      </div>
+    )
+  }
+
   return (
     <div className="card p-8">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('auth.reset.title', lang)}</h2>
+      <div className="mb-7">
+        <h2 className="text-[22px] font-extrabold tracking-tight mb-1.5" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+          {t('auth.reset.title', lang)}
+        </h2>
+        <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>{t('auth.reset.subtitle', lang)}</p>
+      </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
-        </div>
+        <div className="mb-5 alert-error">{error}</div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="label" htmlFor="password">{t('auth.reset.password', lang)}</label>
-          <div className="relative">
+          <div className="field-wrapper">
+            <KeyRound className="field-icon w-4 h-4" />
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
-              className="input pr-10"
+              className="field-input"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
@@ -58,17 +76,21 @@ export default function ResetPasswordPage() {
             />
             <button
               type="button"
-              className={`absolute inset-y-0 ${lang === 'ar' ? 'left-0 pl-3' : 'right-0 pr-3'} flex items-center text-gray-400 hover:text-gray-600`}
+              className="absolute inset-y-0 end-0 pe-3 flex items-center transition-colors"
+              style={{ color: 'var(--text-muted)' }}
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+          <p className="text-[11.5px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
+            {t('auth.reset.hint', lang)}
+          </p>
         </div>
 
         <button
           type="submit"
-          className="btn-primary w-full gap-2"
+          className="btn-accent w-full gap-2"
           disabled={loading || password.length < 8}
         >
           <KeyRound className="w-4 h-4" />

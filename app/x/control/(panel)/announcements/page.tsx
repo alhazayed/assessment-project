@@ -16,6 +16,13 @@ const TYPES = ['info', 'warning', 'success', 'error']
 
 const defaultForm = { title_en: '', title_ar: '', body_en: '', body_ar: '', type: 'info', target_roles: [] as string[], is_dismissible: true, starts_at: '', ends_at: '' }
 
+const typeBadgeClass = (type: string) => ({
+  info: 'bg-blue-50 text-blue-700',
+  warning: 'bg-yellow-50 text-yellow-700',
+  success: 'bg-green-50 text-green-700',
+  error: 'bg-red-50 text-red-700',
+}[type] || 'bg-gray-100 text-gray-600')
+
 export default function AdminAnnouncementsPage() {
   const lang = useLang()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
@@ -62,27 +69,31 @@ export default function AdminAnnouncementsPage() {
     setForm(p => ({ ...p, target_roles: p.target_roles.includes(role) ? p.target_roles.filter(r => r !== role) : [...p.target_roles, role] }))
   }
 
-  const typeBadge = (type: string) => ({ info: 'bg-blue-50 text-blue-700', warning: 'bg-yellow-50 text-yellow-700', success: 'bg-green-50 text-green-700', error: 'bg-red-50 text-red-700' }[type] || 'bg-gray-100 text-gray-600')
-
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-7 max-w-4xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('admin.announcements.title', lang)}</h1>
-          <p className="text-gray-500 mt-1">{t('admin.announcements.subtitle', lang)}</p>
+          <h1 className="text-2xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+            {t('admin.announcements.title', lang)}
+          </h1>
+          <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>{t('admin.announcements.subtitle', lang)}</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-700 transition-colors">
+        <button onClick={() => setShowForm(true)} className="btn-accent flex items-center gap-2 text-sm">
           <Plus className="w-4 h-4" />{t('admin.announcements.new', lang)}
         </button>
       </div>
 
-      {msg && <div className="mb-4 p-3 bg-green-50 border border-green-200 text-sm text-green-700 rounded-lg">{msg}</div>}
+      {msg && <div className="mb-5 alert-success">{msg}</div>}
 
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">{t('admin.announcements.form.title', lang)}</h2>
-            <button onClick={() => { setShowForm(false); setForm(defaultForm) }}><X className="w-5 h-5 text-gray-400" /></button>
+        <div className="card p-6 mb-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('admin.announcements.form.title', lang)}</h2>
+            <button onClick={() => { setShowForm(false); setForm(defaultForm) }}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--surface-alt)] transition-colors"
+              style={{ color: 'var(--text-muted)' }}>
+              <X className="w-4 h-4" />
+            </button>
           </div>
           <form onSubmit={create} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -123,22 +134,33 @@ export default function AdminAnnouncementsPage() {
             </div>
             <div>
               <label className="label">{t('admin.announcements.form.target_roles', lang)}</label>
-              <div className="flex gap-2 mt-1">
+              <div className="flex gap-2 mt-1.5">
                 {ROLES.map(r => (
                   <button key={r} type="button" onClick={() => toggleRole(r)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize ${form.target_roles.includes(r) ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                    className={`px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors capitalize ${
+                      form.target_roles.includes(r)
+                        ? 'text-white'
+                        : 'hover:opacity-80'
+                    }`}
+                    style={form.target_roles.includes(r)
+                      ? { backgroundColor: 'var(--vw-blue)' }
+                      : { backgroundColor: 'var(--surface-alt)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }
+                    }>
                     {r}
                   </button>
                 ))}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <input type="checkbox" id="dismissible" checked={form.is_dismissible} onChange={e => setForm(p => ({ ...p, is_dismissible: e.target.checked }))} className="rounded text-brand-600" />
-              <label htmlFor="dismissible" className="text-sm text-gray-700">{t('admin.announcements.form.dismissible', lang)}</label>
+              <input type="checkbox" id="dismissible" checked={form.is_dismissible} onChange={e => setForm(p => ({ ...p, is_dismissible: e.target.checked }))}
+                className="rounded" style={{ accentColor: 'var(--vw-blue)' }} />
+              <label htmlFor="dismissible" className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>{t('admin.announcements.form.dismissible', lang)}</label>
             </div>
             <div className="flex justify-end gap-3">
-              <button type="button" onClick={() => { setShowForm(false); setForm(defaultForm) }} className="btn-secondary">{t('admin.announcements.form.cancel', lang)}</button>
-              <button type="submit" disabled={saving} className="bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-brand-700 disabled:opacity-50">
+              <button type="button" onClick={() => { setShowForm(false); setForm(defaultForm) }} className="btn-ghost text-sm">
+                {t('admin.announcements.form.cancel', lang)}
+              </button>
+              <button type="submit" disabled={saving} className="btn-accent text-sm disabled:opacity-50">
                 {saving ? t('admin.announcements.form.saving', lang) : t('admin.announcements.form.create', lang)}
               </button>
             </div>
@@ -147,37 +169,44 @@ export default function AdminAnnouncementsPage() {
       )}
 
       <div className="space-y-3">
-        {loading ? <p className="text-sm text-gray-400">{t('admin.loading', lang)}</p>
-          : announcements.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
-              <Megaphone className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="text-sm text-gray-400">{t('admin.announcements.empty', lang)}</p>
+        {loading ? (
+          <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.loading', lang)}</p>
+        ) : announcements.length === 0 ? (
+          <div className="card p-12 text-center">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ backgroundColor: 'var(--surface-alt)' }}>
+              <Megaphone className="w-6 h-6" style={{ color: 'var(--text-muted)' }} />
             </div>
-          ) : announcements.map(a => (
-            <div key={a.id} className={`bg-white border rounded-xl p-5 ${a.is_active ? 'border-gray-200' : 'border-gray-100 opacity-60'}`}>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${typeBadge(a.type)}`}>{a.type}</span>
-                    {a.target_roles?.map(r => <span key={r} className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded capitalize">{r}</span>)}
-                    {!a.is_active && <span className="text-xs text-gray-400">{t('admin.announcements.inactive', lang)}</span>}
-                  </div>
-                  <p className="font-semibold text-gray-900">{a.title_en}</p>
-                  {a.title_ar && <p className="text-sm text-gray-400 text-right" dir="rtl">{a.title_ar}</p>}
-                  <p className="text-sm text-gray-600 mt-1">{a.body_en}</p>
-                  <p className="text-xs text-gray-400 mt-2">Created {new Date(a.created_at).toLocaleDateString()}</p>
+            <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.announcements.empty', lang)}</p>
+          </div>
+        ) : announcements.map(a => (
+          <div key={a.id} className={`card p-5 ${!a.is_active ? 'opacity-60' : ''}`}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`text-[11.5px] px-2 py-0.5 rounded-full font-medium capitalize ${typeBadgeClass(a.type)}`}>{a.type}</span>
+                  {a.target_roles?.map(r => (
+                    <span key={r} className="text-[11px] px-1.5 py-0.5 rounded capitalize" style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--text-muted)' }}>{r}</span>
+                  ))}
+                  {!a.is_active && <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{t('admin.announcements.inactive', lang)}</span>}
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <button onClick={() => toggleActive(a.id, a.is_active)}>
-                    {a.is_active ? <ToggleRight className="w-7 h-7 text-brand-600" /> : <ToggleLeft className="w-7 h-7 text-gray-300" />}
-                  </button>
-                  <button onClick={() => remove(a.id)} className="text-gray-300 hover:text-red-400 transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                <p className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>{a.title_en}</p>
+                {a.title_ar && <p className="text-[13px] text-right mt-0.5" dir="rtl" style={{ color: 'var(--text-muted)' }}>{a.title_ar}</p>}
+                <p className="text-[13px] mt-1.5" style={{ color: 'var(--text-secondary)' }}>{a.body_en}</p>
+                <p className="text-[11.5px] mt-2" style={{ color: 'var(--text-muted)' }}>Created {new Date(a.created_at).toLocaleDateString()}</p>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => toggleActive(a.id, a.is_active)}>
+                  {a.is_active
+                    ? <ToggleRight className="w-7 h-7" style={{ color: 'var(--vw-blue)' }} />
+                    : <ToggleLeft className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />}
+                </button>
+                <button onClick={() => remove(a.id)} className="transition-colors hover:text-red-500" style={{ color: 'var(--text-muted)' }}>
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
-          ))}
+          </div>
+        ))}
       </div>
     </div>
   )

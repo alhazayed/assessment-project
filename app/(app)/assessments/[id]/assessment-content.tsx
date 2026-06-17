@@ -14,10 +14,10 @@ import { t } from '@/lib/i18n'
 
 function severityColor(band: string) {
   const b = band.toLowerCase()
-  if (b.includes('minimal') || b.includes('none') || b.includes('normal') || b.includes('low') || b.includes('negative') || b.includes('below') || b.includes('no ')) return 'text-green-700 bg-green-50 border-green-200'
-  if (b.includes('mild') || b.includes('subthreshold') || b.includes('moderate risk')) return 'text-yellow-700 bg-yellow-50 border-yellow-200'
-  if (b.includes('moderate') || b.includes('possible')) return 'text-orange-700 bg-orange-50 border-orange-200'
-  return 'text-red-700 bg-red-50 border-red-200'
+  if (b.includes('minimal') || b.includes('none') || b.includes('normal') || b.includes('low') || b.includes('negative') || b.includes('below') || b.includes('no ')) return 'badge-minimal border'
+  if (b.includes('mild') || b.includes('subthreshold') || b.includes('moderate risk')) return 'badge-mild border'
+  if (b.includes('moderate') || b.includes('possible')) return 'badge-moderate border'
+  return 'badge-severe border'
 }
 
 interface RelatedAssessment {
@@ -152,8 +152,8 @@ export default function AssessmentContent({ id, userId }: Props) {
     return (
       <div className="p-8 flex items-center justify-center min-h-64">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-brand-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-gray-500">{t('assessment.loading', lang)}</p>
+          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: 'var(--vw-blue)', borderTopColor: 'transparent' }} />
+          <p className="text-[13.5px]" style={{ color: 'var(--text-muted)' }}>{t('assessment.loading', lang)}</p>
         </div>
       </div>
     )
@@ -176,28 +176,28 @@ export default function AssessmentContent({ id, userId }: Props) {
               <AlertTriangle className="w-8 h-8 text-red-600" />
             </div>
           ) : (
-            <div className={`w-16 h-16 ${isPositive ? 'bg-green-100' : 'bg-orange-100'} rounded-full flex items-center justify-center mx-auto mb-4`}>
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isPositive ? 'bg-green-100' : 'bg-orange-100'}`}>
               <CheckCircle2 className={`w-8 h-8 ${isPositive ? 'text-green-600' : 'text-orange-500'}`} />
             </div>
           )}
-          <h2 className="text-xl font-bold text-gray-900 mb-1">{t('assessment.result.score', lang)}</h2>
-          <p className="text-sm text-gray-500 mb-6">{defName}</p>
-          <div className="bg-gray-50 rounded-xl p-6 mb-4 inline-block min-w-48">
-            <p className="text-5xl font-bold text-gray-900 mb-1">{result.score}</p>
-            <p className={`text-xs text-gray-400 mb-3 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`}>{t('assessment.result.score', lang)}</p>
-            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold border ${severityColor(result.band_en)}`}>
+          <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.title', lang)}</h2>
+          <p className="text-[13.5px] mb-6" style={{ color: 'var(--text-muted)' }}>{defName}</p>
+          <div className="rounded-xl p-6 mb-4 inline-block min-w-48" style={{ backgroundColor: 'var(--surface-alt)' }}>
+            <p className="text-5xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{result.score}</p>
+            <p className={`text-[11px] mb-3 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`} style={{ color: 'var(--text-muted)' }}>{t('assessment.result.score', lang)}</p>
+            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${severityColor(result.band_en)}`}>
               {displayBand}
             </span>
           </div>
 
           {isHighRisk && (
-            <div className={`mt-4 p-4 bg-red-50 border border-red-200 rounded-xl ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-              <p className="text-sm font-semibold text-red-700 mb-1">⚠ {t('assessment.high_risk_note', lang)}</p>
-              <p className="text-sm text-red-600">{t('assessment.result.high_risk', lang)}</p>
+            <div className={`mt-4 alert-error ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
+              <p className="text-sm font-semibold mb-1">⚠ {t('assessment.high_risk_note', lang)}</p>
+              <p className="text-sm">{t('assessment.result.high_risk', lang)}</p>
             </div>
           )}
 
-          <p className="mt-4 text-sm text-green-600 flex items-center justify-center gap-1.5">
+          <p className="mt-4 text-[13.5px] text-green-600 flex items-center justify-center gap-1.5">
             <CheckCircle2 className="w-4 h-4" /> {t('assessment.result.saved', lang)}
           </p>
         </div>
@@ -205,10 +205,10 @@ export default function AssessmentContent({ id, userId }: Props) {
         {definition.code === 'IPIP120' && domainScores && (
           <div className="card p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Brain className="w-4 h-4 text-brand-600" />
-              <h3 className="text-base font-semibold text-gray-900">Your Personality Profile</h3>
+              <Brain className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
+              <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>Your Personality Profile</h3>
             </div>
-            <p className="text-xs text-gray-400 mb-5">Scores range 24–120 per domain. Low &lt;65 · Average 65–88 · High &gt;88</p>
+            <p className="text-[11.5px] mb-5" style={{ color: 'var(--text-muted)' }}>Scores range 24–120 per domain. Low &lt;65 · Average 65–88 · High &gt;88</p>
             <div className="space-y-4">
               {Object.entries(IPIP_DOMAINS).map(([key, info]) => {
                 const score = domainScores[key] ?? 0
@@ -217,17 +217,17 @@ export default function AssessmentContent({ id, userId }: Props) {
                 const desc = lang === 'ar' ? info[`${level}_ar`] : info[level]
                 return (
                   <div key={key}>
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-800">{lang === 'ar' ? info.label_ar : info.label}</span>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full border capitalize ${info.color}`}>{level}</span>
+                        <span className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{lang === 'ar' ? info.label_ar : info.label}</span>
+                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border capitalize ${info.color}`}>{level}</span>
                       </div>
-                      <span className="text-sm font-bold text-gray-700">{score}</span>
+                      <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{score}</span>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2 mb-1.5">
-                      <div className="h-2 rounded-full bg-brand-500 transition-all" style={{ width: `${pct}%` }} />
+                    <div className="progress-track mb-1.5">
+                      <div className="progress-fill transition-all" style={{ width: `${pct}%`, backgroundColor: 'var(--vw-blue)' }} />
                     </div>
-                    <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+                    <p className="text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{desc}</p>
                   </div>
                 )
               })}
@@ -238,11 +238,11 @@ export default function AssessmentContent({ id, userId }: Props) {
         {assessmentContent && (
           <div className="card p-6">
             <div className="flex items-center gap-2 mb-3">
-              <BookOpen className="w-4 h-4 text-brand-600" />
-              <h3 className="text-base font-semibold text-gray-900">{t('assessment.result.about', lang)}</h3>
+              <BookOpen className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
+              <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.about', lang)}</h3>
             </div>
-            <p className="text-sm text-gray-600 leading-relaxed mb-2">{assessmentContent.overview}</p>
-            <p className="text-xs text-gray-400">
+            <p className="text-[13.5px] leading-relaxed mb-2" style={{ color: 'var(--text-secondary)' }}>{assessmentContent.overview}</p>
+            <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
               <span className="font-medium">{t('assessment.result.measures', lang)}:</span> {assessmentContent.measuresDomain}
             </p>
           </div>
@@ -251,22 +251,22 @@ export default function AssessmentContent({ id, userId }: Props) {
         {bandContent && (
           <div className="card p-6">
             <div className="flex items-center gap-2 mb-4">
-              <FlaskConical className="w-4 h-4 text-brand-600" />
-              <h3 className="text-base font-semibold text-gray-900">
+              <FlaskConical className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
+              <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
                 {t('assessment.result.what_means', lang)} —{' '}
-                <span className={`text-sm font-medium px-2 py-0.5 rounded-full border ${severityColor(result.band_en)}`}>{displayBand}</span>
+                <span className={`text-[12px] font-medium px-2 py-0.5 rounded-full ${severityColor(result.band_en)}`}>{displayBand}</span>
               </h3>
             </div>
 
-            <p className="text-sm text-gray-700 leading-relaxed mb-5">{bandContent.explanation}</p>
+            <p className="text-[13.5px] leading-relaxed mb-5" style={{ color: 'var(--text-secondary)' }}>{bandContent.explanation}</p>
 
             {bandContent.whatThisMeans.length > 0 && (
               <div className="mb-5">
-                <p className={`text-xs font-semibold text-gray-500 mb-2 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`}>{t('assessment.result.key_points', lang)}</p>
+                <p className={`text-[11px] font-semibold mb-2 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`} style={{ color: 'var(--text-muted)' }}>{t('assessment.result.key_points', lang)}</p>
                 <ul className="space-y-2">
                   {bandContent.whatThisMeans.map((point, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0 mt-2" />
+                    <li key={i} className="flex items-start gap-2 text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2" style={{ backgroundColor: 'var(--vw-blue)' }} />
                       {point}
                     </li>
                   ))}
@@ -275,12 +275,12 @@ export default function AssessmentContent({ id, userId }: Props) {
             )}
 
             {bandContent.recommendations.length > 0 && (
-              <div className="p-4 bg-brand-50 rounded-xl border border-brand-100">
-                <p className={`text-xs font-semibold text-brand-700 mb-2 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`}>{t('assessment.result.recommendations', lang)}</p>
+              <div className="p-4 rounded-xl" style={{ backgroundColor: '#EAF2F9', border: '1px solid #C7DFF0' }}>
+                <p className={`text-[11px] font-semibold mb-2 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`} style={{ color: 'var(--vw-blue)' }}>{t('assessment.result.recommendations', lang)}</p>
                 <ul className="space-y-2">
                   {bandContent.recommendations.map((rec, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-blue-800">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <li key={i} className="flex items-start gap-2 text-[13.5px]" style={{ color: '#12273C' }}>
+                      <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: 'var(--vw-blue)' }} />
                       {rec}
                     </li>
                   ))}
@@ -293,17 +293,17 @@ export default function AssessmentContent({ id, userId }: Props) {
         {bandContent && bandContent.relatedDisorders.length > 0 && (
           <div className="card p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Brain className="w-4 h-4 text-brand-600" />
-              <h3 className="text-base font-semibold text-gray-900">{t('assessment.result.related_conditions', lang)}</h3>
+              <Brain className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
+              <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.related_conditions', lang)}</h3>
             </div>
-            <p className="text-xs text-gray-400 mb-4">{t('assessment.result.clinician_note', lang)}</p>
+            <p className="text-[11.5px] mb-4" style={{ color: 'var(--text-muted)' }}>{t('assessment.result.clinician_note', lang)}</p>
             <div className="space-y-3">
               {bandContent.relatedDisorders.map((disorder, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
-                  <span className="w-2 h-2 rounded-full bg-brand-400 flex-shrink-0 mt-1.5" />
+                <div key={i} className="flex items-start gap-3 p-3 rounded-[10px]" style={{ backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-subtle)' }}>
+                  <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: 'var(--vw-blue)' }} />
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">{disorder.name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{disorder.description}</p>
+                    <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{disorder.name}</p>
+                    <p className="text-[11.5px] mt-0.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{disorder.description}</p>
                   </div>
                 </div>
               ))}
@@ -314,8 +314,8 @@ export default function AssessmentContent({ id, userId }: Props) {
         {relatedAssessments.length > 0 && (
           <div className="card p-6">
             <div className="flex items-center gap-2 mb-4">
-              <ArrowRight className="w-4 h-4 text-brand-600" />
-              <h3 className="text-base font-semibold text-gray-900">{t('assessment.result.related_assessments', lang)}</h3>
+              <ArrowRight className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
+              <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.related_assessments', lang)}</h3>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {relatedAssessments.map((ra) => {
@@ -325,17 +325,17 @@ export default function AssessmentContent({ id, userId }: Props) {
                   <Link
                     key={ra.id}
                     href={`/assessments/${ra.id}`}
-                    className="p-4 rounded-xl border border-gray-200 hover:border-brand-300 hover:bg-brand-50 transition-colors group"
+                    className="card-hover p-4 group"
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold text-brand-600 uppercase tracking-wide">{ra.code}</span>
-                      <span className="text-xs text-gray-400">{ra.total_questions}{t('assessments.questions', lang)}</span>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--vw-blue)' }}>{ra.code}</span>
+                      <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{ra.total_questions}{t('assessments.questions', lang)}</span>
                     </div>
-                    <p className="text-sm font-medium text-gray-900 group-hover:text-brand-800 leading-snug">{raName}</p>
+                    <p className="text-[13.5px] font-medium leading-snug" style={{ color: 'var(--text-primary)' }}>{raName}</p>
                     {raDesc && (
-                      <p className="text-xs text-gray-400 mt-1 line-clamp-2">{raDesc}</p>
+                      <p className="text-[11.5px] mt-1 line-clamp-2" style={{ color: 'var(--text-muted)' }}>{raDesc}</p>
                     )}
-                    <p className="text-xs text-brand-600 mt-2 font-medium">{t('assessment.result.take', lang)} →</p>
+                    <p className="text-[12px] mt-2 font-medium" style={{ color: 'var(--vw-blue)' }}>{t('assessment.result.take', lang)} →</p>
                   </Link>
                 )
               })}
@@ -359,16 +359,14 @@ export default function AssessmentContent({ id, userId }: Props) {
   const defName = lang === 'ar' && definition.name_ar ? definition.name_ar : definition.name_en
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
+    <div className="p-7 max-w-2xl mx-auto">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">{defName}</h1>
-          </div>
-          <span className="text-sm text-gray-400">{currentIndex + 1} {t('assessment.of', lang)} {items.length}</span>
+          <h1 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{defName}</h1>
+          <span className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{currentIndex + 1} {t('assessment.of', lang)} {items.length}</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div className="bg-brand-600 h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+        <div className="progress-track">
+          <div className="progress-fill transition-all duration-300" style={{ width: `${progress}%`, backgroundColor: 'var(--vw-blue)' }} />
         </div>
       </div>
 
@@ -389,14 +387,14 @@ export default function AssessmentContent({ id, userId }: Props) {
       )}
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+        <div className="mb-4 alert-error">{error}</div>
       )}
 
-      <div className="card p-8 mb-6">
-        <p className={`text-gray-500 text-xs font-medium mb-3 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`}>
+      <div className="card p-7 mb-6">
+        <p className={`text-[11px] font-semibold mb-3 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`} style={{ color: 'var(--text-muted)' }}>
           {t('assessment.question', lang)} {currentIndex + 1}
         </p>
-        <h2 className={`text-lg font-medium text-gray-900 mb-6 ${lang === 'ar' ? 'leading-loose text-right' : 'leading-relaxed'}`}>{question}</h2>
+        <h2 className={`text-[16.5px] font-medium mb-6 ${lang === 'ar' ? 'leading-loose text-right' : 'leading-relaxed'}`} style={{ color: 'var(--text-primary)' }}>{question}</h2>
         <div className="space-y-3">
           {(currentItem.response_options as ResponseOption[]).map((opt) => {
             const optLabel = lang === 'ar' && opt.label_ar ? opt.label_ar : opt.label_en
@@ -407,15 +405,17 @@ export default function AssessmentContent({ id, userId }: Props) {
                   ...prev,
                   [currentItem.id]: { value: opt.value, label_en: opt.label_en, label_ar: opt.label_ar }
                 }))}
-                className={`w-full p-4 rounded-lg border-2 transition-all ${lang === 'ar' ? 'text-right' : 'text-left'} ${
-                  currentAnswer?.value === opt.value
-                    ? 'border-brand-500 bg-brand-50 text-brand-900'
-                    : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                }`}
+                className={`w-full p-4 rounded-[12px] border-2 transition-all text-[13.5px] ${lang === 'ar' ? 'text-right' : 'text-left'}`}
+                style={currentAnswer?.value === opt.value
+                  ? { borderColor: 'var(--vw-blue)', backgroundColor: '#EAF2F9', color: '#12273C' }
+                  : { borderColor: 'var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-secondary)' }
+                }
               >
-                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold ${lang === 'ar' ? 'ml-3' : 'mr-3'} ${
-                  currentAnswer?.value === opt.value ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-500'
-                }`}>
+                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold ${lang === 'ar' ? 'ms-3' : 'me-3'}`}
+                  style={currentAnswer?.value === opt.value
+                    ? { backgroundColor: 'var(--vw-blue)', color: 'white' }
+                    : { backgroundColor: 'var(--surface-alt)', color: 'var(--text-muted)' }
+                  }>
                   {opt.value}
                 </span>
                 {optLabel}

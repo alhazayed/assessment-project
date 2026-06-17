@@ -78,12 +78,12 @@ export default async function AdminOverviewPage() {
   const severityDist = Object.entries(severityMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
   const highRiskAll = (allSubsStats || []).filter((s: any) => s.high_risk_flag).length
 
-  function severityColor(band: string) {
+  function severityBadge(band: string) {
     const b = (band || '').toLowerCase()
-    if (b.includes('none') || b.includes('minimal') || b.includes('normal') || b.includes('negative') || b.includes('low')) return 'bg-green-100 text-green-700'
-    if (b.includes('mild')) return 'bg-yellow-100 text-yellow-700'
-    if (b.includes('moderate')) return 'bg-orange-100 text-orange-700'
-    return 'bg-red-100 text-red-700'
+    if (b.includes('none') || b.includes('minimal') || b.includes('normal') || b.includes('negative') || b.includes('low')) return 'badge-minimal'
+    if (b.includes('mild')) return 'badge-mild'
+    if (b.includes('moderate')) return 'badge-moderate'
+    return 'badge-severe'
   }
 
   const ChangeBadge = ({ change }: { change: number | null }) => {
@@ -91,7 +91,7 @@ export default async function AdminOverviewPage() {
     const up = change > 0
     const Icon = up ? TrendingUp : TrendingDown
     return (
-      <span className={`inline-flex items-center gap-0.5 text-xs font-medium px-1.5 py-0.5 rounded-full ${up ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+      <span className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ${up ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
         <Icon className="w-3 h-3" />{up ? '+' : ''}{change}%
       </span>
     )
@@ -149,15 +149,18 @@ export default async function AdminOverviewPage() {
   ]
 
   return (
-    <div className="p-8 max-w-6xl">
+    <div className="p-7 max-w-6xl">
+      {/* Page header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('admin.overview.title', lang)}</h1>
-          <p className="text-gray-500 mt-1">{t('admin.overview.subtitle', lang)}</p>
+          <h1 className="text-2xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+            {t('admin.overview.title', lang)}
+          </h1>
+          <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>{t('admin.overview.subtitle', lang)}</p>
         </div>
         <Link href="/x/control/analytics"
-          className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-          <Brain className="w-4 h-4 text-brand-500" />
+          className="flex items-center gap-2 btn-ghost text-sm">
+          <Brain className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
           {t('admin.overview.deep_analytics', lang)}
         </Link>
       </div>
@@ -165,18 +168,18 @@ export default async function AdminOverviewPage() {
       {/* Stats grid */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         {statsCards.map(s => (
-          <div key={s.label} className="bg-white border border-gray-200 rounded-xl p-5">
-            <div className="flex items-start justify-between mb-2">
+          <div key={s.label} className="card p-5">
+            <div className="flex items-start justify-between mb-3">
               <div>
-                <p className="text-sm text-gray-500 mb-1">{s.label}</p>
-                <p className="text-3xl font-bold text-gray-900">{typeof s.value === 'number' ? s.value.toLocaleString() : s.value}</p>
+                <p className="section-label mb-1">{s.label}</p>
+                <p className="stat-value">{typeof s.value === 'number' ? s.value.toLocaleString() : s.value}</p>
               </div>
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${s.color}`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${s.color}`}>
                 <s.icon className="w-5 h-5" />
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <p className="text-xs text-gray-400">{s.sub}</p>
+              <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{s.sub}</p>
               {s.change !== null && <ChangeBadge change={s.change} />}
             </div>
           </div>
@@ -185,8 +188,8 @@ export default async function AdminOverviewPage() {
 
       <div className="grid grid-cols-3 gap-6 mb-6">
         {/* Users by role */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">{t('admin.overview.roles', lang)}</h2>
+        <div className="card p-5">
+          <h2 className="text-[13.5px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>{t('admin.overview.roles', lang)}</h2>
           <div className="space-y-3">
             {[
               { role: 'patient', color: '#6366f1' },
@@ -199,11 +202,11 @@ export default async function AdminOverviewPage() {
               return (
                 <div key={role}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm capitalize text-gray-600">{role}</span>
-                    <span className="text-sm font-semibold text-gray-900">{count}</span>
+                    <span className="text-[12.5px] capitalize" style={{ color: 'var(--text-secondary)' }}>{role}</span>
+                    <span className="text-[12.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>{count}</span>
                   </div>
-                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+                  <div className="progress-track">
+                    <div className="progress-fill" style={{ width: `${pct}%`, backgroundColor: color }} />
                   </div>
                 </div>
               )
@@ -211,13 +214,13 @@ export default async function AdminOverviewPage() {
           </div>
 
           {totalSubs > 0 && (
-            <div className="mt-5 pt-4 border-t border-gray-100">
-              <h3 className="text-xs font-semibold text-gray-500 mb-3">{t('admin.overview.severity', lang)}</h3>
+            <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--divider)' }}>
+              <h3 className="section-label mb-3">{t('admin.overview.severity', lang)}</h3>
               <div className="space-y-2">
                 {severityDist.map(([band, cnt]) => (
                   <div key={band} className="flex items-center justify-between">
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${severityColor(band)}`}>{band}</span>
-                    <span className="text-xs text-gray-500">{cnt} ({totalSubs ? ((cnt / totalSubs) * 100).toFixed(0) : 0}%)</span>
+                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${severityBadge(band)}`}>{band}</span>
+                    <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{cnt} ({totalSubs ? ((cnt / totalSubs) * 100).toFixed(0) : 0}%)</span>
                   </div>
                 ))}
               </div>
@@ -226,27 +229,26 @@ export default async function AdminOverviewPage() {
         </div>
 
         {/* Top assessments */}
-        <div className="col-span-2 bg-white border border-gray-200 rounded-xl p-5">
+        <div className="col-span-2 card p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-700">{t('admin.overview.top_assessments', lang)}</h2>
-            <Link href="/x/control/analytics" className="text-xs text-brand-500 hover:underline">{t('admin.overview.view_analytics', lang)}</Link>
+            <h2 className="text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('admin.overview.top_assessments', lang)}</h2>
+            <Link href="/x/control/analytics" className="text-xs font-medium hover:underline" style={{ color: 'var(--vw-blue)' }}>{t('admin.overview.view_analytics', lang)}</Link>
           </div>
-          <div className="space-y-3">
-            {top5.length === 0 && <p className="text-sm text-gray-400">{t('admin.overview.no_submissions', lang)}</p>}
+          <div className="space-y-4">
+            {top5.length === 0 && <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.overview.no_submissions', lang)}</p>}
             {top5.map((a, i) => (
               <div key={a.code} className="flex items-center gap-3">
-                <span className="text-xs font-bold text-gray-400 w-4 text-right">{i + 1}</span>
+                <span className="text-[11.5px] font-bold w-4 text-right" style={{ color: 'var(--text-muted)' }}>{i + 1}</span>
                 <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-1.5">
                     <div>
-                      <span className="text-sm text-gray-700 font-medium">{a.name}</span>
-                      <span className="ml-1.5 text-xs text-gray-400">({a.code})</span>
+                      <span className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>{a.name}</span>
+                      <span className="ml-1.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>({a.code})</span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900">{a.count.toLocaleString()}</span>
+                    <span className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{a.count.toLocaleString()}</span>
                   </div>
-                  <div className="bg-gray-100 rounded-full h-1.5">
-                    <div className="bg-brand-500 h-1.5 rounded-full transition-all"
-                      style={{ width: `${Math.min(100, (a.count / (top5[0]?.count || 1)) * 100)}%` }} />
+                  <div className="progress-track">
+                    <div className="progress-fill" style={{ width: `${Math.min(100, (a.count / (top5[0]?.count || 1)) * 100)}%`, backgroundColor: 'var(--vw-blue)' }} />
                   </div>
                 </div>
               </div>
@@ -256,22 +258,22 @@ export default async function AdminOverviewPage() {
       </div>
 
       {/* Recent submissions */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
+      <div className="card p-5 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-gray-700">{t('admin.overview.recent', lang)}</h2>
-          <Link href="/x/control/results" className="text-xs text-brand-500 hover:underline">{t('admin.overview.view_all', lang)}</Link>
+          <h2 className="text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('admin.overview.recent', lang)}</h2>
+          <Link href="/x/control/results" className="text-xs font-medium hover:underline" style={{ color: 'var(--vw-blue)' }}>{t('admin.overview.view_all', lang)}</Link>
         </div>
-        <div className="divide-y divide-gray-50">
+        <div style={{ borderTop: '1px solid var(--divider)' }}>
           {(recentSubmissions || []).map((s: any) => (
-            <div key={s.id} className="flex items-center justify-between py-2.5">
+            <div key={s.id} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--divider)' }}>
               <div>
-                <p className="text-sm font-medium text-gray-800">{s.profiles?.full_name_en || t('admin.anonymous', lang)}</p>
-                <p className="text-xs text-gray-400">{s.assessment_definitions?.name_en} · {new Date(s.submitted_at).toLocaleString()}</p>
+                <p className="text-[13.5px] font-medium" style={{ color: 'var(--text-primary)' }}>{s.profiles?.full_name_en || t('admin.anonymous', lang)}</p>
+                <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{s.assessment_definitions?.name_en} · {new Date(s.submitted_at).toLocaleString()}</p>
               </div>
               <div className="flex items-center gap-2">
                 {s.high_risk_flag && <AlertTriangle className="w-4 h-4 text-red-500" />}
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${severityColor(s.severity_band)}`}>{s.severity_band}</span>
-                <span className="text-sm font-semibold text-gray-700 w-8 text-right">{s.total_score}</span>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${severityBadge(s.severity_band)}`}>{s.severity_band}</span>
+                <span className="text-[13px] font-semibold w-8 text-right" style={{ color: 'var(--text-primary)' }}>{s.total_score}</span>
               </div>
             </div>
           ))}
@@ -280,21 +282,21 @@ export default async function AdminOverviewPage() {
 
       {/* Recent audit */}
       {(recentAudit || []).length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-700">{t('admin.overview.audit', lang)}</h2>
-            <Link href="/x/control/audit" className="text-xs text-brand-500 hover:underline">{t('admin.overview.view_all', lang)}</Link>
+            <h2 className="text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('admin.overview.audit', lang)}</h2>
+            <Link href="/x/control/audit" className="text-xs font-medium hover:underline" style={{ color: 'var(--vw-blue)' }}>{t('admin.overview.view_all', lang)}</Link>
           </div>
-          <div className="divide-y divide-gray-50">
+          <div style={{ borderTop: '1px solid var(--divider)' }}>
             {(recentAudit || []).map((e: any) => (
-              <div key={e.id} className="flex items-center justify-between py-2">
+              <div key={e.id} className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid var(--divider)' }}>
                 <div>
-                  <p className="text-sm text-gray-700">
-                    <span className="font-medium">{e.profiles?.full_name_en || t('admin.anonymous', lang)}</span>
-                    <span className="mx-1 text-gray-400">·</span>
-                    <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">{e.action}</span>
+                  <p className="text-[13px]" style={{ color: 'var(--text-primary)' }}>
+                    <span className="font-semibold">{e.profiles?.full_name_en || t('admin.anonymous', lang)}</span>
+                    <span className="mx-1.5" style={{ color: 'var(--text-muted)' }}>·</span>
+                    <span className="font-mono text-[11px] px-1.5 py-0.5 rounded-[4px]" style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--text-secondary)' }}>{e.action}</span>
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{e.target_type} · {new Date(e.created_at).toLocaleString()}</p>
+                  <p className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{e.target_type} · {new Date(e.created_at).toLocaleString()}</p>
                 </div>
               </div>
             ))}
