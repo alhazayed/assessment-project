@@ -12,11 +12,11 @@ import {
   MessageSquare,
   User,
   LogOut,
-  Users,
-  Settings,
-  LineChart,
-  Shield,
   Brain,
+  LineChart,
+  Users,
+  Shield,
+  Settings,
 } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 import type { Lang } from '@/lib/i18n'
@@ -35,38 +35,29 @@ interface SidebarProps {
 export default function Sidebar({ profile, lang }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const isRtl = lang === 'ar'
 
   const patientNav = [
-    { href: '/dashboard', label: t('nav.dashboard', lang), icon: LayoutDashboard },
-    { href: '/assessments', label: t('nav.assessments', lang), icon: ClipboardList },
-    { href: '/adhd-zones', label: t('nav.adhd_zones', lang), icon: Brain },
-    { href: '/mood', label: t('nav.mood', lang), icon: Heart },
-    { href: '/journal', label: t('nav.journal', lang), icon: BookOpen },
-    { href: '/insights', label: t('nav.insights', lang), icon: LineChart },
-    { href: '/messages', label: t('nav.messages', lang), icon: MessageSquare },
-    { href: '/profile', label: t('nav.profile', lang), icon: User },
-  ]
-
-  const clinicianNav = [
-    { href: '/dashboard', label: t('nav.dashboard', lang), icon: LayoutDashboard },
-    { href: '/patients', label: t('nav.patients', lang), icon: Users },
-    { href: '/assessments', label: t('nav.assessments', lang), icon: ClipboardList },
-    { href: '/messages', label: t('nav.messages', lang), icon: MessageSquare },
-    { href: '/profile', label: t('nav.profile', lang), icon: User },
+    { href: '/dashboard',   label: t('nav.dashboard', lang),   icon: LayoutDashboard },
+    { href: '/assessments', label: t('nav.assessments', lang),  icon: ClipboardList },
+    { href: '/adhd-zones',  label: t('nav.adhd_zones', lang),   icon: Brain },
+    { href: '/mood',        label: t('nav.mood', lang),         icon: Heart },
+    { href: '/journal',     label: t('nav.journal', lang),      icon: BookOpen },
+    { href: '/insights',    label: t('nav.insights', lang),     icon: LineChart },
+    { href: '/messages',    label: t('nav.messages', lang),     icon: MessageSquare },
+    { href: '/profile',     label: t('nav.profile', lang),      icon: User },
   ]
 
   const adminNav = [
-    { href: '/x/control', label: t('nav.admin_panel', lang), icon: Shield },
-    { href: '/dashboard', label: t('nav.dashboard', lang), icon: LayoutDashboard },
-    { href: '/patients', label: t('nav.admin_patients', lang), icon: Users },
-    { href: '/assessments', label: t('nav.assessments', lang), icon: ClipboardList },
-    { href: '/profile', label: t('nav.profile', lang), icon: User },
-    { href: '/admin/settings', label: t('nav.settings', lang), icon: Settings },
+    { href: '/x/control',      label: t('nav.admin_panel', lang),    icon: Shield },
+    { href: '/dashboard',      label: t('nav.dashboard', lang),      icon: LayoutDashboard },
+    { href: '/patients',       label: t('nav.admin_patients', lang), icon: Users },
+    { href: '/assessments',    label: t('nav.assessments', lang),    icon: ClipboardList },
+    { href: '/profile',        label: t('nav.profile', lang),        icon: User },
+    { href: '/admin/settings', label: t('nav.settings', lang),       icon: Settings },
   ]
 
-  const nav = profile?.role === 'clinician' ? clinicianNav
-    : profile?.role === 'admin' || profile?.role === 'superadmin' ? adminNav
-    : patientNav
+  const nav = profile?.role === 'admin' || profile?.role === 'superadmin' ? adminNav : patientNav
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -79,69 +70,96 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
     ? profile.full_name_ar
     : profile?.full_name_en ?? ''
 
+  const initials = displayName
+    ? displayName.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()
+    : '?'
+
   return (
-    <aside className={`fixed inset-y-0 w-64 bg-white dark:!bg-[#0B1521] flex flex-col z-10 ${lang === 'ar' ? 'right-0 border-l' : 'left-0 border-r'} border-gray-200 dark:!border-[#1E2C3A]`}>
-      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-[#1E2C3A]">
-        <div className="flex items-center gap-2.5">
-          <BrandLogo variant="icon" size={38} />
-          <span className="font-semibold text-gray-900 dark:text-[#F4F8FB]">{t('app.name', lang)}</span>
-        </div>
+    <aside
+      className="fixed inset-y-0 flex flex-col z-10"
+      style={{
+        width: 'var(--sidebar-w)',
+        backgroundColor: 'var(--sidebar-bg)',
+        [isRtl ? 'right' : 'left']: 0,
+        [isRtl ? 'borderLeft' : 'borderRight']: '1px solid var(--sidebar-border)',
+      }}
+    >
+      {/* Brand header */}
+      <div
+        className="flex items-center justify-between px-5 py-4"
+        style={{ borderBottom: '1px solid var(--sidebar-border)', minHeight: 'var(--topbar-h)' }}
+      >
+        <Link href="/" className="flex items-center gap-2.5 no-underline">
+          <BrandLogo variant="icon" size={32} />
+          <span
+            className="text-lg font-extrabold tracking-tight"
+            style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
+          >
+            V Welfare
+          </span>
+        </Link>
         <div className="flex items-center gap-1">
           <DarkModeToggle />
           <NotificationBell lang={lang} />
         </div>
       </div>
 
-      {profile && (
-        <div className="px-6 py-4 border-b border-gray-100 dark:border-[#1E2C3A]">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-brand-100 dark:bg-[#1A2E42] flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-semibold text-brand-700 dark:text-[#4C9BE0]">
-                {displayName.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-[#F4F8FB] truncate">{displayName}</p>
-              <p className="text-xs text-gray-500 dark:text-[#6E8093] capitalize">{profile.role}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-5 overflow-y-auto space-y-0.5">
+        <p className="section-label px-3 mb-3">{isRtl ? 'القائمة' : 'MENU'}</p>
         {nav.map(item => {
           const Icon = item.icon
-          const isActive = pathname === item.href
+          const isActive = item.href === '/dashboard'
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-brand-50 dark:bg-[rgba(76,155,224,0.14)] text-brand-700 dark:text-[#EAF2FA]'
-                  : 'text-gray-600 dark:text-[#9DB0C2] hover:bg-gray-50 dark:hover:bg-[#122030] hover:text-gray-900 dark:hover:text-[#F4F8FB]'
-              }`}
+              className={isActive ? 'nav-item-active' : 'nav-item'}
+              style={isRtl && isActive ? {
+                borderLeft: 'none',
+                borderRight: '3px solid var(--vw-blue)',
+                paddingRight: '10px',
+                paddingLeft: '12px',
+              } : undefined}
             >
-              <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-brand-600 dark:text-[#4C9BE0]' : 'text-gray-400 dark:text-[#6E8093]'}`} />
-              {item.label}
+              <Icon className="nav-item-icon" />
+              <span className="flex-1 min-w-0">{item.label}</span>
               {item.href === '/messages' && <UnreadMessagesBadge />}
             </Link>
           )
         })}
       </nav>
 
-      <div className="px-3 pb-2">
-        <LanguageToggle lang={lang} className="w-full justify-center mb-1" />
+      {/* Language toggle */}
+      <div className="px-3 pb-1">
+        <LanguageToggle lang={lang} className="w-full justify-center" />
       </div>
 
-      <div className="p-3 border-t border-gray-100 dark:border-[#1E2C3A]">
+      {/* User profile + sign out */}
+      <div className="px-3 py-3" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-[#9DB0C2] hover:bg-red-50 dark:hover:bg-[#2A1A1A] hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-[10px] text-sm font-medium transition-colors text-start hover:bg-red-50 dark:hover:bg-[#2A1A1A] hover:text-red-600 dark:hover:text-red-400 mb-2"
+          style={{ color: 'var(--text-muted)' }}
         >
-          <LogOut className="w-4 h-4 text-gray-400 dark:text-[#6E8093]" />
+          <LogOut className="w-4 h-4 flex-shrink-0" />
           {t('nav.signout', lang)}
         </button>
+        {profile && (
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-[10px]" style={{ background: 'var(--surface-alt)' }}>
+            <div className="avatar-md flex-shrink-0">{initials}</div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                {displayName}
+              </p>
+              <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                {isRtl ? 'حساب شخصي' : 'Personal account'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   )
