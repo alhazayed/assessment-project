@@ -68,10 +68,6 @@ const dict = {
     'landing.cta.assess': 'Take a free assessment',
     'landing.cta.register': 'Create free account',
     'landing.count.suffix': ' validated scales available · Sign in to take any assessment',
-    'landing.ai.badge': 'AI-Powered',
-    'landing.ai.title': 'Not sure where to start?',
-    'landing.ai.sub': 'Describe how you\'ve been feeling and our AI will suggest the most relevant assessments for you.',
-
     // Trust strip
     'trust.validated': 'Clinically validated tools',
     'trust.private': 'Private & confidential',
@@ -785,10 +781,6 @@ const dict = {
     'landing.cta.assess': 'أجرِ تقييماً مجانياً',
     'landing.cta.register': 'أنشئ حساباً مجانياً',
     'landing.count.suffix': ' مقياساً معتمداً متاحاً · سجّل دخولك لإجراء أي تقييم',
-    'landing.ai.badge': 'مدعوم بالذكاء الاصطناعي',
-    'landing.ai.title': 'لست متأكداً من أين تبدأ؟',
-    'landing.ai.sub': 'صف كيف تشعر وسيقترح ذكاؤنا الاصطناعي التقييمات الأنسب لك.',
-
     // Trust strip
     'trust.validated': 'أدوات معتمدة سريرياً',
     'trust.private': 'خاص وسري',
