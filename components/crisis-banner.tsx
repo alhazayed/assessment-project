@@ -40,9 +40,9 @@ export default function CrisisBanner({ lang }: { lang: Lang }) {
   if (!show || dismissed) return null
 
   return (
-    <div className="rounded-xl border-2 p-4 mb-6" style={{ backgroundColor: '#FEF2EC', borderColor: '#F3650A' }}>
+    <div className="rounded-xl border-2 border-accent-500 bg-accent-50 p-4 mb-6">
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#F3650A' }}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-accent-500">
           <AlertTriangle className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
