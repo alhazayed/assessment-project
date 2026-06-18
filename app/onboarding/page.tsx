@@ -23,6 +23,7 @@ export default function OnboardingPage() {
 
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Step 1 — Identity
   const [nameAr, setNameAr] = useState('')
@@ -46,40 +47,54 @@ export default function OnboardingPage() {
   const [medicationDuration, setMedicationDuration] = useState('')
   const [consent, setConsent] = useState(false)
 
+  async function handleSignOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
   async function handleFinish() {
     setSaving(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
+    setError(null)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
 
-    await supabase.from('profiles').update({
-      full_name_ar: nameAr || null,
-      language_preference: langPref,
-      date_of_birth: dob || null,
-      gender: gender || null,
-      marital_status: maritalStatus || null,
-      educational_status: educationalStatus || null,
-      country_of_residence: country || null,
-    }).eq('id', user.id)
+      const [profileRes, patientRes] = await Promise.all([
+        supabase.from('profiles').update({
+          full_name_ar: nameAr || null,
+          language_preference: langPref,
+          date_of_birth: dob || null,
+          gender: gender || null,
+          marital_status: maritalStatus || null,
+          educational_status: educationalStatus || null,
+          country_of_residence: country || null,
+        }).eq('id', user.id),
+        supabase.from('patient_profiles').upsert({
+          id: user.id,
+          phone_number: phone || null,
+          employment_status: employmentStatus || null,
+          emergency_contact_name: emergencyName || null,
+          emergency_contact_phone: emergencyPhone || null,
+          emergency_contact_relation: emergencyRelation || null,
+          has_psychiatric_medications: hasMedications ?? false,
+          psychiatric_medication_details: hasMedications ? medicationDetails || null : null,
+          psychiatric_medication_duration: hasMedications ? medicationDuration || null : null,
+          share_mood_notes: false,
+          share_journal_default: false,
+          consent_given_at: consent ? new Date().toISOString() : null,
+          onboarding_completed_at: new Date().toISOString(),
+          onboarding_step: TOTAL_STEPS,
+        }),
+      ])
 
-    await supabase.from('patient_profiles').upsert({
-      id: user.id,
-      phone_number: phone || null,
-      employment_status: employmentStatus || null,
-      emergency_contact_name: emergencyName || null,
-      emergency_contact_phone: emergencyPhone || null,
-      emergency_contact_relation: emergencyRelation || null,
-      has_psychiatric_medications: hasMedications ?? false,
-      psychiatric_medication_details: hasMedications ? medicationDetails || null : null,
-      psychiatric_medication_duration: hasMedications ? medicationDuration || null : null,
-      share_mood_notes: false,
-      share_journal_default: false,
-      consent_given_at: consent ? new Date().toISOString() : null,
-      onboarding_completed_at: new Date().toISOString(),
-      onboarding_step: TOTAL_STEPS,
-    })
-
-    router.push('/dashboard')
+      if (profileRes.error || patientRes.error) throw new Error('Save failed')
+      router.push('/dashboard')
+    } catch {
+      setError(t('onboarding.error', lang))
+      setSaving(false)
+    }
   }
 
   const stepTitles = [
@@ -100,7 +115,17 @@ export default function OnboardingPage() {
             </div>
             <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{t('app.name', lang)}</span>
           </div>
-          <LanguageToggle lang={lang} />
+          <div className="flex items-center gap-3">
+            <LanguageToggle lang={lang} />
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="text-[12px] hover:underline"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              {t('nav.signout', lang)}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -342,6 +367,10 @@ export default function OnboardingPage() {
                 </span>
               </label>
             </div>
+          )}
+
+          {error && (
+            <div className="mt-6 alert-error">{error}</div>
           )}
 
           {/* Navigation buttons */}
