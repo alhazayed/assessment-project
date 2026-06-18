@@ -63,7 +63,8 @@ export default async function DashboardPage() {
   const { submissions, moods, pendingAssignments } = await getPatientDashboard(supabase, user.id)
   const latestMood = moods[0] as MoodLog | undefined
   const avgMood = moods.length > 0 ? Math.round(moods.reduce((sum, m) => sum + m.mood_score, 0) / moods.length) : null
-  const firstName = p ? (lang === 'ar' && p.full_name_ar ? p.full_name_ar : p.full_name_en ?? '').split(' ')[0] : ''
+  const rawName = p ? (lang === 'ar' && p.full_name_ar ? p.full_name_ar : p.full_name_en) : ''
+  const firstName = (rawName || user.email?.split('@')[0] || '').split(' ')[0]
 
   return (
     <div className="p-7 max-w-6xl">

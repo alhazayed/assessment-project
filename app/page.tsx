@@ -39,8 +39,8 @@ export default async function LandingPage() {
     { icon: BarChart3, color: '#E6F4EC', iconColor: '#1B8A5A', titleKey: 'service.mood.title' as const, descKey: 'service.mood.desc' as const, ctaKey: 'service.mood.cta' as const, href: '/register' },
     { icon: BookOpen, color: '#FEF2EC', iconColor: '#F3650A', titleKey: 'service.journal.title' as const, descKey: 'service.journal.desc' as const, ctaKey: 'service.journal.cta' as const, href: '/register' },
     { icon: MessageSquare, color: '#EAF2F9', iconColor: '#1D6296', titleKey: 'service.messages.title' as const, descKey: 'service.messages.desc' as const, ctaKey: 'service.messages.cta' as const, href: '/register' },
-    { icon: Brain, color: '#FBF1DC', iconColor: '#B07A12', titleKey: 'service.results.title' as const, descKey: 'service.results.desc' as const, ctaKey: 'service.results.cta' as const, href: '#assessments' },
-    { icon: Heart, color: '#FDE8E8', iconColor: '#C02A2A', titleKey: 'service.clinicians.title' as const, descKey: 'service.clinicians.desc' as const, ctaKey: 'service.clinicians.cta' as const, href: '/register' },
+    { icon: Brain, color: '#FBF1DC', iconColor: '#B07A12', titleKey: 'service.results.title' as const, descKey: 'service.results.desc' as const, ctaKey: 'service.results.cta' as const, href: '/sample-result' },
+    { icon: Heart, color: '#FDE8E8', iconColor: '#C02A2A', titleKey: 'service.clinicians.title' as const, descKey: 'service.clinicians.desc' as const, ctaKey: 'service.clinicians.cta' as const, href: '/clinicians' },
   ]
 
   return (

@@ -50,7 +50,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           {/* Trust stats */}
           <div className="flex gap-8 mt-8">
             {[
-              { value: '12+', label: isRtl ? 'تقييم معتمد' : 'Validated tools' },
+              { value: '39+', label: isRtl ? 'تقييم معتمد' : 'Validated tools' },
               { value: '100%', label: isRtl ? 'سرية تامة' : 'Confidential' },
               { value: '24/7', label: isRtl ? 'دعم مستمر' : 'Always available' },
             ].map(s => (
@@ -101,7 +101,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {/* Footer */}
         <div className="px-8 py-5 text-center">
           <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-            {isRtl ? '© ٢٠٢٥ V Welfare. جميع الحقوق محفوظة.' : '© 2025 V Welfare. All rights reserved.'}
+            {isRtl ? `© ${new Date().getFullYear()} V Welfare. جميع الحقوق محفوظة.` : `© ${new Date().getFullYear()} V Welfare. All rights reserved.`}
           </p>
         </div>
       </div>
