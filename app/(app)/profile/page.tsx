@@ -61,6 +61,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
   const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistory[]>([])
 
@@ -160,6 +161,7 @@ export default function ProfilePage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setValidationError(null)
+    setSaveError(null)
 
     if (!dob || !gender || !maritalStatus || !educationalStatus || !country) {
       setValidationError(
@@ -171,50 +173,62 @@ export default function ProfilePage() {
     }
 
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
 
-    await supabase.from('profiles').update({
-      full_name_en: fullNameEn,
-      full_name_ar: fullNameAr || null,
-      language_preference: langPref,
-      date_of_birth: dob || null,
-      gender: gender || null,
-      marital_status: maritalStatus || null,
-      educational_status: educationalStatus || null,
-      country_of_residence: country || null,
-    }).eq('id', user.id)
+      const { error: profileError } = await supabase.from('profiles').update({
+        full_name_en: fullNameEn,
+        full_name_ar: fullNameAr || null,
+        language_preference: langPref,
+        date_of_birth: dob || null,
+        gender: gender || null,
+        marital_status: maritalStatus || null,
+        educational_status: educationalStatus || null,
+        country_of_residence: country || null,
+      }).eq('id', user.id)
 
-    if (profile?.role === 'patient') {
-      await supabase.from('patient_profiles').upsert({
-        id: user.id,
-        phone_number: phone || null,
-        employment_status: employmentStatus || null,
-        has_psychiatric_medications: hasMedications,
-        psychiatric_medication_details: hasMedications ? (medicationDetails || null) : null,
-        psychiatric_medication_duration: hasMedications ? (medicationDuration || null) : null,
-        emergency_contact_name: emergencyName || null,
-        emergency_contact_phone: emergencyPhone || null,
-        emergency_contact_relation: emergencyRelation || null,
-        share_mood_notes: shareMoodNotes,
-        share_journal_default: shareJournalDefault,
-      })
-    }
+      if (profileError) throw profileError
 
-    // Audit log — fire-and-forget
-    supabase.from('audit_log').insert({
-      actor_id: user.id,
-      action: 'profile_updated',
-      target_type: 'profile',
-      target_id: user.id,
-    }).then(() => {})
+      if (profile?.role === 'patient') {
+        const { error: patientError } = await supabase.from('patient_profiles').upsert({
+          id: user.id,
+          phone_number: phone || null,
+          employment_status: employmentStatus || null,
+          has_psychiatric_medications: hasMedications,
+          psychiatric_medication_details: hasMedications ? (medicationDetails || null) : null,
+          psychiatric_medication_duration: hasMedications ? (medicationDuration || null) : null,
+          emergency_contact_name: emergencyName || null,
+          emergency_contact_phone: emergencyPhone || null,
+          emergency_contact_relation: emergencyRelation || null,
+          share_mood_notes: shareMoodNotes,
+          share_journal_default: shareJournalDefault,
+        })
+        if (patientError) throw patientError
+      }
 
-    setSaving(false)
-    if (nextUrl) {
-      router.push(nextUrl)
-    } else {
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
+      // Audit log — fire-and-forget
+      supabase.from('audit_log').insert({
+        actor_id: user.id,
+        action: 'profile_updated',
+        target_type: 'profile',
+        target_id: user.id,
+      }).then(() => {})
+
+      setSaving(false)
+      if (nextUrl) {
+        router.push(nextUrl)
+      } else {
+        setSaved(true)
+        setTimeout(() => setSaved(false), 3000)
+      }
+    } catch {
+      setSaveError(
+        lang === 'ar'
+          ? 'تعذّر حفظ البيانات. يرجى المحاولة مرة أخرى.'
+          : 'Failed to save. Please try again.'
+      )
+      setSaving(false)
     }
   }
 
@@ -267,6 +281,13 @@ export default function ProfilePage() {
         <div className="alert-success mb-6 flex items-center gap-2 text-[13.5px]" style={{ color: '#1B8A5A' }}>
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           {t('profile.saved', lang)}
+        </div>
+      )}
+
+      {saveError && (
+        <div className="alert-error mb-6 flex items-center gap-2 text-[13.5px]" style={{ color: '#C02A2A' }}>
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {saveError}
         </div>
       )}
 

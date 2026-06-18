@@ -89,7 +89,8 @@ export default function OnboardingPage() {
         }),
       ])
 
-      if (profileRes.error || patientRes.error) throw new Error('Save failed')
+      if (profileRes.error) throw profileRes.error
+      if (patientRes.error) throw patientRes.error
       router.push('/dashboard')
     } catch {
       setError(t('onboarding.error', lang))
