@@ -322,18 +322,19 @@ export default function OnboardingPage() {
               <div>
                 <p className="text-[13.5px] font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>{t('profile.meds.title', lang)}</p>
                 <p className="text-[12px] mb-3" style={{ color: 'var(--text-muted)' }}>{t('profile.meds.subtitle', lang)}</p>
-                <div className="flex gap-4">
-                  {[true, false].map(val => (
-                    <label key={String(val)} className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="hasMeds" checked={hasMedications === val}
-                        onChange={() => setHasMedications(val)} className="text-brand-600" />
-                      <span className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
-                        {val ? t('profile.meds.yes', lang) : t('profile.meds.no', lang)}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                {hasMedications && (
+                <select
+                  className="input mt-1"
+                  value={hasMedications === null ? '' : hasMedications ? 'yes' : 'no'}
+                  onChange={e => {
+                    if (e.target.value === '') setHasMedications(null)
+                    else setHasMedications(e.target.value === 'yes')
+                  }}
+                >
+                  <option value="">{lang === 'ar' ? '-- اختر --' : '-- Select --'}</option>
+                  <option value="yes">{t('profile.meds.yes', lang)}</option>
+                  <option value="no">{t('profile.meds.no', lang)}</option>
+                </select>
+                {hasMedications === true && (
                   <div className="mt-3 space-y-3">
                     <div>
                       <label className="label text-xs">{t('profile.meds.names', lang)}</label>

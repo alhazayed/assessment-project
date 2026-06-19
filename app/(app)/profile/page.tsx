@@ -80,7 +80,7 @@ export default function ProfilePage() {
   // Extended (patients only — stored in patient_profiles)
   const [phone, setPhone] = useState('')
   const [employmentStatus, setEmploymentStatus] = useState<EmploymentStatus | ''>('')
-  const [hasMedications, setHasMedications] = useState(false)
+  const [hasMedications, setHasMedications] = useState<boolean | null>(null)
   const [medicationDetails, setMedicationDetails] = useState('')
   const [medicationDuration, setMedicationDuration] = useState('')
 
@@ -135,7 +135,7 @@ export default function ProfilePage() {
         const pat = pp as PatientProfile
         setPhone(pat.phone_number || '')
         setEmploymentStatus(pat.employment_status || '')
-        setHasMedications(pat.has_psychiatric_medications || false)
+        setHasMedications(pat.has_psychiatric_medications ?? null)
         setMedicationDetails(pat.psychiatric_medication_details || '')
         setMedicationDuration(pat.psychiatric_medication_duration || '')
         setEmergencyName(pat.emergency_contact_name || '')
@@ -195,7 +195,7 @@ export default function ProfilePage() {
           id: user.id,
           phone_number: phone || null,
           employment_status: employmentStatus || null,
-          has_psychiatric_medications: hasMedications,
+          has_psychiatric_medications: hasMedications ?? false,
           psychiatric_medication_details: hasMedications ? (medicationDetails || null) : null,
           psychiatric_medication_duration: hasMedications ? (medicationDuration || null) : null,
           emergency_contact_name: emergencyName || null,
@@ -309,12 +309,18 @@ export default function ProfilePage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="label">{t('profile.name_en', lang)}</label>
+                <label className="label flex items-center gap-2">
+                  {t('profile.name_en', lang)}
+                  <span className="text-xs font-normal" style={{ color: 'var(--text-muted)' }}>({lang === 'ar' ? 'اختياري' : 'optional'})</span>
+                </label>
                 <input type="text" className="input" value={fullNameEn}
-                  onChange={e => setFullNameEn(e.target.value)} required />
+                  onChange={e => setFullNameEn(e.target.value)} />
               </div>
               <div>
-                <label className="label">{t('profile.name_ar', lang)}</label>
+                <label className="label flex items-center gap-2">
+                  {t('profile.name_ar', lang)}
+                  <span className="text-xs font-normal" style={{ color: 'var(--text-muted)' }}>({lang === 'ar' ? 'اختياري' : 'optional'})</span>
+                </label>
                 <input type="text" className="input" value={fullNameAr}
                   onChange={e => setFullNameAr(e.target.value)} dir="rtl" placeholder="الاسم بالعربية" />
               </div>
@@ -443,20 +449,20 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 <div>
                   <label className="label">{t('profile.meds.question', lang)}</label>
-                  <div className="flex gap-6 mt-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="hasMeds" checked={hasMedications === true}
-                        onChange={() => setHasMedications(true)} className="text-brand-600" />
-                      <span className="text-[13.5px]" style={{ color: 'var(--text-primary)' }}>{t('profile.meds.yes', lang)}</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="hasMeds" checked={hasMedications === false}
-                        onChange={() => setHasMedications(false)} className="text-brand-600" />
-                      <span className="text-[13.5px]" style={{ color: 'var(--text-primary)' }}>{t('profile.meds.no', lang)}</span>
-                    </label>
-                  </div>
+                  <select
+                    className="input mt-1"
+                    value={hasMedications === null ? '' : hasMedications ? 'yes' : 'no'}
+                    onChange={e => {
+                      if (e.target.value === '') setHasMedications(null)
+                      else setHasMedications(e.target.value === 'yes')
+                    }}
+                  >
+                    <option value="">{lang === 'ar' ? '-- اختر --' : '-- Select --'}</option>
+                    <option value="yes">{t('profile.meds.yes', lang)}</option>
+                    <option value="no">{t('profile.meds.no', lang)}</option>
+                  </select>
                 </div>
-                {hasMedications && (
+                {hasMedications === true && (
                   <>
                     <div>
                       <label className="label">{t('profile.meds.names', lang)}</label>
