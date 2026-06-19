@@ -8,7 +8,7 @@ import {
   BookOpen, FlaskConical, ArrowRight, Brain,
 } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentItem, ResponseOption } from '@/lib/types'
-import { getLocalizedBandContent, getLocalizedAssessmentMeta, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
+import { getAssessmentContent, getLocalizedBandContent, getLocalizedAssessmentMeta, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
 import { ASSESSMENT_CONTENT_AR } from '@/lib/assessment-content-ar'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
