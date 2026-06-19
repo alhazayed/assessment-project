@@ -162,7 +162,7 @@ export async function GET() {
     }
 
     // --- Trends ---
-    function buildTrends(period: 'weekly' | 'monthly' | 'quarterly') {
+    const buildTrends = (period: 'weekly' | 'monthly' | 'quarterly') => {
       const buckets: Record<string, { scores: number[]; highRisk: number }> = {}
       const order: string[] = []
       for (const s of [...subs].reverse()) { // ascending time
