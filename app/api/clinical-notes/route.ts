@@ -55,6 +55,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'body must be a string under 10000 characters' }, { status: 400 })
   }
 
+  // Clinicians may only write notes for their own assigned patients (same check as GET)
+  const { data: callerProfile } = await supabase
+    .from('profiles').select('role').eq('id', user.id).single()
+  if (callerProfile?.role === 'clinician') {
+    const { data: patientProfile } = await supabase
+      .from('profiles').select('assigned_clinician_id').eq('id', patient_id).single()
+    if (patientProfile?.assigned_clinician_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
+    }
+  }
+
   const { data, error } = await supabase
     .from('clinical_notes')
     .insert({ patient_id, clinician_id: user.id, body, is_ai_draft: !!is_ai_draft })
