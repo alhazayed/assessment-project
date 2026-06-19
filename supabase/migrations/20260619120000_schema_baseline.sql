@@ -769,9 +769,16 @@ ALTER TABLE public.wellness_plans                    ENABLE ROW LEVEL SECURITY;
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- RLS POLICIES
+-- DROP IF EXISTS before each CREATE to make this baseline idempotent when
+-- applied on top of an existing database (e.g. Supabase preview branches).
 -- ──────────────────────────────────────────────────────────────────────────────
 
 -- profiles
+DROP POLICY IF EXISTS profiles_self_read ON public.profiles;
+DROP POLICY IF EXISTS profiles_insert ON public.profiles;
+DROP POLICY IF EXISTS profiles_self_update ON public.profiles;
+DROP POLICY IF EXISTS profiles_admin_update ON public.profiles;
+DROP POLICY IF EXISTS profiles_admin_delete ON public.profiles;
 CREATE POLICY profiles_self_read ON public.profiles FOR SELECT
   USING ((auth.uid() = id) OR (get_my_role() = ANY (ARRAY['admin','superadmin'])));
 CREATE POLICY profiles_insert ON public.profiles FOR INSERT
@@ -786,6 +793,9 @@ CREATE POLICY profiles_admin_delete ON public.profiles FOR DELETE
   USING (get_my_role() = 'superadmin');
 
 -- patient_profiles
+DROP POLICY IF EXISTS patient_prof_own ON public.patient_profiles;
+DROP POLICY IF EXISTS patient_prof_clinician ON public.patient_profiles;
+DROP POLICY IF EXISTS patient_prof_admin_write ON public.patient_profiles;
 CREATE POLICY patient_prof_own ON public.patient_profiles FOR ALL
   USING ((SELECT auth.uid()) = id)
   WITH CHECK ((SELECT auth.uid()) = id);
@@ -796,18 +806,24 @@ CREATE POLICY patient_prof_admin_write ON public.patient_profiles FOR UPDATE
   WITH CHECK (get_my_role() = ANY (ARRAY['admin','superadmin']));
 
 -- clinician_profiles
+DROP POLICY IF EXISTS clin_prof_read ON public.clinician_profiles;
+DROP POLICY IF EXISTS clin_prof_own_write ON public.clinician_profiles;
 CREATE POLICY clin_prof_read ON public.clinician_profiles FOR SELECT USING (true);
 CREATE POLICY clin_prof_own_write ON public.clinician_profiles FOR ALL
   USING (((SELECT auth.uid()) = id) OR (get_my_role() = ANY (ARRAY['admin','superadmin'])))
   WITH CHECK (((SELECT auth.uid()) = id) OR (get_my_role() = ANY (ARRAY['admin','superadmin'])));
 
 -- assessment_definitions
+DROP POLICY IF EXISTS defs_read ON public.assessment_definitions;
+DROP POLICY IF EXISTS defs_admin_write ON public.assessment_definitions;
 CREATE POLICY defs_read ON public.assessment_definitions FOR SELECT USING (true);
 CREATE POLICY defs_admin_write ON public.assessment_definitions FOR ALL
   USING (get_my_role() = ANY (ARRAY['admin','superadmin']))
   WITH CHECK (get_my_role() = ANY (ARRAY['admin','superadmin']));
 
 -- assessment_governance
+DROP POLICY IF EXISTS ag_read ON public.assessment_governance;
+DROP POLICY IF EXISTS ag_admin ON public.assessment_governance;
 CREATE POLICY ag_read ON public.assessment_governance FOR SELECT
   USING (get_my_role() = ANY (ARRAY['clinician','admin','superadmin']));
 CREATE POLICY ag_admin ON public.assessment_governance FOR ALL
@@ -815,12 +831,17 @@ CREATE POLICY ag_admin ON public.assessment_governance FOR ALL
   WITH CHECK (get_my_role() = ANY (ARRAY['admin','superadmin']));
 
 -- assessment_items
+DROP POLICY IF EXISTS items_read ON public.assessment_items;
+DROP POLICY IF EXISTS items_admin_write ON public.assessment_items;
 CREATE POLICY items_read ON public.assessment_items FOR SELECT USING (true);
 CREATE POLICY items_admin_write ON public.assessment_items FOR ALL
   USING (get_my_role() = ANY (ARRAY['admin','superadmin']))
   WITH CHECK (get_my_role() = ANY (ARRAY['admin','superadmin']));
 
 -- assessment_interpretation_templates
+DROP POLICY IF EXISTS interp_templates_read_approved ON public.assessment_interpretation_templates;
+DROP POLICY IF EXISTS interp_templates_admin_read_all ON public.assessment_interpretation_templates;
+DROP POLICY IF EXISTS interp_templates_admin_write ON public.assessment_interpretation_templates;
 CREATE POLICY interp_templates_read_approved ON public.assessment_interpretation_templates FOR SELECT
   USING (is_approved = true);
 CREATE POLICY interp_templates_admin_read_all ON public.assessment_interpretation_templates FOR SELECT
@@ -830,6 +851,9 @@ CREATE POLICY interp_templates_admin_write ON public.assessment_interpretation_t
   WITH CHECK (get_my_role() = ANY (ARRAY['admin','superadmin']));
 
 -- assessment_submissions
+DROP POLICY IF EXISTS submissions_patient_select ON public.assessment_submissions;
+DROP POLICY IF EXISTS submissions_patient_insert ON public.assessment_submissions;
+DROP POLICY IF EXISTS submissions_clinician ON public.assessment_submissions;
 CREATE POLICY submissions_patient_select ON public.assessment_submissions FOR SELECT
   USING ((SELECT auth.uid()) = patient_id);
 CREATE POLICY submissions_patient_insert ON public.assessment_submissions FOR INSERT
@@ -844,6 +868,9 @@ CREATE POLICY submissions_clinician ON public.assessment_submissions FOR SELECT
   );
 
 -- assessment_assignments
+DROP POLICY IF EXISTS assign_read ON public.assessment_assignments;
+DROP POLICY IF EXISTS assign_admin_write ON public.assessment_assignments;
+DROP POLICY IF EXISTS assign_clinician_own_patients ON public.assessment_assignments;
 CREATE POLICY assign_read ON public.assessment_assignments FOR SELECT
   USING (((SELECT auth.uid()) = patient_id) OR (get_my_role() = ANY (ARRAY['clinician','admin','superadmin'])));
 CREATE POLICY assign_admin_write ON public.assessment_assignments FOR ALL
@@ -862,6 +889,9 @@ CREATE POLICY assign_clinician_own_patients ON public.assessment_assignments FOR
   );
 
 -- assessment_responses
+DROP POLICY IF EXISTS responses_patient_select ON public.assessment_responses;
+DROP POLICY IF EXISTS responses_patient_insert ON public.assessment_responses;
+DROP POLICY IF EXISTS responses_clinician ON public.assessment_responses;
 CREATE POLICY responses_patient_select ON public.assessment_responses FOR SELECT
   USING (EXISTS (SELECT 1 FROM public.assessment_submissions s WHERE s.id = assessment_responses.submission_id AND s.patient_id = (SELECT auth.uid())));
 CREATE POLICY responses_patient_insert ON public.assessment_responses FOR INSERT
@@ -880,6 +910,8 @@ CREATE POLICY responses_clinician ON public.assessment_responses FOR SELECT
   );
 
 -- ai_insights
+DROP POLICY IF EXISTS insights_owner ON public.ai_insights;
+DROP POLICY IF EXISTS insights_clinician ON public.ai_insights;
 CREATE POLICY insights_owner ON public.ai_insights FOR ALL
   USING ((SELECT auth.uid()) = patient_id)
   WITH CHECK ((SELECT auth.uid()) = patient_id);
@@ -887,12 +919,16 @@ CREATE POLICY insights_clinician ON public.ai_insights FOR SELECT
   USING (get_my_role() = ANY (ARRAY['clinician','admin','superadmin']));
 
 -- audit_log
+DROP POLICY IF EXISTS audit_admin_read ON public.audit_log;
+DROP POLICY IF EXISTS audit_self_insert ON public.audit_log;
 CREATE POLICY audit_admin_read ON public.audit_log FOR SELECT
   USING (get_my_role() = ANY (ARRAY['admin','superadmin']));
 CREATE POLICY audit_self_insert ON public.audit_log FOR INSERT TO authenticated
   WITH CHECK ((SELECT auth.uid()) = actor_id);
 
 -- chat_sessions
+DROP POLICY IF EXISTS chat_patient_own ON public.chat_sessions;
+DROP POLICY IF EXISTS chat_clinician_read ON public.chat_sessions;
 CREATE POLICY chat_patient_own ON public.chat_sessions FOR ALL
   USING ((SELECT auth.uid()) = patient_id)
   WITH CHECK ((SELECT auth.uid()) = patient_id);
@@ -900,6 +936,9 @@ CREATE POLICY chat_clinician_read ON public.chat_sessions FOR SELECT
   USING (get_my_role() = ANY (ARRAY['clinician','admin','superadmin']));
 
 -- clinical_notes
+DROP POLICY IF EXISTS clinician_own_notes ON public.clinical_notes;
+DROP POLICY IF EXISTS notes_admin_all ON public.clinical_notes;
+DROP POLICY IF EXISTS notes_patient_read_nonprivate ON public.clinical_notes;
 CREATE POLICY clinician_own_notes ON public.clinical_notes FOR ALL
   USING (
     (SELECT auth.uid()) = clinician_id
@@ -922,11 +961,17 @@ CREATE POLICY notes_patient_read_nonprivate ON public.clinical_notes FOR SELECT
   USING ((SELECT auth.uid()) = patient_id AND is_private = false);
 
 -- cms_sections
+DROP POLICY IF EXISTS cms_read ON public.cms_sections;
+DROP POLICY IF EXISTS cms_admin_write ON public.cms_sections;
 CREATE POLICY cms_read ON public.cms_sections FOR SELECT USING (true);
 CREATE POLICY cms_admin_write ON public.cms_sections FOR ALL
   USING (get_my_role() = ANY (ARRAY['admin','superadmin']));
 
 -- consent_documents
+DROP POLICY IF EXISTS consent_docs_read_current ON public.consent_documents;
+DROP POLICY IF EXISTS consent_docs_admin_read_all ON public.consent_documents;
+DROP POLICY IF EXISTS consent_docs_admin_insert ON public.consent_documents;
+DROP POLICY IF EXISTS consent_docs_admin_update ON public.consent_documents;
 CREATE POLICY consent_docs_read_current ON public.consent_documents FOR SELECT
   USING (is_current = true);
 CREATE POLICY consent_docs_admin_read_all ON public.consent_documents FOR SELECT
@@ -938,22 +983,29 @@ CREATE POLICY consent_docs_admin_update ON public.consent_documents FOR UPDATE
   WITH CHECK (get_my_role() = ANY (ARRAY['admin','superadmin']));
 
 -- content_articles
+DROP POLICY IF EXISTS articles_published ON public.content_articles;
+DROP POLICY IF EXISTS articles_admin_write ON public.content_articles;
 CREATE POLICY articles_published ON public.content_articles FOR SELECT
   USING ((status = 'published') OR (get_my_role() = ANY (ARRAY['admin','superadmin'])));
 CREATE POLICY articles_admin_write ON public.content_articles FOR ALL
   USING (get_my_role() = ANY (ARRAY['admin','superadmin']));
 
 -- dismissed_announcements
+DROP POLICY IF EXISTS dismissed_own ON public.dismissed_announcements;
 CREATE POLICY dismissed_own ON public.dismissed_announcements FOR ALL
   USING ((SELECT auth.uid()) = user_id)
   WITH CHECK ((SELECT auth.uid()) = user_id);
 
 -- feature_flags
+DROP POLICY IF EXISTS flags_read ON public.feature_flags;
+DROP POLICY IF EXISTS flags_admin_write ON public.feature_flags;
 CREATE POLICY flags_read ON public.feature_flags FOR SELECT USING (true);
 CREATE POLICY flags_admin_write ON public.feature_flags FOR ALL
   USING (get_my_role() = ANY (ARRAY['admin','superadmin']));
 
 -- gratitude_entries
+DROP POLICY IF EXISTS gratitude_owner ON public.gratitude_entries;
+DROP POLICY IF EXISTS gratitude_clinician ON public.gratitude_entries;
 CREATE POLICY gratitude_owner ON public.gratitude_entries FOR ALL
   USING ((SELECT auth.uid()) = patient_id)
   WITH CHECK ((SELECT auth.uid()) = patient_id);
@@ -961,12 +1013,16 @@ CREATE POLICY gratitude_clinician ON public.gratitude_entries FOR SELECT
   USING (get_my_role() = ANY (ARRAY['clinician','admin','superadmin']));
 
 -- invitations
+DROP POLICY IF EXISTS inv_own_read ON public.invitations;
+DROP POLICY IF EXISTS inv_admin ON public.invitations;
 CREATE POLICY inv_own_read ON public.invitations FOR SELECT
   USING ((SELECT auth.uid()) = created_by);
 CREATE POLICY inv_admin ON public.invitations FOR ALL
   USING (get_my_role() = ANY (ARRAY['clinician','admin','superadmin']));
 
 -- journal_entries
+DROP POLICY IF EXISTS journal_owner ON public.journal_entries;
+DROP POLICY IF EXISTS journal_clinician_shared ON public.journal_entries;
 CREATE POLICY journal_owner ON public.journal_entries FOR ALL
   USING ((SELECT auth.uid()) = patient_id)
   WITH CHECK ((SELECT auth.uid()) = patient_id);
@@ -974,6 +1030,8 @@ CREATE POLICY journal_clinician_shared ON public.journal_entries FOR SELECT
   USING (is_shared = true AND get_my_role() = ANY (ARRAY['clinician','admin','superadmin']));
 
 -- medication_alerts
+DROP POLICY IF EXISTS alerts_owner ON public.medication_alerts;
+DROP POLICY IF EXISTS alerts_clinician ON public.medication_alerts;
 CREATE POLICY alerts_owner ON public.medication_alerts FOR ALL
   USING ((SELECT auth.uid()) = patient_id)
   WITH CHECK ((SELECT auth.uid()) = patient_id);
@@ -981,6 +1039,8 @@ CREATE POLICY alerts_clinician ON public.medication_alerts FOR SELECT
   USING (get_my_role() = ANY (ARRAY['clinician','admin','superadmin']));
 
 -- medications
+DROP POLICY IF EXISTS meds_owner ON public.medications;
+DROP POLICY IF EXISTS meds_clinician ON public.medications;
 CREATE POLICY meds_owner ON public.medications FOR ALL
   USING ((SELECT auth.uid()) = patient_id)
   WITH CHECK ((SELECT auth.uid()) = patient_id);
@@ -988,6 +1048,9 @@ CREATE POLICY meds_clinician ON public.medications FOR SELECT
   USING (get_my_role() = ANY (ARRAY['clinician','admin','superadmin']));
 
 -- messages
+DROP POLICY IF EXISTS messages_read ON public.messages;
+DROP POLICY IF EXISTS messages_insert ON public.messages;
+DROP POLICY IF EXISTS messages_update ON public.messages;
 CREATE POLICY messages_read ON public.messages FOR SELECT
   USING (((SELECT auth.uid()) = patient_id) OR ((SELECT auth.uid()) = clinician_id));
 CREATE POLICY messages_insert ON public.messages FOR INSERT
@@ -1019,6 +1082,8 @@ CREATE POLICY messages_update ON public.messages FOR UPDATE
   );
 
 -- mood_logs
+DROP POLICY IF EXISTS mood_owner ON public.mood_logs;
+DROP POLICY IF EXISTS mood_clinician ON public.mood_logs;
 CREATE POLICY mood_owner ON public.mood_logs FOR ALL
   USING ((SELECT auth.uid()) = patient_id)
   WITH CHECK ((SELECT auth.uid()) = patient_id);
@@ -1032,15 +1097,19 @@ CREATE POLICY mood_clinician ON public.mood_logs FOR SELECT
   );
 
 -- notification_log
+DROP POLICY IF EXISTS notif_own ON public.notification_log;
 CREATE POLICY notif_own ON public.notification_log FOR SELECT
   USING ((SELECT auth.uid()) = recipient_id);
 
 -- notifications
+DROP POLICY IF EXISTS users_own_notifications ON public.notifications;
 CREATE POLICY users_own_notifications ON public.notifications FOR ALL
   USING ((SELECT auth.uid()) = user_id)
   WITH CHECK ((SELECT auth.uid()) = user_id);
 
 -- pdf_reports
+DROP POLICY IF EXISTS pdf_reports_patient ON public.pdf_reports;
+DROP POLICY IF EXISTS pdf_reports_clinician ON public.pdf_reports;
 CREATE POLICY pdf_reports_patient ON public.pdf_reports FOR ALL
   USING ((SELECT auth.uid()) = patient_id)
   WITH CHECK ((SELECT auth.uid()) = patient_id);
@@ -1048,6 +1117,8 @@ CREATE POLICY pdf_reports_clinician ON public.pdf_reports FOR SELECT
   USING (get_my_role() = ANY (ARRAY['clinician','admin','superadmin']));
 
 -- personality_results
+DROP POLICY IF EXISTS personality_own ON public.personality_results;
+DROP POLICY IF EXISTS personality_clinician ON public.personality_results;
 CREATE POLICY personality_own ON public.personality_results FOR ALL
   USING ((SELECT auth.uid()) = patient_id)
   WITH CHECK ((SELECT auth.uid()) = patient_id);
@@ -1055,16 +1126,23 @@ CREATE POLICY personality_clinician ON public.personality_results FOR SELECT
   USING (get_my_role() = ANY (ARRAY['clinician','admin','superadmin']));
 
 -- platform_announcements
+DROP POLICY IF EXISTS ann_read ON public.platform_announcements;
+DROP POLICY IF EXISTS ann_admin_write ON public.platform_announcements;
 CREATE POLICY ann_read ON public.platform_announcements FOR SELECT USING (true);
 CREATE POLICY ann_admin_write ON public.platform_announcements FOR ALL
   USING (get_my_role() = ANY (ARRAY['admin','superadmin']));
 
 -- platform_settings
+DROP POLICY IF EXISTS settings_read ON public.platform_settings;
+DROP POLICY IF EXISTS settings_admin_write ON public.platform_settings;
 CREATE POLICY settings_read ON public.platform_settings FOR SELECT USING (true);
 CREATE POLICY settings_admin_write ON public.platform_settings FOR ALL
   USING (get_my_role() = ANY (ARRAY['admin','superadmin']));
 
 -- session_notes
+DROP POLICY IF EXISTS notes_patient_all ON public.session_notes;
+DROP POLICY IF EXISTS notes_clinician_read ON public.session_notes;
+DROP POLICY IF EXISTS notes_clinician_update ON public.session_notes;
 CREATE POLICY notes_patient_all ON public.session_notes FOR ALL
   USING ((SELECT auth.uid()) = patient_id)
   WITH CHECK ((SELECT auth.uid()) = patient_id);
@@ -1084,6 +1162,11 @@ CREATE POLICY notes_clinician_update ON public.session_notes FOR UPDATE
   );
 
 -- user_consents
+DROP POLICY IF EXISTS user_consents_own_read ON public.user_consents;
+DROP POLICY IF EXISTS user_consents_own_insert ON public.user_consents;
+DROP POLICY IF EXISTS user_consents_admin_read ON public.user_consents;
+DROP POLICY IF EXISTS user_consents_admin_insert ON public.user_consents;
+DROP POLICY IF EXISTS user_consents_clinician_read ON public.user_consents;
 CREATE POLICY user_consents_own_read ON public.user_consents FOR SELECT
   USING ((SELECT auth.uid()) = user_id);
 CREATE POLICY user_consents_own_insert ON public.user_consents FOR INSERT
@@ -1099,6 +1182,7 @@ CREATE POLICY user_consents_clinician_read ON public.user_consents FOR SELECT
   );
 
 -- wellness_plans
+DROP POLICY IF EXISTS wplan_own ON public.wellness_plans;
 CREATE POLICY wplan_own ON public.wellness_plans FOR ALL
   USING ((SELECT auth.uid()) = patient_id)
   WITH CHECK ((SELECT auth.uid()) = patient_id);
