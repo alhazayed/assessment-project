@@ -165,7 +165,8 @@ export default function InsightsPage() {
             {moodLogs.length === 0 ? (
               <p className="text-[13.5px] py-4 text-center" style={{ color: 'var(--text-muted)' }}>{t('insights.no_mood', lang)}</p>
             ) : (
-              <div className="grid grid-cols-10 gap-1.5">
+              <div className="overflow-x-auto">
+              <div className="grid grid-cols-10 gap-1.5 min-w-[320px]">
                 {last30.map(day => {
                   const score = moodByDay[day]
                   const color = score != null ? moodColor(score) : '#F3F4F6'
@@ -181,6 +182,7 @@ export default function InsightsPage() {
                     />
                   )
                 })}
+              </div>
               </div>
             )}
 
@@ -282,7 +284,7 @@ export default function InsightsPage() {
                 <BarChart2 className="w-4 h-4" style={{ color: 'var(--text-icon)' }} />
                 <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('insights.mood_stats', lang)}</h2>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   {
                     label: t('insights.avg_mood', lang),

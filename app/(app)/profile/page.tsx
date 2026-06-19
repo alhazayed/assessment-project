@@ -307,7 +307,7 @@ export default function ProfilePage() {
             <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.identity.title', lang)}</h2>
           </div>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">{t('profile.name_en', lang)}</label>
                 <input type="text" className="input" value={fullNameEn}
@@ -337,7 +337,7 @@ export default function ProfilePage() {
           </div>
           <div className="space-y-4">
             {/* DOB + Gender */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">
                   {t('profile.dob', lang)} <span className="text-red-500">*</span>
@@ -481,7 +481,7 @@ export default function ProfilePage() {
                 <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.emergency.title', lang)}</h2>
               </div>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="label">{t('profile.emergency.name', lang)}</label>
                     <input type="text" className="input" value={emergencyName}

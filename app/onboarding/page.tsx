@@ -193,7 +193,7 @@ export default function OnboardingPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">{t('profile.dob', lang)}</label>
                   <input
@@ -219,7 +219,7 @@ export default function OnboardingPage() {
           {/* ── Step 2: Background ───────────────────────────────── */}
           {step === 2 && (
             <div className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">{t('profile.marital', lang)}</label>
                   <select className="input" value={maritalStatus} onChange={e => setMaritalStatus(e.target.value as MaritalStatus | '')}>
@@ -260,7 +260,7 @@ export default function OnboardingPage() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="label">{t('profile.country', lang)}</label>
                   <select className="input" value={country} onChange={e => setCountry(e.target.value)}>
@@ -291,7 +291,7 @@ export default function OnboardingPage() {
               <div>
                 <p className="text-[13.5px] font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>{t('profile.emergency.title', lang)}</p>
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="label text-xs">{t('profile.emergency.name', lang)}</label>
                       <input type="text" className="input" value={emergencyName}

@@ -29,11 +29,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Sidebar profile={profile} lang={lang} />
       <main
         id="main-content"
-        className="flex-1 min-w-0 overflow-auto"
-        style={{
-          marginInlineStart: 'var(--sidebar-w)',
-          backgroundColor: 'var(--page-bg)',
-        }}
+        className="flex-1 min-w-0 overflow-auto pt-16 lg:pt-0 lg:ms-[248px]"
+        style={{ backgroundColor: 'var(--page-bg)' }}
       >
         {children}
       </main>

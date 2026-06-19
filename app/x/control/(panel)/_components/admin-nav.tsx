@@ -1,8 +1,9 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, LogOut, TrendingUp } from 'lucide-react'
+import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, LogOut, TrendingUp, Menu, X } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 import BrandLogo from '@/components/brand-logo'
@@ -10,6 +11,18 @@ import BrandLogo from '@/components/brand-logo'
 export default function AdminNav({ role }: { role: string }) {
   const pathname = usePathname()
   const lang = useLang()
+  const [isOpen, setIsOpen] = useState(false)
+
+  useEffect(() => { setIsOpen(false) }, [pathname])
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [isOpen])
 
   const NAV = [
     { href: '/x/control/overview',      label: t('admin.nav.overview', lang),       icon: LayoutDashboard },
@@ -27,19 +40,32 @@ export default function AdminNav({ role }: { role: string }) {
     window.location.href = '/'
   }
 
-  return (
-    <aside className="w-56 flex flex-col flex-shrink-0 min-h-screen" style={{ backgroundColor: '#12273C' }}>
-      <div className="px-4 py-4" style={{ borderBottom: '1px solid #1D6296' }}>
+  const sidebarContent = (
+    <aside
+      className={`fixed inset-y-0 left-0 z-40 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 w-56 ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}
+      style={{ backgroundColor: '#12273C' }}
+    >
+      <div className="px-4 py-4 flex items-center justify-between flex-shrink-0" style={{ borderBottom: '1px solid #1D6296', minHeight: '64px' }}>
         <div className="flex items-center gap-2.5">
-          <BrandLogo variant="icon" size={36} />
+          <BrandLogo variant="icon" size={32} />
           <div>
             <p className="text-sm font-bold text-white leading-tight">{t('admin.panel', lang)}</p>
             <p className="text-xs capitalize" style={{ color: '#F3650A' }}>{role}</p>
           </div>
         </div>
+        <button
+          className="lg:hidden p-1.5 rounded-lg transition-colors hover:bg-white/10"
+          onClick={() => setIsOpen(false)}
+          aria-label="Close menu"
+          style={{ color: '#7EB7DB' }}
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
-      <nav className="flex-1 px-2 py-4 space-y-0.5">
+      <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
         {NAV.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href)
           return (
@@ -59,7 +85,7 @@ export default function AdminNav({ role }: { role: string }) {
         })}
       </nav>
 
-      <div className="px-2 py-4 space-y-1" style={{ borderTop: '1px solid #1D6296' }}>
+      <div className="px-2 py-4 space-y-1 flex-shrink-0" style={{ borderTop: '1px solid #1D6296' }}>
         <Link href="/" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors hover:text-white" style={{ color: '#53A0CF' }}>
           {t('admin.nav.back', lang)}
         </Link>
@@ -71,5 +97,40 @@ export default function AdminNav({ role }: { role: string }) {
         </button>
       </div>
     </aside>
+  )
+
+  return (
+    <>
+      {/* Mobile top bar */}
+      <div
+        className="lg:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 h-16 flex-shrink-0"
+        style={{ backgroundColor: '#12273C', borderBottom: '1px solid #1D6296' }}
+      >
+        <button
+          className="p-2 rounded-lg transition-colors hover:bg-white/10"
+          onClick={() => setIsOpen(true)}
+          aria-label="Open menu"
+          style={{ color: '#7EB7DB' }}
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="flex items-center gap-2">
+          <BrandLogo variant="icon" size={26} />
+          <p className="text-sm font-bold text-white">{t('admin.panel', lang)}</p>
+        </div>
+        <div className="w-9" />
+      </div>
+
+      {/* Backdrop */}
+      {isOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {sidebarContent}
+    </>
   )
 }

@@ -166,7 +166,7 @@ export default async function AdminOverviewPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {statsCards.map(s => (
           <div key={s.label} className="card p-5">
             <div className="flex items-start justify-between mb-3">
@@ -186,7 +186,7 @@ export default async function AdminOverviewPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Users by role */}
         <div className="card p-5">
           <h2 className="text-[13.5px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>{t('admin.overview.roles', lang)}</h2>
@@ -229,7 +229,7 @@ export default async function AdminOverviewPage() {
         </div>
 
         {/* Top assessments */}
-        <div className="col-span-2 card p-5">
+        <div className="lg:col-span-2 card p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('admin.overview.top_assessments', lang)}</h2>
             <Link href="/x/control/analytics" className="text-xs font-medium hover:underline" style={{ color: 'var(--vw-blue)' }}>{t('admin.overview.view_analytics', lang)}</Link>

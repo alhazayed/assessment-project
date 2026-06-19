@@ -147,7 +147,7 @@ export default function MoodContent() {
         <div className="card p-6 mb-7">
           <h2 className="text-[15px] font-bold mb-5" style={{ color: 'var(--text-primary)' }}>{t('mood.how', lang)}</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {scoreItems.map(({ key, label, color, emoji }) => (
                 <div key={key}>
                   <label className="label flex items-center gap-1.5 mb-2">
@@ -169,7 +169,7 @@ export default function MoodContent() {
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">{t('mood.sleep', lang)}</label>
                 <input
@@ -278,7 +278,7 @@ export default function MoodContent() {
                   {log.activity_minutes && <p>{t('mood.activity', lang)}: {log.activity_minutes}min</p>}
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <p className="text-[12px] mb-1.5" style={{ color: 'var(--text-muted)' }}>😊 {t('mood.mood', lang)}</p>
                   <ScoreBar score={log.mood_score} color="#E879A0" />

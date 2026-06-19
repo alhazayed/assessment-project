@@ -108,7 +108,7 @@ export default function SampleResultPage() {
           </div>
 
           {/* Severity scale */}
-          <div className="grid grid-cols-4 gap-2 mt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
             {(isRtl
               ? [
                   { range: '0–4', label: 'لا يوجد', cls: 'badge-minimal' },

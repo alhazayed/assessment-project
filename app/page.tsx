@@ -255,7 +255,7 @@ export default async function LandingPage() {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 { value: `${assessments.length}`, key: 'about.stat1' as const },
                 { value: '24/7', key: 'about.stat2' as const },

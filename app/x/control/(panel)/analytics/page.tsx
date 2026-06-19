@@ -207,7 +207,7 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {statCards.map(s => (
           <div key={s.label} className="card p-5">
             <div className="flex items-center justify-between mb-3">
@@ -255,8 +255,8 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* Severity Distribution + Top Assessments */}
-      <div className="grid grid-cols-5 gap-6 mb-6">
-        <div className="col-span-2 card p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+        <div className="lg:col-span-2 card p-6">
           <h2 className="text-[13.5px] font-bold mb-5" style={{ color: 'var(--text-primary)' }}>{t('admin.analytics.severity_dist', lang)}</h2>
           {severityDistribution.length === 0 ? (
             <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.analytics.no_data', lang)}</p>
@@ -277,7 +277,7 @@ export default function AdminAnalyticsPage() {
           )}
         </div>
 
-        <div className="col-span-3 card p-6">
+        <div className="lg:col-span-3 card p-6">
           <h2 className="text-[13.5px] font-bold mb-5" style={{ color: 'var(--text-primary)' }}>{t('admin.analytics.top_by_volume', lang)}</h2>
           {assessmentStats.length === 0 ? (
             <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.analytics.no_submissions', lang)}</p>
@@ -370,8 +370,8 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* User Growth */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 card p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 card p-6">
           <h2 className="text-[13.5px] font-bold mb-5" style={{ color: 'var(--text-primary)' }}>{t('admin.analytics.user_growth', lang)}</h2>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={userGrowth} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>

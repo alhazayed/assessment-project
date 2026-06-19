@@ -100,7 +100,7 @@ export default async function AssessmentsPage() {
             {t('assessments.available.title', lang)}
           </h2>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {allDefinitions.map((d) => {
             const lastSubmission = submissions.find(s => s.definition_id === d.id)
             const dName = lang === 'ar' && d.name_ar ? d.name_ar : d.name_en

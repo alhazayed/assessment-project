@@ -317,7 +317,7 @@ export default function AssessmentContent({ id, userId }: Props) {
               <ArrowRight className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
               <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.related_assessments', lang)}</h3>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {relatedAssessments.map((ra) => {
                 const raName = lang === 'ar' && ra.name_ar ? ra.name_ar : ra.name_en
                 const raDesc = lang === 'ar' && ra.description_ar ? ra.description_ar : ra.description_en

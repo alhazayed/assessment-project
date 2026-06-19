@@ -108,7 +108,7 @@ export default async function DashboardPage() {
       )}
 
       {/* Stat cards */}
-      <div className="grid grid-cols-3 gap-4 mb-7">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-7">
         {/* Mood card */}
         <div className="stat-card">
           <div className="flex items-center justify-between mb-4">
@@ -161,7 +161,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Main content grid */}
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Recent assessments */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-5">
@@ -238,7 +238,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Quick links */}
-      <div className="grid grid-cols-4 gap-3 mt-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
         {[
           { href: '/assessments', label: lang === 'ar' ? 'التقييمات' : 'Assessments', icon: ClipboardList, color: '#EAF2F9', iconColor: '#1D6296' },
           { href: '/mood', label: lang === 'ar' ? 'المزاج' : 'Mood Tracker', icon: Heart, color: '#FDE8E8', iconColor: '#C02A2A' },

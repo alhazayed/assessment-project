@@ -96,7 +96,7 @@ export default function AdminAnnouncementsPage() {
             </button>
           </div>
           <form onSubmit={create} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">{t('admin.announcements.form.title_en', lang)}</label>
                 <input className="input" required value={form.title_en} onChange={e => setForm(p => ({ ...p, title_en: e.target.value }))} />
@@ -106,7 +106,7 @@ export default function AdminAnnouncementsPage() {
                 <input className="input" dir="rtl" value={form.title_ar} onChange={e => setForm(p => ({ ...p, title_ar: e.target.value }))} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">{t('admin.announcements.form.body_en', lang)}</label>
                 <textarea className="input resize-none" rows={3} value={form.body_en} onChange={e => setForm(p => ({ ...p, body_en: e.target.value }))} />
@@ -116,7 +116,7 @@ export default function AdminAnnouncementsPage() {
                 <textarea className="input resize-none" rows={3} dir="rtl" value={form.body_ar} onChange={e => setForm(p => ({ ...p, body_ar: e.target.value }))} />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="label">{t('admin.announcements.form.type', lang)}</label>
                 <select className="input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
