@@ -131,6 +131,23 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ── AI Recommender ──────────────────────────────────────────────── */}
+      <section className="py-16 px-6 bg-gradient-to-b from-white to-gray-50">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 bg-accent-50 text-accent-600 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
+              <Sparkles className="w-3.5 h-3.5" />
+              {t('landing.ai.badge', lang)}
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              {t('landing.ai.title', lang)}
+            </h2>
+            <p className="text-gray-500">{t('landing.ai.sub', lang)}</p>
+          </div>
+          <AIAssessmentFinder lang={lang} />
+        </div>
+      </section>
+
       {/* ── Trust strip ─────────────────────────────────────────────────── */}
       <section style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
         <div className="max-w-5xl mx-auto px-6 py-4">

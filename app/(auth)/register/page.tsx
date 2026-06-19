@@ -76,6 +76,7 @@ export default function RegisterPage() {
     } else if (data.session) {
       router.push(next || '/onboarding')
     } else {
+      // Email confirmation required — show "check your email" screen
       setSuccess(true)
       setResendCooldown(60)
     }
