@@ -1,11 +1,5 @@
 {
   "functions": {
-    "app/api/recommend-assessments/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/synthesis/route.ts": {
-      "maxDuration": 30
-    },
     "app/api/clinical-notes/route.ts": {
       "maxDuration": 30
     }

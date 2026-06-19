@@ -21,41 +21,49 @@ const RULES: Array<{ pattern: RegExp; placeholder: string }> = [
     placeholder: '[EMAIL]',
   },
 
-  // International phone numbers (+966 50 123 4567, +1-800-555-0100, etc.)
-  {
-    pattern: /\+?[\d][\d\s\-().]{7,17}[\d]/g,
-    placeholder: '[PHONE]',
-  },
-
-  // Saudi national ID / Iqama (10 digits starting with 1 or 2)
-  {
-    pattern: /\b[12]\d{9}\b/g,
-    placeholder: '[ID]',
-  },
-
-  // Generic national/passport IDs: letter(s) + 5–12 digits or mixed alphanum ≥8 chars
-  {
-    pattern: /\b[A-Z]{1,3}\d{5,12}\b/g,
-    placeholder: '[ID]',
-  },
-
-  // Medical record numbers — MRN/MR/ID prefix + digits
+  // Medical record numbers — labeled prefix keeps them unambiguous; run before phone/ID
   {
     pattern: /\b(?:MRN?|PATIENT[\s_-]?ID|RECORD[\s_-]?NO?\.?)\s*[:#]?\s*\d{4,12}\b/gi,
     placeholder: '[MRN]',
   },
 
-  // Dates of birth — common formats: DD/MM/YYYY, MM-DD-YYYY, YYYY-MM-DD, "born 12 Jan 1990"
+  // Saudi national ID / Iqama (10 digits starting with 1 or 2)
+  // Must run before the broad phone rule which would otherwise consume them
+  {
+    pattern: /\b[12]\d{9}\b/g,
+    placeholder: '[ID]',
+  },
+
+  // Generic national/passport IDs: letter(s) + 5–12 digits
+  // Must run before broad phone rule
+  {
+    pattern: /\b[A-Z]{1,3}\d{5,12}\b/g,
+    placeholder: '[ID]',
+  },
+
+  // ISO date format YYYY-MM-DD — must run before phone rule since the broad phone
+  // pattern matches hyphen-separated digit runs and would consume ISO dates first
+  {
+    pattern: /\b\d{4}[\/\-]\d{2}[\/\-]\d{2}\b/g,
+    placeholder: '[DOB]',
+  },
+
+  // Labeled DOB patterns: "born 12 Jan 1990", "dob: 01/05/1985"
   {
     pattern: /\b(?:born|dob|d\.o\.b\.?|date of birth)\s*:?\s*[\d]{1,2}[\s\/\-][\w]{2,9}[\s\/\-][\d]{2,4}\b/gi,
     placeholder: '[DOB]',
   },
+
+  // International phone numbers (+966 50 123 4567, +1-800-555-0100, etc.)
+  // Runs after specific ID/DOB rules so it does not consume them first
+  {
+    pattern: /\+?[\d][\d\s\-().]{7,17}[\d]/g,
+    placeholder: '[PHONE]',
+  },
+
+  // Remaining numeric DOB formats: DD/MM/YYYY or MM-DD-YYYY
   {
     pattern: /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/g,
-    placeholder: '[DOB]',
-  },
-  {
-    pattern: /\b\d{4}[\/\-]\d{2}[\/\-]\d{2}\b/g,
     placeholder: '[DOB]',
   },
 
@@ -71,7 +79,7 @@ const RULES: Array<{ pattern: RegExp; placeholder: string }> = [
     placeholder: '[ADDRESS]',
   },
 
-  // Zip / postal codes (US 5-digit, UK, CA, AU)
+  // Zip / postal codes (US 5-digit) — runs after DOB patterns to avoid partial ISO date matches
   {
     pattern: /\b\d{5}(?:-\d{4})?\b/g,
     placeholder: '[ADDRESS]',
