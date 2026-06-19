@@ -67,7 +67,7 @@ export default async function DashboardPage() {
   const firstName = (rawName || user.email?.split('@')[0] || '').split(' ')[0]
 
   return (
-    <div className="p-7 max-w-6xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-6xl">
       <CrisisBanner lang={lang} />
 
       {/* Page header */}

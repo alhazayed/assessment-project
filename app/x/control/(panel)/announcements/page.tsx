@@ -70,7 +70,7 @@ export default function AdminAnnouncementsPage() {
   }
 
   return (
-    <div className="p-7 max-w-4xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-4xl">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>

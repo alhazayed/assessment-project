@@ -258,7 +258,7 @@ export default function ProfilePage() {
   if (loading) return <div className="p-7" style={{ color: 'var(--text-muted)' }}>{t('mood.loading', lang)}</div>
 
   return (
-    <div className="p-7 max-w-2xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-2xl">
       <div className="mb-7">
         <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
           {t('profile.title', lang)}

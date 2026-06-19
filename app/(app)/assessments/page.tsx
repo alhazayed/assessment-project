@@ -60,7 +60,7 @@ export default async function AssessmentsPage() {
   )
 
   return (
-    <div className="p-7 max-w-5xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-5xl">
       {/* Page header */}
       <div className="mb-7">
         <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
@@ -215,28 +215,30 @@ export default async function AssessmentsPage() {
             </h2>
           </div>
           <div className="card overflow-hidden">
+            <div className="overflow-x-auto">
             {submissions.map((s, i) => {
               const def = s.assessment_definitions
               const sName = lang === 'ar' && def?.name_ar ? def.name_ar : def?.name_en
               return (
                 <div
                   key={s.id}
-                  className="flex items-center justify-between p-4"
+                  className="flex items-center justify-between p-4 min-w-0 gap-3"
                   style={{ borderBottom: i < submissions.length - 1 ? '1px solid var(--divider)' : 'none' }}
                 >
-                  <div>
-                    <p className="text-[13.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>{sName}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{sName}</p>
                     <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{new Date(s.submitted_at).toLocaleDateString()}</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[13px] font-bold" style={{ color: 'var(--text-secondary)' }}>{t('assessments.score', lang)} {s.total_score}</span>
-                    <span className={severityBadge(s.severity_band)}>{s.severity_band}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className="text-[13px] font-bold hidden sm:inline" style={{ color: 'var(--text-secondary)' }}>{t('assessments.score', lang)} {s.total_score}</span>
+                    <span className={`${severityBadge(s.severity_band)} hidden sm:inline-flex`}>{s.severity_band}</span>
                     {s.high_risk_flag && <AlertCircle className="w-4 h-4" style={{ color: '#C02A2A' }} aria-label="High risk" />}
                     <ChevronRight className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                   </div>
                 </div>
               )
             })}
+            </div>
           </div>
         </div>
       )}

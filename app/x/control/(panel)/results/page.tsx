@@ -125,7 +125,7 @@ export default function AdminResultsPage() {
   ]
 
   return (
-    <div className="p-7 max-w-7xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-7xl">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
@@ -211,7 +211,8 @@ export default function AdminResultsPage() {
 
       {/* Results table */}
       <div className="card overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead>
             <tr style={{ backgroundColor: 'var(--surface-alt)', borderBottom: '1px solid var(--divider)' }}>
               <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.results.col.patient', lang)}</th>
@@ -256,6 +257,7 @@ export default function AdminResultsPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Pagination */}

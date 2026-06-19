@@ -8,7 +8,8 @@ import {
   BookOpen, FlaskConical, ArrowRight, Brain,
 } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentItem, ResponseOption } from '@/lib/types'
-import { getAssessmentContent, getBandContent, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
+import { getLocalizedBandContent, getLocalizedAssessmentMeta, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
+import { ASSESSMENT_CONTENT_AR } from '@/lib/assessment-content-ar'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
@@ -161,8 +162,8 @@ export default function AssessmentContent({ id, userId }: Props) {
 
   if (submitted && result) {
     const isHighRisk = result.high_risk
-    const assessmentContent = getAssessmentContent(definition.code)
-    const bandContent = getBandContent(definition.code, result.band_en)
+    const assessmentMeta = getLocalizedAssessmentMeta(definition.code, lang, ASSESSMENT_CONTENT_AR)
+    const bandContent = getLocalizedBandContent(definition.code, result.band_en, lang, ASSESSMENT_CONTENT_AR)
     const displayBand = lang === 'ar' ? result.band_ar : result.band_en
     const isPositive = result.band_en.toLowerCase().includes('minimal') || result.band_en.toLowerCase().includes('none') || result.band_en.toLowerCase().includes('normal') || result.band_en.toLowerCase().includes('low risk') || result.band_en.toLowerCase().includes('below') || result.band_en.toLowerCase().includes('no problem')
     const defName = lang === 'ar' && definition.name_ar ? definition.name_ar : definition.name_en
@@ -206,9 +207,9 @@ export default function AssessmentContent({ id, userId }: Props) {
           <div className="card p-6">
             <div className="flex items-center gap-2 mb-4">
               <Brain className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
-              <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>Your Personality Profile</h3>
+              <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{lang === 'ar' ? 'ملفك الشخصي' : 'Your Personality Profile'}</h3>
             </div>
-            <p className="text-[11.5px] mb-5" style={{ color: 'var(--text-muted)' }}>Scores range 24–120 per domain. Low &lt;65 · Average 65–88 · High &gt;88</p>
+            <p className="text-[11.5px] mb-5" style={{ color: 'var(--text-muted)' }}>{lang === 'ar' ? 'النتائج تتراوح 24–120 لكل بُعد. منخفض <65 · متوسط 65–88 · مرتفع >88' : 'Scores range 24–120 per domain. Low <65 · Average 65–88 · High >88'}</p>
             <div className="space-y-4">
               {Object.entries(IPIP_DOMAINS).map(([key, info]) => {
                 const score = domainScores[key] ?? 0
@@ -235,15 +236,15 @@ export default function AssessmentContent({ id, userId }: Props) {
           </div>
         )}
 
-        {assessmentContent && (
+        {assessmentMeta && (
           <div className="card p-6">
             <div className="flex items-center gap-2 mb-3">
               <BookOpen className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
               <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.about', lang)}</h3>
             </div>
-            <p className="text-[13.5px] leading-relaxed mb-2" style={{ color: 'var(--text-secondary)' }}>{assessmentContent.overview}</p>
+            <p className="text-[13.5px] leading-relaxed mb-2" style={{ color: 'var(--text-secondary)' }}>{assessmentMeta.overview}</p>
             <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-              <span className="font-medium">{t('assessment.result.measures', lang)}:</span> {assessmentContent.measuresDomain}
+              <span className="font-medium">{t('assessment.result.measures', lang)}:</span> {assessmentMeta.measuresDomain}
             </p>
           </div>
         )}
@@ -359,7 +360,7 @@ export default function AssessmentContent({ id, userId }: Props) {
   const defName = lang === 'ar' && definition.name_ar ? definition.name_ar : definition.name_en
 
   return (
-    <div className="p-7 max-w-2xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-2xl mx-auto">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{defName}</h1>

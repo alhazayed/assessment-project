@@ -117,7 +117,7 @@ export default function InsightsPage() {
   const scoreRange = maxScore - minScore || 1
 
   return (
-    <div className="p-7 max-w-4xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-4xl">
       <div className="mb-7">
         <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
           {t('insights.title', lang)}
@@ -227,9 +227,9 @@ export default function InsightsPage() {
                 {t('insights.trend_min_needed', lang)}
               </p>
             ) : (
-              <div className="relative">
+              <div className="relative overflow-x-auto">
                 {/* Simple SVG line chart */}
-                <svg viewBox={`0 0 ${trendData.length * 60} 120`} className="w-full h-32" preserveAspectRatio="none">
+                <svg viewBox={`0 0 ${trendData.length * 60} 120`} className="w-full h-32" style={{ minWidth: `${trendData.length * 40}px` }} preserveAspectRatio="none">
                   {/* Grid lines */}
                   {[0, 0.5, 1].map(pct => (
                     <line

@@ -99,12 +99,12 @@ export default async function LandingPage() {
             {t('landing.badge', lang)}
           </div>
 
-          <h1 className="text-[52px] md:text-[64px] font-extrabold leading-tight mb-6" style={{ color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+          <h1 className="text-[32px] sm:text-[48px] md:text-[64px] font-extrabold leading-tight mb-6" style={{ color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
             {t('landing.hero1', lang)}<br />
             <span style={{ color: '#1D6296' }}>{t('landing.hero2', lang)}</span>
           </h1>
 
-          <p className="text-xl leading-relaxed max-w-2xl mx-auto mb-10" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-base sm:text-xl leading-relaxed max-w-2xl mx-auto mb-10" style={{ color: 'var(--text-secondary)' }}>
             {t('landing.hero.sub', lang)}
           </p>
 
@@ -229,7 +229,7 @@ export default async function LandingPage() {
       <section className="py-16 px-6" style={{ backgroundColor: 'var(--surface-alt)' }}>
         <div className="max-w-4xl mx-auto">
           <div className="rounded-[20px] overflow-hidden" style={{ background: 'linear-gradient(135deg, #12273C 0%, #1D3A52 100%)' }}>
-            <div className="px-8 py-8 md:flex md:items-center md:justify-between gap-8">
+            <div className="px-4 py-6 sm:px-8 sm:py-8 md:flex md:items-center md:justify-between gap-8">
               <div className="mb-5 md:mb-0">
                 <div className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[11.5px] font-bold mb-3" style={{ background: 'rgba(245,158,11,0.18)', color: '#FCD34D' }}>
                   <Brain className="w-3.5 h-3.5" />

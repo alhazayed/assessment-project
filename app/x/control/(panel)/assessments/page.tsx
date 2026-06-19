@@ -38,7 +38,7 @@ export default function AdminAssessmentsPage() {
   const maxSubs = Math.max(...assessments.map(a => a.submission_count), 1)
 
   return (
-    <div className="p-7 max-w-5xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-5xl">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
@@ -56,7 +56,8 @@ export default function AdminAssessmentsPage() {
       {msg && <div className="mb-5 alert-success">{msg}</div>}
 
       <div className="card overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[500px]">
           <thead>
             <tr style={{ backgroundColor: 'var(--surface-alt)', borderBottom: '1px solid var(--divider)' }}>
               <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.assessments.col.assessment', lang)}</th>
@@ -107,6 +108,7 @@ export default function AdminAssessmentsPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

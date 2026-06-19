@@ -2243,3 +2243,29 @@ export function getBandContent(code: string, band: string): BandContent | null {
   if (!content) return null
   return content.bands[band] ?? Object.values(content.bands).at(-1) ?? null
 }
+
+export function getLocalizedBandContent(code: string, band: string, lang: string, arContent?: Record<string, import('./assessment-content-ar').AssessmentContentAr>): BandContent | null {
+  const content = ASSESSMENT_CONTENT[code]
+  if (!content) return null
+  const bc = content.bands[band] ?? Object.values(content.bands).at(-1) ?? null
+  if (!bc || lang !== 'ar' || !arContent) return bc
+  const arAssessment = arContent[code]
+  const arBand = arAssessment?.bands[band] ?? arAssessment?.bands[Object.keys(content.bands).at(-1) ?? ''] ?? null
+  return {
+    explanation: arBand?.explanation ?? bc.explanation,
+    whatThisMeans: arBand?.whatThisMeans ?? bc.whatThisMeans,
+    recommendations: arBand?.recommendations ?? bc.recommendations,
+    relatedDisorders: arBand?.relatedDisorders ?? bc.relatedDisorders,
+  }
+}
+
+export function getLocalizedAssessmentMeta(code: string, lang: string, arContent?: Record<string, import('./assessment-content-ar').AssessmentContentAr>): { overview: string; measuresDomain: string } | null {
+  const content = ASSESSMENT_CONTENT[code]
+  if (!content) return null
+  if (lang !== 'ar' || !arContent) return { overview: content.overview, measuresDomain: content.measuresDomain }
+  const ar = arContent[code]
+  return {
+    overview: ar?.overview ?? content.overview,
+    measuresDomain: ar?.measuresDomain ?? content.measuresDomain,
+  }
+}

@@ -149,7 +149,7 @@ export default async function AdminOverviewPage() {
   ]
 
   return (
-    <div className="p-7 max-w-6xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-6xl">
       {/* Page header */}
       <div className="flex items-center justify-between mb-8">
         <div>

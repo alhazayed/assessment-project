@@ -111,7 +111,7 @@ export default function MoodContent() {
   ]
 
   return (
-    <div className="p-7 max-w-4xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-4xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-7">
         <div>
