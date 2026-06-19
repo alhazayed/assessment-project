@@ -22,7 +22,7 @@ export default async function AssessmentsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?next=/assessments')
 
-  const [defsRes, aRes, sRes] = await Promise.all([
+  const [defsRes, aRes, sRes, profileRes, ppRes] = await Promise.all([
     supabase.from('assessment_definitions').select('*').eq('is_active', true).order('name_en'),
     supabase
       .from('assessment_assignments')
@@ -34,11 +34,30 @@ export default async function AssessmentsPage() {
       .select('*, assessment_definitions(name_en, name_ar, code)')
       .eq('patient_id', user.id)
       .order('submitted_at', { ascending: false }),
+    supabase
+      .from('profiles')
+      .select('date_of_birth, gender, marital_status, educational_status, country_of_residence')
+      .eq('id', user.id)
+      .single(),
+    supabase
+      .from('patient_profiles')
+      .select('employment_status, has_psychiatric_medications')
+      .eq('id', user.id)
+      .single(),
   ])
 
   const allDefinitions = (defsRes.data || []) as AssessmentDefinition[]
   const assignments = (aRes.data || []) as (AssessmentAssignment & { assessment_definitions: any })[]
   const submissions = (sRes.data || []) as (AssessmentSubmission & { assessment_definitions: any })[]
+
+  const pd = profileRes.data
+  const ppd = ppRes.data
+  const isProfileComplete = !!(
+    pd?.date_of_birth && pd?.gender && pd?.marital_status &&
+    pd?.educational_status && pd?.country_of_residence &&
+    ppd?.employment_status &&
+    ppd?.has_psychiatric_medications !== null && ppd?.has_psychiatric_medications !== undefined
+  )
 
   return (
     <div className="p-7 max-w-5xl">
@@ -49,6 +68,31 @@ export default async function AssessmentsPage() {
         </h1>
         <p style={{ color: 'var(--text-secondary)' }}>{t('assessments.page.sub', lang)}</p>
       </div>
+
+      {/* Profile incomplete banner */}
+      {!isProfileComplete && (
+        <div className="mb-6 rounded-xl p-4 flex items-start gap-3" style={{ background: '#FEF2EC', border: '1px solid #F3C5A0' }}>
+          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#F3650A' }} />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold" style={{ color: '#9B3D08' }}>
+              {lang === 'ar' ? 'يرجى إكمال ملفك الشخصي لبدء التقييم' : 'Complete your profile to unlock assessments'}
+            </p>
+            <p className="text-xs mt-1 leading-relaxed" style={{ color: '#C2560A' }}>
+              {lang === 'ar'
+                ? 'يجب تعبئة البيانات الشخصية (تاريخ الميلاد، الجنس، الحالة الاجتماعية، التعليم، الدولة، الوظيفة، وحالة الأدوية) قبل بدء أي تقييم.'
+                : 'Biographical data — date of birth, gender, marital status, education, country, employment, and medication status — must be filled before starting any assessment.'}
+            </p>
+            <Link
+              href="/profile?complete=true"
+              className="inline-flex items-center gap-1 text-xs font-semibold mt-2 hover:underline"
+              style={{ color: '#9B3D08' }}
+            >
+              {lang === 'ar' ? 'اذهب إلى ملفي الشخصي' : 'Go to my profile'}
+              <ChevronRight className="w-3 h-3" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Assigned assessments */}
       {assignments.length > 0 && (
@@ -78,9 +122,15 @@ export default async function AssessmentsPage() {
                         </p>
                       )}
                     </div>
-                    <Link href={`/assessments/${a.definition_id}`} className="btn-accent flex-shrink-0">
-                      {t('assessments.btn.start', lang)}
-                    </Link>
+                    {isProfileComplete ? (
+                      <Link href={`/assessments/${a.definition_id}`} className="btn-accent flex-shrink-0">
+                        {t('assessments.btn.start', lang)}
+                      </Link>
+                    ) : (
+                      <Link href="/profile?complete=true" className="btn-ghost flex-shrink-0 text-xs" style={{ opacity: 0.7 }}>
+                        {lang === 'ar' ? 'أكمل ملفك' : 'Complete profile'}
+                      </Link>
+                    )}
                   </div>
                 </div>
               )
@@ -131,9 +181,18 @@ export default async function AssessmentsPage() {
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <Link href={`/assessments/${d.id}`} className="btn-accent">
-                    {lastSubmission ? t('assessments.btn.retake', lang) : t('assessments.start', lang)}
-                  </Link>
+                  {isProfileComplete ? (
+                    <Link href={`/assessments/${d.id}`} className="btn-accent">
+                      {lastSubmission ? t('assessments.btn.retake', lang) : t('assessments.start', lang)}
+                    </Link>
+                  ) : (
+                    <span
+                      className="btn-accent opacity-40 cursor-not-allowed select-none"
+                      title={lang === 'ar' ? 'أكمل ملفك الشخصي أولاً' : 'Complete your profile first'}
+                    >
+                      {lastSubmission ? t('assessments.btn.retake', lang) : t('assessments.start', lang)}
+                    </span>
+                  )}
                   {lastSubmission && (
                     <span className="btn-ghost flex items-center">
                       {t('assessments.score', lang)} {lastSubmission.total_score}

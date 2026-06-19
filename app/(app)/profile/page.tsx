@@ -163,11 +163,16 @@ export default function ProfilePage() {
     setValidationError(null)
     setSaveError(null)
 
-    if (!dob || !gender || !maritalStatus || !educationalStatus || !country) {
+    const isPatient = profile?.role === 'patient'
+    if (
+      !dob || !gender || !maritalStatus || !educationalStatus || !country ||
+      (isPatient && !employmentStatus) ||
+      (isPatient && hasMedications === null)
+    ) {
       setValidationError(
         lang === 'ar'
-          ? 'يرجى تعبئة جميع الحقول المطلوبة: تاريخ الميلاد، الجنس، الحالة الاجتماعية، المستوى التعليمي، وبلد الإقامة.'
-          : 'Please complete all required fields: Date of Birth, Gender, Marital Status, Educational Status, and Country of Residence.'
+          ? 'يرجى تعبئة جميع الحقول المطلوبة: تاريخ الميلاد، الجنس، الحالة الاجتماعية، المستوى التعليمي، بلد الإقامة، الحالة الوظيفية، وحالة الأدوية النفسية.'
+          : 'Please complete all required fields: Date of Birth, Gender, Marital Status, Educational Status, Country of Residence, Employment Status, and Medication Status.'
       )
       return
     }
@@ -270,8 +275,8 @@ export default function ProfilePage() {
             </p>
             <p className="text-[13px]" style={{ color: '#B07A12', opacity: 0.85 }}>
               {lang === 'ar'
-                ? 'يرجى تعبئة الحقول المطلوبة أدناه (تاريخ الميلاد، الجنس، الحالة الاجتماعية، المستوى التعليمي، وبلد الإقامة) قبل إجراء أي تقييم.'
-                : 'Please fill in the required fields below (Date of Birth, Gender, Marital Status, Educational Status, and Country of Residence) before taking an assessment.'}
+                ? 'يرجى تعبئة جميع الحقول المطلوبة (المحددة بإطار أحمر) قبل إجراء أي تقييم: تاريخ الميلاد، الجنس، الحالة الاجتماعية، المستوى التعليمي، بلد الإقامة، الحالة الوظيفية، وحالة الأدوية النفسية.'
+                : 'Please fill in all required fields (highlighted in red) before taking an assessment: Date of Birth, Gender, Marital Status, Educational Status, Country of Residence, Employment Status, and Medication Status.'}
             </p>
           </div>
         </div>
@@ -427,7 +432,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <label className="label">{t('profile.employment', lang)}</label>
-                  <select className="input" value={employmentStatus}
+                  <select className={`input ${!employmentStatus && needsCompletion ? 'border-red-400' : ''}`} value={employmentStatus}
                     onChange={e => setEmploymentStatus(e.target.value as EmploymentStatus | '')}>
                     <option value="">{t('profile.employment.select', lang)}</option>
                     {EMPLOYMENT_OPTIONS.map(o => (
@@ -450,7 +455,7 @@ export default function ProfilePage() {
                 <div>
                   <label className="label">{t('profile.meds.question', lang)}</label>
                   <select
-                    className="input mt-1"
+                    className={`input mt-1 ${hasMedications === null && needsCompletion ? 'border-red-400' : ''}`}
                     value={hasMedications === null ? '' : hasMedications ? 'yes' : 'no'}
                     onChange={e => {
                       if (e.target.value === '') setHasMedications(null)
