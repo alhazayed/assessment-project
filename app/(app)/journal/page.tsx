@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { BookOpen, Plus, Save, X } from 'lucide-react'
+import { BookOpen, Plus, Save, X, AlertCircle } from 'lucide-react'
 import type { JournalEntry } from '@/lib/types'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
@@ -14,6 +14,7 @@ export default function JournalPage() {
   const [loading, setLoading]       = useState(true)
   const [showEditor, setShowEditor] = useState(false)
   const [saving, setSaving]         = useState(false)
+  const [saveError, setSaveError]   = useState<string | null>(null)
   const [newEntry, setNewEntry]     = useState('')
   const [isShared, setIsShared]     = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -35,23 +36,31 @@ export default function JournalPage() {
   async function handleSave() {
     if (!newEntry.trim()) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    setSaveError(null)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setSaving(false); return }
 
-    const wordCount = newEntry.trim().split(/\s+/).length
-    await supabase.from('journal_entries').insert({
-      patient_id: user.id,
-      body: newEntry.trim(),
-      is_shared: isShared,
-      shared_at: isShared ? new Date().toISOString() : null,
-      word_count: wordCount,
-    })
+      const wordCount = newEntry.trim().split(/\s+/).length
+      const { error } = await supabase.from('journal_entries').insert({
+        patient_id: user.id,
+        body: newEntry.trim(),
+        is_shared: isShared,
+        shared_at: isShared ? new Date().toISOString() : null,
+        word_count: wordCount,
+      })
 
-    setNewEntry('')
-    setIsShared(false)
-    setShowEditor(false)
-    setSaving(false)
-    loadEntries()
+      if (error) throw error
+
+      setNewEntry('')
+      setIsShared(false)
+      setShowEditor(false)
+      setSaving(false)
+      loadEntries()
+    } catch {
+      setSaveError(lang === 'ar' ? 'تعذّر حفظ المدخل. يرجى المحاولة مرة أخرى.' : 'Failed to save entry. Please try again.')
+      setSaving(false)
+    }
   }
 
   return (
@@ -91,6 +100,12 @@ export default function JournalPage() {
             placeholder={t('journal.placeholder', lang)}
             autoFocus
           />
+          {saveError && (
+            <div className="alert-error mb-4 flex items-center gap-2 text-[13.5px]">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              {saveError}
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <label className="flex items-center gap-2 cursor-pointer">
               <input

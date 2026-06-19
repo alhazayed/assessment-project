@@ -30,7 +30,20 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError(error.message)
+      const msg = error.message.toLowerCase()
+      if (isRtl) {
+        if (msg.includes('invalid login') || msg.includes('invalid credentials') || msg.includes('email') || msg.includes('password')) {
+          setError('البريد الإلكتروني أو كلمة المرور غير صحيحة.')
+        } else if (msg.includes('too many') || msg.includes('rate limit')) {
+          setError('لقد تجاوزت الحد المسموح به. يرجى الانتظار قبل المحاولة مرة أخرى.')
+        } else if (msg.includes('email not confirmed')) {
+          setError('يرجى تأكيد بريدك الإلكتروني أولاً.')
+        } else {
+          setError('حدث خطأ. يرجى المحاولة مرة أخرى.')
+        }
+      } else {
+        setError(error.message)
+      }
       setLoading(false)
     } else {
       router.push(next)

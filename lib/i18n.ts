@@ -191,7 +191,7 @@ const dict = {
 
     // Assessments list page
     'assessments.page.title': 'Mental Health Assessments',
-    'assessments.page.sub': 'Free, evidence-based screening tools. Sign in to take an assessment.',
+    'assessments.page.sub': 'Free, evidence-based psychological screening tools.',
     'assessments.guest.title': 'Want to track your progress over time?',
     'assessments.guest.create': 'Create a free account',
     'assessments.guest.or': 'or',
@@ -905,7 +905,7 @@ const dict = {
 
     // Assessments list page
     'assessments.page.title': 'تقييمات الصحة النفسية',
-    'assessments.page.sub': 'أدوات فحص مجانية مستندة إلى الأدلة. سجّل دخولك لإجراء التقييم.',
+    'assessments.page.sub': 'أدوات فحص نفسية مجانية مستندة إلى الأدلة.',
     'assessments.guest.title': 'هل تريد تتبع تقدمك مع الوقت؟',
     'assessments.guest.create': 'أنشئ حساباً مجانياً',
     'assessments.guest.or': 'أو',

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Heart, Plus, CheckCircle2 } from 'lucide-react'
+import { Heart, Plus, CheckCircle2, AlertCircle } from 'lucide-react'
 import type { MoodLog } from '@/lib/types'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
@@ -30,6 +30,7 @@ export default function MoodContent() {
   const [loading, setLoading]   = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [saved, setSaved]       = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving]     = useState(false)
   const [form, setForm] = useState({
     mood_score:        5,
@@ -59,27 +60,35 @@ export default function MoodContent() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    setSaveError(null)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setSaving(false); return }
 
-    const today = new Date().toISOString().split('T')[0]
-    await supabase.from('mood_logs').upsert({
-      patient_id:       user.id,
-      log_date:         today,
-      mood_score:       form.mood_score,
-      energy_score:     form.energy_score,
-      anxiety_score:    form.anxiety_score,
-      sleep_hours:      form.sleep_hours ? parseFloat(form.sleep_hours) : null,
-      activity_minutes: form.activity_minutes ? parseInt(form.activity_minutes) : null,
-      mood_note:        form.mood_note || null,
-      triggers:         form.triggers,
-    }, { onConflict: 'patient_id,log_date' })
+      const today = new Date().toISOString().split('T')[0]
+      const { error } = await supabase.from('mood_logs').upsert({
+        patient_id:       user.id,
+        log_date:         today,
+        mood_score:       form.mood_score,
+        energy_score:     form.energy_score,
+        anxiety_score:    form.anxiety_score,
+        sleep_hours:      form.sleep_hours ? parseFloat(form.sleep_hours) : null,
+        activity_minutes: form.activity_minutes ? parseInt(form.activity_minutes) : null,
+        mood_note:        form.mood_note || null,
+        triggers:         form.triggers,
+      }, { onConflict: 'patient_id,log_date' })
 
-    setSaved(true)
-    setSaving(false)
-    setShowForm(false)
-    loadLogs()
-    setTimeout(() => setSaved(false), 3000)
+      if (error) throw error
+
+      setSaved(true)
+      setSaving(false)
+      setShowForm(false)
+      loadLogs()
+      setTimeout(() => setSaved(false), 3000)
+    } catch {
+      setSaveError(lang === 'ar' ? 'تعذّر حفظ السجل. يرجى المحاولة مرة أخرى.' : 'Failed to save. Please try again.')
+      setSaving(false)
+    }
   }
 
   function toggleTrigger(trigger: string) {
@@ -122,6 +131,14 @@ export default function MoodContent() {
         <div className="alert-success mb-6 flex items-center gap-2 text-[13.5px]" style={{ color: '#1B8A5A' }}>
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           {t('mood.logged', lang)}
+        </div>
+      )}
+
+      {/* Error toast */}
+      {saveError && (
+        <div className="alert-error mb-6 flex items-center gap-2 text-[13.5px]">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {saveError}
         </div>
       )}
 
