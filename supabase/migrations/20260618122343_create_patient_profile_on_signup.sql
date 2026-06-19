@@ -1,0 +1,2 @@
+-- Migration 20260618122343: create_patient_profile_on_signup
+-- Applied directly to remote database; stub preserved for migration history.

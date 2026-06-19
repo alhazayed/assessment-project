@@ -1,0 +1,2 @@
+-- Migration 20260605184359: ws3_drop_redundant_duplicate_indexes
+-- Applied directly to remote database; stub preserved for migration history.

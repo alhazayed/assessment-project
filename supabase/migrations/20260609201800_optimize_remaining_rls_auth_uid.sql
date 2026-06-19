@@ -1,0 +1,2 @@
+-- Migration 20260609201800: optimize_remaining_rls_auth_uid
+-- Applied directly to remote database; stub preserved for migration history.

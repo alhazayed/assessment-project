@@ -1,0 +1,2 @@
+-- Migration 20260606073720: ws5_u4_rls_policies
+-- Applied directly to remote database; stub preserved for migration history.

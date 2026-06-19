@@ -1,0 +1,2 @@
+-- Migration 20260528205105: enable_realtime_messages
+-- Applied directly to remote database; stub preserved for migration history.

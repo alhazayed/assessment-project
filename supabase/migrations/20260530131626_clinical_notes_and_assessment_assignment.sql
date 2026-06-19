@@ -1,0 +1,2 @@
+-- Migration 20260530131626: clinical_notes_and_assessment_assignment
+-- Applied directly to remote database; stub preserved for migration history.

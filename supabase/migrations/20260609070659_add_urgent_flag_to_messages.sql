@@ -1,0 +1,2 @@
+-- Migration 20260609070659: add_urgent_flag_to_messages
+-- Applied directly to remote database; stub preserved for migration history.

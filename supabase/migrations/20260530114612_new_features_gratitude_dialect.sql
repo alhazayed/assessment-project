@@ -1,0 +1,2 @@
+-- Migration 20260530114612: new_features_gratitude_dialect
+-- Applied directly to remote database; stub preserved for migration history.

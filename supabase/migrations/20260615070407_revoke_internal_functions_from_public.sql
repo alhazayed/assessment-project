@@ -1,0 +1,2 @@
+-- Migration 20260615070407: revoke_internal_functions_from_public
+-- Applied directly to remote database; stub preserved for migration history.

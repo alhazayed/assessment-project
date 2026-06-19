@@ -1,0 +1,2 @@
+-- Migration 20260606073639: ws5_u2_user_consents
+-- Applied directly to remote database; stub preserved for migration history.

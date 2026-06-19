@@ -1,0 +1,2 @@
+-- Migration 20260606082614: s1_u1_interpretation_templates
+-- Applied directly to remote database; stub preserved for migration history.

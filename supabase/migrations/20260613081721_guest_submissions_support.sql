@@ -1,0 +1,2 @@
+-- Migration 20260613081721: guest_submissions_support
+-- Applied directly to remote database; stub preserved for migration history.

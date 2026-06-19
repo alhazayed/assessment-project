@@ -1,0 +1,2 @@
+-- Migration 20260606073004: ws3_followup_audit_composite_index
+-- Applied directly to remote database; stub preserved for migration history.

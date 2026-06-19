@@ -1,0 +1,2 @@
+-- Migration 20260609070657: create_clinical_notes_table
+-- Applied directly to remote database; stub preserved for migration history.

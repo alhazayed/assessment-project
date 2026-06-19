@@ -1,0 +1,2 @@
+-- Migration 20260606073814: ws5_u6_backfill
+-- Applied directly to remote database; stub preserved for migration history.

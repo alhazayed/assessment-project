@@ -1,0 +1,2 @@
+-- Migration 20260613114105: clinician_patient_assignment_enforcement
+-- Applied directly to remote database; stub preserved for migration history.

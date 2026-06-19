@@ -1,0 +1,2 @@
+-- Migration 20260609070654: create_notifications_table
+-- Applied directly to remote database; stub preserved for migration history.

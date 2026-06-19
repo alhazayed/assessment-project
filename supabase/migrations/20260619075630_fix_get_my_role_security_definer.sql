@@ -1,0 +1,2 @@
+-- Migration 20260619075630: fix_get_my_role_security_definer
+-- Applied directly to remote database; stub preserved for migration history.

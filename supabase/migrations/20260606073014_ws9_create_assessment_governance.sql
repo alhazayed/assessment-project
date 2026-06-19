@@ -1,0 +1,2 @@
+-- Migration 20260606073014: ws9_create_assessment_governance
+-- Applied directly to remote database; stub preserved for migration history.

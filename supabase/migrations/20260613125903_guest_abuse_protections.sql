@@ -1,0 +1,2 @@
+-- Migration 20260613125903: guest_abuse_protections
+-- Applied directly to remote database; stub preserved for migration history.

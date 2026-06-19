@@ -1,0 +1,2 @@
+-- Migration 20260606200628: add_patient_profile_demographics
+-- Applied directly to remote database; stub preserved for migration history.

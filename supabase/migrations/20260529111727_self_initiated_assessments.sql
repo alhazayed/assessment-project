@@ -1,0 +1,2 @@
+-- Migration 20260529111727: self_initiated_assessments
+-- Applied directly to remote database; stub preserved for migration history.

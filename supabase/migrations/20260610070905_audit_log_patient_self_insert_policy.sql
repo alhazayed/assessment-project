@@ -1,0 +1,2 @@
+-- Migration 20260610070905: audit_log_patient_self_insert_policy
+-- Applied directly to remote database; stub preserved for migration history.

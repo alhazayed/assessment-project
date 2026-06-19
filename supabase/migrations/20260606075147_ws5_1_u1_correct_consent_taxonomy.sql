@@ -1,0 +1,2 @@
+-- Migration 20260606075147: ws5_1_u1_correct_consent_taxonomy
+-- Applied directly to remote database; stub preserved for migration history.

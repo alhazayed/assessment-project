@@ -1,0 +1,2 @@
+-- Migration 20260530191726: seed_adhd_sleep_addiction_definitions
+-- Applied directly to remote database; stub preserved for migration history.

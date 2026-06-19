@@ -1,0 +1,2 @@
+-- Migration 20260529203841: rls_clean_rebuild
+-- Applied directly to remote database; stub preserved for migration history.

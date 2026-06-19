@@ -1,0 +1,2 @@
+-- Migration 20260606082737: s1_u2b_ai_insights_period_check
+-- Applied directly to remote database; stub preserved for migration history.

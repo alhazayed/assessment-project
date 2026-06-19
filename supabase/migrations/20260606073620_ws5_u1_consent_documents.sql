@@ -1,0 +1,2 @@
+-- Migration 20260606073620: ws5_u1_consent_documents
+-- Applied directly to remote database; stub preserved for migration history.

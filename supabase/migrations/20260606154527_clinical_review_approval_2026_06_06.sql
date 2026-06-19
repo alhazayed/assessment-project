@@ -1,0 +1,2 @@
+-- Migration 20260606154527: clinical_review_approval_2026_06_06
+-- Applied directly to remote database; stub preserved for migration history.

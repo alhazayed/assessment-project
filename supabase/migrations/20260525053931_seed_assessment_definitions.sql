@@ -1,0 +1,2 @@
+-- Migration 20260525053931: seed_assessment_definitions
+-- Applied directly to remote database; stub preserved for migration history.

@@ -1,0 +1,2 @@
+-- Migration 20260530191740: seed_asrs_items
+-- Applied directly to remote database; stub preserved for migration history.

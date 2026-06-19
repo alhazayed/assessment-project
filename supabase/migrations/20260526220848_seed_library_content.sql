@@ -1,0 +1,2 @@
+-- Migration 20260526220848: seed_library_content
+-- Applied directly to remote database; stub preserved for migration history.

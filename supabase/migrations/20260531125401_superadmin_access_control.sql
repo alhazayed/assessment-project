@@ -1,0 +1,2 @@
+-- Migration 20260531125401: superadmin_access_control
+-- Applied directly to remote database; stub preserved for migration history.

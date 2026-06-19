@@ -1,0 +1,2 @@
+-- Migration 20260524202222: create_profiles_and_user_tables
+-- Applied directly to remote database; stub preserved for migration history.

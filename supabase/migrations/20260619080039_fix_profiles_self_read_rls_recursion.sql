@@ -1,0 +1,2 @@
+-- Migration 20260619080039: fix_profiles_self_read_rls_recursion
+-- Applied directly to remote database; stub preserved for migration history.

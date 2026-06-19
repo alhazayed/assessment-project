@@ -1,0 +1,2 @@
+-- Migration 20260606082712: s1_u2_ai_insights_extend
+-- Applied directly to remote database; stub preserved for migration history.

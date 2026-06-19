@@ -1,0 +1,2 @@
+-- Migration 20260614224248: add_missing_fk_indexes_v2
+-- Applied directly to remote database; stub preserved for migration history.

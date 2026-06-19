@@ -1,0 +1,2 @@
+-- Migration 20260525053947: create_invitation_system
+-- Applied directly to remote database; stub preserved for migration history.

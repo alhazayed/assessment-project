@@ -1,0 +1,2 @@
+-- Migration 20260614224838: schedule_rate_limit_cleanup
+-- Applied directly to remote database; stub preserved for migration history.

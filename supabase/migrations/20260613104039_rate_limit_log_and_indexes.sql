@@ -1,0 +1,2 @@
+-- Migration 20260613104039: rate_limit_log_and_indexes
+-- Applied directly to remote database; stub preserved for migration history.

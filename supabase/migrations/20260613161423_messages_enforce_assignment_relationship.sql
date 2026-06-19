@@ -1,0 +1,2 @@
+-- Migration 20260613161423: messages_enforce_assignment_relationship
+-- Applied directly to remote database; stub preserved for migration history.
