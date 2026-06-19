@@ -13,6 +13,7 @@ import {
 import AssessmentsByCategory from '@/components/assessments-by-category'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
+import LandingMobileMenu from '@/components/landing-mobile-menu'
 
 export default async function LandingPage() {
   const supabase = createClient()
@@ -47,24 +48,34 @@ export default async function LandingPage() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--page-bg)' }}>
 
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50" style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <BrandLogo variant="icon" size={36} />
+      <header className="sticky top-0 z-40" style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0 no-underline">
+            <BrandLogo variant="icon" size={32} />
             <span className="text-base font-extrabold tracking-tight" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
               V Welfare
             </span>
-          </div>
-          <nav className="hidden md:flex items-center gap-6 text-[13.5px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+          </Link>
+
+          {/* Desktop nav links */}
+          <nav className="hidden md:flex items-center gap-6 text-[13.5px] font-medium ms-6" style={{ color: 'var(--text-secondary)' }}>
             <a href="#services" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.services', lang)}</a>
             <a href="#assessments" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.assessments', lang)}</a>
             <a href="#about" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.about', lang)}</a>
           </nav>
-          <div className="flex items-center gap-2">
+
+          {/* Right controls */}
+          <div className="flex items-center gap-1.5 ms-auto">
             <DarkModeToggle />
             <LanguageToggle lang={lang} />
-            <Link href="/login" className="btn-ghost">{t('nav.signin', lang)}</Link>
-            <Link href="/register" className="btn-accent">{t('nav.signup', lang)}</Link>
+            {/* Desktop: auth buttons */}
+            <Link href="/login" className="hidden sm:inline-flex btn-ghost ms-1">{t('nav.signin', lang)}</Link>
+            <Link href="/register" className="hidden sm:inline-flex btn-accent">{t('nav.signup', lang)}</Link>
+            {/* Mobile: hamburger */}
+            <div className="sm:hidden ms-0.5">
+              <LandingMobileMenu lang={lang} />
+            </div>
           </div>
         </div>
       </header>
