@@ -1,0 +1,9 @@
+-- Migration 20260619214942: security_hardening_v3
+-- Applied directly to remote database; stub preserved for migration history.
+--
+-- Changes:
+-- 1. REVOKE EXECUTE on get_my_role() FROM anon (was incorrectly granted)
+-- 2. Restrict clinician_profiles SELECT to authenticated users (was USING true)
+-- 3. Restrict platform_settings SELECT to authenticated users (was USING true)
+-- 4. Add admin-only read policy on rate_limit_log (RLS was on but no policies existed)
+-- 5. Create submit_assessment_atomic() stored procedure for atomic submission + responses

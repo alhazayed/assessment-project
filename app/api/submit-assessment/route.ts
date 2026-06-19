@@ -164,38 +164,32 @@ export async function POST(request: Request) {
     })
     const highRisk = safetyItemTriggered || (def.high_risk_threshold !== null && totalScore >= def.high_risk_threshold)
 
-    // Persist submission
-    const { data: submission, error: subErr } = await db
-      .from('assessment_submissions')
-      .insert({
-        patient_id: user.id,
-        definition_id,
-        total_score: totalScore,
-        severity_band: band?.severity_en ?? '',
-        high_risk_flag: highRisk,
-        is_self_initiated: true,
-      })
-      .select('id')
-      .single()
-
-    if (subErr || !submission) {
-      console.error('submission insert error:', subErr)
-      return NextResponse.json({ error: 'Failed to save submission' }, { status: 500 })
-    }
-
-    // Persist individual responses
-    const responseRows = validatedResponses.map(r => ({
-      submission_id: submission.id,
+    // Persist submission + responses atomically in a single transaction
+    const responsePayload = validatedResponses.map(r => ({
       item_id: r.item_id,
       response_value: r.value,
       response_label_en: r.label_en,
       response_label_ar: r.label_ar,
     }))
-    await db.from('assessment_responses').insert(responseRows)
+
+    const { data: submissionId, error: subErr } = await db.rpc('submit_assessment_atomic', {
+      p_patient_id: user.id,
+      p_definition_id: definition_id,
+      p_total_score: totalScore,
+      p_severity_band: band?.severity_en ?? '',
+      p_high_risk_flag: highRisk,
+      p_is_self_initiated: true,
+      p_responses: responsePayload,
+    })
+
+    if (subErr || !submissionId) {
+      console.error('submission error:', subErr)
+      return NextResponse.json({ error: 'Failed to save submission' }, { status: 500 })
+    }
 
     // Server-side high-risk admin alert — idempotent, fire-and-forget
     if (highRisk) {
-      notifyAdminsHighRisk(submission.id, definition_id, user.id).catch(() => {})
+      notifyAdminsHighRisk(submissionId as string, definition_id, user.id).catch(() => {})
     }
 
     // Log the submission in audit trail
@@ -203,12 +197,12 @@ export async function POST(request: Request) {
       actor_id: user.id,
       action: 'assessment_submitted',
       target_type: 'assessment_submission',
-      target_id: submission.id,
+      target_id: submissionId as string,
       reason: `${def.name_en} — score ${totalScore}${band ? ` (${band.severity_en})` : ''}${highRisk ? ' HIGH RISK' : ''}`,
     }).then(() => {}) // fire-and-forget; don't block response
 
     return NextResponse.json({
-      submission_id: submission.id,
+      submission_id: submissionId,
       score: totalScore,
       band_en: band?.severity_en ?? null,
       band_ar: band?.severity_ar ?? null,

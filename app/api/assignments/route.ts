@@ -134,6 +134,6 @@ export async function PATCH(request: Request) {
     : supabase.from('assessment_assignments').update({ status }).eq('id', id).eq('patient_id', user.id)
 
   const { data, error } = await filter.select().single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Failed to update assignment' }, { status: 500 })
   return NextResponse.json({ assignment: data })
 }
