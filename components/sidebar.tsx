@@ -20,6 +20,7 @@ import {
   Settings,
   Menu,
   X,
+  Layers,
 } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 import type { Lang } from '@/lib/i18n'
@@ -55,23 +56,24 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
   }, [isOpen])
 
   const patientNav = [
-    { href: '/dashboard',   label: t('nav.dashboard', lang),   icon: LayoutDashboard },
-    { href: '/assessments', label: t('nav.assessments', lang),  icon: ClipboardList },
-    { href: '/adhd-zones',  label: t('nav.adhd_zones', lang),   icon: Brain },
-    { href: '/mood',        label: t('nav.mood', lang),         icon: Heart },
-    { href: '/journal',     label: t('nav.journal', lang),      icon: BookOpen },
-    { href: '/insights',    label: t('nav.insights', lang),     icon: LineChart },
-    { href: '/messages',    label: t('nav.messages', lang),     icon: MessageSquare },
-    { href: '/profile',     label: t('nav.profile', lang),      icon: User },
+    { href: '/dashboard',   label: t('nav.dashboard', lang),   icon: LayoutDashboard, badge: undefined },
+    { href: '/assessments', label: t('nav.assessments', lang),  icon: ClipboardList,   badge: undefined },
+    { href: '/packages',    label: t('nav.packages', lang),    icon: Layers,          badge: t('nav.packages_badge', lang) },
+    { href: '/adhd-zones',  label: t('nav.adhd_zones', lang),   icon: Brain,           badge: undefined },
+    { href: '/mood',        label: t('nav.mood', lang),         icon: Heart,           badge: undefined },
+    { href: '/journal',     label: t('nav.journal', lang),      icon: BookOpen,        badge: undefined },
+    { href: '/insights',    label: t('nav.insights', lang),     icon: LineChart,       badge: undefined },
+    { href: '/messages',    label: t('nav.messages', lang),     icon: MessageSquare,   badge: undefined },
+    { href: '/profile',     label: t('nav.profile', lang),      icon: User,            badge: undefined },
   ]
 
   const adminNav = [
-    { href: '/x/control',      label: t('nav.admin_panel', lang),    icon: Shield },
-    { href: '/dashboard',      label: t('nav.dashboard', lang),      icon: LayoutDashboard },
-    { href: '/patients',       label: t('nav.admin_patients', lang), icon: Users },
-    { href: '/assessments',    label: t('nav.assessments', lang),    icon: ClipboardList },
-    { href: '/profile',        label: t('nav.profile', lang),        icon: User },
-    { href: '/admin/settings', label: t('nav.settings', lang),       icon: Settings },
+    { href: '/x/control',      label: t('nav.admin_panel', lang),    icon: Shield,        badge: undefined as string | undefined },
+    { href: '/dashboard',      label: t('nav.dashboard', lang),      icon: LayoutDashboard, badge: undefined as string | undefined },
+    { href: '/patients',       label: t('nav.admin_patients', lang), icon: Users,         badge: undefined as string | undefined },
+    { href: '/assessments',    label: t('nav.assessments', lang),    icon: ClipboardList, badge: undefined as string | undefined },
+    { href: '/profile',        label: t('nav.profile', lang),        icon: User,          badge: undefined as string | undefined },
+    { href: '/admin/settings', label: t('nav.settings', lang),       icon: Settings,      badge: undefined as string | undefined },
   ]
 
   const nav = profile?.role === 'admin' || profile?.role === 'superadmin' ? adminNav : patientNav
@@ -157,6 +159,11 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
               <Icon className="nav-item-icon" />
               <span className="flex-1 min-w-0">{item.label}</span>
               {item.href === '/messages' && <UnreadMessagesBadge />}
+              {item.badge && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0" style={{ backgroundColor: 'var(--accent-50)', color: 'var(--accent-600)' }}>
+                  {item.badge}
+                </span>
+              )}
             </Link>
           )
         })}
