@@ -38,65 +38,77 @@ export default function AdminAssessmentsPage() {
   const maxSubs = Math.max(...assessments.map(a => a.submission_count), 1)
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-5xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('admin.assessments.title', lang)}</h1>
-          <p className="text-gray-500 mt-1">{active}/{assessments.length} {t('admin.assessments.active', lang)} · {totalSubs} {t('admin.assessments.total_subs', lang)}</p>
+          <h1 className="text-2xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+            {t('admin.assessments.title', lang)}
+          </h1>
+          <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>
+            {active}/{assessments.length} {t('admin.assessments.active', lang)} · {totalSubs} {t('admin.assessments.total_subs', lang)}
+          </p>
         </div>
-        <ClipboardList className="w-6 h-6 text-gray-400" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-brand-50">
+          <ClipboardList className="w-5 h-5 text-brand-600" />
+        </div>
       </div>
 
-      {msg && <div className="mb-4 p-3 bg-green-50 border border-green-200 text-sm text-green-700 rounded-lg">{msg}</div>}
+      {msg && <div className="mb-5 alert-success">{msg}</div>}
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[500px]">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.assessments.col.assessment', lang)}</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.assessments.col.code', lang)}</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.assessments.col.questions', lang)}</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.assessments.col.submissions', lang)}</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.assessments.col.status', lang)}</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-600">{t('admin.assessments.col.toggle', lang)}</th>
+            <tr style={{ backgroundColor: 'var(--surface-alt)', borderBottom: '1px solid var(--divider)' }}>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.assessments.col.assessment', lang)}</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.assessments.col.code', lang)}</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.assessments.col.questions', lang)}</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.assessments.col.submissions', lang)}</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.assessments.col.status', lang)}</th>
+              <th className="text-right px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.assessments.col.toggle', lang)}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="text-center py-12 text-gray-400">{t('admin.loading', lang)}</td></tr>
+              <tr><td colSpan={6} className="text-center py-12 text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.loading', lang)}</td></tr>
             ) : assessments.map(a => (
-              <tr key={a.id} className={`hover:bg-gray-50 ${updating === a.id ? 'opacity-50' : ''}`}>
+              <tr key={a.id} className={updating === a.id ? 'opacity-50' : ''} style={{ borderBottom: '1px solid var(--divider)' }}>
                 <td className="px-4 py-3">
-                  <p className="font-medium text-gray-900">{a.name_en}</p>
-                  {a.name_ar && <p className="text-xs text-gray-400 text-right" dir="rtl">{a.name_ar}</p>}
+                  <p className="text-[13.5px] font-medium" style={{ color: 'var(--text-primary)' }}>{a.name_en}</p>
+                  {a.name_ar && <p className="text-[11.5px] text-right" dir="rtl" style={{ color: 'var(--text-muted)' }}>{a.name_ar}</p>}
                 </td>
-                <td className="px-4 py-3"><span className="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{a.code}</span></td>
-                <td className="px-4 py-3 text-gray-600">{a.total_questions}</td>
+                <td className="px-4 py-3">
+                  <span className="text-[11.5px] font-mono px-2 py-0.5 rounded-[4px]"
+                    style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--text-secondary)' }}>{a.code}</span>
+                </td>
+                <td className="px-4 py-3 text-[13px]" style={{ color: 'var(--text-secondary)' }}>{a.total_questions}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-20 bg-gray-100 rounded-full h-1.5">
-                      <div className="bg-brand-500 h-1.5 rounded-full" style={{ width: `${(a.submission_count / maxSubs) * 100}%` }} />
+                    <div className="w-20 progress-track">
+                      <div className="progress-fill" style={{ width: `${(a.submission_count / maxSubs) * 100}%`, backgroundColor: 'var(--vw-blue)' }} />
                     </div>
-                    <span className="text-gray-700 font-medium">{a.submission_count}</span>
+                    <span className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{a.submission_count}</span>
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`flex items-center gap-1 w-fit text-xs font-medium ${a.is_active ? 'text-green-600' : 'text-gray-400'}`}>
+                  <span className={`flex items-center gap-1.5 w-fit text-[12px] font-medium ${a.is_active ? 'text-green-600' : ''}`}
+                    style={!a.is_active ? { color: 'var(--text-muted)' } : undefined}>
                     {a.is_active ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
                     {a.is_active ? t('admin.assessments.visible', lang) : t('admin.assessments.hidden', lang)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => toggle(a.id, a.is_active)} className="text-gray-400 hover:text-brand-600 transition-colors">
+                  <button onClick={() => toggle(a.id, a.is_active)} className="transition-colors hover:opacity-70">
                     {a.is_active
-                      ? <ToggleRight className="w-7 h-7 text-brand-600" />
-                      : <ToggleLeft className="w-7 h-7" />}
+                      ? <ToggleRight className="w-7 h-7" style={{ color: 'var(--vw-blue)' }} />
+                      : <ToggleLeft className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />}
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

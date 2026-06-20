@@ -1,0 +1,2 @@
+-- Migration 20260606165744: sprint2_t1_pdf_reports_foundation
+-- Applied directly to remote database; stub preserved for migration history.

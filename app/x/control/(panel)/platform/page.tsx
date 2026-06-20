@@ -45,46 +45,52 @@ export default function AdminPlatformPage() {
   }
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-4xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('admin.platform.title', lang)}</h1>
-          <p className="text-gray-500 mt-1">{t('admin.platform.subtitle', lang)}</p>
+          <h1 className="text-2xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+            {t('admin.platform.title', lang)}
+          </h1>
+          <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>{t('admin.platform.subtitle', lang)}</p>
         </div>
-        <Settings className="w-6 h-6 text-gray-400" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-brand-50">
+          <Settings className="w-5 h-5 text-brand-600" />
+        </div>
       </div>
 
-      {msg && <div className="mb-4 p-3 bg-green-50 border border-green-200 text-sm text-green-700 rounded-lg">{msg}</div>}
+      {msg && <div className="mb-5 alert-success">{msg}</div>}
 
       {/* Feature Flags */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{t('admin.platform.flags', lang)}</h2>
+      <div className="card p-6 mb-6">
+        <h2 className="text-[14.5px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>{t('admin.platform.flags', lang)}</h2>
         {loading ? (
-          <p className="text-sm text-gray-400">{t('admin.loading', lang)}</p>
+          <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.loading', lang)}</p>
         ) : flags.length === 0 ? (
-          <p className="text-sm text-gray-400">{t('admin.platform.no_flags', lang)}</p>
+          <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.platform.no_flags', lang)}</p>
         ) : (
-          <div className="divide-y divide-gray-50">
-            {flags.map(f => (
-              <div key={f.id} className="flex items-center justify-between py-4">
+          <div>
+            {flags.map((f, i) => (
+              <div key={f.id} className="flex items-center justify-between py-4"
+                style={i < flags.length - 1 ? { borderBottom: '1px solid var(--divider)' } : undefined}>
                 <div className="flex-1 min-w-0 pr-6">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="text-sm font-semibold text-gray-900">{f.display_name}</p>
-                    <code className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{f.flag_key}</code>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-[13.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>{f.display_name}</p>
+                    <code className="text-[11px] font-mono px-1.5 py-0.5 rounded-[4px]"
+                      style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--text-muted)' }}>{f.flag_key}</code>
                   </div>
-                  <p className="text-xs text-gray-500">{f.description}</p>
+                  <p className="text-[12.5px]" style={{ color: 'var(--text-secondary)' }}>{f.description}</p>
                   {f.applies_to?.length > 0 && (
-                    <div className="flex gap-1 mt-1">
+                    <div className="flex gap-1 mt-1.5">
                       {f.applies_to.map((r: string) => (
-                        <span key={r} className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded capitalize">{r}</span>
+                        <span key={r} className="text-[11px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded capitalize">{r}</span>
                       ))}
                     </div>
                   )}
                 </div>
                 <button onClick={() => toggleFlag(f.id, f.is_enabled)} className="flex-shrink-0">
                   {f.is_enabled
-                    ? <ToggleRight className="w-8 h-8 text-brand-600" />
-                    : <ToggleLeft className="w-8 h-8 text-gray-300" />}
+                    ? <ToggleRight className="w-8 h-8" style={{ color: 'var(--vw-blue)' }} />
+                    : <ToggleLeft className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />}
                 </button>
               </div>
             ))}
@@ -93,19 +99,20 @@ export default function AdminPlatformPage() {
       </div>
 
       {/* Platform Settings */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{t('admin.platform.config', lang)}</h2>
+      <div className="card p-6">
+        <h2 className="text-[14.5px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>{t('admin.platform.config', lang)}</h2>
         {loading ? (
-          <p className="text-sm text-gray-400">{t('admin.loading', lang)}</p>
+          <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.loading', lang)}</p>
         ) : settings.length === 0 ? (
-          <p className="text-sm text-gray-400">{t('admin.platform.no_settings', lang)}</p>
+          <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.platform.no_settings', lang)}</p>
         ) : (
           <div className="space-y-4">
             {settings.map(s => (
               <div key={s.key}>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  <code className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded mr-2">{s.key}</code>
-                  <span className="text-gray-400 text-xs">{t('admin.platform.updated', lang)} {new Date(s.updated_at).toLocaleDateString()}</span>
+                <label className="block mb-1.5">
+                  <code className="text-[11.5px] font-mono px-1.5 py-0.5 rounded-[4px] mr-2"
+                    style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--text-secondary)' }}>{s.key}</code>
+                  <span className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{t('admin.platform.updated', lang)} {new Date(s.updated_at).toLocaleDateString()}</span>
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -113,8 +120,7 @@ export default function AdminPlatformPage() {
                     value={settingEdits[s.key] ?? s.value}
                     onChange={e => setSettingEdits(p => ({ ...p, [s.key]: e.target.value }))}
                   />
-                  <button onClick={() => saveSetting(s.key)}
-                    className="flex items-center gap-1.5 bg-brand-600 text-white text-sm px-3 py-2 rounded-lg hover:bg-brand-700 transition-colors">
+                  <button onClick={() => saveSetting(s.key)} className="btn-accent flex items-center gap-1.5 text-sm">
                     <Save className="w-3.5 h-3.5" />
                     {t('admin.platform.save', lang)}
                   </button>

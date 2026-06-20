@@ -138,7 +138,7 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
       <button
         ref={bellButtonRef}
         onClick={() => setOpen(v => !v)}
-        className="relative flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+        className="relative flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 dark:text-[#9DB0C2] hover:bg-gray-100 dark:hover:bg-[#122030] hover:text-gray-700 dark:hover:text-[#F4F8FB] transition-colors"
         aria-label="Notifications"
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -154,28 +154,28 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
 
       {open && (
         <div
-          className={`absolute ${isAr ? 'left-0' : 'right-0'} top-10 w-80 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden`}
+          className={`absolute ${isAr ? 'left-0' : 'right-0'} top-10 w-80 bg-white dark:bg-[#10202E] rounded-xl shadow-xl dark:shadow-none border border-gray-200 dark:border-[#233241] z-50 overflow-hidden`}
           role="dialog"
           aria-modal="true"
           aria-label={isAr ? 'الإشعارات' : 'Notifications'}
           onKeyDown={handleKeyDown}
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <p className="text-sm font-semibold text-gray-900">{t('notif.title', lang)}</p>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-[#1E2C3A]">
+            <p className="text-sm font-semibold text-gray-900 dark:text-[#F4F8FB]">{t('notif.title', lang)}</p>
             <div className="flex items-center gap-2">
               {unread > 0 && (
-                <button onClick={markAllRead} className="text-xs text-brand-600 hover:text-brand-700 flex items-center gap-1">
+                <button onClick={markAllRead} className="text-xs text-brand-600 dark:text-[#4C9BE0] hover:text-brand-700 dark:hover:text-[#70B6F0] flex items-center gap-1">
                   <CheckCheck className="w-3.5 h-3.5" />
                   {t('notif.mark_all', lang)}
                 </button>
               )}
-              <button ref={closeButtonRef} onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600" aria-label={isAr ? 'إغلاق' : 'Close notifications'}>
+              <button ref={closeButtonRef} onClick={() => setOpen(false)} className="text-gray-400 dark:text-[#5B6E80] hover:text-gray-600 dark:hover:text-[#9DB0C2]" aria-label={isAr ? 'إغلاق' : 'Close notifications'}>
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+          <div className="max-h-80 overflow-y-auto divide-y divide-gray-50 dark:divide-[#1C2A38]">
             {items.length === 0 ? (
               <div className="py-10 text-center">
                 <Bell className="w-8 h-8 text-gray-200 mx-auto mb-2" />

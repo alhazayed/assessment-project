@@ -1,0 +1,2 @@
+-- Migration 20260527163350: create_cms_and_feature_system
+-- Applied directly to remote database; stub preserved for migration history.

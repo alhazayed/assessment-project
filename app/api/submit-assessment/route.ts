@@ -70,9 +70,15 @@ function calcBand(scoringLogic: ScoringBand[], score: number): ScoringBand | nul
 
 export async function POST(request: Request) {
   try {
+    // Auth check via SSR client (validates session cookie)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // Use admin client for all DB ops — bypasses RLS which can fail in route
+    // handler context when the JWT isn't forwarded to PostgREST. Auth is
+    // already enforced above; patient_id is always set to user.id below.
+    const db = createAdminClient()
 
     // 20 submissions per hour per user
     const rl = await checkRateLimit(`submit:${user.id}`, { limit: 20, windowMs: 60 * 60 * 1000 })
@@ -88,7 +94,7 @@ export async function POST(request: Request) {
     }
 
     // Fetch definition
-    const { data: def, error: defErr } = await supabase
+    const { data: def, error: defErr } = await db
       .from('assessment_definitions')
       .select('id, code, name_en, name_ar, scoring_logic, high_risk_threshold, total_questions, is_active')
       .eq('id', definition_id)
@@ -98,7 +104,7 @@ export async function POST(request: Request) {
     if (!def.is_active) return NextResponse.json({ error: 'Assessment is not active' }, { status: 400 })
 
     // Fetch items to validate response values
-    const { data: items } = await supabase
+    const { data: items } = await db
       .from('assessment_items')
       .select('id, response_options, subscale, is_safety_item')
       .eq('definition_id', definition_id)
@@ -158,51 +164,45 @@ export async function POST(request: Request) {
     })
     const highRisk = safetyItemTriggered || (def.high_risk_threshold !== null && totalScore >= def.high_risk_threshold)
 
-    // Persist submission
-    const { data: submission, error: subErr } = await supabase
-      .from('assessment_submissions')
-      .insert({
-        patient_id: user.id,
-        definition_id,
-        total_score: totalScore,
-        severity_band: band?.severity_en ?? null,
-        high_risk_flag: highRisk,
-        is_self_initiated: true,
-      })
-      .select('id')
-      .single()
-
-    if (subErr || !submission) {
-      console.error('submission insert error:', subErr)
-      return NextResponse.json({ error: 'Failed to save submission' }, { status: 500 })
-    }
-
-    // Persist individual responses
-    const responseRows = validatedResponses.map(r => ({
-      submission_id: submission.id,
+    // Persist submission + responses atomically in a single transaction
+    const responsePayload = validatedResponses.map(r => ({
       item_id: r.item_id,
       response_value: r.value,
       response_label_en: r.label_en,
       response_label_ar: r.label_ar,
     }))
-    await supabase.from('assessment_responses').insert(responseRows)
+
+    const { data: submissionId, error: subErr } = await db.rpc('submit_assessment_atomic', {
+      p_patient_id: user.id,
+      p_definition_id: definition_id,
+      p_total_score: totalScore,
+      p_severity_band: band?.severity_en ?? '',
+      p_high_risk_flag: highRisk,
+      p_is_self_initiated: true,
+      p_responses: responsePayload,
+    })
+
+    if (subErr || !submissionId) {
+      console.error('submission error:', subErr)
+      return NextResponse.json({ error: 'Failed to save submission' }, { status: 500 })
+    }
 
     // Server-side high-risk admin alert — idempotent, fire-and-forget
     if (highRisk) {
-      notifyAdminsHighRisk(submission.id, definition_id, user.id).catch(() => {})
+      notifyAdminsHighRisk(submissionId as string, definition_id, user.id).catch(() => {})
     }
 
     // Log the submission in audit trail
-    await supabase.from('audit_log').insert({
+    await db.from('audit_log').insert({
       actor_id: user.id,
       action: 'assessment_submitted',
       target_type: 'assessment_submission',
-      target_id: submission.id,
+      target_id: submissionId as string,
       reason: `${def.name_en} — score ${totalScore}${band ? ` (${band.severity_en})` : ''}${highRisk ? ' HIGH RISK' : ''}`,
     }).then(() => {}) // fire-and-forget; don't block response
 
     return NextResponse.json({
-      submission_id: submission.id,
+      submission_id: submissionId,
       score: totalScore,
       band_en: band?.severity_en ?? null,
       band_ar: band?.severity_ar ?? null,

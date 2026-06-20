@@ -1,0 +1,2 @@
+-- Migration 20260524202243: create_assessment_tables
+-- Applied directly to remote database; stub preserved for migration history.

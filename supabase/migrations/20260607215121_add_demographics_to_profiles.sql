@@ -1,0 +1,2 @@
+-- Migration 20260607215121: add_demographics_to_profiles
+-- Applied directly to remote database; stub preserved for migration history.

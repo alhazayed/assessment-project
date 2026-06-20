@@ -1,0 +1,2 @@
+-- Migration 20260609194356: fix_security_definer_view_and_rls_auth_uid
+-- Applied directly to remote database; stub preserved for migration history.

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -12,9 +13,13 @@ import {
   MessageSquare,
   User,
   LogOut,
-  Users,
-  Settings,
+  Brain,
   LineChart,
+  Users,
+  Shield,
+  Settings,
+  Menu,
+  X,
 } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 import type { Lang } from '@/lib/i18n'
@@ -23,6 +28,7 @@ import LanguageToggle from '@/components/language-toggle'
 import NotificationBell from '@/components/notification-bell'
 import UnreadMessagesBadge from '@/components/unread-messages-badge'
 import BrandLogo from '@/components/brand-logo'
+import DarkModeToggle from '@/components/dark-mode-toggle'
 
 interface SidebarProps {
   profile: Profile | null
@@ -30,38 +36,45 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ profile, lang }: SidebarProps) {
+  const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
+  const isRtl = lang === 'ar'
+
+  // Close on route change (mobile nav tap)
+  useEffect(() => { setIsOpen(false) }, [pathname])
+
+  // Prevent body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [isOpen])
 
   const patientNav = [
-    { href: '/dashboard', label: t('nav.dashboard', lang), icon: LayoutDashboard },
-    { href: '/assessments', label: t('nav.assessments', lang), icon: ClipboardList },
-    { href: '/mood', label: t('nav.mood', lang), icon: Heart },
-    { href: '/journal', label: t('nav.journal', lang), icon: BookOpen },
-    { href: '/insights', label: t('nav.insights', lang), icon: LineChart },
-    { href: '/messages', label: t('nav.messages', lang), icon: MessageSquare },
-    { href: '/profile', label: t('nav.profile', lang), icon: User },
-  ]
-
-  const clinicianNav = [
-    { href: '/dashboard', label: t('nav.dashboard', lang), icon: LayoutDashboard },
-    { href: '/patients', label: t('nav.patients', lang), icon: Users },
-    { href: '/assessments', label: t('nav.assessments', lang), icon: ClipboardList },
-    { href: '/messages', label: t('nav.messages', lang), icon: MessageSquare },
-    { href: '/profile', label: t('nav.profile', lang), icon: User },
+    { href: '/dashboard',   label: t('nav.dashboard', lang),   icon: LayoutDashboard },
+    { href: '/assessments', label: t('nav.assessments', lang),  icon: ClipboardList },
+    { href: '/adhd-zones',  label: t('nav.adhd_zones', lang),   icon: Brain },
+    { href: '/mood',        label: t('nav.mood', lang),         icon: Heart },
+    { href: '/journal',     label: t('nav.journal', lang),      icon: BookOpen },
+    { href: '/insights',    label: t('nav.insights', lang),     icon: LineChart },
+    { href: '/messages',    label: t('nav.messages', lang),     icon: MessageSquare },
+    { href: '/profile',     label: t('nav.profile', lang),      icon: User },
   ]
 
   const adminNav = [
-    { href: '/dashboard', label: t('nav.dashboard', lang), icon: LayoutDashboard },
-    { href: '/patients', label: t('nav.admin_patients', lang), icon: Users },
-    { href: '/assessments', label: t('nav.assessments', lang), icon: ClipboardList },
-    { href: '/profile', label: t('nav.profile', lang), icon: User },
-    { href: '/admin/settings', label: t('nav.settings', lang), icon: Settings },
+    { href: '/x/control',      label: t('nav.admin_panel', lang),    icon: Shield },
+    { href: '/dashboard',      label: t('nav.dashboard', lang),      icon: LayoutDashboard },
+    { href: '/patients',       label: t('nav.admin_patients', lang), icon: Users },
+    { href: '/assessments',    label: t('nav.assessments', lang),    icon: ClipboardList },
+    { href: '/profile',        label: t('nav.profile', lang),        icon: User },
+    { href: '/admin/settings', label: t('nav.settings', lang),       icon: Settings },
   ]
 
-  const nav = profile?.role === 'clinician' ? clinicianNav
-    : profile?.role === 'admin' || profile?.role === 'superadmin' ? adminNav
-    : patientNav
+  const nav = profile?.role === 'admin' || profile?.role === 'superadmin' ? adminNav : patientNav
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -74,67 +87,150 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
     ? profile.full_name_ar
     : profile?.full_name_en ?? ''
 
-  return (
-    <aside className={`fixed inset-y-0 w-64 bg-white flex flex-col z-10 ${lang === 'ar' ? 'right-0 border-l' : 'left-0 border-r'} border-gray-200`}>
-      <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-        <div className="flex items-center gap-2.5">
-          <BrandLogo variant="icon" size={38} />
-          <span className="font-semibold text-gray-900">{t('app.name', lang)}</span>
+  const initials = displayName
+    ? displayName.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()
+    : '?'
+
+  const sidebarContent = (
+    <aside
+      className={`fixed inset-y-0 z-40 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        isOpen
+          ? 'translate-x-0'
+          : isRtl ? 'translate-x-full' : '-translate-x-full'
+      }`}
+      style={{
+        width: 'var(--sidebar-w)',
+        backgroundColor: 'var(--sidebar-bg)',
+        [isRtl ? 'right' : 'left']: 0,
+        [isRtl ? 'borderLeft' : 'borderRight']: '1px solid var(--sidebar-border)',
+      }}
+    >
+      {/* Brand header */}
+      <div
+        className="flex items-center justify-between px-5 py-4 flex-shrink-0"
+        style={{ borderBottom: '1px solid var(--sidebar-border)', minHeight: 'var(--topbar-h)' }}
+      >
+        <Link href="/" className="flex items-center gap-2.5 no-underline">
+          <BrandLogo variant="icon" size={32} />
+          <span
+            className="text-lg font-extrabold tracking-tight"
+            style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}
+          >
+            V Welfare
+          </span>
+        </Link>
+        <div className="flex items-center gap-1">
+          <DarkModeToggle />
+          <NotificationBell lang={lang} />
+          {/* Close button — mobile only */}
+          <button
+            className="lg:hidden p-1.5 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ms-1"
+            onClick={() => setIsOpen(false)}
+            aria-label="Close menu"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-        <NotificationBell lang={lang} />
       </div>
 
-      {profile && (
-        <div className="px-6 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-semibold text-brand-700">
-                {displayName.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{displayName}</p>
-              <p className="text-xs text-gray-500 capitalize">{profile.role}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-5 overflow-y-auto space-y-0.5">
+        <p className="section-label px-3 mb-3">{isRtl ? 'القائمة' : 'MENU'}</p>
         {nav.map(item => {
           const Icon = item.icon
-          const isActive = pathname === item.href
+          const isActive = item.href === '/dashboard'
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-brand-50 text-brand-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`}
+              className={isActive ? 'nav-item-active' : 'nav-item'}
+              style={isRtl && isActive ? {
+                borderLeft: 'none',
+                borderRight: '3px solid var(--vw-blue)',
+                paddingRight: '10px',
+                paddingLeft: '12px',
+              } : undefined}
             >
-              <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-brand-600' : 'text-gray-400'}`} />
-              {item.label}
+              <Icon className="nav-item-icon" />
+              <span className="flex-1 min-w-0">{item.label}</span>
               {item.href === '/messages' && <UnreadMessagesBadge />}
             </Link>
           )
         })}
       </nav>
 
-      <div className="px-3 pb-2">
-        <LanguageToggle lang={lang} className="w-full justify-center mb-1" />
+      {/* Language toggle */}
+      <div className="px-3 pb-1">
+        <LanguageToggle lang={lang} className="w-full justify-center" />
       </div>
 
-      <div className="p-3 border-t border-gray-100">
+      {/* User profile + sign out */}
+      <div className="px-3 py-3 flex-shrink-0" style={{ borderTop: '1px solid var(--sidebar-border)' }}>
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-[10px] text-sm font-medium transition-colors text-start hover:bg-red-50 dark:hover:bg-[#2A1A1A] hover:text-red-600 dark:hover:text-red-400 mb-2"
+          style={{ color: 'var(--text-muted)' }}
         >
-          <LogOut className="w-4 h-4 text-gray-400" />
+          <LogOut className="w-4 h-4 flex-shrink-0" />
           {t('nav.signout', lang)}
         </button>
+        {profile && (
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-[10px]" style={{ background: 'var(--surface-alt)' }}>
+            <div className="avatar-md flex-shrink-0">{initials}</div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[13.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                {displayName}
+              </p>
+              <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                {isRtl ? 'حساب شخصي' : 'Personal account'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </aside>
+  )
+
+  return (
+    <>
+      {/* Mobile top bar — hidden on lg+ */}
+      <div
+        className="lg:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 h-16 flex-shrink-0"
+        style={{ backgroundColor: 'var(--sidebar-bg)', borderBottom: '1px solid var(--sidebar-border)' }}
+      >
+        <button
+          className="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+          onClick={() => setIsOpen(true)}
+          aria-label="Open menu"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <Link href="/" className="flex items-center gap-2 no-underline">
+          <BrandLogo variant="icon" size={28} />
+          <span className="text-base font-extrabold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            V Welfare
+          </span>
+        </Link>
+        <div className="flex items-center gap-1">
+          <DarkModeToggle />
+          <NotificationBell lang={lang} />
+        </div>
+      </div>
+
+      {/* Backdrop — mobile only */}
+      {isOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {sidebarContent}
+    </>
   )
 }

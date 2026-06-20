@@ -1,0 +1,2 @@
+-- Migration 20260525053847: create_content_and_audit_tables
+-- Applied directly to remote database; stub preserved for migration history.

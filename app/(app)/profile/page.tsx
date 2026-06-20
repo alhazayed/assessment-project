@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Save, CheckCircle2, User, MapPin, BookOpen, Briefcase, Pill, Phone, Shield } from 'lucide-react'
+import { Save, CheckCircle2, User, MapPin, BookOpen, Briefcase, Pill, Phone, Shield, AlertCircle, ClipboardList } from 'lucide-react'
 import type { Profile, PatientProfile } from '@/lib/types'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
@@ -40,13 +41,29 @@ const EMPLOYMENT_OPTIONS: { value: EmploymentStatus; enLabel: string; arLabel: s
   { value: 'other',        enLabel: 'Other',                            arLabel: 'أخرى' },
 ]
 
+interface AssessmentHistory {
+  id: string
+  submitted_at: string
+  total_score: number
+  severity_band: string
+  high_risk_flag: boolean
+  assessment_definitions: { name_en: string; name_ar: string | null } | null
+}
+
 export default function ProfilePage() {
   const supabase = createClient()
   const lang = useLang()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const needsCompletion = searchParams.get('complete') === 'true'
+  const nextUrl = searchParams.get('next')
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistory[]>([])
 
   // Identity
   const [fullNameEn, setFullNameEn] = useState('')
@@ -63,7 +80,7 @@ export default function ProfilePage() {
   // Extended (patients only — stored in patient_profiles)
   const [phone, setPhone] = useState('')
   const [employmentStatus, setEmploymentStatus] = useState<EmploymentStatus | ''>('')
-  const [hasMedications, setHasMedications] = useState(false)
+  const [hasMedications, setHasMedications] = useState<boolean | null>(null)
   const [medicationDetails, setMedicationDetails] = useState('')
   const [medicationDuration, setMedicationDuration] = useState('')
 
@@ -84,7 +101,17 @@ export default function ProfilePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    const [profileRes, historyRes] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', user.id).single(),
+      supabase
+        .from('assessment_submissions')
+        .select('id, submitted_at, total_score, severity_band, high_risk_flag, assessment_definitions(name_en, name_ar)')
+        .eq('patient_id', user.id)
+        .order('submitted_at', { ascending: false })
+        .limit(20),
+    ])
+
+    const p = profileRes.data
     if (p) {
       const prof = p as Profile
       setProfile(prof)
@@ -98,13 +125,17 @@ export default function ProfilePage() {
       setCountry(prof.country_of_residence || '')
     }
 
+    if (historyRes.data) {
+      setAssessmentHistory(historyRes.data as unknown as AssessmentHistory[])
+    }
+
     if (p?.role === 'patient') {
       const { data: pp } = await supabase.from('patient_profiles').select('*').eq('id', user.id).single()
       if (pp) {
         const pat = pp as PatientProfile
         setPhone(pat.phone_number || '')
         setEmploymentStatus(pat.employment_status || '')
-        setHasMedications(pat.has_psychiatric_medications || false)
+        setHasMedications(pat.has_psychiatric_medications ?? null)
         setMedicationDetails(pat.psychiatric_medication_details || '')
         setMedicationDuration(pat.psychiatric_medication_duration || '')
         setEmergencyName(pat.emergency_contact_name || '')
@@ -129,48 +160,81 @@ export default function ProfilePage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    setValidationError(null)
+    setSaveError(null)
 
-    await supabase.from('profiles').update({
-      full_name_en: fullNameEn,
-      full_name_ar: fullNameAr || null,
-      language_preference: langPref,
-      date_of_birth: dob || null,
-      gender: gender || null,
-      marital_status: maritalStatus || null,
-      educational_status: educationalStatus || null,
-      country_of_residence: country || null,
-    }).eq('id', user.id)
-
-    if (profile?.role === 'patient') {
-      await supabase.from('patient_profiles').upsert({
-        id: user.id,
-        phone_number: phone || null,
-        employment_status: employmentStatus || null,
-        has_psychiatric_medications: hasMedications,
-        psychiatric_medication_details: hasMedications ? (medicationDetails || null) : null,
-        psychiatric_medication_duration: hasMedications ? (medicationDuration || null) : null,
-        emergency_contact_name: emergencyName || null,
-        emergency_contact_phone: emergencyPhone || null,
-        emergency_contact_relation: emergencyRelation || null,
-        share_mood_notes: shareMoodNotes,
-        share_journal_default: shareJournalDefault,
-      })
+    const isPatient = profile?.role === 'patient'
+    if (
+      !dob || !gender || !maritalStatus || !educationalStatus || !country ||
+      (isPatient && !employmentStatus) ||
+      (isPatient && hasMedications === null)
+    ) {
+      setValidationError(
+        lang === 'ar'
+          ? 'يرجى تعبئة جميع الحقول المطلوبة: تاريخ الميلاد، الجنس، الحالة الاجتماعية، المستوى التعليمي، بلد الإقامة، الحالة الوظيفية، وحالة الأدوية النفسية.'
+          : 'Please complete all required fields: Date of Birth, Gender, Marital Status, Educational Status, Country of Residence, Employment Status, and Medication Status.'
+      )
+      return
     }
 
-    // Audit log — fire-and-forget
-    supabase.from('audit_log').insert({
-      actor_id: user.id,
-      action: 'profile_updated',
-      target_type: 'profile',
-      target_id: user.id,
-    }).then(() => {})
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
 
-    setSaved(true)
-    setSaving(false)
-    setTimeout(() => setSaved(false), 3000)
+      const { error: profileError } = await supabase.from('profiles').update({
+        full_name_en: fullNameEn,
+        full_name_ar: fullNameAr || null,
+        language_preference: langPref,
+        date_of_birth: dob || null,
+        gender: gender || null,
+        marital_status: maritalStatus || null,
+        educational_status: educationalStatus || null,
+        country_of_residence: country || null,
+      }).eq('id', user.id)
+
+      if (profileError) throw profileError
+
+      if (profile?.role === 'patient') {
+        const { error: patientError } = await supabase.from('patient_profiles').upsert({
+          id: user.id,
+          phone_number: phone || null,
+          employment_status: employmentStatus || null,
+          has_psychiatric_medications: hasMedications ?? false,
+          psychiatric_medication_details: hasMedications ? (medicationDetails || null) : null,
+          psychiatric_medication_duration: hasMedications ? (medicationDuration || null) : null,
+          emergency_contact_name: emergencyName || null,
+          emergency_contact_phone: emergencyPhone || null,
+          emergency_contact_relation: emergencyRelation || null,
+          share_mood_notes: shareMoodNotes,
+          share_journal_default: shareJournalDefault,
+        })
+        if (patientError) throw patientError
+      }
+
+      // Audit log — fire-and-forget
+      supabase.from('audit_log').insert({
+        actor_id: user.id,
+        action: 'profile_updated',
+        target_type: 'profile',
+        target_id: user.id,
+      }).then(() => {})
+
+      setSaving(false)
+      if (nextUrl) {
+        router.push(nextUrl)
+      } else {
+        setSaved(true)
+        setTimeout(() => setSaved(false), 3000)
+      }
+    } catch {
+      setSaveError(
+        lang === 'ar'
+          ? 'تعذّر حفظ البيانات. يرجى المحاولة مرة أخرى.'
+          : 'Failed to save. Please try again.'
+      )
+      setSaving(false)
+    }
   }
 
   async function handleGiveConsent() {
@@ -191,19 +255,51 @@ export default function ProfilePage() {
 
   const isAr = lang === 'ar'
 
-  if (loading) return <div className="p-8 text-gray-400">{t('mood.loading', lang)}</div>
+  if (loading) return <div className="p-7" style={{ color: 'var(--text-muted)' }}>{t('mood.loading', lang)}</div>
 
   return (
-    <div className="p-8 max-w-2xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{t('profile.title', lang)}</h1>
-        <p className="text-gray-500 mt-1">{t('profile.subtitle', lang)}</p>
+    <div className="p-4 sm:p-6 lg:p-7 max-w-2xl">
+      <div className="mb-7">
+        <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+          {t('profile.title', lang)}
+        </h1>
+        <p style={{ color: 'var(--text-secondary)' }}>{t('profile.subtitle', lang)}</p>
       </div>
 
+      {needsCompletion && (
+        <div className="alert-warning mb-6 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#B07A12' }} />
+          <div>
+            <p className="text-[13.5px] font-bold mb-0.5" style={{ color: '#B07A12' }}>
+              {lang === 'ar' ? 'أكمل ملفك الشخصي أولاً' : 'Complete your profile first'}
+            </p>
+            <p className="text-[13px]" style={{ color: '#B07A12', opacity: 0.85 }}>
+              {lang === 'ar'
+                ? 'يرجى تعبئة جميع الحقول المطلوبة (المحددة بإطار أحمر) قبل إجراء أي تقييم: تاريخ الميلاد، الجنس، الحالة الاجتماعية، المستوى التعليمي، بلد الإقامة، الحالة الوظيفية، وحالة الأدوية النفسية.'
+                : 'Please fill in all required fields (highlighted in red) before taking an assessment: Date of Birth, Gender, Marital Status, Educational Status, Country of Residence, Employment Status, and Medication Status.'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {saved && (
-        <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-sm text-green-700">
+        <div className="alert-success mb-6 flex items-center gap-2 text-[13.5px]" style={{ color: '#1B8A5A' }}>
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           {t('profile.saved', lang)}
+        </div>
+      )}
+
+      {saveError && (
+        <div className="alert-error mb-6 flex items-center gap-2 text-[13.5px]" style={{ color: '#C02A2A' }}>
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {saveError}
+        </div>
+      )}
+
+      {validationError && (
+        <div className="alert-error mb-6 flex items-center gap-2 text-[13.5px]" style={{ color: '#C02A2A' }}>
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {validationError}
         </div>
       )}
 
@@ -212,18 +308,24 @@ export default function ProfilePage() {
         {/* Identity */}
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-5">
-            <User className="w-4 h-4 text-brand-500" />
-            <h2 className="text-base font-semibold text-gray-900">{t('profile.identity.title', lang)}</h2>
+            <User className="w-4 h-4" style={{ color: '#1D6296' }} />
+            <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.identity.title', lang)}</h2>
           </div>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="label">{t('profile.name_en', lang)}</label>
+                <label className="label flex items-center gap-2">
+                  {t('profile.name_en', lang)}
+                  <span className="text-xs font-normal" style={{ color: 'var(--text-muted)' }}>({lang === 'ar' ? 'اختياري' : 'optional'})</span>
+                </label>
                 <input type="text" className="input" value={fullNameEn}
-                  onChange={e => setFullNameEn(e.target.value)} required />
+                  onChange={e => setFullNameEn(e.target.value)} />
               </div>
               <div>
-                <label className="label">{t('profile.name_ar', lang)}</label>
+                <label className="label flex items-center gap-2">
+                  {t('profile.name_ar', lang)}
+                  <span className="text-xs font-normal" style={{ color: 'var(--text-muted)' }}>({lang === 'ar' ? 'اختياري' : 'optional'})</span>
+                </label>
                 <input type="text" className="input" value={fullNameAr}
                   onChange={e => setFullNameAr(e.target.value)} dir="rtl" placeholder="الاسم بالعربية" />
               </div>
@@ -241,21 +343,25 @@ export default function ProfilePage() {
         {/* Demographics — all roles */}
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-5">
-            <MapPin className="w-4 h-4 text-brand-500" />
-            <h2 className="text-base font-semibold text-gray-900">{t('profile.demographics.title', lang)}</h2>
+            <MapPin className="w-4 h-4" style={{ color: '#1D6296' }} />
+            <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.demographics.title', lang)}</h2>
           </div>
           <div className="space-y-4">
             {/* DOB + Gender */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="label">{t('profile.dob', lang)}</label>
-                <input type="date" className="input" value={dob}
+                <label className="label">
+                  {t('profile.dob', lang)} <span className="text-red-500">*</span>
+                </label>
+                <input type="date" className={`input ${!dob && needsCompletion ? 'border-red-400' : ''}`} value={dob}
                   onChange={e => setDob(e.target.value)}
                   max={new Date().toISOString().split('T')[0]} />
               </div>
               <div>
-                <label className="label">{t('profile.gender', lang)}</label>
-                <select className="input" value={gender} onChange={e => setGender(e.target.value as 'male' | 'female' | '')}>
+                <label className="label">
+                  {t('profile.gender', lang)} <span className="text-red-500">*</span>
+                </label>
+                <select className={`input ${!gender && needsCompletion ? 'border-red-400' : ''}`} value={gender} onChange={e => setGender(e.target.value as 'male' | 'female' | '')}>
                   <option value="">{t('profile.gender.select', lang)}</option>
                   <option value="male">{t('profile.gender.male', lang)}</option>
                   <option value="female">{t('profile.gender.female', lang)}</option>
@@ -265,8 +371,10 @@ export default function ProfilePage() {
 
             {/* Marital status */}
             <div>
-              <label className="label">{t('profile.marital', lang)}</label>
-              <select className="input" value={maritalStatus}
+              <label className="label">
+                {t('profile.marital', lang)} <span className="text-red-500">*</span>
+              </label>
+              <select className={`input ${!maritalStatus && needsCompletion ? 'border-red-400' : ''}`} value={maritalStatus}
                 onChange={e => setMaritalStatus(e.target.value as MaritalStatus | '')}>
                 <option value="">{t('profile.marital.select', lang)}</option>
                 {MARITAL_OPTIONS.map(o => (
@@ -279,8 +387,10 @@ export default function ProfilePage() {
 
             {/* Educational status */}
             <div>
-              <label className="label">{t('profile.education', lang)}</label>
-              <select className="input" value={educationalStatus}
+              <label className="label">
+                {t('profile.education', lang)} <span className="text-red-500">*</span>
+              </label>
+              <select className={`input ${!educationalStatus && needsCompletion ? 'border-red-400' : ''}`} value={educationalStatus}
                 onChange={e => setEducationalStatus(e.target.value as EducationalStatus | '')}>
                 <option value="">{t('profile.education.select', lang)}</option>
                 {EDUCATION_OPTIONS.map(o => (
@@ -293,8 +403,10 @@ export default function ProfilePage() {
 
             {/* Country of residence */}
             <div>
-              <label className="label">{t('profile.country', lang)}</label>
-              <select className="input" value={country} onChange={e => setCountry(e.target.value)}>
+              <label className="label">
+                {t('profile.country', lang)} <span className="text-red-500">*</span>
+              </label>
+              <select className={`input ${!country && needsCompletion ? 'border-red-400' : ''}`} value={country} onChange={e => setCountry(e.target.value)}>
                 <option value="">{t('profile.country.ph', lang)}</option>
                 {COUNTRIES.map(c => (
                   <option key={c.value} value={c.value}>{lang === 'ar' ? c.ar : c.en}</option>
@@ -309,8 +421,8 @@ export default function ProfilePage() {
           <>
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-5">
-                <Briefcase className="w-4 h-4 text-brand-500" />
-                <h2 className="text-base font-semibold text-gray-900">{t('profile.employment', lang)}</h2>
+                <Briefcase className="w-4 h-4" style={{ color: '#1D6296' }} />
+                <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.employment', lang)}</h2>
               </div>
               <div className="space-y-4">
                 <div>
@@ -320,7 +432,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <label className="label">{t('profile.employment', lang)}</label>
-                  <select className="input" value={employmentStatus}
+                  <select className={`input ${!employmentStatus && needsCompletion ? 'border-red-400' : ''}`} value={employmentStatus}
                     onChange={e => setEmploymentStatus(e.target.value as EmploymentStatus | '')}>
                     <option value="">{t('profile.employment.select', lang)}</option>
                     {EMPLOYMENT_OPTIONS.map(o => (
@@ -335,27 +447,27 @@ export default function ProfilePage() {
 
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-1">
-                <Pill className="w-4 h-4 text-brand-500" />
-                <h2 className="text-base font-semibold text-gray-900">{t('profile.meds.title', lang)}</h2>
+                <Pill className="w-4 h-4" style={{ color: '#1D6296' }} />
+                <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.meds.title', lang)}</h2>
               </div>
-              <p className="text-sm text-gray-500 mb-5 ml-6">{t('profile.meds.subtitle', lang)}</p>
+              <p className="text-[13px] mb-5 ms-6" style={{ color: 'var(--text-secondary)' }}>{t('profile.meds.subtitle', lang)}</p>
               <div className="space-y-4">
                 <div>
                   <label className="label">{t('profile.meds.question', lang)}</label>
-                  <div className="flex gap-6 mt-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="hasMeds" checked={hasMedications === true}
-                        onChange={() => setHasMedications(true)} className="text-brand-600" />
-                      <span className="text-sm text-gray-700">{t('profile.meds.yes', lang)}</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="hasMeds" checked={hasMedications === false}
-                        onChange={() => setHasMedications(false)} className="text-brand-600" />
-                      <span className="text-sm text-gray-700">{t('profile.meds.no', lang)}</span>
-                    </label>
-                  </div>
+                  <select
+                    className={`input mt-1 ${hasMedications === null && needsCompletion ? 'border-red-400' : ''}`}
+                    value={hasMedications === null ? '' : hasMedications ? 'yes' : 'no'}
+                    onChange={e => {
+                      if (e.target.value === '') setHasMedications(null)
+                      else setHasMedications(e.target.value === 'yes')
+                    }}
+                  >
+                    <option value="">{lang === 'ar' ? '-- اختر --' : '-- Select --'}</option>
+                    <option value="yes">{t('profile.meds.yes', lang)}</option>
+                    <option value="no">{t('profile.meds.no', lang)}</option>
+                  </select>
                 </div>
-                {hasMedications && (
+                {hasMedications === true && (
                   <>
                     <div>
                       <label className="label">{t('profile.meds.names', lang)}</label>
@@ -376,11 +488,11 @@ export default function ProfilePage() {
             {/* Emergency contact */}
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-5">
-                <Phone className="w-4 h-4 text-brand-500" />
-                <h2 className="text-base font-semibold text-gray-900">{t('profile.emergency.title', lang)}</h2>
+                <Phone className="w-4 h-4" style={{ color: '#1D6296' }} />
+                <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.emergency.title', lang)}</h2>
               </div>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="label">{t('profile.emergency.name', lang)}</label>
                     <input type="text" className="input" value={emergencyName}
@@ -411,8 +523,8 @@ export default function ProfilePage() {
             {/* Privacy preferences */}
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-5">
-                <Shield className="w-4 h-4 text-brand-500" />
-                <h2 className="text-base font-semibold text-gray-900">{t('profile.privacy.title', lang)}</h2>
+                <Shield className="w-4 h-4" style={{ color: '#1D6296' }} />
+                <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.privacy.title', lang)}</h2>
               </div>
               <div className="space-y-4">
                 {[
@@ -428,7 +540,7 @@ export default function ProfilePage() {
                         className="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                       />
                     </div>
-                    <span className="text-sm text-gray-700 group-hover:text-gray-900">{item.label}</span>
+                    <span className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>{item.label}</span>
                   </label>
                 ))}
               </div>
@@ -437,7 +549,7 @@ export default function ProfilePage() {
         )}
 
         <div className="flex justify-end">
-          <button type="submit" disabled={saving} className="btn-primary gap-2">
+          <button type="submit" disabled={saving} className="btn-accent gap-2">
             <Save className="w-4 h-4" />
             {saving ? t('profile.saving', lang) : t('profile.save', lang)}
           </button>
@@ -448,23 +560,23 @@ export default function ProfilePage() {
       {profile?.role === 'patient' && (
         <div className="card p-6 mt-6">
           <div className="flex items-center gap-2 mb-4">
-            <Shield className="w-4 h-4 text-brand-500" />
-            <h2 className="text-base font-semibold text-gray-900">{t('profile.consent.title', lang)}</h2>
+            <Shield className="w-4 h-4" style={{ color: '#1D6296' }} />
+            <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.consent.title', lang)}</h2>
           </div>
           {consentGivenAt ? (
-            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+            <div className="alert-success flex items-center gap-2 text-[13.5px]" style={{ color: '#1B8A5A' }}>
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
               {t('profile.consent.given_on', lang)}{' '}
               {new Date(consentGivenAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-gray-600 leading-relaxed">{t('profile.consent.text', lang)}</p>
+              <p className="text-[13.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{t('profile.consent.text', lang)}</p>
               <button
                 type="button"
                 onClick={handleGiveConsent}
                 disabled={givingConsent}
-                className="btn-primary gap-2 disabled:opacity-40"
+                className="btn-accent gap-2 disabled:opacity-40"
               >
                 <Shield className="w-4 h-4" />
                 {givingConsent ? '...' : t('profile.consent.confirm', lang)}
@@ -474,39 +586,64 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* Assessment history */}
+      {assessmentHistory.length > 0 && (
+        <div className="card p-6 mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ClipboardList className="w-4 h-4" style={{ color: '#1D6296' }} />
+            <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
+              {lang === 'ar' ? 'سجل التقييمات' : 'Assessment History'}
+            </h2>
+          </div>
+          <div className="space-y-2">
+            {assessmentHistory.map(sub => {
+              const name = lang === 'ar' && sub.assessment_definitions?.name_ar
+                ? sub.assessment_definitions.name_ar
+                : sub.assessment_definitions?.name_en ?? '—'
+              const date = new Date(sub.submitted_at).toLocaleDateString(
+                isAr ? 'ar-SA' : 'en-GB',
+                { year: 'numeric', month: 'short', day: 'numeric' }
+              )
+              return (
+                <div key={sub.id} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--divider)' }}>
+                  <div className="min-w-0">
+                    <p className="text-[13.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{name}</p>
+                    <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{date}</p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0 ms-4">
+                    <span className="text-[13px] font-bold" style={{ color: 'var(--text-secondary)' }}>{sub.total_score}</span>
+                    {sub.severity_band && (
+                      <span className="badge-neutral">{sub.severity_band}</span>
+                    )}
+                    {sub.high_risk_flag && (
+                      <span className="badge-severe">{lang === 'ar' ? 'خطورة عالية' : 'High Risk'}</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Account info */}
       <div className="card p-6 mt-6">
         <div className="flex items-center gap-2 mb-4">
-          <BookOpen className="w-4 h-4 text-brand-500" />
-          <h2 className="text-base font-semibold text-gray-900">{t('profile.account.title', lang)}</h2>
+          <BookOpen className="w-4 h-4" style={{ color: '#1D6296' }} />
+          <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.account.title', lang)}</h2>
         </div>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between py-2 border-b border-gray-50">
-            <span className="text-gray-500">{t('profile.account.role', lang)}</span>
-            <span className="font-medium text-gray-900 capitalize">{profile?.role}</span>
-          </div>
-          {profile?.date_of_birth && (
-            <div className="flex justify-between py-2 border-b border-gray-50">
-              <span className="text-gray-500">{t('profile.dob', lang)}</span>
-              <span className="font-medium text-gray-900">
-                {new Date(profile.date_of_birth).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
-              </span>
+        <div className="space-y-0 text-[13.5px]">
+          {[
+            { label: t('profile.account.role', lang), value: <span className="capitalize">{profile?.role}</span> },
+            profile?.date_of_birth ? { label: t('profile.dob', lang), value: new Date(profile.date_of_birth).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) } : null,
+            profile?.country_of_residence ? { label: t('profile.country', lang), value: COUNTRIES.find(c => c.value === profile.country_of_residence)?.[lang === 'ar' ? 'ar' : 'en'] ?? profile.country_of_residence } : null,
+            { label: t('profile.account.status', lang), value: <span style={{ color: profile?.is_active ? '#1B8A5A' : '#C02A2A' }}>{profile?.is_active ? t('profile.account.active', lang) : t('profile.account.inactive', lang)}</span> },
+          ].filter(Boolean).map((item, i, arr) => item && (
+            <div key={i} className="flex justify-between py-3" style={{ borderBottom: i < arr.length - 1 ? '1px solid var(--divider)' : 'none' }}>
+              <span style={{ color: 'var(--text-muted)' }}>{item.label}</span>
+              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{item.value}</span>
             </div>
-          )}
-          {profile?.country_of_residence && (
-            <div className="flex justify-between py-2 border-b border-gray-50">
-              <span className="text-gray-500">{t('profile.country', lang)}</span>
-              <span className="font-medium text-gray-900">
-                {COUNTRIES.find(c => c.value === profile.country_of_residence)?.[lang === 'ar' ? 'ar' : 'en'] ?? profile.country_of_residence}
-              </span>
-            </div>
-          )}
-          <div className="flex justify-between py-2">
-            <span className="text-gray-500">{t('profile.account.status', lang)}</span>
-            <span className={`font-medium ${profile?.is_active ? 'text-green-600' : 'text-red-600'}`}>
-              {profile?.is_active ? t('profile.account.active', lang) : t('profile.account.inactive', lang)}
-            </span>
-          </div>
+          ))}
         </div>
       </div>
     </div>

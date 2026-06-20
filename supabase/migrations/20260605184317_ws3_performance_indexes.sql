@@ -1,0 +1,2 @@
+-- Migration 20260605184317: ws3_performance_indexes
+-- Applied directly to remote database; stub preserved for migration history.

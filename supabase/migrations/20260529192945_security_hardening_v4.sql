@@ -1,0 +1,2 @@
+-- Migration 20260529192945: security_hardening_v4
+-- Applied directly to remote database; stub preserved for migration history.

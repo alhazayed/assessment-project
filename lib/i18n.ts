@@ -24,6 +24,8 @@ const dict = {
     'nav.settings': 'Settings',
     'nav.signout': 'Sign out',
     'nav.admin_patients': 'Patients',
+    'nav.admin_panel': 'Admin Panel',
+    'nav.adhd_zones': 'ADHD Zone Check',
 
     // Patients page
     'patients.title': 'My Patients',
@@ -62,14 +64,13 @@ const dict = {
     'landing.badge': 'Free · Evidence-based · Bilingual',
     'landing.hero1': 'Your mental health',
     'landing.hero2': 'deserves clarity',
-    'landing.hero.sub': 'Take validated psychological assessments, track your mood, and connect with clinicians — all in one place. No account required to start.',
+    'landing.hero.sub': 'Take validated psychological assessments, track your mood, and connect with clinicians — all in one place. Sign in to get started.',
     'landing.cta.assess': 'Take a free assessment',
     'landing.cta.register': 'Create free account',
-    'landing.count.suffix': ' validated scales available · No login required to take any assessment',
-    'landing.ai.badge': 'AI-Powered',
+    'landing.count.suffix': ' validated scales available · Sign in to take any assessment',
+    'landing.ai.badge': 'AI-Powered Recommender',
     'landing.ai.title': 'Not sure where to start?',
-    'landing.ai.sub': 'Describe how you\'ve been feeling and our AI will suggest the most relevant assessments for you.',
-
+    'landing.ai.sub': 'Describe what you\'re experiencing and our AI will suggest the most relevant assessments for you.',
     // Trust strip
     'trust.validated': 'Clinically validated tools',
     'trust.private': 'Private & confidential',
@@ -80,7 +81,7 @@ const dict = {
     'services.title': 'Everything you need',
     'services.sub': 'A complete mental health support ecosystem — from screening to ongoing care.',
     'service.assessments.title': 'Validated Assessments',
-    'service.assessments.desc.pre': 'evidence-based psychological scales covering depression, anxiety, stress, trauma, ADHD, eating disorders, substance use, and more. Free to take — no account needed.',
+    'service.assessments.desc.pre': '39 evidence-based psychological scales covering depression, anxiety, stress, trauma, ADHD, eating disorders, substance use, and more. Free to take — sign in to get started.',
     'service.assessments.cta': 'Take an assessment',
     'service.mood.title': 'Mood Tracking',
     'service.mood.desc': 'Log your mood, energy, anxiety, and sleep daily. Visualise trends over time and share insights with your clinician to inform treatment decisions.',
@@ -98,10 +99,16 @@ const dict = {
     'service.clinicians.desc': 'Clinicians can assign assessments, review patient results, monitor mood trends, flag high-risk cases, and maintain therapeutic relationships — all in one dashboard.',
     'service.clinicians.cta': 'For clinicians',
 
+    // ADHD Zone tool (landing)
+    'adhd.landing.badge': 'Free · No login required',
+    'adhd.landing.title': 'ADHD Zone Check-In',
+    'adhd.landing.sub': 'Based on Sara Al Shatarat\'s Zone Model for Focus & Regulation. 5 questions to identify your current regulation zone (Green / Yellow / Red / Black) and get exactly what to do in it.',
+    'adhd.landing.cta': 'Check my zone now',
+
     // Assessments section (landing)
     'assessments.section.title': 'Free assessments — start now',
     'assessments.section.sub.pre': 'All',
-    'assessments.section.sub.post': 'tools are scientifically validated and free to use. No account required. Create one to save your results and track progress over time.',
+    'assessments.section.sub.post': 'tools are scientifically validated and free to use. Sign in to take assessments and track your progress over time.',
     'assessments.start': 'Start free',
     'assessments.track.cta': 'Want to track your progress?',
     'assessments.track.link': 'Create a free account',
@@ -111,7 +118,7 @@ const dict = {
     'about.title': 'Built for real mental health care',
     'about.p1': 'V Welfare is a bilingual (Arabic & English) mental health platform designed to bridge the gap between evidence-based screening tools and everyday access to mental health support.',
     'about.p2': 'Every assessment on this platform is a validated, open-source psychological scale used by clinicians and researchers worldwide. Results are explained in plain language with scientific context, clinical recommendations, and suggested next steps.',
-    'about.bullet1': 'All screening tools are free and publicly accessible without registration',
+    'about.bullet1': 'All screening tools are free — sign in to take any assessment',
     'about.bullet2': 'Results include scientific explanations, not just scores',
     'about.bullet3': 'Designed for both individual users and clinical organisations',
     'about.bullet4': 'Fully bilingual — Arabic and English throughout',
@@ -122,7 +129,7 @@ const dict = {
 
     // CTA banner
     'cta.title': 'Ready to understand your mental health?',
-    'cta.sub': 'Take any assessment for free — no account, no waiting. Create an account to save your history.',
+    'cta.sub': 'Take any assessment for free — create an account to get started and save your history.',
     'cta.browse': 'Browse assessments',
     'cta.register': 'Create free account',
 
@@ -187,7 +194,7 @@ const dict = {
 
     // Assessments list page
     'assessments.page.title': 'Mental Health Assessments',
-    'assessments.page.sub': 'Free, evidence-based screening tools. No account required to take an assessment.',
+    'assessments.page.sub': 'Free, evidence-based psychological screening tools.',
     'assessments.guest.title': 'Want to track your progress over time?',
     'assessments.guest.create': 'Create a free account',
     'assessments.guest.or': 'or',
@@ -628,6 +635,7 @@ const dict = {
     'onboarding.back': 'Back',
     'onboarding.finish': 'Get Started',
     'onboarding.finishing': 'Saving…',
+    'onboarding.error': 'Something went wrong. Please try again.',
     'onboarding.skip': 'Skip for now',
     'onboarding.step1.title': 'About You',
     'onboarding.step1.sub': 'Basic identity and language preferences.',
@@ -642,6 +650,7 @@ const dict = {
     // Forgot / reset password
     'auth.login.forgot_password': 'Forgot password?',
     'auth.forgot.title': 'Reset your password',
+    'auth.forgot.desc': "Enter your email and we'll send you a reset link.",
     'auth.forgot.submit': 'Send reset link',
     'auth.forgot.submitting': 'Sending...',
     'auth.forgot.success': 'Check your email for a password reset link.',
@@ -651,6 +660,10 @@ const dict = {
     'auth.reset.submit': 'Update password',
     'auth.reset.submitting': 'Updating...',
     'auth.reset.success': 'Password updated! Redirecting to sign in...',
+    'auth.reset.subtitle': 'Enter your new password below.',
+    'auth.reset.hint': 'Use at least 8 characters.',
+    'auth.reset.done': 'Password updated!',
+    'auth.reset.redirecting': 'Redirecting you to sign in...',
 
     // Footer contact
     'footer.contact': 'Contact',
@@ -728,6 +741,8 @@ const dict = {
     'nav.settings': 'الإعدادات',
     'nav.signout': 'تسجيل الخروج',
     'nav.admin_patients': 'المرضى',
+    'nav.admin_panel': 'لوحة الإدارة',
+    'nav.adhd_zones': 'فحص منطقة ADHD',
 
     // Patients page
     'patients.title': 'مرضاي',
@@ -766,14 +781,13 @@ const dict = {
     'landing.badge': 'مجاني · مبني على الأدلة · ثنائي اللغة',
     'landing.hero1': 'صحتك النفسية',
     'landing.hero2': 'تستحق الوضوح',
-    'landing.hero.sub': 'أجرِ تقييمات نفسية معتمدة، وتتبع مزاجك، وتواصل مع المختصين — كل ذلك في مكان واحد. لا حاجة لحساب للبدء.',
+    'landing.hero.sub': 'أجرِ تقييمات نفسية معتمدة، وتتبع مزاجك، وتواصل مع المختصين — كل ذلك في مكان واحد. سجّل دخولك للبدء.',
     'landing.cta.assess': 'أجرِ تقييماً مجانياً',
     'landing.cta.register': 'أنشئ حساباً مجانياً',
-    'landing.count.suffix': ' مقياساً معتمداً متاحاً · لا يلزم تسجيل دخول لإجراء أي تقييم',
-    'landing.ai.badge': 'مدعوم بالذكاء الاصطناعي',
+    'landing.count.suffix': ' مقياساً معتمداً متاحاً · سجّل دخولك لإجراء أي تقييم',
+    'landing.ai.badge': 'موصي ذكي بالتقييمات',
     'landing.ai.title': 'لست متأكداً من أين تبدأ؟',
-    'landing.ai.sub': 'صف كيف تشعر وسيقترح ذكاؤنا الاصطناعي التقييمات الأنسب لك.',
-
+    'landing.ai.sub': 'صف ما تشعر به وسيقترح الذكاء الاصطناعي أكثر التقييمات ملاءمةً لحالتك.',
     // Trust strip
     'trust.validated': 'أدوات معتمدة سريرياً',
     'trust.private': 'خاص وسري',
@@ -784,7 +798,7 @@ const dict = {
     'services.title': 'كل ما تحتاجه',
     'services.sub': 'منظومة متكاملة لدعم الصحة النفسية — من الفحص المبكر إلى الرعاية المستمرة.',
     'service.assessments.title': 'تقييمات معتمدة',
-    'service.assessments.desc.pre': 'مقياساً نفسياً مستنداً إلى الأدلة، يغطي الاكتئاب والقلق والضغط والصدمات واضطراب فرط الحركة واضطرابات الأكل وتعاطي المخدرات وغيرها. مجاني تماماً — دون الحاجة إلى حساب.',
+    'service.assessments.desc.pre': '٣٩ مقياساً نفسياً مستنداً إلى الأدلة، يغطي الاكتئاب والقلق والضغط والصدمات واضطراب فرط الحركة واضطرابات الأكل وتعاطي المخدرات وغيرها. مجاني تماماً — سجّل دخولك للبدء.',
     'service.assessments.cta': 'أجرِ تقييماً',
     'service.mood.title': 'متتبع المزاج',
     'service.mood.desc': 'سجّل مزاجك وطاقتك وقلقك وساعات نومك يومياً. تابع التغيرات عبر الزمن وشارك رؤاك مع اختصاصيك لإثراء قرارات العلاج.',
@@ -802,10 +816,16 @@ const dict = {
     'service.clinicians.desc': 'يستطيع الاختصاصيون تعيين التقييمات ومراجعة النتائج وتتبع المزاج وتمييز الحالات عالية الخطورة — كل ذلك من لوحة تحكم واحدة.',
     'service.clinicians.cta': 'للاختصاصيين',
 
+    // ADHD Zone tool (landing)
+    'adhd.landing.badge': 'مجاني · بدون تسجيل',
+    'adhd.landing.title': 'فحص منطقة ADHD',
+    'adhd.landing.sub': 'استناداً إلى نموذج المناطق للتركيز والتنظيم بقلم سارة الشطرات. 5 أسئلة لتحديد منطقة التنظيم الحالية (خضراء / صفراء / حمراء / سوداء) ومعرفة ما يجب فعله بالضبط.',
+    'adhd.landing.cta': 'افحص منطقتي الآن',
+
     // Assessments section (landing)
     'assessments.section.title': 'تقييمات مجانية — ابدأ الآن',
     'assessments.section.sub.pre': 'جميع',
-    'assessments.section.sub.post': 'أداة معتمدة علمياً ومجانية الاستخدام. لا يلزم تسجيل. أنشئ حساباً لحفظ نتائجك وتتبع تقدمك.',
+    'assessments.section.sub.post': 'أداة معتمدة علمياً ومجانية الاستخدام. سجّل دخولك لإجراء التقييمات وتتبع تقدمك.',
     'assessments.start': 'ابدأ مجاناً',
     'assessments.track.cta': 'هل تريد تتبع تقدمك؟',
     'assessments.track.link': 'أنشئ حساباً مجانياً',
@@ -815,7 +835,7 @@ const dict = {
     'about.title': 'بُني لرعاية صحة نفسية حقيقية',
     'about.p1': 'V Welfare منصة للصحة النفسية ثنائية اللغة (عربية وإنجليزية) صُممت لتقليص الفجوة بين أدوات الفحص المستندة إلى الأدلة والوصول اليومي إلى دعم الصحة النفسية.',
     'about.p2': 'كل تقييم في المنصة هو مقياس نفسي معتمد ومفتوح المصدر يستخدمه الاختصاصيون والباحثون حول العالم. تُشرح النتائج بلغة واضحة مع السياق العلمي والتوصيات السريرية والخطوات التالية.',
-    'about.bullet1': 'جميع أدوات الفحص مجانية ومتاحة للعموم دون تسجيل',
+    'about.bullet1': 'جميع أدوات الفحص مجانية — سجّل دخولك لإجراء أي تقييم',
     'about.bullet2': 'النتائج تتضمن تفسيرات علمية وليس أرقاماً فقط',
     'about.bullet3': 'مصمم للأفراد والمؤسسات السريرية على حد سواء',
     'about.bullet4': 'ثنائي اللغة بالكامل — عربي وإنجليزي',
@@ -826,7 +846,7 @@ const dict = {
 
     // CTA banner
     'cta.title': 'هل أنت مستعد لفهم صحتك النفسية؟',
-    'cta.sub': 'أجرِ أي تقييم مجاناً — دون حساب ودون انتظار. أنشئ حساباً لحفظ تاريخك.',
+    'cta.sub': 'أجرِ أي تقييم مجاناً — أنشئ حساباً للبدء وحفظ تاريخك.',
     'cta.browse': 'تصفح التقييمات',
     'cta.register': 'أنشئ حساباً مجانياً',
 
@@ -891,7 +911,7 @@ const dict = {
 
     // Assessments list page
     'assessments.page.title': 'تقييمات الصحة النفسية',
-    'assessments.page.sub': 'أدوات فحص مجانية مستندة إلى الأدلة. لا يلزم حساب لإجراء التقييم.',
+    'assessments.page.sub': 'أدوات فحص نفسية مجانية مستندة إلى الأدلة.',
     'assessments.guest.title': 'هل تريد تتبع تقدمك مع الوقت؟',
     'assessments.guest.create': 'أنشئ حساباً مجانياً',
     'assessments.guest.or': 'أو',
@@ -1332,6 +1352,7 @@ const dict = {
     'onboarding.back': 'رجوع',
     'onboarding.finish': 'ابدأ الآن',
     'onboarding.finishing': 'جارٍ الحفظ…',
+    'onboarding.error': 'حدث خطأ ما. يرجى المحاولة مرة أخرى.',
     'onboarding.skip': 'تخطي الآن',
     'onboarding.step1.title': 'عنك',
     'onboarding.step1.sub': 'الهوية الأساسية وتفضيلات اللغة.',
@@ -1346,6 +1367,7 @@ const dict = {
     // Forgot / reset password
     'auth.login.forgot_password': 'نسيت كلمة المرور؟',
     'auth.forgot.title': 'إعادة تعيين كلمة المرور',
+    'auth.forgot.desc': 'أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين.',
     'auth.forgot.submit': 'إرسال رابط الإعادة',
     'auth.forgot.submitting': 'جارٍ الإرسال...',
     'auth.forgot.success': 'تحقق من بريدك الإلكتروني للحصول على رابط إعادة التعيين.',
@@ -1355,6 +1377,10 @@ const dict = {
     'auth.reset.submit': 'تحديث كلمة المرور',
     'auth.reset.submitting': 'جارٍ التحديث...',
     'auth.reset.success': 'تم تحديث كلمة المرور! سيتم توجيهك لتسجيل الدخول...',
+    'auth.reset.subtitle': 'أدخل كلمة مرورك الجديدة أدناه.',
+    'auth.reset.hint': 'استخدم 8 أحرف على الأقل.',
+    'auth.reset.done': 'تم تحديث كلمة المرور!',
+    'auth.reset.redirecting': 'سيتم توجيهك لتسجيل الدخول...',
 
     // Footer contact
     'footer.contact': 'تواصل معنا',

@@ -1,0 +1,2 @@
+-- Migration 20260606073047: ws9_install_publication_gate
+-- Applied directly to remote database; stub preserved for migration history.

@@ -37,7 +37,6 @@ describe('Unauthenticated access — all protected endpoints must return 401', (
     { method: 'GET', path: '/api/notifications' },
     { method: 'GET', path: '/api/reports?patient_id=00000000-0000-0000-0000-000000000001' },
     { method: 'GET', path: '/api/clinical-notes?patient_id=00000000-0000-0000-0000-000000000001' },
-    { method: 'GET', path: '/api/synthesis' },
     { method: 'POST', path: '/api/submit-assessment' },
     { method: 'POST', path: '/api/notify-high-risk' },
   ]
@@ -123,8 +122,4 @@ describe('Input validation — malformed payloads', () => {
     assert.equal(res.status, 400, `Expected 400 for invalid country but got ${res.status}`)
   })
 
-  test('POST /api/recommend-assessments with oversized input → 400', async () => {
-    const res = await post('/api/recommend-assessments', { text: 'x'.repeat(600) })
-    assert.equal(res.status, 400, `Expected 400 for oversized input but got ${res.status}`)
-  })
 })

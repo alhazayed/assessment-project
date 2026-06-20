@@ -1,0 +1,2 @@
+-- Migration 20260606073032: ws9_backfill_governance_metadata
+-- Applied directly to remote database; stub preserved for migration history.

@@ -2,13 +2,14 @@ import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
-// Role is bound into the HMAC so that revoking admin access invalidates the existing cookie
+// Role is bound into the HMAC so that revoking admin access invalidates the existing cookie.
+// Uses ADMIN_SESSION_SECRET if set (recommended); falls back to ADMIN_PIN for backwards compat.
 export async function computeHmac(userId: string, role: string): Promise<string> {
-  const pin = process.env.ADMIN_PIN
-  if (!pin) throw new Error('ADMIN_PIN environment variable is not configured')
+  const secret = process.env.ADMIN_SESSION_SECRET
+    ?? (process.env.ADMIN_PIN ? process.env.ADMIN_PIN + '_vwelfare_admin' : null)
+  if (!secret) throw new Error('ADMIN_SESSION_SECRET environment variable is not configured')
   const enc = new TextEncoder()
-  const keyMaterial = enc.encode(pin + '_vwelfare_admin')
-  const key = await crypto.subtle.importKey('raw', keyMaterial, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
   const sig = await crypto.subtle.sign('HMAC', key, enc.encode(userId + ':' + role))
   return Buffer.from(sig).toString('base64url')
 }

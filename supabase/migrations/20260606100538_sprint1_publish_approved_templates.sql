@@ -1,0 +1,2 @@
+-- Migration 20260606100538: sprint1_publish_approved_templates
+-- Applied directly to remote database; stub preserved for migration history.

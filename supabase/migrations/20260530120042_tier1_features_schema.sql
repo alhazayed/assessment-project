@@ -1,0 +1,2 @@
+-- Migration 20260530120042: tier1_features_schema
+-- Applied directly to remote database; stub preserved for migration history.

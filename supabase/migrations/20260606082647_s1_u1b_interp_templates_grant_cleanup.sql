@@ -1,0 +1,2 @@
+-- Migration 20260606082647: s1_u1b_interp_templates_grant_cleanup
+-- Applied directly to remote database; stub preserved for migration history.

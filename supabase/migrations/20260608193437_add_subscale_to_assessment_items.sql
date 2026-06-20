@@ -1,0 +1,2 @@
+-- Migration 20260608193437: add_subscale_to_assessment_items
+-- Applied directly to remote database; stub preserved for migration history.

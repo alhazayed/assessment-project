@@ -1,0 +1,2 @@
+-- Migration 20260606075217: ws5_1_u2_view_security_invoker
+-- Applied directly to remote database; stub preserved for migration history.

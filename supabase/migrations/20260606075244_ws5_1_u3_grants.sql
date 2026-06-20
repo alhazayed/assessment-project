@@ -1,0 +1,2 @@
+-- Migration 20260606075244: ws5_1_u3_grants
+-- Applied directly to remote database; stub preserved for migration history.

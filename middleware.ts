@@ -47,7 +47,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/journal') ||
     pathname.startsWith('/insights') ||
     pathname.startsWith('/messages') ||
-    pathname.startsWith('/moods') ||
+    pathname.startsWith('/mood') ||
+    pathname.startsWith('/patients') ||
     pathname.startsWith('/onboarding') ||
     pathname.startsWith('/notifications')
 

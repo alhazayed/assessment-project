@@ -1,0 +1,2 @@
+-- Migration 20260530191845: seed_dass21_items
+-- Applied directly to remote database; stub preserved for migration history.

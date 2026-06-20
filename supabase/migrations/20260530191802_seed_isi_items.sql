@@ -1,0 +1,2 @@
+-- Migration 20260530191802: seed_isi_items
+-- Applied directly to remote database; stub preserved for migration history.

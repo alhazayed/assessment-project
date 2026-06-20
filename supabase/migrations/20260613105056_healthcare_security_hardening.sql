@@ -1,0 +1,2 @@
+-- Migration 20260613105056: healthcare_security_hardening
+-- Applied directly to remote database; stub preserved for migration history.

@@ -1,0 +1,2 @@
+-- Migration 20260530154142: personality_and_wellness_plan
+-- Applied directly to remote database; stub preserved for migration history.

@@ -24,7 +24,6 @@
 | Database | Supabase | Pro (PostgreSQL 15) |
 | Auth | Supabase Auth | Included |
 | File Storage | Supabase Storage | Included |
-| AI (Gemini) | Google Cloud | Pay-as-you-go |
 | Rate Limiting | Supabase `rate_limit_log` | Included |
 | DNS / CDN / DDoS | Cloudflare | Free+ |
 
@@ -70,7 +69,6 @@ All secrets must be stored in a secure secrets manager (e.g., 1Password Teams, A
 | Variable | Location |
 |---|---|
 | `SUPABASE_SERVICE_ROLE_KEY` | Secrets manager |
-| `GEMINI_API_KEY` | Secrets manager |
 | `ADMIN_PIN` | Secrets manager |
 | `TURNSTILE_SECRET_KEY` | Secrets manager |
 | `UPSTASH_REDIS_REST_URL` | Secrets manager |
@@ -78,7 +76,6 @@ All secrets must be stored in a secure secrets manager (e.g., 1Password Teams, A
 | `NEXT_PUBLIC_SUPABASE_URL` | Secrets manager (non-secret but document) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Secrets manager |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Secrets manager |
-| `AI_DAILY_BUDGET_USD` | Secrets manager |
 
 ---
 
@@ -135,7 +132,6 @@ If secrets are lost or compromised:
 | Secret | Recovery Action |
 |---|---|
 | `SUPABASE_SERVICE_ROLE_KEY` | Regenerate: Supabase → Project Settings → API → Rotate service role key |
-| `GEMINI_API_KEY` | Regenerate: Google Cloud Console → APIs & Services → Credentials |
 | `ADMIN_PIN` | Update in env vars + redeploy; all existing admin sessions will be invalidated (HMAC mismatch) |
 | `TURNSTILE_SECRET_KEY` | Regenerate: Cloudflare → Turnstile → Site settings → Rotate secret key |
 | `UPSTASH_REDIS_REST_TOKEN` | Regenerate: Upstash Console → Database → REST API → Reset token |
@@ -191,7 +187,6 @@ Supabase does not automatically reverse migrations. To rollback a schema change:
 |---|---|---|
 | Uptime | Vercel built-in / BetterUptime | Alert if down > 2 min |
 | Error rate | Vercel logs + Sentry | Alert if 5xx rate > 1% |
-| Gemini spend | Google Cloud Billing Alerts | Alert at 50% and 100% of `AI_DAILY_BUDGET_USD` |
 | DB connections | Supabase metrics | Alert if pool > 80% utilised |
 | Rate limit hits | Query `rate_limit_log` | Alert if any key hits limit >50% of window |
 
@@ -211,6 +206,5 @@ Schedule a monthly drill:
 |---|---|---|
 | Vercel outage | Vercel Status Page (status.vercel.com) | Vercel Support |
 | Supabase outage | Supabase Status Page (status.supabase.com) | Supabase Support |
-| Gemini API outage | Google Cloud Status | Use fallback: disable AI endpoints |
 | Data breach | info@vwelfare.com | Legal counsel + PDPL authority notification within 72h |
 | Admin account compromised | Rotate `ADMIN_PIN` immediately | Audit `audit_log` table |

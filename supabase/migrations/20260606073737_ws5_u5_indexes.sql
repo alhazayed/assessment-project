@@ -1,0 +1,2 @@
+-- Migration 20260606073737: ws5_u5_indexes
+-- Applied directly to remote database; stub preserved for migration history.

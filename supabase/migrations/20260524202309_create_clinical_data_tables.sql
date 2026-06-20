@@ -1,0 +1,2 @@
+-- Migration 20260524202309: create_clinical_data_tables
+-- Applied directly to remote database; stub preserved for migration history.

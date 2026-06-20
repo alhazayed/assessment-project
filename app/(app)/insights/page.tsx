@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { Flame, TrendingUp, Calendar, BarChart2 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
-import SynthesisCard from '@/components/synthesis-card'
 import MentalHealthRadar from '@/components/mental-health-radar'
 
 type MoodLog = {
@@ -118,10 +117,12 @@ export default function InsightsPage() {
   const scoreRange = maxScore - minScore || 1
 
   return (
-    <div className="p-8 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{t('insights.title', lang)}</h1>
-        <p className="text-gray-500 mt-1">{t('insights.subtitle', lang)}</p>
+    <div className="p-4 sm:p-6 lg:p-7 max-w-4xl">
+      <div className="mb-7">
+        <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+          {t('insights.title', lang)}
+        </h1>
+        <p style={{ color: 'var(--text-secondary)' }}>{t('insights.subtitle', lang)}</p>
       </div>
 
       {loading ? (
@@ -131,9 +132,6 @@ export default function InsightsPage() {
       ) : (
         <div className="space-y-6">
 
-          {/* AI Synthesis */}
-          <SynthesisCard isAr={isAr} />
-
           {/* Mental Health Radar */}
           {scoreHistory.length > 0 && (
             <MentalHealthRadar scoreHistory={scoreHistory} isAr={isAr} />
@@ -141,17 +139,17 @@ export default function InsightsPage() {
 
           {/* Streak card */}
           <div className="card p-6 flex items-center gap-5">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#FEF2EC' }}>
-              <Flame className="w-7 h-7" style={{ color: '#F3650A' }} />
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-accent-50">
+              <Flame className="w-7 h-7 text-accent-500" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">{t('insights.streak', lang)}</p>
+              <p className="section-label mb-1">{t('insights.streak', lang)}</p>
               {streak > 0 ? (
-                <p className="text-3xl font-bold text-gray-900">
-                  {streak} <span className="text-lg font-medium text-gray-500">{t('insights.streak.days', lang)}</span>
+                <p className="stat-value">
+                  {streak} <span className="text-lg font-normal" style={{ color: 'var(--text-muted)' }}>{t('insights.streak.days', lang)}</span>
                 </p>
               ) : (
-                <p className="text-sm text-gray-500">{t('insights.streak.none', lang)}</p>
+                <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>{t('insights.streak.none', lang)}</p>
               )}
             </div>
           </div>
@@ -159,15 +157,16 @@ export default function InsightsPage() {
           {/* Mood calendar */}
           <div className="card p-6">
             <div className="flex items-center gap-2 mb-5">
-              <Calendar className="w-4 h-4 text-gray-500" />
-              <h2 className="text-base font-semibold text-gray-900">{t('insights.mood_cal', lang)}</h2>
+              <Calendar className="w-4 h-4" style={{ color: 'var(--text-icon)' }} />
+              <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('insights.mood_cal', lang)}</h2>
               <span className="text-xs text-gray-400 ml-1">— {t('insights.last_30_days', lang)}</span>
             </div>
 
             {moodLogs.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">{t('insights.no_mood', lang)}</p>
+              <p className="text-[13.5px] py-4 text-center" style={{ color: 'var(--text-muted)' }}>{t('insights.no_mood', lang)}</p>
             ) : (
-              <div className="grid grid-cols-10 gap-1.5">
+              <div className="overflow-x-auto">
+              <div className="grid grid-cols-10 gap-1.5 min-w-[320px]">
                 {last30.map(day => {
                   const score = moodByDay[day]
                   const color = score != null ? moodColor(score) : '#F3F4F6'
@@ -184,17 +183,18 @@ export default function InsightsPage() {
                   )
                 })}
               </div>
+              </div>
             )}
 
             <div className="flex items-center gap-4 mt-4">
-              <span className="text-xs text-gray-400">{isAr ? 'أقل' : 'Less'}</span>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{isAr ? 'أقل' : 'Less'}</span>
               {MOOD_COLORS.map((c, i) => (
                 <div key={i} className="flex items-center gap-1">
                   <div className="w-3.5 h-3.5 rounded" style={{ backgroundColor: c }} />
                   <span className="text-[10px] text-gray-400">{(isAr ? MOOD_LABELS_AR : MOOD_LABELS_EN)[i]}</span>
                 </div>
               ))}
-              <span className="text-xs text-gray-400">{isAr ? 'أكثر' : 'More'}</span>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{isAr ? 'أكثر' : 'More'}</span>
             </div>
           </div>
 
@@ -202,8 +202,8 @@ export default function InsightsPage() {
           <div className="card p-6">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-gray-500" />
-                <h2 className="text-base font-semibold text-gray-900">{t('insights.score_trend', lang)}</h2>
+                <TrendingUp className="w-4 h-4" style={{ color: 'var(--text-icon)' }} />
+                <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('insights.score_trend', lang)}</h2>
               </div>
               {uniqueAssessments.length > 1 && (
                 <select
@@ -221,15 +221,15 @@ export default function InsightsPage() {
             </div>
 
             {scoreHistory.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">{t('insights.no_scores', lang)}</p>
+              <p className="text-[13.5px] py-4 text-center" style={{ color: 'var(--text-muted)' }}>{t('insights.no_scores', lang)}</p>
             ) : trendData.length < 2 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">
+              <p className="text-[13.5px] py-4 text-center" style={{ color: 'var(--text-muted)' }}>
                 {t('insights.trend_min_needed', lang)}
               </p>
             ) : (
-              <div className="relative">
+              <div className="relative overflow-x-auto">
                 {/* Simple SVG line chart */}
-                <svg viewBox={`0 0 ${trendData.length * 60} 120`} className="w-full h-32" preserveAspectRatio="none">
+                <svg viewBox={`0 0 ${trendData.length * 60} 120`} className="w-full h-32" style={{ minWidth: `${trendData.length * 40}px` }} preserveAspectRatio="none">
                   {/* Grid lines */}
                   {[0, 0.5, 1].map(pct => (
                     <line
@@ -281,10 +281,10 @@ export default function InsightsPage() {
           {moodLogs.length > 0 && (
             <div className="card p-6">
               <div className="flex items-center gap-2 mb-4">
-                <BarChart2 className="w-4 h-4 text-gray-500" />
-                <h2 className="text-base font-semibold text-gray-900">{t('insights.mood_stats', lang)}</h2>
+                <BarChart2 className="w-4 h-4" style={{ color: 'var(--text-icon)' }} />
+                <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('insights.mood_stats', lang)}</h2>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   {
                     label: t('insights.avg_mood', lang),
@@ -305,9 +305,11 @@ export default function InsightsPage() {
                     color: '#12273C',
                   },
                 ].map(stat => (
-                  <div key={stat.label} className="p-4 rounded-xl bg-gray-50 text-center">
-                    <p className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}<span className="text-base font-medium text-gray-400">{stat.unit}</span></p>
-                    <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
+                  <div key={stat.label} className="p-4 rounded-[12px] text-center" style={{ backgroundColor: 'var(--surface-alt)' }}>
+                    <p className="text-2xl font-extrabold" style={{ color: stat.color, letterSpacing: '-0.02em' }}>
+                      {stat.value}<span className="text-base font-normal" style={{ color: 'var(--text-muted)' }}>{stat.unit}</span>
+                    </p>
+                    <p className="text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>{stat.label}</p>
                   </div>
                 ))}
               </div>

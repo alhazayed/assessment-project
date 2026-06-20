@@ -1,0 +1,2 @@
+-- Migration 20260615070309: security_performance_hardening_v2
+-- Applied directly to remote database; stub preserved for migration history.

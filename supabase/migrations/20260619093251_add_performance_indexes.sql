@@ -1,0 +1,2 @@
+-- Migration 20260619093251: add_performance_indexes
+-- Applied directly to remote database; stub preserved for migration history.

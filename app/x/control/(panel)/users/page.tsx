@@ -13,6 +13,16 @@ type User = {
 
 const ROLES = ['patient', 'clinician', 'admin', 'superadmin']
 
+const roleBadgeClass = (role: string) => {
+  const m: Record<string, string> = {
+    patient: 'bg-blue-50 text-blue-700',
+    clinician: 'bg-green-50 text-green-700',
+    admin: 'bg-purple-50 text-purple-700',
+    superadmin: 'bg-red-50 text-red-700',
+  }
+  return m[role] || 'bg-gray-100 text-gray-600'
+}
+
 export default function AdminUsersPage() {
   const lang = useLang()
   const [users, setUsers] = useState<User[]>([])
@@ -59,28 +69,29 @@ export default function AdminUsersPage() {
     setUpdating(null)
   }
 
-  const roleBadge = (role: string) => {
-    const m: Record<string, string> = { patient: 'bg-blue-50 text-blue-700', clinician: 'bg-green-50 text-green-700', admin: 'bg-purple-50 text-purple-700', superadmin: 'bg-red-50 text-red-700' }
-    return m[role] || 'bg-gray-100 text-gray-600'
-  }
-
   return (
-    <div className="p-8 max-w-6xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-6xl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('admin.users.title', lang)}</h1>
-          <p className="text-gray-500 mt-1">{users.length} {t('admin.nav.users', lang).toLowerCase()} · {t('admin.users.subtitle', lang)}</p>
+          <h1 className="text-2xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+            {t('admin.users.title', lang)}
+          </h1>
+          <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>
+            {users.length} {t('admin.nav.users', lang).toLowerCase()} · {t('admin.users.subtitle', lang)}
+          </p>
         </div>
-        <Users className="w-6 h-6 text-gray-400" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-brand-50">
+          <Users className="w-5 h-5 text-brand-600" />
+        </div>
       </div>
 
       {msg && (
-        <div className={`mb-4 p-3 text-sm rounded-lg border ${msgError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>{msg}</div>
+        <div className={`mb-5 ${msgError ? 'alert-error' : 'alert-success'}`}>{msg}</div>
       )}
 
       <div className="flex gap-3 mb-6">
         <div className="relative flex-1">
-          <Search className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 ${lang === 'ar' ? 'right-3' : 'left-3'}`} />
+          <Search className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 ${lang === 'ar' ? 'right-3' : 'left-3'}`} style={{ color: 'var(--text-muted)' }} />
           <input className={`input w-full ${lang === 'ar' ? 'pr-9' : 'pl-9'}`} placeholder={t('admin.users.search', lang)} value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <select className="input w-44" value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
@@ -89,35 +100,36 @@ export default function AdminUsersPage() {
         </select>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[600px]">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.users.col.name', lang)}</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.users.col.role', lang)}</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.users.col.status', lang)}</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.users.col.joined', lang)}</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">{t('admin.users.col.submissions', lang)}</th>
-              <th className="text-right px-4 py-3 font-medium text-gray-600">{t('admin.users.col.actions', lang)}</th>
+            <tr style={{ backgroundColor: 'var(--surface-alt)', borderBottom: '1px solid var(--divider)' }}>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.users.col.name', lang)}</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.users.col.role', lang)}</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.users.col.status', lang)}</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.users.col.joined', lang)}</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.users.col.submissions', lang)}</th>
+              <th className="text-right px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.users.col.actions', lang)}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="text-center py-12 text-gray-400">{t('admin.loading', lang)}</td></tr>
+              <tr><td colSpan={6} className="text-center py-12 text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.loading', lang)}</td></tr>
             ) : users.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-12 text-gray-400">{t('admin.users.empty', lang)}</td></tr>
+              <tr><td colSpan={6} className="text-center py-12 text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.users.empty', lang)}</td></tr>
             ) : users.map(u => (
-              <tr key={u.id} className={`hover:bg-gray-50 ${updating === u.id ? 'opacity-50' : ''}`}>
+              <tr key={u.id} className={updating === u.id ? 'opacity-50' : ''} style={{ borderBottom: '1px solid var(--divider)' }}>
                 <td className="px-4 py-3">
-                  <p className="font-medium text-gray-900">{u.full_name_en}</p>
-                  {u.full_name_ar && <p className="text-xs text-gray-400">{u.full_name_ar}</p>}
+                  <p className="text-[13.5px] font-medium" style={{ color: 'var(--text-primary)' }}>{u.full_name_en}</p>
+                  {u.full_name_ar && <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{u.full_name_ar}</p>}
                 </td>
                 <td className="px-4 py-3">
                   <div className="relative inline-block">
                     <select
                       value={u.role}
                       onChange={e => changeRole(u.id, e.target.value)}
-                      className={`text-xs font-medium px-2 py-1 rounded-full border-0 appearance-none pr-5 cursor-pointer ${roleBadge(u.role)}`}
+                      className={`text-xs font-medium px-2 py-1 rounded-full border-0 appearance-none pr-5 cursor-pointer ${roleBadgeClass(u.role)}`}
                     >
                       {ROLES.map(r => <option key={r} value={r} className="text-gray-900 bg-white">{r}</option>)}
                     </select>
@@ -125,13 +137,13 @@ export default function AdminUsersPage() {
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`flex items-center gap-1 w-fit text-xs font-medium ${u.is_active ? 'text-green-600' : 'text-red-500'}`}>
+                  <span className={`flex items-center gap-1.5 w-fit text-[12px] font-medium ${u.is_active ? 'text-green-600' : 'text-red-500'}`}>
                     {u.is_active ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
                     {u.is_active ? t('admin.users.active', lang) : t('admin.users.inactive', lang)}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-gray-500">{new Date(u.created_at).toLocaleDateString()}</td>
-                <td className="px-4 py-3 text-gray-700 font-medium">{u.submission_count ?? '—'}</td>
+                <td className="px-4 py-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{new Date(u.created_at).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{u.submission_count ?? '—'}</td>
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={() => toggleActive(u.id, u.is_active)}
@@ -144,6 +156,7 @@ export default function AdminUsersPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

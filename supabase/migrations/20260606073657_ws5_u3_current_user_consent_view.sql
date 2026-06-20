@@ -1,0 +1,2 @@
+-- Migration 20260606073657: ws5_u3_current_user_consent_view
+-- Applied directly to remote database; stub preserved for migration history.

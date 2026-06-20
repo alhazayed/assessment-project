@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "app/api/clinical-notes/route.ts": {
+      "maxDuration": 30
+    }
+  }
+}

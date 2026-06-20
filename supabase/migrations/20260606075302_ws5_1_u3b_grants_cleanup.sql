@@ -1,0 +1,2 @@
+-- Migration 20260606075302: ws5_1_u3b_grants_cleanup
+-- Applied directly to remote database; stub preserved for migration history.

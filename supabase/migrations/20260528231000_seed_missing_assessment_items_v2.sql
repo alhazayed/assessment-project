@@ -1,0 +1,2 @@
+-- Migration 20260528231000: seed_missing_assessment_items_v2
+-- Applied directly to remote database; stub preserved for migration history.

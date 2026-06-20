@@ -1,0 +1,2 @@
+-- Migration 20260614224208: security_hardening_phase1
+-- Applied directly to remote database; stub preserved for migration history.
