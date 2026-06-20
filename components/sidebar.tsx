@@ -68,12 +68,12 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
   ]
 
   const adminNav = [
-    { href: '/x/control',      label: t('nav.admin_panel', lang),    icon: Shield },
-    { href: '/dashboard',      label: t('nav.dashboard', lang),      icon: LayoutDashboard },
-    { href: '/patients',       label: t('nav.admin_patients', lang), icon: Users },
-    { href: '/assessments',    label: t('nav.assessments', lang),    icon: ClipboardList },
-    { href: '/profile',        label: t('nav.profile', lang),        icon: User },
-    { href: '/admin/settings', label: t('nav.settings', lang),       icon: Settings },
+    { href: '/x/control',      label: t('nav.admin_panel', lang),    icon: Shield,        badge: undefined as string | undefined },
+    { href: '/dashboard',      label: t('nav.dashboard', lang),      icon: LayoutDashboard, badge: undefined as string | undefined },
+    { href: '/patients',       label: t('nav.admin_patients', lang), icon: Users,         badge: undefined as string | undefined },
+    { href: '/assessments',    label: t('nav.assessments', lang),    icon: ClipboardList, badge: undefined as string | undefined },
+    { href: '/profile',        label: t('nav.profile', lang),        icon: User,          badge: undefined as string | undefined },
+    { href: '/admin/settings', label: t('nav.settings', lang),       icon: Settings,      badge: undefined as string | undefined },
   ]
 
   const nav = profile?.role === 'admin' || profile?.role === 'superadmin' ? adminNav : patientNav
