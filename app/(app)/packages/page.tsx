@@ -26,6 +26,7 @@ interface Package {
   color: string
   index_name_en: string | null
   index_name_ar: string | null
+  is_prototype: boolean | null
   interpretation_bands: Array<{ min: number; max: number; band_en: string; band_ar: string; color: string }>
   output_dimensions: Array<{ key: string; label_en: string; label_ar: string }>
   package_assessments: PackageAssessment[]
