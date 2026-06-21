@@ -3,9 +3,14 @@
 -- ===================================================================
 
 -- Unique constraint on package_results so upsert works cleanly
-alter table package_results
-  add constraint if not exists package_results_unique
-  unique (package_id, user_id);
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'package_results_unique'
+  ) then
+    alter table package_results add constraint package_results_unique unique (package_id, user_id);
+  end if;
+end $$;
 
 -- Lightweight table tracking user progress through a package
 create table if not exists package_sessions (
