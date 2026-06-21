@@ -4,8 +4,15 @@ import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Lightbulb, ShieldAlert, FileDown } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Lightbulb, ShieldAlert } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import type { InterpretationBand, OutputDimension, PackageResult } from '@/lib/types'
+
+const PdfDownloadButton = dynamic(
+  () => import('../pdf-download-button').then(m => m.PdfDownloadButton),
+  { ssr: false, loading: () => null }
+)
+
 
 interface PkgAssessment {
   assessment_code: string
@@ -311,15 +318,25 @@ export default async function PackageResultPage({ params }: { params: { id: stri
           {isAr ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
           {t('packages.result.back', lang)}
         </Link>
-        <button
-          disabled
-          title="Coming in Phase 3"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium opacity-40 cursor-not-allowed"
-          style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--text-secondary)', border: '1px solid var(--divider)' }}
-        >
-          <FileDown className="w-4 h-4" />
-          {t('packages.result.download_pdf', lang)}
-        </button>
+        <PdfDownloadButton
+          pkg={{
+            name_en: pkg.name_en,
+            color: pkg.color,
+            category: pkg.category,
+            interpretation_bands: pkg.interpretation_bands as InterpretationBand[],
+            output_dimensions: pkg.output_dimensions as OutputDimension[],
+            package_assessments: availableAssessments.map(a => ({
+              assessment_code: a.assessment_code,
+              name_en: a.name_en,
+              weight_pct: a.weight_pct,
+              is_available: a.is_available,
+            })),
+          }}
+          result={r}
+          completedOn={completedOn ?? ''}
+          labelDownload={t('packages.result.download_pdf', lang)}
+          labelGenerating={t('packages.result.generating_pdf', lang)}
+        />
       </div>
 
       {/* Disclaimer */}
