@@ -205,6 +205,126 @@ const ASSESSMENT_NARRATIVES: Record<string, {
       risk_ar: 'صعوبات في الوظائف التنفيذية تؤثر على التخطيط والتركيز وإدارة المهام الأكاديمية',
     },
   },
+  PHQ9: {
+    high: {
+      insight_en: 'Your PHQ-9 results indicate minimal to no depressive symptoms — your mood and daily functioning appear healthy and stable.',
+      insight_ar: 'تُشير نتائج PHQ-9 إلى أعراض اكتئابية طفيفة أو معدومة — يبدو مزاجك وأداؤك اليومي صحياً ومستقراً.',
+      strength_en: 'Minimal depressive symptoms with stable mood and daily functioning',
+      strength_ar: 'أعراض اكتئابية طفيفة مع استقرار المزاج والأداء اليومي',
+    },
+    mid: {
+      insight_en: 'Some depressive symptoms are present at a mild to moderate level. These are common and often respond well to self-care strategies and support.',
+      insight_ar: 'توجد بعض أعراض الاكتئاب بمستوى خفيف إلى معتدل. وهذه شائعة وغالباً ما تستجيب جيداً لاستراتيجيات الرعاية الذاتية والدعم.',
+      rec_en: 'Consider discussing these symptoms with a mental health professional and explore evidence-based self-care strategies',
+      rec_ar: 'فكّر في مناقشة هذه الأعراض مع متخصص في الصحة النفسية واستكشاف استراتيجيات الرعاية الذاتية القائمة على الأدلة',
+    },
+    low: {
+      insight_en: 'Your results indicate significant depressive symptoms that are likely affecting your daily life. Professional support is strongly recommended.',
+      insight_ar: 'تُشير نتائجك إلى أعراض اكتئابية ملحوظة تؤثر على الأرجح في حياتك اليومية. يُنصح بشدة بالحصول على دعم متخصص.',
+      risk_en: 'Significant depressive symptoms detected — professional mental health evaluation is strongly recommended',
+      risk_ar: 'رصد أعراض اكتئابية ملحوظة — يُنصح بشدة بإجراء تقييم متخصص للصحة النفسية',
+    },
+  },
+  GAD7: {
+    high: {
+      insight_en: 'Your GAD-7 results indicate minimal anxiety — you appear calm, grounded, and well-regulated in managing daily worry.',
+      insight_ar: 'تُشير نتائج GAD-7 إلى قلق طفيف — تبدو هادئاً ومتوازناً ومتحكماً جيداً في إدارة القلق اليومي.',
+      strength_en: 'Minimal anxiety symptoms with effective worry management',
+      strength_ar: 'أعراض قلق طفيفة مع إدارة فعّالة للقلق',
+    },
+    mid: {
+      insight_en: 'Mild to moderate anxiety is present. With the right tools, anxiety at this level is very manageable.',
+      insight_ar: 'يوجد قلق خفيف إلى معتدل. مع الأدوات المناسبة، يمكن إدارة القلق بهذا المستوى بشكل جيد جداً.',
+      rec_en: 'Practice anxiety management techniques such as controlled breathing, progressive muscle relaxation, and cognitive reframing',
+      rec_ar: 'مارس تقنيات إدارة القلق كالتنفس المتحكم فيه والاسترخاء العضلي التدريجي وإعادة التأطير المعرفي',
+    },
+    low: {
+      insight_en: 'Your results indicate significant anxiety symptoms that are interfering with your daily functioning. Professional support is recommended.',
+      insight_ar: 'تُشير نتائجك إلى أعراض قلق ملحوظة تُعيق أداؤك اليومي. يُنصح بالحصول على دعم متخصص.',
+      risk_en: 'Significant anxiety symptoms affecting daily functioning — professional evaluation is recommended',
+      risk_ar: 'أعراض قلق ملحوظة تؤثر على الأداء اليومي — يُنصح بالتقييم المتخصص',
+    },
+  },
+  K10: {
+    high: {
+      insight_en: 'Your K10 results indicate low psychological distress — your general mental health and daily functioning appear solid and resilient.',
+      insight_ar: 'تُشير نتائج K10 إلى ضائقة نفسية منخفضة — تبدو صحتك النفسية العامة وأداؤك اليومي متيناً ومرناً.',
+      strength_en: 'Low psychological distress with strong general mental health functioning',
+      strength_ar: 'ضائقة نفسية منخفضة مع أداء قوي للصحة النفسية العامة',
+    },
+    mid: {
+      insight_en: 'Moderate distress is present. This is worth monitoring and often responds well to targeted lifestyle and coping improvements.',
+      insight_ar: 'توجد ضائقة معتدلة. هذا يستحق المتابعة وغالباً ما يستجيب جيداً لتحسينات نمط الحياة والتكيف المستهدفة.',
+      rec_en: 'Monitor your wellbeing regularly and prioritise stress-reducing activities, social connection, and adequate rest',
+      rec_ar: 'راقب رفاهيتك بانتظام وأعطِ الأولوية للأنشطة المخففة للضغط والتواصل الاجتماعي والراحة الكافية',
+    },
+    low: {
+      insight_en: 'High psychological distress is indicated. These results suggest that seeking professional mental health support would be beneficial.',
+      insight_ar: 'تشير النتائج إلى ضائقة نفسية مرتفعة. تُقترح هذه النتائج بأن طلب الدعم المتخصص للصحة النفسية سيكون مفيداً.',
+      risk_en: 'High psychological distress levels — professional mental health support is recommended',
+      risk_ar: 'مستويات ضائقة نفسية مرتفعة — يُنصح بالدعم المتخصص للصحة النفسية',
+    },
+  },
+  PSS10: {
+    high: {
+      insight_en: 'Your perceived stress is low — your life situations and coping resources appear well-matched, giving you a sense of control.',
+      insight_ar: 'ضغطك المُدرَك منخفض — تبدو مواقف حياتك وموارد تكيفك متوازنة جيداً، مما يمنحك إحساساً بالسيطرة.',
+      strength_en: 'Low perceived stress with effective coping and sense of control',
+      strength_ar: 'ضغط مُدرَك منخفض مع تكيف فعّال وإحساس بالسيطرة',
+    },
+    mid: {
+      insight_en: 'Moderate perceived stress is common in busy lives. Targeted coping strategies can meaningfully reduce its impact.',
+      insight_ar: 'الضغط المُدرَك المعتدل شائع في الحياة المزدحمة. يمكن لاستراتيجيات التكيف المستهدفة أن تقلل تأثيره بشكل ملموس.',
+      rec_en: 'Identify your key stressors and develop targeted strategies — prioritisation, delegation, and recovery routines can help significantly',
+      rec_ar: 'حدّد مصادر ضغطك الرئيسية وطوّر استراتيجيات مستهدفة — يمكن أن تساعد الأولوية والتفويض وروتين التعافي بشكل ملحوظ',
+    },
+    low: {
+      insight_en: 'High perceived stress is indicated — your current demands may be exceeding your coping resources. Addressing this is important for your health.',
+      insight_ar: 'يُشار إلى ضغط مُدرَك مرتفع — قد تتجاوز متطلباتك الحالية موارد تكيفك. معالجة هذا أمر مهم لصحتك.',
+      risk_en: 'High perceived stress burden affecting coping capacity and overall wellbeing',
+      risk_ar: 'عبء ضغط مُدرَك مرتفع يؤثر على قدرة التكيف والرفاهية العامة',
+    },
+  },
+  PCL5: {
+    high: {
+      insight_en: 'Your PCL-5 results indicate minimal trauma-related symptoms — your recovery capacity and current functioning appear strong.',
+      insight_ar: 'تُشير نتائج PCL-5 إلى أعراض مرتبطة بالصدمة طفيفة — تبدو قدرتك على التعافي وأداؤك الحالي قوياً.',
+      strength_en: 'Minimal trauma-related symptoms with strong recovery and functioning',
+      strength_ar: 'أعراض مرتبطة بالصدمة طفيفة مع تعافٍ قوي وأداء جيد',
+    },
+    mid: {
+      insight_en: 'Some trauma-related symptoms are present at a sub-threshold level. Awareness and support can help manage these effectively.',
+      insight_ar: 'توجد بعض الأعراض المرتبطة بالصدمة بمستوى دون العتبة. يمكن للوعي والدعم مساعدتك في إدارتها بفعالية.',
+      rec_en: 'Speak with a mental health professional about your experiences — trauma-focused approaches can be highly effective',
+      rec_ar: 'تحدّث مع متخصص في الصحة النفسية حول تجاربك — يمكن أن تكون المناهج المتمحورة حول الصدمة فعّالة جداً',
+    },
+    low: {
+      insight_en: 'Your results suggest significant trauma-related symptoms. Professional support from a trauma-informed specialist is strongly recommended. (Screening tool — not a diagnosis.)',
+      insight_ar: 'تُشير نتائجك إلى أعراض ملحوظة مرتبطة بالصدمة. يُنصح بشدة بالدعم المتخصص من متخصص مدرك للصدمة. (أداة فحص — وليست تشخيصاً.)',
+      risk_en: 'Significant trauma-related symptoms — professional trauma-informed support is strongly recommended',
+      risk_ar: 'أعراض ملحوظة مرتبطة بالصدمة — يُنصح بشدة بالدعم المتخصص المدرك للصدمة',
+    },
+  },
+  ESS: {
+    high: {
+      insight_en: 'Your Epworth results indicate low daytime sleepiness — you are alert and well-rested with good sleep recovery.',
+      insight_ar: 'تُشير نتائج إبورث إلى نعاس نهاري منخفض — أنت يقظ ومُستريح جيداً مع تعافٍ جيد من النوم.',
+      strength_en: 'Low daytime sleepiness with good alertness and sleep recovery',
+      strength_ar: 'نعاس نهاري منخفض مع يقظة جيدة وتعافٍ جيد من النوم',
+    },
+    mid: {
+      insight_en: 'Mild daytime sleepiness is present. This can affect concentration, mood, and productivity over time.',
+      insight_ar: 'يوجد نعاس نهاري خفيف. يمكن أن يؤثر هذا على التركيز والمزاج والإنتاجية بمرور الوقت.',
+      rec_en: 'Prioritise consistent sleep schedules, limit caffeine after midday, and evaluate your sleep environment for quality improvements',
+      rec_ar: 'أعطِ الأولوية لجداول نوم منتظمة وحدّد الكافيين بعد منتصف النهار وقيّم بيئة نومك لتحسينات الجودة',
+    },
+    low: {
+      insight_en: 'Significant daytime sleepiness is indicated. This may reflect poor sleep quality, insufficient sleep duration, or an underlying sleep disorder worth evaluating.',
+      insight_ar: 'يُشار إلى نعاس نهاري ملحوظ. قد يعكس هذا جودة نوم ضعيفة أو مدة نوم غير كافية أو اضطراب نوم كامن يستحق التقييم.',
+      risk_en: 'Significant daytime sleepiness affecting alertness and functioning — sleep evaluation is recommended',
+      risk_ar: 'نعاس نهاري ملحوظ يؤثر على اليقظة والأداء — يُنصح بتقييم النوم',
+    },
+  },
 }
 
 const CATEGORY_SUMMARY: Record<string, {
