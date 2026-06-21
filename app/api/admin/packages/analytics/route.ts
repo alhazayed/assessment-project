@@ -6,12 +6,6 @@ export async function GET() {
   await requireAdmin()
   const db = createAdminClient()
 
-  // Package completion counts and avg scores
-  const { data: results } = await db
-    .from('package_results')
-    .select('package_id, composite_score, status, packages(name_en, category, color)')
-    .eq('status', 'completed')
-
   const { data: pkgResults } = await db
     .from('package_results')
     .select(`
@@ -47,7 +41,7 @@ export async function GET() {
   }>()
 
   for (const r of pkgResults) {
-    const pkg = r.packages as { name_en: string; category: string; color: string } | null
+    const pkg = (r.packages as unknown) as { name_en: string; category: string; color: string } | null
     if (!pkg || r.composite_score === null) continue
     const existing = pkgMap.get(r.package_id)
     if (existing) {
@@ -94,7 +88,7 @@ export async function GET() {
   // Category stats
   const catMap = new Map<string, number[]>()
   for (const r of pkgResults) {
-    const pkg = r.packages as { category: string } | null
+    const pkg = (r.packages as unknown) as { category: string } | null
     if (!pkg || r.composite_score === null) continue
     const arr = catMap.get(pkg.category) ?? []
     arr.push(r.composite_score)
