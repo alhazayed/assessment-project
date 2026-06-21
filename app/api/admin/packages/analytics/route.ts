@@ -12,9 +12,6 @@ export async function GET() {
     .select('package_id, composite_score, status, packages(name_en, category, color)')
     .eq('status', 'completed')
 
-  // Demographics breakdown — join with profiles
-  const userIds = [...new Set((results ?? []).map(r => r.package_id ? r : null).filter(Boolean).map((r: any) => r))]
-
   const { data: pkgResults } = await db
     .from('package_results')
     .select(`
