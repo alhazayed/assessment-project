@@ -134,6 +134,91 @@ export interface JournalEntry {
   updated_at: string
 }
 
+// ─── Packages Module ────────────────────────────────────────────────────────
+
+export interface InterpretationBand {
+  min: number
+  max: number
+  band_en: string
+  band_ar: string
+  color: string
+}
+
+export interface OutputDimension {
+  key: string
+  label_en: string
+  label_ar: string
+}
+
+export interface PackageAssessmentItem {
+  id: string
+  package_id: string
+  assessment_code: string
+  name_en: string
+  name_ar: string
+  weight_pct: number
+  is_available: boolean
+  sort_order: number
+}
+
+export interface Package {
+  id: string
+  name_en: string
+  name_ar: string
+  description_en: string | null
+  description_ar: string | null
+  purpose_en: string | null
+  purpose_ar: string | null
+  category: string
+  status: 'draft' | 'active' | 'archived'
+  color: string
+  icon: string | null
+  index_name_en: string | null
+  index_name_ar: string | null
+  scoring_method: string
+  interpretation_bands: InterpretationBand[]
+  output_dimensions: OutputDimension[]
+  disclaimer_en: string
+  disclaimer_ar: string
+  sort_order: number
+  is_prototype: boolean
+  created_at: string
+  updated_at: string
+  package_assessments?: PackageAssessmentItem[]
+}
+
+export interface PackageSession {
+  id: string
+  package_id: string
+  user_id: string
+  status: 'in_progress' | 'completed'
+  started_at: string
+  completed_at: string | null
+  result_id: string | null
+}
+
+export interface PackageResult {
+  id: string
+  package_id: string
+  user_id: string
+  composite_score: number | null
+  band_en: string | null
+  band_ar: string | null
+  individual_scores: Record<string, number>
+  dimension_scores: Record<string, number>
+  strengths_en: string[]
+  strengths_ar: string[]
+  risk_indicators_en: string[]
+  risk_indicators_ar: string[]
+  recommendations_en: string[]
+  recommendations_ar: string[]
+  status: 'in_progress' | 'completed'
+  completed_at: string | null
+  created_at: string
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+
 export interface Message {
   id: string
   patient_id: string

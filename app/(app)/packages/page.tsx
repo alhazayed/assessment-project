@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { Layers, Construction, ShieldAlert, CheckCircle2, Circle } from 'lucide-react'
 
 interface PackageAssessment {
@@ -241,14 +242,26 @@ export default async function PackagesPage() {
                 {/* Card Footer */}
                 <div className="px-5 py-3 flex items-center justify-between" style={{ borderTop: '1px solid var(--divider)', backgroundColor: 'var(--surface-alt)' }}>
                   <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    {isAr ? 'قيد التطوير' : 'Under development'}
+                    {availableCount > 0
+                      ? (isAr ? `${availableCount} مقاييس متاحة` : `${availableCount} available`)
+                      : (isAr ? 'قيد التطوير' : 'Under development')}
                   </span>
-                  <span
-                    className="text-[11.5px] font-semibold px-3 py-1.5 rounded-lg cursor-not-allowed opacity-50"
-                    style={{ backgroundColor: pkg.color, color: '#fff' }}
-                  >
-                    {t('packages.coming_soon', lang)}
-                  </span>
+                  {availableCount > 0 ? (
+                    <Link
+                      href={`/packages/${pkg.id}`}
+                      className="text-[11.5px] font-semibold px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
+                      style={{ backgroundColor: pkg.color, color: '#fff' }}
+                    >
+                      {isAr ? 'عرض الباقة' : 'View Package'}
+                    </Link>
+                  ) : (
+                    <span
+                      className="text-[11.5px] font-semibold px-3 py-1.5 rounded-lg cursor-not-allowed opacity-50"
+                      style={{ backgroundColor: pkg.color, color: '#fff' }}
+                    >
+                      {t('packages.coming_soon', lang)}
+                    </span>
+                  )}
                 </div>
               </div>
             )
