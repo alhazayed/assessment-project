@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Layers, Plus, Trash2, ToggleLeft, ToggleRight, X, Archive, ChevronDown } from 'lucide-react'
+import { Layers, Plus, Trash2, ToggleLeft, ToggleRight, X, Archive, ChevronDown, Download } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
@@ -130,6 +130,14 @@ export default function AdminPackagesPage() {
           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-brand-50">
             <Layers className="w-5 h-5 text-brand-600" />
           </div>
+          <a
+            href="/api/admin/packages/export"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+            style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--text-secondary)', border: '1px solid var(--divider)' }}
+            download
+          >
+            <Download className="w-4 h-4" />{t('admin.packages.export_results', lang)}
+          </a>
           <button onClick={() => setShowForm(true)} className="btn-accent flex items-center gap-2 text-sm">
             <Plus className="w-4 h-4" />{t('admin.packages.create', lang)}
           </button>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { generateRichNarrative } from '@/lib/package-interpret'
 import type { ScoringBand, InterpretationBand } from '@/lib/types'
 
 interface PkgAssessment {
@@ -95,28 +96,30 @@ export async function POST(
     const pkgBands = pkg.interpretation_bands as InterpretationBand[]
     const band = findBand(pkgBands, compositeScore)
 
-    // Generate basic insights (Phase 3 replaces with AI)
-    const strengthsEn: string[] = []
-    const strengthsAr: string[] = []
-    const risksEn: string[] = []
-    const risksAr: string[] = []
-    const recommendationsEn: string[] = []
-    const recommendationsAr: string[] = []
+    // Rich narrative generation
+    const assessmentScores = available
+      .filter(a => individualScores[a.assessment_code] !== undefined)
+      .map(a => ({
+        assessment_code: a.assessment_code,
+        name_en: a.name_en,
+        name_ar: a.name_ar,
+        weight_pct: a.weight_pct,
+        normalized: individualScores[a.assessment_code],
+      }))
 
-    for (const a of available) {
-      const score = individualScores[a.assessment_code]
-      if (score === undefined) continue
-      if (score >= 70) {
-        strengthsEn.push(`Strong performance in ${a.name_en} (${score}/100)`)
-        strengthsAr.push(`أداء قوي في ${a.name_ar} (${score}/100)`)
-      } else if (score < 45) {
-        risksEn.push(`${a.name_en} may benefit from further development (${score}/100)`)
-        risksAr.push(`${a.name_ar} قد يستفيد من مزيد من التطوير (${score}/100)`)
-      } else {
-        recommendationsEn.push(`Continue building your ${a.name_en} skills (${score}/100)`)
-        recommendationsAr.push(`استمر في تعزيز مهاراتك في ${a.name_ar} (${score}/100)`)
-      }
-    }
+    const narrative = generateRichNarrative(
+      pkg.category as string,
+      assessmentScores,
+      compositeScore,
+      band,
+    )
+
+    const strengthsEn = narrative.strengths_en
+    const strengthsAr = narrative.strengths_ar
+    const risksEn = narrative.risks_en
+    const risksAr = narrative.risks_ar
+    const recommendationsEn = narrative.recommendations_en
+    const recommendationsAr = narrative.recommendations_ar
 
     // Upsert result
     const { data: result, error: resultErr } = await db
