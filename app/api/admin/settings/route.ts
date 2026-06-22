@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function GET() {
   try {
@@ -17,6 +18,10 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const { user } = await requireAdmin()
+    const rl = await checkRateLimit(`admin-mut:${user.id}`, { limit: 30, windowMs: 60 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+    }
     const { key, value } = await request.json()
 
     if (!key || typeof key !== 'string' || key.length > 128) {
