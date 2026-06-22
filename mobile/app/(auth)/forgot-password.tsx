@@ -1,8 +1,15 @@
 import { useState } from 'react'
 import {
-  View, Text, TextInput, TouchableOpacity, ActivityIndicator,
-  KeyboardAvoidingView, Platform, SafeAreaView,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '@/lib/supabase'
@@ -14,6 +21,7 @@ export default function ForgotPasswordScreen() {
   const router = useRouter()
   const { lang } = useAppLocale()
   const isRTL = useIsRTL(lang)
+
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -22,72 +30,90 @@ export default function ForgotPasswordScreen() {
   async function handleReset() {
     if (!email.trim()) { setError(t('emailRequired', lang)); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError(t('invalidEmail', lang)); return }
-    setLoading(true); setError('')
+    setLoading(true)
+    setError('')
     await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
       redirectTo: 'vwelfare://reset-password',
     })
     // Always show success to prevent email enumeration
-    setSent(true); setLoading(false)
+    setSent(true)
+    setLoading(false)
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-white dark:bg-gray-900">
-      <SafeAreaView className="flex-1 px-6 pt-4 pb-8">
-        <TouchableOpacity onPress={() => router.back()} className="mb-8 self-start flex-row items-center gap-1">
-          <Ionicons name={isRTL ? 'arrow-forward' : 'arrow-back'} size={20} color="#1D6296" />
-          <Text style={{ color: '#1D6296' }}>{t('backToLogin', lang)}</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.inner}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backRow, isRTL && styles.rtlRow]}
+        >
+          <Ionicons
+            name={isRTL ? 'arrow-forward' : 'arrow-back'}
+            size={20}
+            color="#1D6296"
+          />
+          <Text style={[styles.backText, isRTL && { marginRight: 6 }]}>
+            {t('backToLogin', lang)}
+          </Text>
         </TouchableOpacity>
 
-        <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
-          style={isRTL ? { textAlign: 'right', writingDirection: 'rtl' } : undefined}>
+        <Text style={[styles.title, isRTL && styles.rtlText]}>
           {t('forgotPassword', lang)}
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 mb-8"
-          style={isRTL ? { textAlign: 'right', writingDirection: 'rtl' } : undefined}>
-          {lang === 'ar' ? 'سنرسل رابط إعادة التعيين إلى بريدك الإلكتروني' : "We'll send a reset link to your email."}
+        <Text style={[styles.subtitle, isRTL && styles.rtlText]}>
+          {lang === 'ar'
+            ? 'سنرسل رابط إعادة التعيين إلى بريدك الإلكتروني'
+            : "We'll send a reset link to your email."}
         </Text>
 
         {sent ? (
-          <View className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-5">
-            <Text className="text-green-700 dark:text-green-400 font-semibold text-center text-base">
-              {lang === 'ar' ? 'تحقق من بريدك الإلكتروني' : 'Check your email!'}
+          <View style={styles.successBox}>
+            <Text style={[styles.successTitle, isRTL && styles.rtlText]}>
+              {lang === 'ar' ? 'تحقق من بريدك الإلكتروني!' : 'Check your email!'}
             </Text>
-            <Text className="text-green-600 dark:text-green-500 text-center text-sm mt-1">
-              {lang === 'ar' ? 'إذا كان الحساب موجوداً، ستصل رسالة إعادة التعيين خلال دقائق.' : "If an account exists, you'll receive a reset link shortly."}
+            <Text style={[styles.successBody, isRTL && styles.rtlText]}>
+              {lang === 'ar'
+                ? 'إذا كان الحساب موجوداً، ستصل رسالة إعادة التعيين خلال دقائق.'
+                : "If an account exists, you'll receive a reset link shortly."}
             </Text>
           </View>
         ) : (
           <>
             {!!error && (
-              <View className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
-                <Text className="text-red-600 text-sm" style={isRTL ? { textAlign: 'right' } : undefined}>{error}</Text>
+              <View style={styles.errorBox}>
+                <Text style={[styles.errorText, isRTL && styles.rtlText]}>{error}</Text>
               </View>
             )}
-            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
-              style={isRTL ? { textAlign: 'right' } : undefined}>
-              {t('emailPlaceholder', lang).replace('you@example.com', '') || 'Email'}
-            </Text>
-            <TextInput
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white text-sm mb-6 bg-white dark:bg-gray-800"
-              placeholder={t('emailPlaceholder', lang)}
-              placeholderTextColor="#9CA3AF"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={email}
-              onChangeText={setEmail}
-              textAlign={isRTL ? 'right' : 'left'}
-            />
+
+            <View style={styles.fieldGroup}>
+              <Text style={[styles.fieldLabel, isRTL && styles.rtlText]}>
+                {t('email', lang)}
+              </Text>
+              <TextInput
+                style={[styles.textInput, isRTL && styles.rtlText]}
+                placeholder={t('emailPlaceholder', lang)}
+                placeholderTextColor="#9CA3AF"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={email}
+                onChangeText={setEmail}
+              />
+            </View>
+
             <TouchableOpacity
               onPress={handleReset}
               disabled={loading}
-              className="w-full py-3.5 rounded-xl items-center"
-              style={{ backgroundColor: '#1D6296' }}
+              style={styles.submitBtn}
             >
-              {loading
-                ? <ActivityIndicator color="white" />
-                : <Text className="text-white font-semibold">{t('resetPassword', lang)}</Text>
-              }
+              {loading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.submitBtnText}>{t('resetPassword', lang)}</Text>
+              )}
             </TouchableOpacity>
           </>
         )}
@@ -95,3 +121,51 @@ export default function ForgotPasswordScreen() {
     </KeyboardAvoidingView>
   )
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  inner: { flex: 1, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32 },
+  rtlRow: { flexDirection: 'row-reverse' },
+  rtlText: { writingDirection: 'rtl', textAlign: 'right' },
+  backRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 32, alignSelf: 'flex-start' },
+  backText: { color: '#1D6296', fontSize: 14, fontWeight: '500', marginLeft: 4 },
+  title: { fontSize: 24, fontWeight: '700', color: '#111827', marginBottom: 8 },
+  subtitle: { fontSize: 14, color: '#6B7280', marginBottom: 32, lineHeight: 22 },
+  successBox: {
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    borderRadius: 16,
+    padding: 20,
+  },
+  successTitle: { fontSize: 16, fontWeight: '700', color: '#15803D', textAlign: 'center', marginBottom: 8 },
+  successBody: { fontSize: 13, color: '#16A34A', textAlign: 'center', lineHeight: 20 },
+  errorBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: { color: '#DC2626', fontSize: 13 },
+  fieldGroup: { marginBottom: 24 },
+  fieldLabel: { fontSize: 13, fontWeight: '500', color: '#374151', marginBottom: 6 },
+  textInput: {
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: '#111827',
+    backgroundColor: '#FAFAFA',
+  },
+  submitBtn: {
+    backgroundColor: '#1D6296',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  submitBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
+})

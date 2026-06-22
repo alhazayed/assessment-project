@@ -17,10 +17,25 @@
         "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#12273C"
       },
-      "package": "com.vwelfare.app"
+      "package": "com.vwelfare.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "ios": {
-      "bundleIdentifier": "com.vwelfare.app"
+      "bundleIdentifier": "com.vwelfare.app",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "V Welfare does not use the camera.",
+        "NSMicrophoneUsageDescription": "V Welfare does not use the microphone.",
+        "NSPhotoLibraryUsageDescription": "V Welfare does not access your photo library.",
+        "NSUserNotificationsUsageDescription": "V Welfare sends daily mood check-in reminders and weekly assessment reminders.",
+        "UIBackgroundModes": ["fetch", "remote-notification"]
+      }
     },
     "plugins": [
       "expo-router",

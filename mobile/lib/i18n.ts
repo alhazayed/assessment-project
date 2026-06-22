@@ -192,6 +192,22 @@ const translations = {
     getStarted: 'Get Started',
     skip: 'Skip',
 
+    // Journal
+    journalTitle: 'Journal',
+    newEntry: '+ New Entry',
+    journalEntryTitle: 'Title',
+    journalEntryContent: 'Write your thoughts...',
+    noJournalEntries: 'No journal entries yet.',
+    writeFirstEntry: 'Write your first entry',
+    journalPlaceholderTitle: 'What\'s on your mind?',
+    journalPlaceholderContent: 'Express your thoughts and feelings freely...',
+    saveEntry: 'Save Entry',
+    editEntry: 'Edit',
+    deleteEntry: 'Delete',
+    deleteEntryConfirm: 'Are you sure you want to delete this entry?',
+    entryDeleted: 'Entry deleted',
+    entrySaved: 'Entry saved',
+
     // Common
     loading: 'Loading...',
     error: 'An error occurred',
@@ -395,6 +411,22 @@ const translations = {
     slide3Body: 'بياناتك الصحية النفسية مشفرة ومحمية. نتبع أفضل الممارسات المستوحاة من معايير HIPAA للحفاظ على أمان معلوماتك.',
     getStarted: 'ابدأ الآن',
     skip: 'تخطي',
+
+    // Journal
+    journalTitle: 'المجلة',
+    newEntry: '+ إدخال جديد',
+    journalEntryTitle: 'العنوان',
+    journalEntryContent: 'اكتب أفكارك...',
+    noJournalEntries: 'لا توجد إدخالات في المجلة بعد.',
+    writeFirstEntry: 'اكتب إدخالك الأول',
+    journalPlaceholderTitle: 'ما الذي يشغل تفكيرك؟',
+    journalPlaceholderContent: 'عبّر عن أفكارك ومشاعرك بحرية...',
+    saveEntry: 'حفظ الإدخال',
+    editEntry: 'تعديل',
+    deleteEntry: 'حذف',
+    deleteEntryConfirm: 'هل أنت متأكد من حذف هذا الإدخال؟',
+    entryDeleted: 'تم حذف الإدخال',
+    entrySaved: 'تم حفظ الإدخال',
 
     // Common
     loading: 'جارٍ التحميل...',
