@@ -26,6 +26,11 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://vwelfare.vercel.app'),
   alternates: {
     canonical: '/',
+    languages: {
+      'en': 'https://vwelfare.vercel.app',
+      'ar': 'https://vwelfare.vercel.app/?lang=ar',
+      'x-default': 'https://vwelfare.vercel.app',
+    },
   },
   openGraph: {
     type: 'website',

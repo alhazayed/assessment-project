@@ -20,6 +20,8 @@ import type { Lang } from '@/lib/i18n'
 import type { ThemeMode } from '@/lib/hooks'
 import {
   requestNotificationPermission,
+  registerPushToken,
+  unregisterPushToken,
   scheduleDailyMoodReminder,
   scheduleWeeklyAssessmentReminder,
   cancelAllReminders,
@@ -56,8 +58,10 @@ export default function SettingsScreen() {
       }
       await scheduleDailyMoodReminder(lang)
       await scheduleWeeklyAssessmentReminder(lang)
+      await registerPushToken()
     } else {
       await cancelAllReminders()
+      await unregisterPushToken()
     }
     setNotificationsEnabled(value)
     await persistNotificationsEnabled(value)
