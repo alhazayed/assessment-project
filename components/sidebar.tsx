@@ -34,9 +34,10 @@ import DarkModeToggle from '@/components/dark-mode-toggle'
 interface SidebarProps {
   profile: Profile | null
   lang: Lang
+  showPackages?: boolean
 }
 
-export default function Sidebar({ profile, lang }: SidebarProps) {
+export default function Sidebar({ profile, lang, showPackages = false }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
@@ -58,7 +59,7 @@ export default function Sidebar({ profile, lang }: SidebarProps) {
   const patientNav = [
     { href: '/dashboard',   label: t('nav.dashboard', lang),   icon: LayoutDashboard, badge: undefined },
     { href: '/assessments', label: t('nav.assessments', lang),  icon: ClipboardList,   badge: undefined },
-    { href: '/packages',    label: t('nav.packages', lang),    icon: Layers,          badge: t('nav.packages_badge', lang) },
+    ...(showPackages ? [{ href: '/packages', label: t('nav.packages', lang), icon: Layers, badge: t('nav.packages_badge', lang) }] : []),
     { href: '/adhd-zones',  label: t('nav.adhd_zones', lang),   icon: Brain,           badge: undefined },
     { href: '/mood',        label: t('nav.mood', lang),         icon: Heart,           badge: undefined },
     { href: '/journal',     label: t('nav.journal', lang),      icon: BookOpen,        badge: undefined },

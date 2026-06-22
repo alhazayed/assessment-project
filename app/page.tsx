@@ -21,10 +21,11 @@ export default async function LandingPage() {
   const lang = getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
 
+  let isLoggedIn = false
   if (user) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     if (profile?.role === 'admin' || profile?.role === 'superadmin') redirect('/x/control')
-    redirect('/dashboard')
+    isLoggedIn = true
   }
 
   const { data: definitions } = await supabase
@@ -70,13 +71,22 @@ export default async function LandingPage() {
           <div className="flex items-center gap-1.5 ms-auto">
             <DarkModeToggle />
             <LanguageToggle lang={lang} />
-            {/* Desktop: auth buttons */}
-            <Link href="/login" className="hidden sm:inline-flex btn-ghost ms-1">{t('nav.signin', lang)}</Link>
-            <Link href="/register" className="hidden sm:inline-flex btn-accent">{t('nav.signup', lang)}</Link>
-            {/* Mobile: hamburger */}
-            <div className="sm:hidden ms-0.5">
-              <LandingMobileMenu lang={lang} />
-            </div>
+            {isLoggedIn ? (
+              <>
+                <Link href="/dashboard" className="hidden sm:inline-flex btn-accent ms-1">{t('nav.dashboard', lang)}</Link>
+                <div className="sm:hidden ms-0.5">
+                  <LandingMobileMenu lang={lang} isLoggedIn />
+                </div>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="hidden sm:inline-flex btn-ghost ms-1">{t('nav.signin', lang)}</Link>
+                <Link href="/register" className="hidden sm:inline-flex btn-accent">{t('nav.signup', lang)}</Link>
+                <div className="sm:hidden ms-0.5">
+                  <LandingMobileMenu lang={lang} />
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>

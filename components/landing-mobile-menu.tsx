@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { t } from '@/lib/i18n'
 import type { Lang } from '@/lib/i18n'
 
-export default function LandingMobileMenu({ lang }: { lang: Lang }) {
+export default function LandingMobileMenu({ lang, isLoggedIn = false }: { lang: Lang; isLoggedIn?: boolean }) {
   const [open, setOpen] = useState(false)
   const isRtl = lang === 'ar'
 
@@ -74,14 +74,22 @@ export default function LandingMobileMenu({ lang }: { lang: Lang }) {
               ))}
             </nav>
 
-            {/* Auth buttons */}
+            {/* Auth / dashboard buttons */}
             <div className="mt-auto p-4 flex flex-col gap-3 border-t" style={{ borderColor: 'var(--border)' }}>
-              <Link href="/login" onClick={close} className="btn-ghost w-full justify-center text-center">
-                {t('nav.signin', lang)}
-              </Link>
-              <Link href="/register" onClick={close} className="btn-accent w-full justify-center text-center">
-                {t('nav.signup', lang)}
-              </Link>
+              {isLoggedIn ? (
+                <Link href="/dashboard" onClick={close} className="btn-accent w-full justify-center text-center">
+                  {t('nav.dashboard', lang)}
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login" onClick={close} className="btn-ghost w-full justify-center text-center">
+                    {t('nav.signin', lang)}
+                  </Link>
+                  <Link href="/register" onClick={close} className="btn-accent w-full justify-center text-center">
+                    {t('nav.signup', lang)}
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </>
