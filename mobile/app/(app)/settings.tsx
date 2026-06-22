@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -12,28 +12,40 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import * as Notifications from 'expo-notifications'
 import { supabase } from '@/lib/supabase'
-import { useLocale, useThemeMode, useIsRTL } from '@/lib/hooks'
+import { useAppLocale } from '@/lib/LocaleContext'
+import { useThemeMode, useIsRTL } from '@/lib/hooks'
 import { t } from '@/lib/i18n'
 import type { Lang } from '@/lib/i18n'
 import type { ThemeMode } from '@/lib/hooks'
+import {
+  requestNotificationPermission,
+  scheduleDailyMoodReminder,
+  scheduleWeeklyAssessmentReminder,
+  cancelAllReminders,
+  getNotificationsEnabled,
+  setNotificationsEnabled as persistNotificationsEnabled,
+} from '@/lib/notifications'
 
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? 'https://vwelfare.vercel.app'
 
 export default function SettingsScreen() {
   const router = useRouter()
-  const { lang, setLang } = useLocale()
+  const { lang, setLang } = useAppLocale()
   const { mode, setMode } = useThemeMode()
   const isRTL = useIsRTL(lang)
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
 
+  useEffect(() => {
+    getNotificationsEnabled().then(setNotificationsEnabled)
+  }, [])
+
   async function handleToggleNotifications(value: boolean) {
     if (value) {
-      const { status } = await Notifications.requestPermissionsAsync()
-      if (status !== 'granted') {
+      const granted = await requestNotificationPermission()
+      if (!granted) {
         Alert.alert(
           t('notifications', lang),
           lang === 'ar'
@@ -42,8 +54,13 @@ export default function SettingsScreen() {
         )
         return
       }
+      await scheduleDailyMoodReminder(lang)
+      await scheduleWeeklyAssessmentReminder(lang)
+    } else {
+      await cancelAllReminders()
     }
     setNotificationsEnabled(value)
+    await persistNotificationsEnabled(value)
   }
 
   function handleDeleteAccount() {
@@ -214,14 +231,20 @@ export default function SettingsScreen() {
             <Ionicons name={isRTL ? 'chevron-back' : 'chevron-forward'} size={18} color="#9CA3AF" />
           </TouchableOpacity>
           <View style={styles.divider} />
-          <TouchableOpacity style={[styles.linkRow, isRTL && styles.rtlRow]}>
+          <TouchableOpacity
+            onPress={() => router.push('/privacy' as any)}
+            style={[styles.linkRow, isRTL && styles.rtlRow]}
+          >
             <Text style={[styles.linkText, isRTL && styles.rtlText]}>
               {t('privacy', lang)}
             </Text>
             <Ionicons name={isRTL ? 'chevron-back' : 'chevron-forward'} size={18} color="#9CA3AF" />
           </TouchableOpacity>
           <View style={styles.divider} />
-          <TouchableOpacity style={[styles.linkRow, isRTL && styles.rtlRow]}>
+          <TouchableOpacity
+            onPress={() => router.push('/terms' as any)}
+            style={[styles.linkRow, isRTL && styles.rtlRow]}
+          >
             <Text style={[styles.linkText, isRTL && styles.rtlText]}>
               {t('termsOfUse', lang)}
             </Text>

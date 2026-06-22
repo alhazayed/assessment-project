@@ -39,7 +39,15 @@ export default function RootLayout() {
   return (
     <LocaleProvider>
       <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="onboarding" />
+        <Stack.Screen name="privacy" />
+        <Stack.Screen name="terms" />
+        <Stack.Screen name="emergency" />
+        <Stack.Screen name="reset-password" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(app)" />
+      </Stack>
     </LocaleProvider>
   )
 }
