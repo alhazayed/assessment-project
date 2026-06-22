@@ -9,12 +9,15 @@ import {
   Platform,
   ActivityIndicator,
   StyleSheet,
+  Alert,
+  Linking,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocale, useIsRTL } from '@/lib/hooks'
 import { t } from '@/lib/i18n'
+import { supabase } from '@/lib/supabase'
 
 interface ChatMessage {
   id: string
@@ -61,17 +64,35 @@ export default function AIScreen() {
     setLoading(true)
 
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      // Build last-10-turn history for multi-turn context
+      const history = [...messages, userMsg].slice(-11, -1).map(m => ({
+        role: m.role,
+        text: m.text,
+      }))
+
       const res = await fetch(`${WEB_URL}/api/ai-chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, lang }),
-        signal: AbortSignal.timeout(15000),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ message: text, lang, history }),
+        signal: AbortSignal.timeout(20000),
       })
 
       let aiText: string
+      let isEmergency = false
       if (res.ok) {
         const data = await res.json()
-        aiText = data.message ?? data.response ?? t('aiStaticResponse', lang)
+        aiText = data.reply ?? t('aiStaticResponse', lang)
+        isEmergency = data.emergency === true
+      } else if (res.status === 429) {
+        aiText = lang === 'ar'
+          ? 'لقد وصلت إلى حد الرسائل. يرجى المحاولة مجدداً لاحقاً.'
+          : 'You\'ve reached the message limit. Please try again later.'
       } else {
         aiText = t('aiStaticResponse', lang)
       }
@@ -83,6 +104,17 @@ export default function AIScreen() {
         timestamp: new Date(),
       }
       setMessages(prev => [...prev, aiMsg])
+
+      if (isEmergency) {
+        Alert.alert(
+          lang === 'ar' ? 'موارد الطوارئ' : 'Emergency Resources',
+          lang === 'ar' ? 'هل تريد الاتصال بخط دعم الأزمات؟' : 'Would you like to call the crisis line?',
+          [
+            { text: lang === 'ar' ? 'إلغاء' : 'Cancel', style: 'cancel' },
+            { text: '988', onPress: () => Linking.openURL('tel:988') },
+          ]
+        )
+      }
     } catch {
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
