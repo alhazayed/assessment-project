@@ -12,7 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) redirect('/login')
 
   const [{ data }, { data: flagRow }] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('profiles').select('id, role, full_name_en, full_name_ar, language_preference, is_active').eq('id', user.id).single(),
     supabase.from('feature_flags').select('is_enabled').eq('flag_key', 'show_packages').single(),
   ])
   const profile = data as Profile | null
