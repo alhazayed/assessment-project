@@ -150,6 +150,7 @@ export default function Sidebar({ profile, lang, showPackages = false }: Sidebar
               key={item.href}
               href={item.href}
               className={isActive ? 'nav-item-active' : 'nav-item'}
+              aria-current={isActive ? 'page' as const : undefined}
               style={isRtl && isActive ? {
                 borderLeft: 'none',
                 borderRight: '3px solid var(--vw-blue)',

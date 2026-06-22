@@ -155,7 +155,7 @@ export default function RegisterPage() {
       </div>
 
       {error && (
-        <div className="alert-error mb-5 text-[14px]">
+        <div id="register-error" className="alert-error mb-5 text-[14px]">
           {error}
         </div>
       )}
@@ -189,6 +189,7 @@ export default function RegisterPage() {
               onChange={e => setEmail(e.target.value)}
               required
               placeholder="you@example.com"
+              aria-describedby={error ? 'register-error' : undefined}
             />
           </div>
         </div>

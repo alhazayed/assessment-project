@@ -68,7 +68,7 @@ export default function LoginPage() {
 
       {/* Error */}
       {error && (
-        <div className="alert-error mb-5 text-[14px]" style={{ color: '#C02A2A' }}>
+        <div id="login-error" className="alert-error mb-5 text-[14px]" style={{ color: '#C02A2A' }}>
           {error}
         </div>
       )}
@@ -87,6 +87,7 @@ export default function LoginPage() {
               required
               autoComplete="email"
               placeholder="you@example.com"
+              aria-describedby={error ? 'login-error' : undefined}
             />
           </div>
         </div>

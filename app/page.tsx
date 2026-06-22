@@ -97,10 +97,10 @@ export default async function LandingPage() {
         style={{ background: 'linear-gradient(180deg, #EAF2F9 0%, var(--page-bg) 100%)' }}
       >
         {/* Decorative circles */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-12 -right-20 w-80 h-80 rounded-full opacity-[0.07]" style={{ background: '#1D6296' }} />
-          <div className="absolute top-1/2 -left-32 w-96 h-96 rounded-full opacity-[0.05]" style={{ background: '#4C9BE0' }} />
-          <div className="absolute bottom-0 right-1/4 w-48 h-48 rounded-full opacity-[0.06]" style={{ background: '#F3650A' }} />
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+          <div className="absolute -top-12 -right-20 w-80 h-80 rounded-full opacity-[0.07]" style={{ background: '#1D6296' }} aria-hidden="true" />
+          <div className="absolute top-1/2 -left-32 w-96 h-96 rounded-full opacity-[0.05]" style={{ background: '#4C9BE0' }} aria-hidden="true" />
+          <div className="absolute bottom-0 right-1/4 w-48 h-48 rounded-full opacity-[0.06]" style={{ background: '#F3650A' }} aria-hidden="true" />
         </div>
 
         <div className="relative max-w-4xl mx-auto text-center">
@@ -347,6 +347,25 @@ export default async function LandingPage() {
           </p>
         </div>
       </footer>
+
+      {/* JSON-LD structured data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'V Welfare',
+            url: 'https://vwelfare.vercel.app',
+            description: 'Compassionate mental health assessment and wellbeing platform offering validated psychometric tools in Arabic and English.',
+            sameAs: [],
+            offers: {
+              '@type': 'Offer',
+              description: 'Free mental health assessments and wellbeing tools',
+            },
+          }),
+        }}
+      />
 
     </div>
   )
