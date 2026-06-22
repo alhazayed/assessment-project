@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '@/lib/useAuth'
+import { LocaleProvider } from '@/lib/LocaleContext'
 
 export default function RootLayout() {
   const { session, loading } = useAuth()
@@ -36,9 +37,9 @@ export default function RootLayout() {
   }, [session, loading, segments, onboarded])
 
   return (
-    <>
+    <LocaleProvider>
       <StatusBar style="auto" />
       <Stack screenOptions={{ headerShown: false }} />
-    </>
+    </LocaleProvider>
   )
 }

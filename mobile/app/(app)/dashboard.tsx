@@ -12,7 +12,8 @@ import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/useAuth'
-import { useLocale, useIsRTL } from '@/lib/hooks'
+import { useIsRTL } from '@/lib/hooks'
+import { useAppLocale } from '@/lib/LocaleContext'
 import { t } from '@/lib/i18n'
 import { getMoodColor, getSeverityColor } from '@/lib/theme'
 import type { AssessmentSubmission, AssessmentDefinition, MoodLog } from '@/lib/types'
@@ -30,7 +31,7 @@ const AI_TIPS = [
 export default function DashboardScreen() {
   const router = useRouter()
   const { profile } = useAuth()
-  const { lang } = useLocale()
+  const { lang } = useAppLocale()
   const isRTL = useIsRTL(lang)
 
   const [submissions, setSubmissions] = useState<(AssessmentSubmission & {

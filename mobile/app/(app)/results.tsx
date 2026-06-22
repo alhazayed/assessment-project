@@ -8,10 +8,13 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native'
+import * as FileSystem from 'expo-file-system'
+import * as Sharing from 'expo-sharing'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '@/lib/supabase'
-import { useLocale, useIsRTL } from '@/lib/hooks'
+import { useIsRTL } from '@/lib/hooks'
+import { useAppLocale } from '@/lib/LocaleContext'
 import { t } from '@/lib/i18n'
 import { getSeverityColor } from '@/lib/theme'
 import type { AssessmentSubmission, AssessmentDefinition } from '@/lib/types'
@@ -23,7 +26,7 @@ type SubmissionWithDef = AssessmentSubmission & {
 const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? 'https://vwelfare.vercel.app'
 
 export default function ResultsScreen() {
-  const { lang } = useLocale()
+  const { lang } = useAppLocale()
   const isRTL = useIsRTL(lang)
 
   const [submissions, setSubmissions] = useState<SubmissionWithDef[]>([])
@@ -61,23 +64,35 @@ export default function ResultsScreen() {
     setDownloading(submissionId)
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch(`${WEB_URL}/api/export/pdf/${submissionId}`, {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
-      })
-      if (res.ok) {
-        Alert.alert(
-          lang === 'ar' ? 'تم' : 'Success',
-          lang === 'ar' ? 'جارٍ تحضير ملف PDF...' : 'Your PDF is being prepared. Check your email.',
-        )
+      const token = session?.access_token
+      if (!token) { Alert.alert('Error', 'Please sign in again'); setDownloading(null); return }
+
+      const fileUri = FileSystem.documentDirectory + `report-${submissionId}.pdf`
+      const downloadRes = await FileSystem.downloadAsync(
+        `${WEB_URL}/api/export/pdf/${submissionId}`,
+        fileUri,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+
+      if (downloadRes.status === 200) {
+        const canShare = await Sharing.isAvailableAsync()
+        if (canShare) {
+          await Sharing.shareAsync(downloadRes.uri, {
+            mimeType: 'application/pdf',
+            dialogTitle: lang === 'ar' ? 'مشاركة التقرير' : 'Share Report',
+            UTI: 'com.adobe.pdf',
+          })
+        } else {
+          Alert.alert(
+            lang === 'ar' ? 'تم الحفظ' : 'Saved',
+            lang === 'ar' ? 'تم حفظ التقرير في الجهاز' : 'Report saved to device'
+          )
+        }
       } else {
-        throw new Error('Failed')
+        Alert.alert('Error', lang === 'ar' ? 'فشل تحميل التقرير' : 'Failed to download report')
       }
     } catch {
-      Alert.alert(
-        lang === 'ar' ? 'خطأ' : 'Error',
-        lang === 'ar' ? 'تعذر تنزيل التقرير.' : 'Unable to download the report. Please try again.',
-      )
+      Alert.alert('Error', lang === 'ar' ? 'حدث خطأ' : 'Something went wrong')
     } finally {
       setDownloading(null)
     }

@@ -1,9 +1,13 @@
 import { Tabs } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useAppLocale } from '@/lib/LocaleContext'
+import { t } from '@/lib/i18n'
 
 type IconName = React.ComponentProps<typeof Ionicons>['name']
 
 export default function AppLayout() {
+  const { lang } = useAppLocale()
+
   return (
     <Tabs
       screenOptions={{
@@ -22,7 +26,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: 'Home',
+          title: t('home', lang),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -31,7 +35,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="assessments/index"
         options={{
-          title: 'Assessments',
+          title: t('assessments', lang),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="clipboard" size={size} color={color} />
           ),
@@ -40,7 +44,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="results"
         options={{
-          title: 'Results',
+          title: t('results', lang),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="bar-chart" size={size} color={color} />
           ),
@@ -49,7 +53,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="resources/index"
         options={{
-          title: 'Resources',
+          title: t('resources', lang),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="library" size={size} color={color} />
           ),
@@ -58,7 +62,7 @@ export default function AppLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('profile', lang),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
