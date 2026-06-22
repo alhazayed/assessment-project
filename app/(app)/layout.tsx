@@ -11,12 +11,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  const [{ data }, { data: flagRow }] = await Promise.all([
+    supabase.from('profiles').select('id, role, full_name_en, full_name_ar, language_preference, is_active').eq('id', user.id).single(),
+    supabase.from('feature_flags').select('is_enabled').eq('flag_key', 'show_packages').single(),
+  ])
   const profile = data as Profile | null
+  const showPackages = flagRow?.is_enabled ?? false
 
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--page-bg)' }}>
@@ -26,7 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       >
         {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
       </a>
-      <Sidebar profile={profile} lang={lang} />
+      <Sidebar profile={profile} lang={lang} showPackages={showPackages} />
       <main
         id="main-content"
         className="flex-1 min-w-0 overflow-auto pt-16 lg:pt-0 lg:ms-[248px]"

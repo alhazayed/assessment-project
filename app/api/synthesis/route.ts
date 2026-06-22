@@ -143,6 +143,25 @@ Rules:
         Array.isArray(parsed.recommendations) &&
         ['positive', 'cautionary', 'urgent'].includes(parsed.overall_tone)
       ) {
+        // Apply length caps to prevent oversized AI responses from being stored/returned
+        const MAX_LEN = 5000
+        if (parsed.summary && parsed.summary.length > MAX_LEN) parsed.summary = parsed.summary.slice(0, MAX_LEN)
+        if (parsed.summary_ar && parsed.summary_ar.length > MAX_LEN) parsed.summary_ar = parsed.summary_ar.slice(0, MAX_LEN)
+        if (parsed.high_priority_scale && typeof parsed.high_priority_scale === 'string' && parsed.high_priority_scale.length > MAX_LEN) {
+          parsed.high_priority_scale = parsed.high_priority_scale.slice(0, MAX_LEN)
+        }
+        if (Array.isArray(parsed.patterns)) {
+          parsed.patterns = parsed.patterns.map((s: unknown) => typeof s === 'string' && s.length > MAX_LEN ? s.slice(0, MAX_LEN) : s)
+        }
+        if (Array.isArray(parsed.strengths)) {
+          parsed.strengths = parsed.strengths.map((s: unknown) => typeof s === 'string' && s.length > MAX_LEN ? s.slice(0, MAX_LEN) : s)
+        }
+        if (Array.isArray(parsed.areas_of_concern)) {
+          parsed.areas_of_concern = parsed.areas_of_concern.map((s: unknown) => typeof s === 'string' && s.length > MAX_LEN ? s.slice(0, MAX_LEN) : s)
+        }
+        if (Array.isArray(parsed.recommendations)) {
+          parsed.recommendations = parsed.recommendations.map((s: unknown) => typeof s === 'string' && s.length > MAX_LEN ? s.slice(0, MAX_LEN) : s)
+        }
         synthesis = parsed
       }
     } catch {

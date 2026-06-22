@@ -8,10 +8,21 @@ import { User, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, RefreshCw } fr
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
+function safeRedirectUrl(raw: string | null): string | null {
+  if (!raw) return null
+  // Reject absolute URLs and protocol-relative URLs
+  if (/^https?:\/\//i.test(raw) || raw.startsWith('//')) return null
+  // Must start with /
+  if (!raw.startsWith('/')) return null
+  // Reject redirects to admin or API areas from public auth
+  if (raw.startsWith('/x/control') || raw.startsWith('/api/')) return null
+  return raw
+}
+
 export default function RegisterPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const next = searchParams.get('next')
+  const next = safeRedirectUrl(searchParams.get('next'))
   const lang = useLang()
   const isRtl = lang === 'ar'
 
@@ -144,7 +155,7 @@ export default function RegisterPage() {
       </div>
 
       {error && (
-        <div className="alert-error mb-5 text-[14px]">
+        <div id="register-error" className="alert-error mb-5 text-[14px]">
           {error}
         </div>
       )}
@@ -178,6 +189,7 @@ export default function RegisterPage() {
               onChange={e => setEmail(e.target.value)}
               required
               placeholder="you@example.com"
+              aria-describedby={error ? 'register-error' : undefined}
             />
           </div>
         </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Layers, Plus, Trash2, ToggleLeft, ToggleRight, X, Archive, ChevronDown, Download } from 'lucide-react'
+import { Layers, Plus, Trash2, ToggleLeft, ToggleRight, X, Archive, ChevronDown, Download, Settings2, BarChart3 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
@@ -13,6 +13,14 @@ interface PackageAssessment {
   weight_pct: number
   is_available: boolean
   sort_order: number
+}
+
+interface InterpBand {
+  min: number; max: number; band_en: string; band_ar: string; color: string
+}
+
+interface OutputDim {
+  key: string; label_en: string; label_ar: string
 }
 
 interface Package {
@@ -28,7 +36,21 @@ interface Package {
   index_name_ar: string | null
   is_prototype: boolean
   updated_at: string
+  interpretation_bands: InterpBand[]
+  output_dimensions: OutputDim[]
   package_assessments: PackageAssessment[]
+}
+
+interface PkgStat {
+  package_id: string; name_en: string; category: string; color: string
+  count: number; avg_score: number; min_score: number; max_score: number
+}
+
+interface Analytics {
+  packageStats: PkgStat[]
+  genderBreakdown: { gender: string; count: number; avg_score: number }[]
+  categoryStats: { category: string; count: number; avg_score: number }[]
+  totalCompleted: number
 }
 
 const CATEGORIES = ['general', 'marriage', 'employment', 'leadership', 'academic']
@@ -51,6 +73,8 @@ const statusBadge = (s: string) => ({
   archived: 'bg-amber-50 text-amber-700 border-amber-200',
 }[s] || 'bg-gray-100 text-gray-600 border-gray-200')
 
+const BAND_COLORS = ['#22c55e', '#f59e0b', '#f97316', '#ef4444', '#3b82f6', '#8b5cf6']
+
 export default function AdminPackagesPage() {
   const lang = useLang()
   const isAr = lang === 'ar'
@@ -61,8 +85,51 @@ export default function AdminPackagesPage() {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [editingScoring, setEditingScoring] = useState<string | null>(null)
+  const [bands, setBands] = useState<InterpBand[]>([])
+  const [dims, setDims] = useState<OutputDim[]>([])
+  const [savingScoring, setSavingScoring] = useState(false)
+  const [analytics, setAnalytics] = useState<Analytics | null>(null)
+  const [showAnalytics, setShowAnalytics] = useState(false)
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
   function flash(m: string) { setMsg(m); setTimeout(() => setMsg(''), 3000) }
+
+  function openScoringEditor(pkg: Package) {
+    setEditingScoring(pkg.id)
+    setBands(pkg.interpretation_bands?.length
+      ? [...pkg.interpretation_bands]
+      : [{ min: 80, max: 100, band_en: 'High', band_ar: 'عالٍ', color: '#22c55e' },
+         { min: 60, max: 79, band_en: 'Moderate', band_ar: 'معتدل', color: '#f59e0b' },
+         { min: 40, max: 59, band_en: 'Developing', band_ar: 'في التطوير', color: '#f97316' },
+         { min: 0,  max: 39, band_en: 'Needs Attention', band_ar: 'يحتاج اهتماماً', color: '#ef4444' }])
+    setDims(pkg.output_dimensions?.length
+      ? [...pkg.output_dimensions]
+      : [{ key: 'dimension_1', label_en: 'Dimension 1', label_ar: 'البُعد الأول' }])
+  }
+
+  async function saveScoring(pkgId: string) {
+    setSavingScoring(true)
+    await fetch('/api/admin/packages', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: pkgId, interpretation_bands: bands, output_dimensions: dims }),
+    })
+    flash(isAr ? 'تم حفظ قواعد التقييم' : 'Scoring rules saved.')
+    setEditingScoring(null)
+    load()
+    setSavingScoring(false)
+  }
+
+  async function loadAnalytics() {
+    setAnalyticsLoading(true)
+    try {
+      const res = await fetch('/api/admin/packages/analytics')
+      const data = await res.json()
+      setAnalytics(data)
+    } catch { /* ignore */ }
+    setAnalyticsLoading(false)
+  }
 
   async function load() {
     setLoading(true)
@@ -294,6 +361,14 @@ export default function AdminPackagesPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button
+                          title={isAr ? 'تعديل قواعد التقييم' : 'Edit Scoring Rules'}
+                          onClick={() => editingScoring === pkg.id ? setEditingScoring(null) : openScoringEditor(pkg)}
+                          className="transition-colors hover:text-blue-600"
+                          style={{ color: editingScoring === pkg.id ? 'var(--vw-blue)' : 'var(--text-muted)' }}
+                        >
+                          <Settings2 className="w-4 h-4" />
+                        </button>
+                        <button
                           title={pkg.status === 'active' ? t('admin.packages.deactivate', lang) : t('admin.packages.activate', lang)}
                           onClick={() => setStatus(pkg.id, pkg.status === 'active' ? 'draft' : 'active')}
                         >
@@ -335,6 +410,98 @@ export default function AdminPackagesPage() {
                       </td>
                     </tr>
                   )}
+
+                  {/* Scoring Rule Builder */}
+                  {editingScoring === pkg.id && (
+                    <tr key={`${pkg.id}-scoring`} style={{ backgroundColor: 'var(--page-bg)', borderBottom: '2px solid var(--vw-blue)' }}>
+                      <td colSpan={6} className="px-6 py-5">
+                        <div className="space-y-6">
+                          {/* Interpretation Bands */}
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                                {isAr ? 'نطاقات التفسير' : 'Interpretation Bands'}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => setBands(prev => [...prev, { min: 0, max: 0, band_en: '', band_ar: '', color: '#22c55e' }])}
+                                className="text-[11px] px-2 py-1 rounded" style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--text-secondary)' }}
+                              >
+                                + {isAr ? 'نطاق' : 'Band'}
+                              </button>
+                            </div>
+                            <div className="space-y-2">
+                              {bands.map((band, i) => (
+                                <div key={i} className="grid grid-cols-[60px_60px_1fr_1fr_80px_28px] gap-2 items-center">
+                                  <input type="number" className="input text-xs py-1" placeholder="Min" value={band.min}
+                                    onChange={e => setBands(prev => prev.map((b, j) => j === i ? { ...b, min: +e.target.value } : b))} />
+                                  <input type="number" className="input text-xs py-1" placeholder="Max" value={band.max}
+                                    onChange={e => setBands(prev => prev.map((b, j) => j === i ? { ...b, max: +e.target.value } : b))} />
+                                  <input className="input text-xs py-1" placeholder="Band label (EN)" value={band.band_en}
+                                    onChange={e => setBands(prev => prev.map((b, j) => j === i ? { ...b, band_en: e.target.value } : b))} />
+                                  <input className="input text-xs py-1" dir="rtl" placeholder="تسمية النطاق (AR)" value={band.band_ar}
+                                    onChange={e => setBands(prev => prev.map((b, j) => j === i ? { ...b, band_ar: e.target.value } : b))} />
+                                  <div className="flex gap-1 flex-wrap">
+                                    {BAND_COLORS.map(c => (
+                                      <button key={c} type="button" onClick={() => setBands(prev => prev.map((b, j) => j === i ? { ...b, color: c } : b))}
+                                        className="w-4 h-4 rounded-full border-2 transition-all"
+                                        style={{ backgroundColor: c, borderColor: band.color === c ? '#12273C' : 'transparent' }} />
+                                    ))}
+                                  </div>
+                                  <button type="button" onClick={() => setBands(prev => prev.filter((_, j) => j !== i))}
+                                    className="text-red-400 hover:text-red-600 flex items-center justify-center">
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Output Dimensions */}
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                                {isAr ? 'أبعاد المخرجات' : 'Output Dimensions'}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => setDims(prev => [...prev, { key: `dim_${prev.length + 1}`, label_en: '', label_ar: '' }])}
+                                className="text-[11px] px-2 py-1 rounded" style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--text-secondary)' }}
+                              >
+                                + {isAr ? 'بُعد' : 'Dimension'}
+                              </button>
+                            </div>
+                            <div className="space-y-2">
+                              {dims.map((dim, i) => (
+                                <div key={i} className="grid grid-cols-[120px_1fr_1fr_28px] gap-2 items-center">
+                                  <input className="input text-xs py-1 font-mono" placeholder="key_name" value={dim.key}
+                                    onChange={e => setDims(prev => prev.map((d, j) => j === i ? { ...d, key: e.target.value.replace(/\s/g, '_').toLowerCase() } : d))} />
+                                  <input className="input text-xs py-1" placeholder="Label (EN)" value={dim.label_en}
+                                    onChange={e => setDims(prev => prev.map((d, j) => j === i ? { ...d, label_en: e.target.value } : d))} />
+                                  <input className="input text-xs py-1" dir="rtl" placeholder="التسمية (AR)" value={dim.label_ar}
+                                    onChange={e => setDims(prev => prev.map((d, j) => j === i ? { ...d, label_ar: e.target.value } : d))} />
+                                  <button type="button" onClick={() => setDims(prev => prev.filter((_, j) => j !== i))}
+                                    className="text-red-400 hover:text-red-600 flex items-center justify-center">
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <button onClick={() => saveScoring(pkg.id)} disabled={savingScoring} className="btn-accent text-xs px-4 py-2 disabled:opacity-50">
+                              {savingScoring ? (isAr ? 'جاري الحفظ…' : 'Saving…') : (isAr ? 'حفظ قواعد التقييم' : 'Save Scoring Rules')}
+                            </button>
+                            <button onClick={() => setEditingScoring(null)} className="btn-ghost text-xs px-4 py-2">
+                              {isAr ? 'إلغاء' : 'Cancel'}
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+
                 </>
               ))}
             </tbody>
@@ -352,6 +519,162 @@ export default function AdminPackagesPage() {
           <span className="w-2 h-2 rounded-full bg-gray-300" />
           {isAr ? 'قيد الإضافة' : 'Pending integration'}
         </div>
+      </div>
+
+      {/* Analytics Section */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+            <h2 className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>
+              {isAr ? 'تحليلات الحزم' : 'Package Analytics'}
+            </h2>
+          </div>
+          <button
+            onClick={async () => {
+              if (!showAnalytics) {
+                setShowAnalytics(true)
+                if (!analytics) await loadAnalytics()
+              } else {
+                setShowAnalytics(false)
+              }
+            }}
+            className="text-[12px] px-3 py-1.5 rounded-lg transition-colors"
+            style={{ backgroundColor: showAnalytics ? 'var(--vw-blue)' : 'var(--surface-alt)', color: showAnalytics ? '#fff' : 'var(--text-secondary)', border: '1px solid var(--divider)' }}
+          >
+            {showAnalytics ? (isAr ? 'إخفاء' : 'Hide') : (isAr ? 'عرض التحليلات' : 'Show Analytics')}
+          </button>
+        </div>
+
+        {showAnalytics && (
+          <div className="space-y-5">
+            {analyticsLoading ? (
+              <div className="card p-8 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                {isAr ? 'جاري التحميل…' : 'Loading analytics…'}
+              </div>
+            ) : analytics ? (
+              <>
+                {/* Summary row */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="card p-4 text-center">
+                    <p className="text-2xl font-extrabold" style={{ color: 'var(--vw-blue)' }}>{analytics.totalCompleted}</p>
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>{isAr ? 'نتائج مكتملة' : 'Completed Results'}</p>
+                  </div>
+                  <div className="card p-4 text-center">
+                    <p className="text-2xl font-extrabold" style={{ color: 'var(--vw-blue)' }}>{analytics.packageStats.length}</p>
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>{isAr ? 'حزم نشطة' : 'Active Packages'}</p>
+                  </div>
+                  <div className="card p-4 text-center">
+                    <p className="text-2xl font-extrabold" style={{ color: 'var(--vw-blue)' }}>{analytics.categoryStats.length}</p>
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>{isAr ? 'فئات' : 'Categories'}</p>
+                  </div>
+                  <div className="card p-4 text-center">
+                    <p className="text-2xl font-extrabold" style={{ color: 'var(--vw-blue)' }}>
+                      {analytics.packageStats.length > 0
+                        ? Math.round(analytics.packageStats.reduce((s, p) => s + p.avg_score, 0) / analytics.packageStats.length)
+                        : '—'}
+                    </p>
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>{isAr ? 'متوسط الدرجات' : 'Avg Score'}</p>
+                  </div>
+                </div>
+
+                {/* Per-package stats */}
+                {analytics.packageStats.length > 0 && (
+                  <div className="card overflow-hidden">
+                    <div className="px-5 py-3.5" style={{ borderBottom: '1px solid var(--divider)' }}>
+                      <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                        {isAr ? 'إحصائيات الحزم' : 'Package Stats'}
+                      </p>
+                    </div>
+                    <div className="divide-y">
+                      {analytics.packageStats.map(p => {
+                        const barColor = p.avg_score >= 70 ? '#22c55e' : p.avg_score >= 45 ? '#f59e0b' : '#ef4444'
+                        return (
+                          <div key={p.package_id} className="px-5 py-3 flex items-center gap-4" style={{ borderColor: 'var(--divider)' }}>
+                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[12.5px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{p.name_en}</p>
+                              <p className="text-[11px] capitalize" style={{ color: 'var(--text-muted)' }}>{p.category}</p>
+                            </div>
+                            <div className="text-[11px] text-right flex-shrink-0 space-y-0.5" style={{ color: 'var(--text-muted)', minWidth: 120 }}>
+                              <div>{isAr ? 'المشاركون' : 'Participants'}: <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{p.count}</span></div>
+                              <div>{isAr ? 'النطاق' : 'Range'}: <span className="font-mono">{p.min_score}–{p.max_score}</span></div>
+                            </div>
+                            <div className="flex-shrink-0 text-center" style={{ minWidth: 56 }}>
+                              <p className="text-[18px] font-extrabold" style={{ color: barColor }}>{p.avg_score}</p>
+                              <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{isAr ? 'متوسط' : 'avg'}</p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {/* Gender breakdown */}
+                  {analytics.genderBreakdown.length > 0 && (
+                    <div className="card overflow-hidden">
+                      <div className="px-5 py-3.5" style={{ borderBottom: '1px solid var(--divider)' }}>
+                        <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                          {isAr ? 'توزيع الجنس' : 'Gender Breakdown'}
+                        </p>
+                      </div>
+                      <div className="divide-y">
+                        {analytics.genderBreakdown.map(g => {
+                          const barColor = g.avg_score >= 70 ? '#22c55e' : g.avg_score >= 45 ? '#f59e0b' : '#ef4444'
+                          const label = g.gender === 'male' ? (isAr ? 'ذكر' : 'Male')
+                            : g.gender === 'female' ? (isAr ? 'أنثى' : 'Female')
+                            : (isAr ? 'غير محدد' : 'Unspecified')
+                          return (
+                            <div key={g.gender} className="px-5 py-2.5 flex items-center justify-between gap-3" style={{ borderColor: 'var(--divider)' }}>
+                              <span className="text-[12.5px]" style={{ color: 'var(--text-primary)' }}>{label}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{g.count} {isAr ? 'مشارك' : 'participants'}</span>
+                                <span className="text-[13px] font-bold" style={{ color: barColor }}>{g.avg_score}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Category stats */}
+                  {analytics.categoryStats.length > 0 && (
+                    <div className="card overflow-hidden">
+                      <div className="px-5 py-3.5" style={{ borderBottom: '1px solid var(--divider)' }}>
+                        <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                          {isAr ? 'إحصائيات الفئات' : 'Category Stats'}
+                        </p>
+                      </div>
+                      <div className="divide-y">
+                        {analytics.categoryStats.map(c => {
+                          const barColor = c.avg_score >= 70 ? '#22c55e' : c.avg_score >= 45 ? '#f59e0b' : '#ef4444'
+                          return (
+                            <div key={c.category} className="px-5 py-2.5 flex items-center justify-between gap-3" style={{ borderColor: 'var(--divider)' }}>
+                              <span className="text-[12.5px] capitalize" style={{ color: 'var(--text-primary)' }}>{c.category}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{c.count} {isAr ? 'نتيجة' : 'results'}</span>
+                                <span className="text-[13px] font-bold" style={{ color: barColor }}>{c.avg_score}</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {analytics.totalCompleted === 0 && (
+                  <div className="card p-8 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                    {isAr ? 'لا توجد نتائج مكتملة بعد.' : 'No completed results yet.'}
+                  </div>
+                )}
+              </>
+            ) : null}
+          </div>
+        )}
       </div>
     </div>
   )

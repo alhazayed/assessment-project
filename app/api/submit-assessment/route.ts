@@ -38,7 +38,7 @@ async function notifyAdminsHighRisk(submissionId: string, definitionId: string, 
       )
     }
   } catch (err) {
-    console.error('[notifyAdminsHighRisk] error (non-fatal):', err)
+    console.error('[notifyAdminsHighRisk] error (non-fatal):', err instanceof Error ? err.message : 'unknown')
   }
 }
 
@@ -183,7 +183,7 @@ export async function POST(request: Request) {
     })
 
     if (subErr || !submissionId) {
-      console.error('submission error:', subErr)
+      console.error('submission error:', subErr?.message ?? 'unknown')
       return NextResponse.json({ error: 'Failed to save submission' }, { status: 500 })
     }
 
@@ -209,7 +209,7 @@ export async function POST(request: Request) {
       high_risk: highRisk,
     })
   } catch (err) {
-    console.error('submit-assessment error:', err)
+    console.error('submit-assessment error:', err instanceof Error ? err.message : 'unknown')
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { computeHmac } from '@/lib/admin-auth'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { cookies } from 'next/headers'
@@ -20,11 +21,31 @@ export async function POST(request: Request) {
     const expectedPin = process.env.ADMIN_PIN
     if (!expectedPin) return NextResponse.json({ error: 'Admin PIN not configured on server' }, { status: 503 })
     // Validate PIN and credentials with a unified error to prevent factor enumeration
-    if (pin !== expectedPin) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+    if (pin !== expectedPin) {
+      try {
+        const logDb = createAdminClient()
+        await logDb.from('audit_log').insert({
+          action: 'admin_login_failed',
+          target_type: 'admin_session',
+          details: { ip, email },
+        })
+      } catch { /* non-fatal */ }
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+    }
 
     const supabase = createClient()
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error || !data.user) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+    if (error || !data.user) {
+      try {
+        const logDb = createAdminClient()
+        await logDb.from('audit_log').insert({
+          action: 'admin_login_failed',
+          target_type: 'admin_session',
+          details: { ip, email },
+        })
+      } catch { /* non-fatal */ }
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+    }
 
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single()
     if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
@@ -35,7 +56,7 @@ export async function POST(request: Request) {
     const token = await computeHmac(data.user.id, profile.role)
     const store = cookies()
     store.set('admin_session', token, {
-      httpOnly: true, secure: process.env.NODE_ENV === 'production',
+      httpOnly: true, secure: true,
       sameSite: 'lax', path: '/', maxAge: 60 * 60 * 8,
     })
 

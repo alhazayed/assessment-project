@@ -253,6 +253,27 @@ export default function ProfilePage() {
     }).then(() => {})
   }
 
+  async function handleExportData() {
+    const res = await fetch('/api/user/export-data')
+    if (!res.ok) return
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'my-vwelfare-data.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function handleDeleteAccount() {
+    if (!confirm('Are you sure? This will schedule your account for deletion within 30 days. This action cannot be undone.')) return
+    await fetch('/api/user/delete-request', { method: 'POST' })
+    // Sign out after requesting deletion
+    const supabaseClient = createClient()
+    await supabaseClient.auth.signOut()
+    router.push('/')
+  }
+
   const isAr = lang === 'ar'
 
   if (loading) return <div className="p-7" style={{ color: 'var(--text-muted)' }}>{t('mood.loading', lang)}</div>
@@ -585,6 +606,38 @@ export default function ProfilePage() {
           )}
         </div>
       )}
+
+      {/* Your Data Rights (GDPR) */}
+      <div className="card p-6 mt-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Shield className="w-4 h-4" style={{ color: '#1D6296' }} />
+          <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
+            {lang === 'ar' ? 'حقوق بياناتك' : 'Your Data Rights'}
+          </h2>
+        </div>
+        <p className="text-[13px] mb-5" style={{ color: 'var(--text-secondary)' }}>
+          {lang === 'ar'
+            ? 'يمكنك تنزيل نسخة من بياناتك أو طلب حذف حسابك.'
+            : 'You can download a copy of your data or request deletion of your account.'}
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={handleExportData}
+            className="btn-ghost text-[13px]"
+          >
+            {lang === 'ar' ? 'تصدير بياناتي' : 'Export my data'}
+          </button>
+          <button
+            type="button"
+            onClick={handleDeleteAccount}
+            className="btn-ghost text-[13px]"
+            style={{ color: '#C02A2A' }}
+          >
+            {lang === 'ar' ? 'طلب حذف الحساب' : 'Delete my account'}
+          </button>
+        </div>
+      </div>
 
       {/* Assessment history */}
       {assessmentHistory.length > 0 && (

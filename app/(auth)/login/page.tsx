@@ -8,10 +8,21 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
+function safeRedirectUrl(raw: string | null): string {
+  if (!raw) return '/dashboard'
+  // Reject absolute URLs and protocol-relative URLs
+  if (/^https?:\/\//i.test(raw) || raw.startsWith('//')) return '/dashboard'
+  // Must start with /
+  if (!raw.startsWith('/')) return '/dashboard'
+  // Reject redirects to admin or API areas from public auth
+  if (raw.startsWith('/x/control') || raw.startsWith('/api/')) return '/dashboard'
+  return raw
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const next = searchParams.get('next') || '/dashboard'
+  const next = safeRedirectUrl(searchParams.get('next'))
   const lang = useLang()
   const isRtl = lang === 'ar'
 
@@ -30,20 +41,12 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      const msg = error.message.toLowerCase()
-      if (isRtl) {
-        if (msg.includes('invalid login') || msg.includes('invalid credentials') || msg.includes('email') || msg.includes('password')) {
-          setError('البريد الإلكتروني أو كلمة المرور غير صحيحة.')
-        } else if (msg.includes('too many') || msg.includes('rate limit')) {
-          setError('لقد تجاوزت الحد المسموح به. يرجى الانتظار قبل المحاولة مرة أخرى.')
-        } else if (msg.includes('email not confirmed')) {
-          setError('يرجى تأكيد بريدك الإلكتروني أولاً.')
-        } else {
-          setError('حدث خطأ. يرجى المحاولة مرة أخرى.')
-        }
-      } else {
-        setError(error.message)
-      }
+      // Always show a single generic error to prevent account enumeration
+      setError(
+        isRtl
+          ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
+          : 'Invalid email or password.'
+      )
       setLoading(false)
     } else {
       router.push(next)
@@ -65,7 +68,7 @@ export default function LoginPage() {
 
       {/* Error */}
       {error && (
-        <div className="alert-error mb-5 text-[14px]" style={{ color: '#C02A2A' }}>
+        <div id="login-error" className="alert-error mb-5 text-[14px]" style={{ color: '#C02A2A' }}>
           {error}
         </div>
       )}
@@ -84,6 +87,7 @@ export default function LoginPage() {
               required
               autoComplete="email"
               placeholder="you@example.com"
+              aria-describedby={error ? 'login-error' : undefined}
             />
           </div>
         </div>

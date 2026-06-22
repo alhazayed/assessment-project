@@ -140,7 +140,11 @@ export async function POST(request: Request) {
     const body: SubmitBody & { turnstile_token?: string } = await request.json()
     const { definition_id, responses, demographics } = body
 
-    // Cloudflare Turnstile CAPTCHA — only enforced when TURNSTILE_SECRET_KEY is configured.
+    // Cloudflare Turnstile CAPTCHA — fail-closed in production if key is missing.
+    if (process.env.NODE_ENV === 'production' && !process.env.TURNSTILE_SECRET_KEY) {
+      return NextResponse.json({ error: 'CAPTCHA not configured' }, { status: 503 })
+    }
+    // Only enforced when TURNSTILE_SECRET_KEY is configured.
     // Without the env var the widget is not shown on the frontend either, so no token arrives.
     if (process.env.TURNSTILE_SECRET_KEY) {
       const turnstileResult = await verifyTurnstileToken(body.turnstile_token, ip !== 'unknown' ? ip : undefined)
@@ -180,10 +184,13 @@ export async function POST(request: Request) {
     if (!/^[A-Z]{2,3}$/.test(country)) {
       return NextResponse.json({ error: 'Invalid country code (use ISO 3166-1 alpha-2 or alpha-3)' }, { status: 400 })
     }
-    // DOB: basic date format check
+    // DOB: proper date validation
     const dob = demographics.dob ? String(demographics.dob).trim() : null
-    if (dob && !/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
-      return NextResponse.json({ error: 'Invalid date of birth format (use YYYY-MM-DD)' }, { status: 400 })
+    if (dob) {
+      const dobDate = new Date(dob)
+      if (isNaN(dobDate.getTime()) || dobDate > new Date() || dobDate < new Date('1900-01-01')) {
+        return NextResponse.json({ error: 'Invalid date of birth' }, { status: 400 })
+      }
     }
 
     const supabase = createAdminClient()

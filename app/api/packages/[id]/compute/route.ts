@@ -94,6 +94,9 @@ export async function POST(
 
     const compositeScore = Math.round(weightedSum / totalWeight)
     const pkgBands = pkg.interpretation_bands as InterpretationBand[]
+    if (!Array.isArray(pkgBands) || pkgBands.length === 0) {
+      return NextResponse.json({ error: 'Package configuration invalid' }, { status: 500 })
+    }
     const band = findBand(pkgBands, compositeScore)
 
     // Rich narrative generation
@@ -145,7 +148,7 @@ export async function POST(
       .single()
 
     if (resultErr || !result) {
-      console.error('compute: save result failed', resultErr)
+      console.error('compute: save result failed:', resultErr?.message ?? 'unknown')
       return NextResponse.json({ error: 'Failed to save result' }, { status: 500 })
     }
 
@@ -162,7 +165,7 @@ export async function POST(
 
     return NextResponse.json({ result_id: result.id, composite_score: compositeScore })
   } catch (err) {
-    console.error('compute error:', err)
+    console.error('compute error:', err instanceof Error ? err.message : 'unknown')
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

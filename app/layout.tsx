@@ -18,8 +18,46 @@ const tajawal = Tajawal({
 })
 
 export const metadata: Metadata = {
-  title: 'V Welfare — Mental Health Platform',
-  description: 'Compassionate mental health support and assessment platform',
+  title: {
+    default: 'V Welfare — Mental Health Assessment Platform',
+    template: '%s | V Welfare',
+  },
+  description: 'Compassionate, science-backed mental health assessments and wellbeing tools. Take validated psychometric assessments in Arabic and English.',
+  metadataBase: new URL('https://vwelfare.vercel.app'),
+  alternates: {
+    canonical: '/',
+    languages: {
+      'en': 'https://vwelfare.vercel.app',
+      'ar': 'https://vwelfare.vercel.app/?lang=ar',
+      'x-default': 'https://vwelfare.vercel.app',
+    },
+  },
+  openGraph: {
+    type: 'website',
+    siteName: 'V Welfare',
+    title: 'V Welfare — Mental Health Assessment Platform',
+    description: 'Science-backed mental health assessments and wellbeing tools in Arabic and English.',
+    url: 'https://vwelfare.vercel.app',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'V Welfare Mental Health Platform',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'V Welfare — Mental Health Assessment Platform',
+    description: 'Science-backed mental health assessments and wellbeing tools.',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

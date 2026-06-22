@@ -10,7 +10,7 @@
       "android": { "buildType": "apk" }
     },
     "production": {
-      "android": { "buildType": "apk" }
+      "android": { "buildType": "aab" }
     }
   }
 }

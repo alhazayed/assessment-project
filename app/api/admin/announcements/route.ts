@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function GET() {
   try {
@@ -18,6 +19,10 @@ const ALLOWED_TYPES = ['info', 'warning', 'success', 'error'] as const
 export async function POST(request: Request) {
   try {
     const { user } = await requireAdmin()
+    const rl = await checkRateLimit(`admin-mut:${user.id}`, { limit: 30, windowMs: 60 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+    }
     const body = await request.json()
 
     if (!body.title_en?.trim() || body.title_en.length > 200) {
@@ -53,6 +58,10 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const { user, role } = await requireAdmin()
+    const rl = await checkRateLimit(`admin-mut:${user.id}`, { limit: 30, windowMs: 60 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+    }
     const { id, is_active } = await request.json()
     if (!id || typeof id !== 'string') {
       return NextResponse.json({ error: 'id required' }, { status: 400 })
@@ -84,6 +93,10 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const { user, role } = await requireAdmin()
+    const rl = await checkRateLimit(`admin-mut:${user.id}`, { limit: 30, windowMs: 60 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 })
+    }
     const { id } = await request.json()
     if (!id || typeof id !== 'string') {
       return NextResponse.json({ error: 'id required' }, { status: 400 })
