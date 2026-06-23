@@ -3,9 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
-
-const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
+import { callGemini } from '@/lib/gemini'
 
 const MAX_MESSAGE_LEN = 1000
 
@@ -25,7 +23,12 @@ IMPORTANT DISCLAIMER (always apply): You are not a licensed therapist and cannot
 const EMERGENCY_KEYWORDS = [
   'kill myself', 'end my life', 'suicide', 'suicidal', 'self-harm', 'self harm',
   'cutting myself', 'hurt myself', 'want to die', 'no reason to live',
+  'end it all', 'take my life', 'not worth living', 'overdose',
+  // Arabic emergency keywords
   'أنتحر', 'أقتل نفسي', 'إيذاء النفس',
+  'الانتحار', 'أريد أن أموت', 'لا أريد العيش',
+  'أؤذي نفسي', 'إنهاء حياتي', 'جرح نفسي',
+  'لا معنى للحياة', 'أريد الموت',
 ]
 
 function containsEmergencyKeyword(text: string): boolean {
@@ -108,6 +111,8 @@ export async function POST(request: Request) {
 
   for (const turn of history) {
     if (typeof turn.text !== 'string') continue
+    // Validate role to prevent prompt injection via history
+    if (turn.role !== 'user' && turn.role !== 'model') continue
     const role = turn.role === 'user' ? 'user' : 'model'
     contents.push({ role, parts: [{ text: turn.text.slice(0, MAX_MESSAGE_LEN) }] })
   }
@@ -121,14 +126,10 @@ export async function POST(request: Request) {
     parts: [{ text: `${langInstruction}\n\nUser message: ${message}` }],
   })
 
-  const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-      contents,
-      generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
-    }),
+  const res = await callGemini(apiKey, {
+    systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+    contents,
+    generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
   })
 
   if (!res.ok) {

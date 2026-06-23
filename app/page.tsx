@@ -356,7 +356,7 @@ export default async function LandingPage() {
             '@context': 'https://schema.org',
             '@type': 'Organization',
             name: 'V Welfare',
-            url: 'https://vwelfare.vercel.app',
+            url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
             description: 'Compassionate mental health assessment and wellbeing platform offering validated psychometric tools in Arabic and English.',
             sameAs: [],
             offers: {
