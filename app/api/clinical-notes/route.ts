@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 async function requireClinician() {
   const supabase = createClient()
@@ -48,6 +49,10 @@ export async function POST(request: Request) {
   const ctx = await requireClinician()
   if (!ctx) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const { user, supabase } = ctx
+
+  // Rate limit: 200 notes/hour per clinician
+  const rl = await checkRateLimit(`clinical-notes:${ctx.user.id}`, { limit: 200, windowMs: 60 * 60 * 1000 })
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
   const { patient_id, body, is_ai_draft } = await request.json()
   if (!patient_id || !body) return NextResponse.json({ error: 'patient_id and body required' }, { status: 400 })

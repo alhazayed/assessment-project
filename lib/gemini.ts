@@ -3,17 +3,27 @@ const GEMINI_API_URL =
 
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503])
 const MAX_ATTEMPTS = 3
+const TIMEOUT_MS = 15_000
 
 export async function callGemini(
   apiKey: string,
   body: object,
   attempt = 1
 ): Promise<Response> {
-  const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+  let res: Response
+  try {
+    res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timer)
+  }
 
   if (!res.ok && RETRYABLE_STATUS.has(res.status) && attempt < MAX_ATTEMPTS) {
     const backoffMs = Math.min(1000 * 2 ** (attempt - 1), 8000)
