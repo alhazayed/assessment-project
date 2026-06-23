@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -19,7 +19,7 @@ function safeRedirectUrl(raw: string | null): string {
   return raw
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const next = safeRedirectUrl(searchParams.get('next'))
@@ -154,5 +154,13 @@ export default function LoginPage() {
         </Link>
       </p>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="space-y-4 animate-pulse"><div className="h-8 rounded bg-gray-200 dark:bg-gray-700 w-3/4 mb-8" /><div className="h-10 rounded bg-gray-200 dark:bg-gray-700" /><div className="h-10 rounded bg-gray-200 dark:bg-gray-700" /><div className="h-11 rounded bg-gray-300 dark:bg-gray-600 mt-2" /></div>}>
+      <LoginForm />
+    </Suspense>
   )
 }
