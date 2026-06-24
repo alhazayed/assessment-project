@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Inter, Tajawal } from 'next/font/google'
 import './globals.css'
 import { getLanguage } from '@/lib/get-language'
+import CapacitorProvider from '@/components/capacitor-provider'
+import OfflineBanner from '@/components/offline-banner'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -68,7 +70,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('vw-theme');var d=window.matchMedia('(prefers-color-scheme:dark)').matches;if(t==='dark'||(t===null&&d)){document.documentElement.classList.add('dark')}}catch(e){}})()` }} />
       </head>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <CapacitorProvider />
+        <OfflineBanner />
+        {children}
+      </body>
     </html>
   )
 }

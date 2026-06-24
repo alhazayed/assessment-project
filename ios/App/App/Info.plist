@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CAPACITOR_DEBUG</key>
+    <string>$(CAPACITOR_DEBUG)</string>
+
+    <!-- ── Bundle Identity ── -->
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleDisplayName</key>
+    <string>V Welfare</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(MARKETING_VERSION)</string>
+    <key>CFBundleVersion</key>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
+
+    <!-- ── UI ── -->
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    <key>UIMainStoryboardFile</key>
+    <string>Main</string>
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>armv7</string>
+    </array>
+
+    <!-- Portrait only for phone; all orientations for iPad -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <true/>
+
+    <!-- ── Safe Area / Full Screen ── -->
+    <key>UIStatusBarHidden</key>
+    <false/>
+
+    <!-- ── Permission Usage Descriptions (App Store required) ── -->
+    <key>NSCameraUsageDescription</key>
+    <string>V Welfare uses the camera to let you capture profile photos and documents for your health records.</string>
+
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>V Welfare accesses your photo library so you can choose a profile photo or attach documents to your health record.</string>
+
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>V Welfare saves exported documents and reports to your photo library.</string>
+
+    <key>NSMicrophoneUsageDescription</key>
+    <string>V Welfare uses the microphone for video consultations with your clinician.</string>
+
+    <key>NSUserNotificationsUsageDescription</key>
+    <string>V Welfare sends you appointment reminders, clinician messages, and important health notifications.</string>
+
+    <!-- Face ID — for future biometric authentication (Phase 3) -->
+    <key>NSFaceIDUsageDescription</key>
+    <string>V Welfare uses Face ID to securely and quickly sign you in to your health account.</string>
+
+    <!-- ── Deep Linking (Universal Links) ── -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.vwelfare.app</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>vwelfare</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- ── App Transport Security — HTTPS only ── -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        <!-- Allow localhost for development builds only -->
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>localhost</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+            </dict>
+        </dict>
+    </dict>
+
+    <!-- ── Localization ── -->
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>ar</string>
+    </array>
+
+    <!-- ── Background Modes (for future push + background sync) ── -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>remote-notification</string>
+        <string>fetch</string>
+    </array>
+
+</dict>
+</plist>
