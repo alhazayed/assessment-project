@@ -12,7 +12,6 @@ export async function POST() {
   const rl = await checkRateLimit(`delete-request:${user.id}`, { limit: 1, windowMs: 60 * 60 * 1000 })
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
-
   const db = createAdminClient()
   // Log deletion request in audit log
   await db.from('audit_log').insert({
