@@ -229,3 +229,127 @@ export interface Message {
   read_at: string | null
   created_at: string
 }
+
+// ── Clinician-Patient Consent System ─────────────────────────────────────────
+
+export type VerificationStatus =
+  | 'pending_verification'
+  | 'verified'
+  | 'rejected'
+  | 'suspended'
+  | 'not_submitted'
+
+export interface ClinicianVerification {
+  id: string
+  clinician_id: string
+  full_name: string
+  professional_title: string
+  license_number: string
+  country: string
+  specialty: string
+  organization: string
+  document_urls: string[]
+  status: VerificationStatus
+  reviewed_by?: string
+  reviewed_at?: string
+  rejection_reason?: string
+  submitted_at: string
+  updated_at: string
+}
+
+export interface PatientAccessCode {
+  id: string
+  patient_id: string
+  code: string
+  is_active: boolean
+  created_at: string
+  last_used_at?: string
+}
+
+export type RelationshipStatus = 'pending' | 'active' | 'rejected' | 'revoked' | 'expired'
+
+export type PermissionKey =
+  | 'view_profile'
+  | 'view_assessment_results'
+  | 'view_assessment_history'
+  | 'view_reports'
+  | 'view_progress_tracking'
+  | 'view_mood_tracking'
+  | 'export_reports'
+  | 'message_patient'
+  | 'upload_documents'
+  | 'generate_clinical_notes'
+
+export const ALL_PERMISSION_KEYS: PermissionKey[] = [
+  'view_profile',
+  'view_assessment_results',
+  'view_assessment_history',
+  'view_reports',
+  'view_progress_tracking',
+  'view_mood_tracking',
+  'export_reports',
+  'message_patient',
+  'upload_documents',
+  'generate_clinical_notes',
+]
+
+export interface RelationshipPermission {
+  id: string
+  relationship_id: string
+  permission_key: PermissionKey
+  granted: boolean
+  granted_at?: string
+  revoked_at?: string
+  modified_by?: string
+}
+
+export interface ClinicianPatientRelationship {
+  id: string
+  clinician_id: string
+  patient_id: string
+  status: RelationshipStatus
+  initiated_by: 'clinician' | 'patient'
+  request_message?: string
+  patient_code_used?: string
+  invitation_id?: string
+  requested_permissions: PermissionKey[]
+  requested_at: string
+  responded_at?: string
+  revoked_at?: string
+  revoked_by?: string
+  last_access_at?: string
+  permissions?: RelationshipPermission[]
+  clinician?: Partial<Profile> & { specialty?: string; organization?: string; professional_title?: string }
+  patient?: Partial<Profile>
+}
+
+export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'cancelled'
+
+export interface ClinicianInvitation {
+  id: string
+  clinician_id: string
+  token: string
+  message?: string
+  patient_id?: string
+  status: InvitationStatus
+  requested_permissions: PermissionKey[]
+  created_at: string
+  expires_at: string
+  accepted_at?: string
+}
+
+export interface NotificationEvent {
+  id: string
+  recipient_id: string
+  sender_id?: string
+  event_type: string
+  related_id?: string
+  related_type?: string
+  title_en?: string
+  title_ar?: string
+  body_en?: string
+  body_ar?: string
+  link?: string
+  read_at?: string
+  created_at: string
+}
