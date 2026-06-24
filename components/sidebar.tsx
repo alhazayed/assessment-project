@@ -21,6 +21,9 @@ import {
   Menu,
   X,
   Layers,
+  UserCheck,
+  ShieldCheck,
+  Link2,
 } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 import type { Lang } from '@/lib/i18n'
@@ -57,15 +60,25 @@ export default function Sidebar({ profile, lang, showPackages = false }: Sidebar
   }, [isOpen])
 
   const patientNav = [
-    { href: '/dashboard',   label: t('nav.dashboard', lang),   icon: LayoutDashboard, badge: undefined },
-    { href: '/assessments', label: t('nav.assessments', lang),  icon: ClipboardList,   badge: undefined },
+    { href: '/dashboard',          label: t('nav.dashboard', lang),   icon: LayoutDashboard, badge: undefined },
+    { href: '/assessments',        label: t('nav.assessments', lang),  icon: ClipboardList,   badge: undefined },
     ...(showPackages ? [{ href: '/packages', label: t('nav.packages', lang), icon: Layers, badge: t('nav.packages_badge', lang) }] : []),
-    { href: '/adhd-zones',  label: t('nav.adhd_zones', lang),   icon: Brain,           badge: undefined },
-    { href: '/mood',        label: t('nav.mood', lang),         icon: Heart,           badge: undefined },
-    { href: '/journal',     label: t('nav.journal', lang),      icon: BookOpen,        badge: undefined },
-    { href: '/insights',    label: t('nav.insights', lang),     icon: LineChart,       badge: undefined },
-    { href: '/messages',    label: t('nav.messages', lang),     icon: MessageSquare,   badge: undefined },
-    { href: '/profile',     label: t('nav.profile', lang),      icon: User,            badge: undefined },
+    { href: '/adhd-zones',         label: t('nav.adhd_zones', lang),   icon: Brain,           badge: undefined },
+    { href: '/mood',               label: t('nav.mood', lang),         icon: Heart,           badge: undefined },
+    { href: '/journal',            label: t('nav.journal', lang),      icon: BookOpen,        badge: undefined },
+    { href: '/insights',           label: t('nav.insights', lang),     icon: LineChart,       badge: undefined },
+    { href: '/messages',           label: t('nav.messages', lang),     icon: MessageSquare,   badge: undefined },
+    { href: '/patient/clinicians', label: lang === 'ar' ? 'طاقمي الطبي' : 'My Clinicians',    icon: UserCheck,   badge: undefined },
+    { href: '/profile',            label: t('nav.profile', lang),      icon: User,            badge: undefined },
+  ]
+
+  const clinicianNav = [
+    { href: '/dashboard',              label: t('nav.dashboard', lang),                                  icon: LayoutDashboard, badge: undefined },
+    { href: '/patients',               label: t('nav.admin_patients', lang),                             icon: Users,           badge: undefined },
+    { href: '/messages',               label: t('nav.messages', lang),                                   icon: MessageSquare,   badge: undefined },
+    { href: '/clinician/connect',      label: lang === 'ar' ? 'ربط المرضى' : 'Connect Patients',        icon: Link2,           badge: undefined },
+    { href: '/clinician/verification', label: lang === 'ar' ? 'التحقق من الهوية' : 'Verification',      icon: ShieldCheck,     badge: undefined },
+    { href: '/profile',                label: t('nav.profile', lang),                                    icon: User,            badge: undefined },
   ]
 
   const adminNav = [
@@ -77,7 +90,11 @@ export default function Sidebar({ profile, lang, showPackages = false }: Sidebar
     { href: '/admin/settings', label: t('nav.settings', lang),       icon: Settings,      badge: undefined as string | undefined },
   ]
 
-  const nav = profile?.role === 'admin' || profile?.role === 'superadmin' ? adminNav : patientNav
+  const nav = profile?.role === 'admin' || profile?.role === 'superadmin'
+    ? adminNav
+    : profile?.role === 'clinician'
+      ? clinicianNav
+      : patientNav
 
   async function handleSignOut() {
     const supabase = createClient()

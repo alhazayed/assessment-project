@@ -12,17 +12,19 @@ export async function checkRateLimit(
   const db = createAdminClient()
   const windowStart = new Date(Date.now() - options.windowMs).toISOString()
 
-  const { count } = await db
-    .from('rate_limit_log')
-    .select('*', { count: 'exact', head: true })
-    .eq('key', key)
-    .gte('created_at', windowStart)
+  const { data, error } = await db.rpc('check_and_record_rate_limit', {
+    p_key: key,
+    p_window_start: windowStart,
+    p_limit: options.limit,
+  })
 
-  const hits = count ?? 0
-  if (hits >= options.limit) {
-    return { allowed: false, remaining: 0 }
+  if (error) {
+    // Fail open on DB error — do not block legitimate requests
+    console.error('[rate-limit] rpc error:', error)
+    return { allowed: true, remaining: 0 }
   }
 
-  await db.from('rate_limit_log').insert({ key })
-  return { allowed: true, remaining: options.limit - hits - 1 }
+  const newCount = data as number
+  if (newCount === -1) return { allowed: false, remaining: 0 }
+  return { allowed: true, remaining: Math.max(0, options.limit - newCount) }
 }
