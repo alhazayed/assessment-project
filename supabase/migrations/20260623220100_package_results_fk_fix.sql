@@ -1,0 +1,4 @@
+-- This migration was applied by Supabase CI at this version.
+-- The canonical version is 20260624044337_package_results_fk_fix.sql
+-- This file is retained so the remote migration record matches local files.
+-- Supabase will not re-apply this because the version is already in schema_migrations.
