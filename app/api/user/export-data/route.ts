@@ -39,6 +39,7 @@ export async function GET() {
     console.error('[user/export-data] audit log failed (non-fatal):', auditErr instanceof Error ? auditErr.message : 'unknown')
   }
 
+
   return new NextResponse(JSON.stringify(exportData, null, 2), {
     headers: {
       'Content-Type': 'application/json',
