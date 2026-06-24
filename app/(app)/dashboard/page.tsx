@@ -123,9 +123,14 @@ export default async function DashboardPage() {
               <p className="stat-sub">{latestMood.log_date}</p>
             </>
           ) : (
-            <Link href="/mood" className="text-[13px] font-semibold" style={{ color: '#1D6296' }}>
-              {t('dashboard.mood.log', lang)}
-            </Link>
+            <>
+              <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
+                {lang === 'ar' ? 'لم تسجّل مزاجك اليوم بعد' : "You haven't logged today yet"}
+              </p>
+              <Link href="/mood" className="text-[13px] font-semibold" style={{ color: '#1D6296' }}>
+                {t('dashboard.mood.log', lang)}
+              </Link>
+            </>
           )}
         </div>
 

@@ -2,7 +2,7 @@ import { getLanguage } from '@/lib/get-language'
 import ADHDZoneChecker from '@/components/adhd-zone-checker'
 
 export const metadata = {
-  title: 'ADHD Zone Check-In | V Welfare',
+  title: 'ADHD Zone Check-In',
   description: 'Identify your current ADHD regulation zone and get actionable, science-backed guidance.',
 }
 

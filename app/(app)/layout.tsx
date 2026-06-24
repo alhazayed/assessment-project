@@ -4,6 +4,10 @@ import { redirect } from 'next/navigation'
 import Sidebar from '@/components/sidebar'
 import type { Profile } from '@/lib/types'
 
+export const metadata = {
+  robots: { index: false, follow: false },
+}
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
   const lang = getLanguage()

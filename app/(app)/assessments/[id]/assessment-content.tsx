@@ -50,6 +50,7 @@ export default function AssessmentContent({ id, userId }: Props) {
   const [result, setResult] = useState<{ score: number; band_en: string; band_ar: string; high_risk: boolean } | null>(null)
   const [domainScores, setDomainScores] = useState<Record<string, number> | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState(false)
   const [hasSavedProgress, setHasSavedProgress] = useState(false)
 
   const storageKey = `vw_assessment_${id}_${userId}`
@@ -67,6 +68,7 @@ export default function AssessmentContent({ id, userId }: Props) {
         supabase.from('assessment_definitions').select('*').eq('id', id).single(),
         supabase.from('assessment_items').select('*').eq('definition_id', id).order('item_number'),
       ])
+      if (defRes.error || !defRes.data) { setLoadError(true); return }
       if (defRes.data) setDefinition(defRes.data as AssessmentDefinition)
       if (itemsRes.data) setItems(itemsRes.data as AssessmentItem[])
 
@@ -147,6 +149,24 @@ export default function AssessmentContent({ id, userId }: Props) {
     setSubmitted(true)
     setSubmitting(false)
     await loadRelated(definition.code)
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-64">
+        <div className="text-center max-w-sm">
+          <p className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+            {lang === 'ar' ? 'تعذّر تحميل التقييم' : 'Assessment not found'}
+          </p>
+          <p className="text-[13.5px] mb-4" style={{ color: 'var(--text-muted)' }}>
+            {lang === 'ar' ? 'يرجى العودة وتحديد تقييم من القائمة.' : 'Please go back and select an assessment from the list.'}
+          </p>
+          <a href="/assessments" className="text-[13px] font-semibold underline" style={{ color: 'var(--vw-blue)' }}>
+            {lang === 'ar' ? '← العودة إلى التقييمات' : '← Back to Assessments'}
+          </a>
+        </div>
+      </div>
+    )
   }
 
   if (!definition || items.length === 0) {
