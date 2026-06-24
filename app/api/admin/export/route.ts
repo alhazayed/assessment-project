@@ -46,8 +46,8 @@ function rowsToCsv(headers: string[], rows: (string | number | boolean)[][]): st
 
 export async function GET(request: Request) {
   try {
-    const adminSession = await requireAdmin()
-    const rl = await checkRateLimit(`admin-export:${adminSession.user.id}`, { limit: 10, windowMs: 60 * 60 * 1000 })
+    const { user: adminUser } = await requireAdmin()
+    const rl = await checkRateLimit(`admin-export:${adminUser.id}`, { limit: 10, windowMs: 60 * 60 * 1000 })
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Export rate limit reached. Please wait before exporting again.' }, { status: 429, headers: { 'Retry-After': '3600' } })
     }
@@ -102,6 +102,19 @@ export async function GET(request: Request) {
 
     if (assessment) rows = rows.filter((r: any) => r.code === assessment)
     if (severity && severity !== 'high_risk') rows = rows.filter((r: any) => (r.severity || '').toLowerCase().includes(severity.toLowerCase()))
+
+    // Audit log — record who exported what and how many rows
+    try {
+      await db.from('audit_log').insert({
+        actor_id: adminUser.id,
+        action: 'data_export',
+        target_type: 'assessment_submissions',
+        target_id: adminUser.id,
+        details: { format, row_count: rows.length, filters: { assessment, severity, from, to } },
+      })
+    } catch (auditErr) {
+      console.error('[admin/export] audit log failed (non-fatal):', auditErr instanceof Error ? auditErr.message : 'unknown')
+    }
 
     const dateStr = new Date().toISOString().split('T')[0]
 

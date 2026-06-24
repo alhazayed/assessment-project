@@ -144,9 +144,16 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
         aria-expanded={open}
       >
         <Bell className="w-4 h-4" />
+        {/* Always-mounted live region so screen readers announce count changes */}
+        <span aria-live="polite" aria-atomic="true" className="sr-only">
+          {unread > 0 ? (isAr ? `${unread} إشعار غير مقروء` : `${unread} unread notification${unread === 1 ? '' : 's'}`) : ''}
+        </span>
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full text-white text-[10px] font-bold flex items-center justify-center"
-            style={{ backgroundColor: '#F3650A' }}>
+          <span
+            aria-hidden="true"
+            className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 rounded-full text-white text-[10px] font-bold flex items-center justify-center"
+            style={{ backgroundColor: '#F3650A' }}
+          >
             {unread > 9 ? '9+' : unread}
           </span>
         )}

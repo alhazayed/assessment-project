@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Flame, TrendingUp, Calendar, BarChart2 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
@@ -58,7 +58,7 @@ function getLast30Days() {
 }
 
 export default function InsightsPage() {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const lang = useLang()
   const isAr = lang === 'ar'
 
@@ -95,7 +95,7 @@ export default function InsightsPage() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [supabase])
 
   const streak = calcStreak(moodLogs)
   const last30 = getLast30Days()

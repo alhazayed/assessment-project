@@ -93,6 +93,7 @@ export default async function LandingPage() {
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section
+        id="main-content"
         className="relative overflow-hidden pt-24 pb-28 px-6"
         style={{ background: 'linear-gradient(180deg, #EAF2F9 0%, var(--page-bg) 100%)' }}
       >

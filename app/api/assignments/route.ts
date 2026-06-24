@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function GET(request: Request) {
   const supabase = createClient()
@@ -52,6 +53,15 @@ export async function POST(request: Request) {
   const callerRole = callerProfile?.role ?? ''
   if (!['clinician', 'admin', 'superadmin'].includes(callerRole)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // Rate limit: 30 assignments/hour per clinician
+  const rl = await checkRateLimit(`assignments:${user.id}`, { limit: 30, windowMs: 60 * 60 * 1000 })
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': '3600' } }
+    )
   }
 
   const { patient_id, definition_id, due_date, note_en, note_ar } = await request.json()

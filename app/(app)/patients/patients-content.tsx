@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   Users, Search, AlertTriangle, X, ClipboardList,
@@ -50,7 +50,7 @@ function severityColor(band: string) {
 }
 
 export default function PatientsContent() {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const lang = useLang()
   const isAr = lang === 'ar'
 
@@ -78,9 +78,7 @@ export default function PatientsContent() {
   const [noteSaving, setNoteSaving] = useState(false)
   const [aiDrafting, setAiDrafting] = useState(false)
 
-  useEffect(() => { load() }, [])
-
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -132,7 +130,9 @@ export default function PatientsContent() {
       has_high_risk: riskSet.has(pt.id),
     })))
     setLoading(false)
-  }
+  }, [supabase])
+
+  useEffect(() => { load() }, [load])
 
   async function openPatient(p: Patient) {
     setSelected(p)

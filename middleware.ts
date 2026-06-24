@@ -50,7 +50,11 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/mood') ||
     pathname.startsWith('/patients') ||
     pathname.startsWith('/onboarding') ||
-    pathname.startsWith('/notifications')
+    pathname.startsWith('/notifications') ||
+    pathname.startsWith('/assessments') ||
+    pathname.startsWith('/packages') ||
+    pathname.startsWith('/adhd-zones') ||
+    pathname.startsWith('/admin')
 
   if (!user && isPrivateRoute) {
     const url = request.nextUrl.clone()

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Save, CheckCircle2, User, MapPin, BookOpen, Briefcase, Pill, Phone, Shield, AlertCircle, ClipboardList } from 'lucide-react'
@@ -51,7 +51,7 @@ interface AssessmentHistory {
 }
 
 export default function ProfilePage() {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const lang = useLang()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -97,7 +97,7 @@ export default function ProfilePage() {
   const [consentGivenAt, setConsentGivenAt] = useState<string | null>(null)
   const [givingConsent, setGivingConsent] = useState(false)
 
-  async function load() {
+  const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
@@ -112,16 +112,24 @@ export default function ProfilePage() {
     ])
 
     const p = profileRes.data
+    let profDob = ''
+    let profGender: 'male' | 'female' | '' = ''
+    let profMarital: MaritalStatus | '' = ''
+    let profEducation: EducationalStatus | '' = ''
     if (p) {
       const prof = p as Profile
       setProfile(prof)
       setFullNameEn(prof.full_name_en || '')
       setFullNameAr(prof.full_name_ar || '')
       setLangPref(prof.language_preference || 'en')
-      setDob(prof.date_of_birth || '')
-      setGender((prof.gender as 'male' | 'female') || '')
-      setMaritalStatus(prof.marital_status || '')
-      setEducationalStatus(prof.educational_status || '')
+      profDob = prof.date_of_birth || ''
+      profGender = (prof.gender as 'male' | 'female') || ''
+      profMarital = (prof.marital_status as MaritalStatus) || ''
+      profEducation = (prof.educational_status as EducationalStatus) || ''
+      setDob(profDob)
+      setGender(profGender)
+      setMaritalStatus(profMarital)
+      setEducationalStatus(profEducation)
       setCountry(prof.country_of_residence || '')
     }
 
@@ -146,17 +154,17 @@ export default function ProfilePage() {
         setConsentGivenAt(pat.consent_given_at)
 
         // Back-fill demographics from patient_profiles if profiles columns are empty
-        if (!dob && pat.date_of_birth) setDob(pat.date_of_birth)
-        if (!gender && pat.gender) setGender(pat.gender)
-        if (!maritalStatus && pat.marital_status) setMaritalStatus(pat.marital_status)
-        if (!educationalStatus && pat.educational_status) setEducationalStatus(pat.educational_status)
+        if (!profDob && pat.date_of_birth) setDob(pat.date_of_birth)
+        if (!profGender && pat.gender) setGender(pat.gender)
+        if (!profMarital && pat.marital_status) setMaritalStatus(pat.marital_status)
+        if (!profEducation && pat.educational_status) setEducationalStatus(pat.educational_status)
       }
     }
 
     setLoading(false)
-  }
+  }, [supabase])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [load])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()

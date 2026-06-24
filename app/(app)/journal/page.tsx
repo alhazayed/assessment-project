@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { BookOpen, Plus, Save, X, AlertCircle } from 'lucide-react'
 import type { JournalEntry } from '@/lib/types'
@@ -8,7 +8,7 @@ import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
 export default function JournalPage() {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const lang = useLang()
   const [entries, setEntries]       = useState<JournalEntry[]>([])
   const [loading, setLoading]       = useState(true)
@@ -19,7 +19,7 @@ export default function JournalPage() {
   const [isShared, setIsShared]     = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  async function loadEntries() {
+  const loadEntries = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data } = await supabase
@@ -29,9 +29,9 @@ export default function JournalPage() {
       .order('created_at', { ascending: false })
     setEntries(data as JournalEntry[] || [])
     setLoading(false)
-  }
+  }, [supabase])
 
-  useEffect(() => { loadEntries() }, [])
+  useEffect(() => { loadEntries() }, [loadEntries])
 
   async function handleSave() {
     if (!newEntry.trim()) return
