@@ -1,9 +1,16 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getLanguage } from '@/lib/get-language'
 import { ArrowLeft } from 'lucide-react'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import LanguageToggle from '@/components/language-toggle'
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: 'Learn how V Welfare collects, uses, and protects your personal and mental health data.',
+  robots: { index: true, follow: true },
+}
 
 export default function PrivacyPage() {
   const lang = getLanguage()
