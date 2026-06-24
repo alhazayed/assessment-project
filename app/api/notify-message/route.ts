@@ -12,8 +12,8 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // 30 notifications per hour per sender — prevents inbox flooding
-    const rl = await checkRateLimit(`notify-message:${user.id}`, { limit: 30, windowMs: 60 * 60 * 1000 })
+    // 10 notifications per hour per sender — prevents inbox flooding
+    const rl = await checkRateLimit(`notify-message:${user.id}`, { limit: 10, windowMs: 60 * 60 * 1000 })
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Too many message notifications. Please wait before sending more.' },

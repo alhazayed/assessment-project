@@ -93,6 +93,7 @@ export default async function LandingPage() {
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <section
+        id="main-content"
         className="relative overflow-hidden pt-24 pb-28 px-6"
         style={{ background: 'linear-gradient(180deg, #EAF2F9 0%, var(--page-bg) 100%)' }}
       >
@@ -356,7 +357,7 @@ export default async function LandingPage() {
             '@context': 'https://schema.org',
             '@type': 'Organization',
             name: 'V Welfare',
-            url: 'https://vwelfare.vercel.app',
+            url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
             description: 'Compassionate mental health assessment and wellbeing platform offering validated psychometric tools in Arabic and English.',
             sameAs: [],
             offers: {

@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next'
 
-const BASE = 'https://vwelfare.vercel.app'
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app'
 
 const publicRoutes = [
   { path: '',        freq: 'weekly'  as const, priority: 1.0 },

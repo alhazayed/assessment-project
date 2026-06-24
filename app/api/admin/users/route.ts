@@ -3,6 +3,8 @@ import { requireAdmin } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
+const ALLOWED_ROLES = ['patient', 'clinician', 'admin', 'superadmin'] as const
+
 export async function GET(request: Request) {
   try {
     await requireAdmin()
@@ -14,8 +16,10 @@ export async function GET(request: Request) {
 
     let query = db.from('profiles').select('id, full_name_en, full_name_ar, role, is_active, created_at, language_preference')
 
-    if (role) query = query.eq('role', role)
-    if (search) query = query.ilike('full_name_en', `%${search}%`)
+    if (role && (ALLOWED_ROLES as readonly string[]).includes(role)) query = query.eq('role', role)
+    if (search && typeof search === 'string' && search.length <= 100) {
+      query = query.ilike('full_name_en', `%${search.trim()}%`)
+    }
 
     const { data: users } = await query.order('created_at', { ascending: false }).limit(200)
 
@@ -37,8 +41,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 }
-
-const ALLOWED_ROLES = ['patient', 'clinician', 'admin', 'superadmin'] as const
 
 export async function PATCH(request: Request) {
   try {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -37,7 +37,7 @@ interface Props {
 }
 
 export default function AssessmentContent({ id, userId }: Props) {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const lang = useLang()
 
   const [definition, setDefinition] = useState<AssessmentDefinition | null>(null)
@@ -81,7 +81,7 @@ export default function AssessmentContent({ id, userId }: Props) {
       } catch {}
     }
     load()
-  }, [id, storageKey])
+  }, [id, storageKey, supabase])
 
   function resumeSavedProgress() {
     try {

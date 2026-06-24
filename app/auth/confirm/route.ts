@@ -7,7 +7,15 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
+
+  // Allowlist-based open redirect prevention
+  function safeNext(raw: string | null): string {
+    if (!raw) return '/dashboard'
+    if (/^https?:\/\//i.test(raw) || raw.startsWith('//') || !raw.startsWith('/')) return '/dashboard'
+    if (raw.startsWith('/x/control') || raw.startsWith('/api/')) return '/dashboard'
+    return raw
+  }
+  const next = safeNext(searchParams.get('next'))
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vwelfare.vercel.app'
 

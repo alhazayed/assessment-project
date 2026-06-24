@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Heart, Plus, CheckCircle2, AlertCircle } from 'lucide-react'
 import type { MoodLog } from '@/lib/types'
@@ -24,7 +24,7 @@ function ScoreBar({ score, color }: { score: number; color: string }) {
 }
 
 export default function MoodContent() {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const lang = useLang()
   const [logs, setLogs]         = useState<MoodLog[]>([])
   const [loading, setLoading]   = useState(true)
@@ -42,7 +42,7 @@ export default function MoodContent() {
     triggers:          [] as string[],
   })
 
-  async function loadLogs() {
+  const loadLogs = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data } = await supabase
@@ -53,9 +53,9 @@ export default function MoodContent() {
       .limit(30)
     setLogs(data as MoodLog[] || [])
     setLoading(false)
-  }
+  }, [supabase])
 
-  useEffect(() => { loadLogs() }, [])
+  useEffect(() => { loadLogs() }, [loadLogs])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

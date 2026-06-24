@@ -24,7 +24,7 @@ export default function SynthesisCard({ isAr }: { isAr: boolean }) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/synthesis')
+      const res = await fetch('/api/synthesis', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) {
         setError(data.error ?? 'Failed to generate synthesis')

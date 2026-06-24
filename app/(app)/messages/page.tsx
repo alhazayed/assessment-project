@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Send, MessageSquare, AlertCircle } from 'lucide-react'
 import type { Message, Profile } from '@/lib/types'
@@ -8,7 +8,7 @@ import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
 export default function MessagesPage() {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const lang = useLang()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [clinician, setClinician] = useState<Profile | null>(null)
@@ -21,7 +21,7 @@ export default function MessagesPage() {
   const [isUrgent, setIsUrgent] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  async function loadMessages(patientId: string, clinicianId: string) {
+  const loadMessages = useCallback(async (patientId: string, clinicianId: string) => {
     const { data: { user } } = await supabase.auth.getUser()
     const { data: msgs } = await supabase
       .from('messages')
@@ -43,9 +43,9 @@ export default function MessagesPage() {
           .in('id', unreadIds)
       }
     }
-  }
+  }, [supabase])
 
-  async function load() {
+  const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
@@ -67,15 +67,15 @@ export default function MessagesPage() {
       setPatients(pts as Profile[] || [])
     }
     setLoading(false)
-  }
+  }, [supabase, loadMessages])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [load])
 
   useEffect(() => {
     if (profile?.role === 'clinician' && selectedPatient) {
       loadMessages(selectedPatient.id, profile.id)
     }
-  }, [selectedPatient])
+  }, [selectedPatient, profile, loadMessages])
 
   useEffect(() => {
     if (!profile) return
@@ -103,7 +103,7 @@ export default function MessagesPage() {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [profile, clinician, selectedPatient])
+  }, [profile, clinician, selectedPatient, supabase, loadMessages])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })

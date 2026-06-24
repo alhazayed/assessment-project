@@ -33,14 +33,23 @@ export async function verifyTurnstileToken(
     return { success: false, errorCode: 'missing-token' }
   }
 
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 10_000)
+
+  let res: Response
   try {
     const body = new URLSearchParams({ secret, response: token })
     if (remoteip) body.append('remoteip', remoteip)
 
-    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      body,
-    })
+    try {
+      res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        body,
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timer)
+    }
 
     if (!res.ok) {
       console.error('[verifyTurnstile] siteverify HTTP error:', res.status)
@@ -54,6 +63,10 @@ export async function verifyTurnstileToken(
 
     return { success: true }
   } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.error('[verifyTurnstile] request timed out')
+      return { success: false, errorCode: 'timeout' }
+    }
     console.error('[verifyTurnstile] error:', err)
     return { success: false, errorCode: 'exception' }
   }

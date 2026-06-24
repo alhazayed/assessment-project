@@ -2,11 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
+import { callGemini } from '@/lib/gemini'
 
-const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
-
-export async function GET(_request: Request) {
+export async function POST(_request: Request) {
   try {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -104,14 +102,10 @@ Rules:
 - Keep recommendations practical and achievable without professional help
 - Strengths list may be empty [] if none are evident`
 
-    const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        contents: [{ role: 'user', parts: [{ text: `Assessment Results:\n${resultsSummary}` }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
-      }),
+    const res = await callGemini(apiKey, {
+      systemInstruction: { parts: [{ text: systemInstruction }] },
+      contents: [{ role: 'user', parts: [{ text: `Assessment Results:\n${resultsSummary}` }] }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
     })
 
     if (!res.ok) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -19,7 +19,7 @@ function safeRedirectUrl(raw: string | null): string | null {
   return raw
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const next = safeRedirectUrl(searchParams.get('next'))
@@ -317,5 +317,13 @@ export default function RegisterPage() {
         </Link>
       </p>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="space-y-4 animate-pulse"><div className="h-8 rounded bg-gray-200 dark:bg-gray-700 w-3/4 mb-8" /><div className="h-10 rounded bg-gray-200 dark:bg-gray-700" /><div className="h-10 rounded bg-gray-200 dark:bg-gray-700" /><div className="h-10 rounded bg-gray-200 dark:bg-gray-700" /><div className="h-11 rounded bg-gray-300 dark:bg-gray-600 mt-2" /></div>}>
+      <RegisterForm />
+    </Suspense>
   )
 }

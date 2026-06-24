@@ -23,13 +23,13 @@ export const metadata: Metadata = {
     template: '%s | V Welfare',
   },
   description: 'Compassionate, science-backed mental health assessments and wellbeing tools. Take validated psychometric assessments in Arabic and English.',
-  metadataBase: new URL('https://vwelfare.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app'),
   alternates: {
     canonical: '/',
     languages: {
-      'en': 'https://vwelfare.vercel.app',
-      'ar': 'https://vwelfare.vercel.app/?lang=ar',
-      'x-default': 'https://vwelfare.vercel.app',
+      'en': process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
+      'ar': `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app'}/?lang=ar`,
+      'x-default': process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
     },
   },
   openGraph: {
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     siteName: 'V Welfare',
     title: 'V Welfare — Mental Health Assessment Platform',
     description: 'Science-backed mental health assessments and wellbeing tools in Arabic and English.',
-    url: 'https://vwelfare.vercel.app',
+    url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
     images: [
       {
         url: '/og-image.png',
@@ -68,7 +68,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('vw-theme');var d=window.matchMedia('(prefers-color-scheme:dark)').matches;if(t==='dark'||(t===null&&d)){document.documentElement.classList.add('dark')}}catch(e){}})()` }} />
       </head>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-blue-700 focus:rounded focus:shadow-lg"
+        >
+          {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
+        </a>
+        {children}
+      </body>
     </html>
   )
 }

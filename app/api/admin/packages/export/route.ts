@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-auth'
 
 export async function GET(req: Request) {
-  await requireAdmin()
+  const { user: adminUser } = await requireAdmin()
 
   const { searchParams } = new URL(req.url)
   const packageId = searchParams.get('package_id')
@@ -106,6 +106,19 @@ export async function GET(req: Request) {
   const filename = packageId
     ? `package_results_${packageId}_${new Date().toISOString().slice(0, 10)}.csv`
     : `package_results_all_${new Date().toISOString().slice(0, 10)}.csv`
+
+  // Audit log — record who exported what and how many rows
+  try {
+    await db.from('audit_log').insert({
+      actor_id: adminUser.id,
+      action: 'data_export',
+      target_type: 'package_results',
+      target_id: packageId ?? adminUser.id,
+      details: { format: 'csv', row_count: rows.length, filters: { package_id: packageId, status } },
+    })
+  } catch (auditErr) {
+    console.error('[admin/packages/export] audit log failed (non-fatal):', auditErr instanceof Error ? auditErr.message : 'unknown')
+  }
 
   return new NextResponse(csv, {
     headers: {
