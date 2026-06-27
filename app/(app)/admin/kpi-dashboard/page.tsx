@@ -3,6 +3,7 @@ import { getLanguage } from '@/lib/get-language'
 import { redirect } from 'next/navigation'
 import { KPI_DEFINITIONS } from '@/lib/types/kpi'
 import { EnhancedKPICard } from '@/components/kpi-card-enhanced'
+import { KpiTrendCharts } from '@/components/kpi-trend-charts'
 import { RefreshCw, Download } from 'lucide-react'
 
 export default async function KPIDashboardPage() {
@@ -126,6 +127,11 @@ export default async function KPIDashboardPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Trend Charts */}
+      <div className="mt-10">
+        <KpiTrendCharts />
       </div>
 
       {/* Info Footer */}
