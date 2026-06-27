@@ -1,4 +1,0 @@
--- This migration was applied by Supabase CI at this version.
--- The canonical version is 20260624044327_assessment_submissions_constraints.sql
--- This file is retained so the remote migration record matches local files.
--- Supabase will not re-apply this because the version is already in schema_migrations.
