@@ -26,8 +26,8 @@ export async function PATCH(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Rate limit: 100 mark-read requests/hour per user
-  const rl = await checkRateLimit(`notifications:${user.id}`, { limit: 100, windowMs: 60 * 60 * 1000 })
+  // Rate limit: 50 mark-read requests/hour per user
+  const rl = await checkRateLimit(`notifications:${user.id}`, { limit: 50, windowMs: 60 * 60 * 1000 })
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Too many requests' },
