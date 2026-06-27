@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit } from '@/lib/rate-limit'
 import { generateRichNarrative } from '@/lib/package-interpret'
 import type { ScoringBand, InterpretationBand } from '@/lib/types'
 
@@ -24,6 +25,15 @@ export async function POST(
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // Rate limit: 30 package computations per hour per user
+    const rl = await checkRateLimit(`package-compute:${user.id}`, { limit: 30, windowMs: 60 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Too many package computations. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': '3600' } }
+      )
+    }
 
     const db = createAdminClient()
 
