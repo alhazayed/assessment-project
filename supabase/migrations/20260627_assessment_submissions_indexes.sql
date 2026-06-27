@@ -17,8 +17,3 @@ CREATE INDEX IF NOT EXISTS idx_assessment_submissions_definition_id
 CREATE INDEX IF NOT EXISTS idx_assessment_submissions_high_risk
   ON public.assessment_submissions(high_risk_flag)
   WHERE high_risk_flag = true;
-
--- Partial index for incomplete/in-progress submissions
-CREATE INDEX IF NOT EXISTS idx_assessment_submissions_incomplete
-  ON public.assessment_submissions(patient_id, created_at DESC)
-  WHERE status = 'in_progress';
