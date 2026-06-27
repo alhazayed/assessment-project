@@ -38,7 +38,8 @@ function LoginForm() {
       window.turnstile?.render(turnstileRef.current, {
         sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
         theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
-      })
+        callback: () => {}, // On successful verification
+      } as any)
     }
   }, [])
 
