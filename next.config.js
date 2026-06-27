@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
+  eslint: {
+    // Don't fail build on ESLint errors during production builds
+    // ESLint is still run and warnings are shown
+    ignoreDuringBuilds: false,
+  },
   async headers() {
     return [
       {
