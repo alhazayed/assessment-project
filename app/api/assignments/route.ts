@@ -55,8 +55,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  // Rate limit: 30 assignments/hour per clinician
-  const rl = await checkRateLimit(`assignments:${user.id}`, { limit: 30, windowMs: 60 * 60 * 1000 })
+  // Rate limit: 20 assignments/hour per clinician
+  const rl = await checkRateLimit(`assignments:${user.id}`, { limit: 20, windowMs: 60 * 60 * 1000 })
   if (!rl.allowed) {
     return NextResponse.json(
       { error: 'Too many requests' },

@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-auth'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { buildContentDisposition, getMimeTypeForFormat } from '@/lib/security/file-export'
 
 export async function GET(req: Request) {
   const { user: adminUser } = await requireAdmin()
+
+  const rl = await checkRateLimit(`admin-export-packages:${adminUser.id}`, { limit: 10, windowMs: 60 * 60 * 1000 })
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Export rate limit reached. Please wait before exporting again.' }, { status: 429, headers: { 'Retry-After': '3600' } })
+  }
 
   const { searchParams } = new URL(req.url)
   const packageId = searchParams.get('package_id')
@@ -122,8 +129,10 @@ export async function GET(req: Request) {
 
   return new NextResponse(csv, {
     headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Type': getMimeTypeForFormat('csv'),
+      'Content-Disposition': buildContentDisposition(filename),
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': 'no-store',
     },
   })
 }

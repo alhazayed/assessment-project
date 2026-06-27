@@ -353,18 +353,31 @@ export default async function LandingPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'Organization',
-            name: 'V Welfare',
-            url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
-            description: 'Compassionate mental health assessment and wellbeing platform offering validated psychometric tools in Arabic and English.',
-            sameAs: [],
-            offers: {
-              '@type': 'Offer',
-              description: 'Free mental health assessments and wellbeing tools',
+          __html: JSON.stringify([
+            {
+              '@context': 'https://schema.org',
+              '@type': 'WebApplication',
+              name: 'V Welfare',
+              url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
+              description: 'Compassionate, science-backed mental health assessments and wellbeing tools in Arabic and English.',
+              applicationCategory: 'HealthApplication',
+              operatingSystem: 'Web',
+              inLanguage: ['ar', 'en'],
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'SAR',
+                description: 'Free mental health assessments and wellbeing tools',
+              },
             },
-          }),
+            {
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'V Welfare',
+              url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
+              description: 'Compassionate mental health assessment and wellbeing platform offering validated psychometric tools in Arabic and English.',
+            },
+          ]),
         }}
       />
 

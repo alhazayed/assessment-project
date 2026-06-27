@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { buildContentDisposition, getMimeTypeForFormat } from '@/lib/security/file-export'
 
 export async function GET() {
   const supabase = createClient()
@@ -41,8 +42,10 @@ export async function GET() {
 
   return new NextResponse(JSON.stringify(exportData, null, 2), {
     headers: {
-      'Content-Type': 'application/json',
-      'Content-Disposition': 'attachment; filename="my-vwelfare-data.json"',
+      'Content-Type': getMimeTypeForFormat('json'),
+      'Content-Disposition': buildContentDisposition('my-vwelfare-data.json'),
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': 'no-store',
     },
   })
 }

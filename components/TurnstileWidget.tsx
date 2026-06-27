@@ -6,8 +6,9 @@ declare global {
   interface Window {
     turnstile?: {
       render: (container: string | HTMLElement, options: TurnstileOptions) => string
-      reset: (widgetId: string) => void
-      remove: (widgetId: string) => void
+      reset: (widgetId?: string) => void
+      remove: (widgetId?: string) => void
+      getResponse: (widgetId?: string) => string | undefined
     }
     onTurnstileLoad?: () => void
   }

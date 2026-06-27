@@ -2,6 +2,18 @@
   "functions": {
     "app/api/clinical-notes/route.ts": {
       "maxDuration": 30
+    },
+    "app/api/synthesis/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/ai-chat/route.ts": {
+      "maxDuration": 25
+    },
+    "app/api/admin/export/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/admin/research/route.ts": {
+      "maxDuration": 45
     }
   }
 }

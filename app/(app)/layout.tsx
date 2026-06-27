@@ -4,6 +4,10 @@ import { redirect } from 'next/navigation'
 import Sidebar from '@/components/sidebar'
 import type { Profile } from '@/lib/types'
 
+export const metadata = {
+  robots: { index: false, follow: false },
+}
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
   const lang = getLanguage()
@@ -22,7 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--page-bg)' }}>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:start-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium"
       >
         {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
       </a>

@@ -4,6 +4,7 @@ import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
 import { Users, ClipboardCheck, AlertTriangle, Activity, TrendingUp, TrendingDown, ShieldAlert, Brain } from 'lucide-react'
 import Link from 'next/link'
+import DashboardOverview from '@/components/admin/dashboard-overview'
 
 export default async function AdminOverviewPage() {
   await requireAdmin()
@@ -163,6 +164,12 @@ export default async function AdminOverviewPage() {
           <Brain className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
           {t('admin.overview.deep_analytics', lang)}
         </Link>
+      </div>
+
+      {/* Phase 1: Performance-Optimized Dashboard */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance Analytics</h2>
+        <DashboardOverview />
       </div>
 
       {/* Stats grid */}

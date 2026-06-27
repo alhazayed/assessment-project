@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -25,6 +25,7 @@ function LoginForm() {
   const next = safeRedirectUrl(searchParams.get('next'))
   const lang = useLang()
   const isRtl = lang === 'ar'
+  const turnstileRef = useRef<HTMLDivElement>(null)
 
   const [email, setEmail]             = useState('')
   const [password, setPassword]       = useState('')
@@ -32,25 +33,82 @@ function LoginForm() {
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState<string | null>(null)
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && turnstileRef.current) {
+      window.turnstile?.render(turnstileRef.current, {
+        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+        callback: () => {}, // On successful verification
+      } as any)
+    }
+  }, [])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    try {
+      // Step 1: Check login rate limit
+      const limitRes = await fetch('/api/auth/check-login-limit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
 
-    if (error) {
-      // Always show a single generic error to prevent account enumeration
-      setError(
-        isRtl
-          ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
-          : 'Invalid email or password.'
-      )
+      if (!limitRes.ok) {
+        const data = await limitRes.json()
+        setError(data.error || 'Too many login attempts. Please try again later.')
+        setLoading(false)
+        return
+      }
+
+      // Step 2: Verify CAPTCHA if enabled
+      const turnstileToken = window.turnstile?.getResponse()
+      if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken) {
+        setError(isRtl ? 'يرجى التحقق من أنك لست روبوتاً' : 'Please complete the CAPTCHA verification')
+        setLoading(false)
+        window.turnstile?.reset()
+        return
+      }
+
+      if (turnstileToken) {
+        const captchaRes = await fetch('/api/auth/verify-captcha', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: turnstileToken }),
+        })
+
+        if (!captchaRes.ok) {
+          const data = await captchaRes.json()
+          setError(isRtl ? 'فشل التحقق من CAPTCHA' : 'CAPTCHA verification failed')
+          setLoading(false)
+          window.turnstile?.reset()
+          return
+        }
+      }
+
+      // Step 3: Attempt login
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+      if (error) {
+        setError(
+          isRtl
+            ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
+            : 'Invalid email or password.'
+        )
+        setLoading(false)
+        if (turnstileToken) window.turnstile?.reset()
+      } else {
+        router.push(next)
+        router.refresh()
+      }
+    } catch (err) {
+      console.error('Login error:', err)
+      setError(isRtl ? 'حدث خطأ أثناء تسجيل الدخول' : 'An error occurred during login')
       setLoading(false)
-    } else {
-      router.push(next)
-      router.refresh()
+      if (window.turnstile?.getResponse()) window.turnstile?.reset()
     }
   }
 
@@ -126,6 +184,11 @@ function LoginForm() {
             </button>
           </div>
         </div>
+
+        {/* Turnstile CAPTCHA */}
+        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+          <div className="flex justify-center my-4 cf-turnstile" ref={turnstileRef} data-theme={typeof window !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light'} />
+        )}
 
         {/* Submit */}
         <button

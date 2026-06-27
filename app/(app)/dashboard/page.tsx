@@ -123,9 +123,14 @@ export default async function DashboardPage() {
               <p className="stat-sub">{latestMood.log_date}</p>
             </>
           ) : (
-            <Link href="/mood" className="text-[13px] font-semibold" style={{ color: '#1D6296' }}>
-              {t('dashboard.mood.log', lang)}
-            </Link>
+            <>
+              <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
+                {lang === 'ar' ? 'لم تسجّل مزاجك اليوم بعد' : "You haven't logged today yet"}
+              </p>
+              <Link href="/mood" className="text-[13px] font-semibold" style={{ color: '#1D6296' }}>
+                {t('dashboard.mood.log', lang)}
+              </Link>
+            </>
           )}
         </div>
 
@@ -140,7 +145,7 @@ export default async function DashboardPage() {
           {avgMood !== null ? (
             <>
               <p className="stat-value">{avgMood}<span className="text-lg font-normal" style={{ color: 'var(--text-muted)' }}>/10</span></p>
-              <p className="stat-sub">{lang === 'ar' ? `آخر ${moods.length} أيام` : `Last ${moods.length} days`}</p>
+              <p className="stat-sub">{lang === 'ar' ? `آخر ${moods.length} ${moods.length === 1 ? 'يوم' : 'أيام'}` : `Last ${moods.length} ${moods.length === 1 ? 'day' : 'days'}`}</p>
             </>
           ) : (
             <p className="stat-sub mt-2">{t('dashboard.mood.no_data', lang)}</p>

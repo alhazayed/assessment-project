@@ -1,9 +1,16 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getLanguage } from '@/lib/get-language'
 import { ArrowLeft } from 'lucide-react'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import LanguageToggle from '@/components/language-toggle'
+
+export const metadata: Metadata = {
+  title: 'Terms of Service',
+  description: 'Read the Terms of Service for the V Welfare mental health assessment platform.',
+  robots: { index: true, follow: true },
+}
 
 export default function TermsPage() {
   const lang = getLanguage()
