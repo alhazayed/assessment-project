@@ -19,9 +19,10 @@ export async function checkRateLimit(
   })
 
   if (error) {
-    // Fail open on DB error — do not block legitimate requests
-    console.error('[rate-limit] rpc error:', error)
-    return { allowed: true, remaining: 0 }
+    // Fail closed on DB error for security-critical endpoints (auth, admin)
+    // Caller can override this behavior for non-critical endpoints if needed
+    console.error('[rate-limit] rpc error (failing secure):', error)
+    return { allowed: false, remaining: 0 }
   }
 
   const newCount = data as number

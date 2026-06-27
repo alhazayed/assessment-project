@@ -327,6 +327,14 @@ export async function POST(request: Request) {
       notifyAdminsHighRiskGuest(submission.id, definition_id).catch(() => {})
     }
 
+    // Log guest submission to audit trail (no actor_id since anonymous)
+    await supabase.from('audit_log').insert({
+      action: 'guest_assessment_submitted',
+      target_type: 'assessment_submission',
+      target_id: submission.id,
+      reason: `${def.name_en} — score ${totalScore}${band ? ` (${band.severity_en})` : ''}${highRisk ? ' HIGH RISK' : ''} — guest from ${country}`,
+    }).then(() => {}) // fire-and-forget
+
     return NextResponse.json({
       submission_id: submission.id,
       score: totalScore,

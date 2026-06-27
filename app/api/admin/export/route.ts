@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { buildContentDisposition, getMimeTypeForFormat } from '@/lib/security/file-export'
 
 function csvSafe(value: string): string {
   if (/^[=+\-@|%\t\r]/.test(String(value))) return `'${value}`
@@ -125,8 +126,10 @@ export async function GET(request: Request) {
       const csv = rowsToCsv(headers, dataRows)
       return new NextResponse(csv, {
         headers: {
-          'Content-Type': 'text/csv; charset=utf-8',
-          'Content-Disposition': `attachment; filename="anonymized-dataset-${dateStr}.csv"`,
+          'Content-Type': getMimeTypeForFormat('csv'),
+          'Content-Disposition': buildContentDisposition(`anonymized-dataset-${dateStr}.csv`),
+          'X-Content-Type-Options': 'nosniff',
+          'Cache-Control': 'no-store',
         },
       })
     }
@@ -150,8 +153,10 @@ export async function GET(request: Request) {
       const csv = rowsToCsv(headers, dataRows)
       return new NextResponse(csv, {
         headers: {
-          'Content-Type': 'text/csv; charset=utf-8',
-          'Content-Disposition': `attachment; filename="stats-summary-${dateStr}.csv"`,
+          'Content-Type': getMimeTypeForFormat('csv'),
+          'Content-Disposition': buildContentDisposition(`stats-summary-${dateStr}.csv`),
+          'X-Content-Type-Options': 'nosniff',
+          'Cache-Control': 'no-store',
         },
       })
     }
@@ -164,8 +169,10 @@ export async function GET(request: Request) {
       const csv = rowsToCsv(headers, dataRows)
       return new NextResponse(csv, {
         headers: {
-          'Content-Type': 'text/csv; charset=utf-8',
-          'Content-Disposition': `attachment; filename="high-risk-report-${dateStr}.csv"`,
+          'Content-Type': getMimeTypeForFormat('csv'),
+          'Content-Disposition': buildContentDisposition(`high-risk-report-${dateStr}.csv`),
+          'X-Content-Type-Options': 'nosniff',
+          'Cache-Control': 'no-store',
         },
       })
     }
@@ -197,8 +204,10 @@ export async function GET(request: Request) {
       const csv = csvSections.join('\n')
       return new NextResponse(csv, {
         headers: {
-          'Content-Type': 'text/csv; charset=utf-8',
-          'Content-Disposition': `attachment; filename="demographic-analysis-${dateStr}.csv"`,
+          'Content-Type': getMimeTypeForFormat('csv'),
+          'Content-Disposition': buildContentDisposition(`demographic-analysis-${dateStr}.csv`),
+          'X-Content-Type-Options': 'nosniff',
+          'Cache-Control': 'no-store',
         },
       })
     }
@@ -253,8 +262,10 @@ ${rows.slice(0, 200).map(r => `<tr><td>${r.id.slice(0, 8)}…</td><td>${r.assess
 
       return new NextResponse(html, {
         headers: {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Content-Disposition': `inline; filename="analytics-report-${dateStr}.html"`,
+          'Content-Type': getMimeTypeForFormat('html'),
+          'Content-Disposition': buildContentDisposition(`analytics-report-${dateStr}.html`, true),
+          'X-Content-Type-Options': 'nosniff',
+          'Cache-Control': 'no-store',
         },
       })
     }

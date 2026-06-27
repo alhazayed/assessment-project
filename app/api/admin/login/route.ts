@@ -27,7 +27,7 @@ export async function POST(request: Request) {
         await logDb.from('audit_log').insert({
           action: 'admin_login_failed',
           target_type: 'admin_session',
-          details: { ip, email },
+          details: { ip },
         })
       } catch { /* non-fatal */ }
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
         await logDb.from('audit_log').insert({
           action: 'admin_login_failed',
           target_type: 'admin_session',
-          details: { ip, email },
+          details: { ip },
         })
       } catch { /* non-fatal */ }
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
