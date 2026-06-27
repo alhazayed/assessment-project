@@ -67,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       {/* Anti-flash: apply saved dark preference before first paint */}
       <head>
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('vw-theme');var d=window.matchMedia('(prefers-color-scheme:dark)').matches;if(t==='dark'||(t===null&&d)){document.documentElement.classList.add('dark')}}catch(e){}})()` }} />
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
       </head>
       <body suppressHydrationWarning>
         <a

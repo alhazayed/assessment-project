@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -25,6 +25,7 @@ function RegisterForm() {
   const next = safeRedirectUrl(searchParams.get('next'))
   const lang = useLang()
   const isRtl = lang === 'ar'
+  const turnstileRef = useRef<HTMLDivElement>(null)
 
   const [email, setEmail]                   = useState('')
   const [password, setPassword]             = useState('')
@@ -44,6 +45,15 @@ function RegisterForm() {
     const timer = setTimeout(() => setResendCooldown(c => c - 1), 1000)
     return () => clearTimeout(timer)
   }, [resendCooldown])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && turnstileRef.current) {
+      window.turnstile?.render(turnstileRef.current, {
+        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+      })
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -71,25 +81,74 @@ function RegisterForm() {
     }
 
     setLoading(true)
-    const supabase = createClient()
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name_en: fullName },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vwelfare.vercel.app'}/auth/confirm?next=${encodeURIComponent(next || '/onboarding')}`,
-      },
-    })
 
-    if (error) {
-      setError(error.message)
+    try {
+      // Step 1: Check registration rate limit
+      const limitRes = await fetch('/api/auth/check-signup-limit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+
+      if (!limitRes.ok) {
+        const data = await limitRes.json()
+        setError(data.error || 'Too many signup attempts. Please try again later.')
+        setLoading(false)
+        return
+      }
+
+      // Step 2: Verify CAPTCHA if enabled
+      const turnstileToken = window.turnstile?.getResponse()
+      if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken) {
+        setError(isRtl ? 'يرجى التحقق من أنك لست روبوتاً' : 'Please complete the CAPTCHA verification')
+        setLoading(false)
+        window.turnstile?.reset()
+        return
+      }
+
+      if (turnstileToken) {
+        const captchaRes = await fetch('/api/auth/verify-captcha', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: turnstileToken }),
+        })
+
+        if (!captchaRes.ok) {
+          const data = await captchaRes.json()
+          setError(isRtl ? 'فشل التحقق من CAPTCHA' : 'CAPTCHA verification failed')
+          setLoading(false)
+          window.turnstile?.reset()
+          return
+        }
+      }
+
+      // Step 3: Attempt signup
+      const supabase = createClient()
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name_en: fullName },
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vwelfare.vercel.app'}/auth/confirm?next=${encodeURIComponent(next || '/onboarding')}`,
+        },
+      })
+
+      if (error) {
+        setError(error.message)
+        setLoading(false)
+        if (turnstileToken) window.turnstile?.reset()
+      } else if (data.session) {
+        router.push(next || '/onboarding')
+      } else {
+        // Email confirmation required — show "check your email" screen
+        setSuccess(true)
+        setResendCooldown(60)
+      }
+    } catch (err) {
+      console.error('Signup error:', err)
+      setError(isRtl ? 'حدث خطأ أثناء التسجيل' : 'An error occurred during signup')
       setLoading(false)
-    } else if (data.session) {
-      router.push(next || '/onboarding')
-    } else {
-      // Email confirmation required — show "check your email" screen
-      setSuccess(true)
-      setResendCooldown(60)
+      if (window.turnstile?.getResponse()) window.turnstile?.reset()
     }
   }
 
@@ -289,6 +348,11 @@ function RegisterForm() {
             )}
           </span>
         </label>
+
+        {/* Turnstile CAPTCHA */}
+        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+          <div className="flex justify-center my-4 cf-turnstile" ref={turnstileRef} data-theme={typeof window !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light'} />
+        )}
 
         {/* Submit */}
         <button
