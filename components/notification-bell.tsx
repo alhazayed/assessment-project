@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Bell, X, CheckCheck, AlertTriangle, ClipboardList, MessageSquare, Info } from 'lucide-react'
 import Link from 'next/link'
@@ -34,7 +34,7 @@ const TYPE_COLOR = {
 }
 
 export default function NotificationBell({ lang }: { lang: Lang }) {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<Notification[]>([])
   const panelRef = useRef<HTMLDivElement>(null)
@@ -66,7 +66,7 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
 
     init()
     return () => { if (channel) supabase.removeChannel(channel) }
-  }, [])
+  }, [supabase])
 
   // Focus the close button when panel opens; return focus to bell when it closes
   useEffect(() => {

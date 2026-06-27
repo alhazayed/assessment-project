@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { AlertTriangle, X, Phone, ExternalLink } from 'lucide-react'
 import type { Lang } from '@/lib/i18n'
@@ -13,7 +13,7 @@ const CRISIS_LINES = [
 ]
 
 export default function CrisisBanner({ lang }: { lang: Lang }) {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const [show, setShow] = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const isAr = lang === 'ar'
@@ -35,7 +35,7 @@ export default function CrisisBanner({ lang }: { lang: Lang }) {
       if (data && data.length > 0) setShow(true)
     }
     check()
-  }, [])
+  }, [supabase])
 
   if (!show || dismissed) return null
 

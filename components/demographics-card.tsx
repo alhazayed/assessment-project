@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { User, CheckCircle2, X, UserPlus } from 'lucide-react'
@@ -31,7 +31,7 @@ interface Props {
 }
 
 export default function DemographicsCard({ isLoggedIn, lang }: Props) {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const isAr = lang === 'ar'
 
   const [dob, setDob] = useState('')
@@ -70,7 +70,7 @@ export default function DemographicsCard({ isLoggedIn, lang }: Props) {
       setLoading(false)
     }
     fetchProfile()
-  }, [isLoggedIn])
+  }, [isLoggedIn, supabase])
 
   async function handleSave() {
     const { data: { user } } = await supabase.auth.getUser()
