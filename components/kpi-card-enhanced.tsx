@@ -33,11 +33,33 @@ export function EnhancedKPICard({
   status = 'good',
   lastUpdated,
   isLoading,
+  available = true,
   onDrilldown,
   onAlertConfig,
 }: EnhancedKPICardProps) {
   const router = useRouter()
   const colors = statusColors[status]
+
+  // No backing data source yet — show an honest placeholder rather than a
+  // zero that reads as a real (critical) value.
+  if (!isLoading && available === false) {
+    return (
+      <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-4 flex flex-col h-full">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+          {kpi.category}
+        </p>
+        <h3 className="text-sm font-semibold text-gray-500 mt-1 leading-tight">
+          {kpi.title}
+        </h3>
+        <div className="flex-1 flex items-center justify-center py-4">
+          <span className="text-2xl font-bold text-gray-300">—</span>
+        </div>
+        <span className="text-[11px] font-medium text-gray-400 text-center">
+          No data source yet
+        </span>
+      </div>
+    )
+  }
   const progress = target ? (Number(value) / target) * 100 : 0
   const progressCapped = Math.min(100, progress)
 
@@ -183,7 +205,7 @@ export function EnhancedKPICard({
       {/* Last Updated */}
       {lastUpdated && (
         <p className="text-xs text-gray-500 mb-3">
-          Updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          Updated: {new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </p>
       )}
 

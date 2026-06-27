@@ -29,9 +29,13 @@ export interface KPIValue {
   trendDirection?: TrendDirection
   target?: number
   status?: KPIStatus
-  lastUpdated?: Date
+  lastUpdated?: Date | string
   format?: KPIFormat
   unit?: string
+  // false when no underlying data source exists yet (e.g. no api_logs /
+  // login_attempts table). The card renders a "no data source" state rather
+  // than a misleading zero.
+  available?: boolean
 }
 
 export interface KPIHistoryPoint {
@@ -55,8 +59,9 @@ export interface EnhancedKPICardProps {
   trendDirection?: TrendDirection
   target?: number
   status?: KPIStatus
-  lastUpdated?: Date
+  lastUpdated?: Date | string
   isLoading?: boolean
+  available?: boolean
   onDrilldown?: () => void
   onAlertConfig?: () => void
 }
