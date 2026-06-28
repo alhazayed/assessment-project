@@ -1,6 +1,9 @@
 import { MetadataRoute } from 'next'
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app'
+// Canonical production domain. Falls back to it (not the Vercel preview URL)
+// so the sitemap/robots always advertise the real host even if the env var
+// is unset on a given deployment.
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://app.vwelfare.com'
 
 const publicRoutes = [
   { path: '',        freq: 'weekly'  as const, priority: 1.0 },
@@ -25,7 +28,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
       alternates: {
         languages: {
           en: url,
-          ar: `${url}${route.path ? '&' : '?'}lang=ar`,
+          // None of these routes carry an existing query string, so the lang
+          // param is always introduced with '?'. The previous '&' for non-root
+          // paths produced malformed URLs and an unescaped-'&' XML parse error.
+          ar: `${url}?lang=ar`,
         },
       },
     })

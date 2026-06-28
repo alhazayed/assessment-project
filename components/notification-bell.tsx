@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo, useId } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Bell, X, CheckCheck, AlertTriangle, ClipboardList, MessageSquare, Info } from 'lucide-react'
 import Link from 'next/link'
@@ -35,6 +35,11 @@ const TYPE_COLOR = {
 
 export default function NotificationBell({ lang }: { lang: Lang }) {
   const supabase = useMemo(() => createClient(), [])
+  // Unique per component instance. The bell renders twice (desktop + mobile
+  // bars); without a per-instance topic both would open the SAME realtime
+  // channel, and the second .on() after the first .subscribe() throws
+  // "cannot add postgres_changes callbacks ... after subscribe()".
+  const instanceId = useId()
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<Notification[]>([])
   const panelRef = useRef<HTMLDivElement>(null)
@@ -45,16 +50,18 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
   const unread = items.filter(n => !n.read_at).length
 
   useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel>
+    let channel: ReturnType<typeof supabase.channel> | undefined
+    let cancelled = false
 
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user || cancelled) return
 
       await loadNotifications()
+      if (cancelled) return
 
       channel = supabase
-        .channel(`notifications-bell-${user.id}`)
+        .channel(`notifications-bell-${user.id}-${instanceId}`)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
@@ -65,8 +72,8 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
     }
 
     init()
-    return () => { if (channel) supabase.removeChannel(channel) }
-  }, [supabase])
+    return () => { cancelled = true; if (channel) supabase.removeChannel(channel) }
+  }, [supabase, instanceId])
 
   // Focus the close button when panel opens; return focus to bell when it closes
   useEffect(() => {

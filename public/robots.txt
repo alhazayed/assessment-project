@@ -1,8 +1,0 @@
-User-agent: *
-Disallow: /x/control
-Disallow: /api/
-Disallow: /forgot-password
-Disallow: /onboarding
-Allow: /
-
-Sitemap: https://vwelfare.vercel.app/sitemap.xml
