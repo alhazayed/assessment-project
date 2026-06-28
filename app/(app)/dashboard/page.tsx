@@ -93,7 +93,7 @@ export default async function DashboardPage() {
                 return (
                   <Link
                     key={a.id}
-                    href={`/assessments/${a.definition_id}`}
+                    href={`/assessments/${a.definition_id}?assignment=${a.id}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12.5px] font-semibold transition-opacity hover:opacity-80"
                     style={{ background: '#FEF2EC', color: '#F3650A', border: '1px solid #FBC29D' }}
                   >

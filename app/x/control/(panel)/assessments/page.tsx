@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ClipboardList, ToggleLeft, ToggleRight, CheckCircle, XCircle } from 'lucide-react'
+import Link from 'next/link'
+import { ClipboardList, ToggleLeft, ToggleRight, CheckCircle, XCircle, BarChart3 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
@@ -74,7 +75,10 @@ export default function AdminAssessmentsPage() {
             ) : assessments.map(a => (
               <tr key={a.id} className={updating === a.id ? 'opacity-50' : ''} style={{ borderBottom: '1px solid var(--divider)' }}>
                 <td className="px-4 py-3">
-                  <p className="text-[13.5px] font-medium" style={{ color: 'var(--text-primary)' }}>{a.name_en}</p>
+                  <Link href={`/x/control/assessments/${a.id}`} className="group inline-flex items-center gap-1.5 transition-colors hover:opacity-80">
+                    <span className="text-[13.5px] font-medium" style={{ color: 'var(--vw-blue)' }}>{a.name_en}</span>
+                    <BarChart3 className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--vw-blue)' }} />
+                  </Link>
                   {a.name_ar && <p className="text-[11.5px] text-right" dir="rtl" style={{ color: 'var(--text-muted)' }}>{a.name_ar}</p>}
                 </td>
                 <td className="px-4 py-3">

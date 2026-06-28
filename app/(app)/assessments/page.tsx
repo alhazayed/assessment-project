@@ -123,7 +123,7 @@ export default async function AssessmentsPage() {
                       )}
                     </div>
                     {isProfileComplete ? (
-                      <Link href={`/assessments/${a.definition_id}`} className="btn-accent flex-shrink-0">
+                      <Link href={`/assessments/${a.definition_id}?assignment=${a.id}`} className="btn-accent flex-shrink-0">
                         {t('assessments.btn.start', lang)}
                       </Link>
                     ) : (
@@ -140,7 +140,7 @@ export default async function AssessmentsPage() {
       )}
 
       <RescreeningTrigger />
-      <InProgressAssessments definitions={allDefinitions} lang={lang} />
+      <InProgressAssessments definitions={allDefinitions} lang={lang} userId={user.id} />
 
       {/* Available assessments */}
       <div className="mb-7">

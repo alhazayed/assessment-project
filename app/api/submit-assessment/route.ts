@@ -58,6 +58,8 @@ interface ItemRow {
 interface SubmitBody {
   definition_id: string
   responses: Array<{ item_id: string; value: number }>
+  /** Set when fulfilling a clinician-assigned assessment, so it can be marked complete. */
+  assignment_id?: string
 }
 
 function calcBand(scoringLogic: ScoringBand[], score: number): ScoringBand | null {
@@ -87,7 +89,7 @@ export async function POST(request: Request) {
     }
 
     const body: SubmitBody = await request.json()
-    const { definition_id, responses } = body
+    const { definition_id, responses, assignment_id } = body
 
     if (!definition_id || !Array.isArray(responses) || responses.length === 0 || responses.length > 200) {
       return NextResponse.json({ error: 'definition_id and responses are required (max 200 items)' }, { status: 400 })
@@ -178,13 +180,30 @@ export async function POST(request: Request) {
       p_total_score: totalScore,
       p_severity_band: band?.severity_en ?? '',
       p_high_risk_flag: highRisk,
-      p_is_self_initiated: true,
+      p_is_self_initiated: !assignment_id,
       p_responses: responsePayload,
     })
 
     if (subErr || !submissionId) {
       console.error('submission error:', subErr?.message ?? 'unknown')
       return NextResponse.json({ error: 'Failed to save submission' }, { status: 500 })
+    }
+
+    // Mark a clinician-assigned assessment as completed. Scoped to this
+    // patient + definition + a still-pending assignment so a patient can't
+    // close out someone else's (or an already-completed) assignment.
+    if (assignment_id) {
+      const { error: assignErr } = await db
+        .from('assessment_assignments')
+        .update({ status: 'completed', completed_submission_id: submissionId as string })
+        .eq('id', assignment_id)
+        .eq('patient_id', user.id)
+        .eq('definition_id', definition_id)
+        .eq('status', 'pending')
+      if (assignErr) {
+        // Non-fatal: the submission is already saved; just log the miss.
+        console.error('assignment completion update failed:', assignErr.message)
+      }
     }
 
     // Server-side high-risk admin alert — idempotent, fire-and-forget
