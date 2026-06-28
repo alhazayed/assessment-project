@@ -18,7 +18,12 @@ export async function GET(request: Request) {
 
     if (role && (ALLOWED_ROLES as readonly string[]).includes(role)) query = query.eq('role', role)
     if (search && typeof search === 'string' && search.length <= 100) {
-      query = query.ilike('full_name_en', `%${search.trim()}%`)
+      // Search both English and Arabic names (the platform is bilingual; an
+      // English-only match silently returned nothing for Arabic queries).
+      // Strip characters that are structural in PostgREST's or() filter so a
+      // name fragment can't break or inject into the filter expression.
+      const term = search.trim().replace(/[,()*]/g, ' ').trim()
+      if (term) query = query.or(`full_name_en.ilike.%${term}%,full_name_ar.ilike.%${term}%`)
     }
 
     const { data: users } = await query.order('created_at', { ascending: false }).limit(200)
