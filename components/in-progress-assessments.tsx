@@ -10,6 +10,8 @@ import { t } from '@/lib/i18n'
 interface Props {
   definitions: AssessmentDefinition[]
   lang: Lang
+  /** Auth user id — required: saved-progress keys are namespaced per user. */
+  userId: string
 }
 
 interface SavedProgress {
@@ -17,14 +19,17 @@ interface SavedProgress {
   currentIndex: number
 }
 
-export default function InProgressAssessments({ definitions, lang }: Props) {
+export default function InProgressAssessments({ definitions, lang, userId }: Props) {
   const [inProgress, setInProgress] = useState<{ def: AssessmentDefinition; progress: SavedProgress }[]>([])
 
   useEffect(() => {
     const found: { def: AssessmentDefinition; progress: SavedProgress }[] = []
     for (const def of definitions) {
       try {
-        const raw = localStorage.getItem(`vw_assessment_${def.id}`)
+        // Must match the key the assessment runner writes:
+        // `vw_assessment_${id}_${userId}` (assessment-content.tsx). The
+        // previous key omitted userId, so this list was always empty.
+        const raw = localStorage.getItem(`vw_assessment_${def.id}_${userId}`)
         if (!raw) continue
         const progress = JSON.parse(raw) as SavedProgress
         if (Object.keys(progress.answers).length > 0) {
@@ -35,7 +40,7 @@ export default function InProgressAssessments({ definitions, lang }: Props) {
       }
     }
     setInProgress(found)
-  }, [definitions])
+  }, [definitions, userId])
 
   if (inProgress.length === 0) return null
 

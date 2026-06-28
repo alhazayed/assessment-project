@@ -4,14 +4,20 @@ import AssessmentContent from './assessment-content'
 
 interface Props {
   params: { id: string }
+  searchParams: { assignment?: string }
 }
 
-export default async function TakeAssessmentPage({ params }: Props) {
+export default async function TakeAssessmentPage({ params, searchParams }: Props) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Optional clinician-assignment context — preserved across auth/profile
+  // redirects so completing the assignment still marks it done on submit.
+  const assignmentId = typeof searchParams.assignment === 'string' ? searchParams.assignment : undefined
+  const nextPath = `/assessments/${params.id}${assignmentId ? `?assignment=${assignmentId}` : ''}`
+
   if (!user) {
-    redirect(`/login?next=/assessments/${params.id}`)
+    redirect(`/login?next=${encodeURIComponent(nextPath)}`)
   }
 
   const [{ data: profile }, { data: pp }] = await Promise.all([
@@ -38,8 +44,8 @@ export default async function TakeAssessmentPage({ params }: Props) {
     pp?.has_psychiatric_medications !== undefined
 
   if (!isProfileComplete) {
-    redirect(`/profile?complete=true&next=/assessments/${params.id}`)
+    redirect(`/profile?complete=true&next=${encodeURIComponent(nextPath)}`)
   }
 
-  return <AssessmentContent id={params.id} userId={user.id} />
+  return <AssessmentContent id={params.id} userId={user.id} assignmentId={assignmentId} />
 }

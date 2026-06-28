@@ -1,5 +1,5 @@
+import { requireAdmin } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 // Real daily series for the executive trend charts, sourced from the
@@ -19,22 +19,12 @@ type SeriesPoint = {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
+    // Auth: admin or superadmin (HMAC admin session). Using the shared gate
+    // instead of an inline `role === 'admin'` check, which wrongly excluded
+    // superadmin — the only admin-tier role in the live DB — and 403'd the
+    // trend charts.
+    await requireAdmin()
     const db = createAdminClient()
-
-    // Auth: must be a signed-in admin
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    const { data: profile } = await db
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     const { searchParams } = new URL(request.url)
     const requestedDays = parseInt(searchParams.get('days') || '30', 10)
@@ -89,7 +79,10 @@ export async function GET(request: NextRequest) {
       hasData: (rows?.length ?? 0) > 0,
       series,
     })
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.digest?.toString().startsWith('NEXT_REDIRECT')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('KPI history fetch error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

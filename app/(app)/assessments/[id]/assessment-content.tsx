@@ -34,9 +34,11 @@ interface RelatedAssessment {
 interface Props {
   id: string
   userId: string
+  /** Present when launched from a clinician assignment — marks it complete on submit. */
+  assignmentId?: string
 }
 
-export default function AssessmentContent({ id, userId }: Props) {
+export default function AssessmentContent({ id, userId, assignmentId }: Props) {
   const supabase = useMemo(() => createClient(), [])
   const lang = useLang()
 
@@ -134,7 +136,7 @@ export default function AssessmentContent({ id, userId }: Props) {
     const res = await fetch('/api/submit-assessment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ definition_id: definition.id, responses: responsePayload }),
+      body: JSON.stringify({ definition_id: definition.id, responses: responsePayload, assignment_id: assignmentId }),
     })
 
     if (!res.ok) {
