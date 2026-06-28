@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import MoodContent from './mood-content'
 
 export const metadata = {
-  title: 'Mood Tracker | V Welfare',
+  title: 'Mood Tracker',
   description: 'Track and monitor your mood patterns over time.',
 }
 

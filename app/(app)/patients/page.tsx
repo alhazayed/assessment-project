@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import PatientsContent from './patients-content'
 
 export const metadata = {
-  title: 'Patients | V Welfare',
+  title: 'Patients',
   description: 'Manage your patients and their assessments.',
 }
 

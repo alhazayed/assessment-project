@@ -211,7 +211,11 @@ export default function Sidebar({ profile, lang, showPackages = false }: Sidebar
                 {displayName}
               </p>
               <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-                {isRtl ? 'حساب شخصي' : 'Personal account'}
+                {profile?.role === 'clinician'
+                  ? (isRtl ? 'حساب طبي' : 'Clinician account')
+                  : profile?.role === 'admin' || profile?.role === 'superadmin'
+                    ? (isRtl ? 'حساب إداري' : 'Admin account')
+                    : (isRtl ? 'حساب شخصي' : 'Personal account')}
               </p>
             </div>
           </div>
