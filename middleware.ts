@@ -64,6 +64,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/assessments') ||
     pathname.startsWith('/packages') ||
     pathname.startsWith('/adhd-zones') ||
+    pathname.startsWith('/clinician') ||
+    pathname.startsWith('/patient') ||
     pathname.startsWith('/admin')
 
   if (!user && isPrivateRoute) {

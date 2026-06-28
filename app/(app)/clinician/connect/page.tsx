@@ -727,7 +727,8 @@ export default function ClinicianConnectPage() {
               <div className="flex justify-end pt-1">
                 <button
                   type="submit"
-                  disabled={codeSubmitting}
+                  disabled={codeSubmitting || !isVerified}
+                  title={!isVerified ? (isAr ? 'يلزم توثيق الحساب أولاً' : 'Your account must be verified first') : undefined}
                   className="btn-accent gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {codeSubmitting ? (
@@ -812,7 +813,8 @@ export default function ClinicianConnectPage() {
               <button
                 type="button"
                 onClick={handleGenerateInvite}
-                disabled={inviteGenerating}
+                disabled={inviteGenerating || !isVerified}
+                title={!isVerified ? (isAr ? 'يلزم توثيق الحساب أولاً' : 'Your account must be verified first') : undefined}
                 className="btn-brand gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {inviteGenerating ? (
