@@ -7,6 +7,7 @@ import { Save, CheckCircle2, User, MapPin, BookOpen, Briefcase, Pill, Phone, Shi
 import type { Profile, PatientProfile } from '@/lib/types'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import { localizeSeverity } from '@/lib/severity-labels'
 import { COUNTRIES } from '@/lib/countries'
 
 type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed'
@@ -674,7 +675,7 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-2 flex-shrink-0 ms-4">
                     <span className="text-[13px] font-bold" style={{ color: 'var(--text-secondary)' }}>{sub.total_score}</span>
                     {sub.severity_band && (
-                      <span className="badge-neutral">{sub.severity_band}</span>
+                      <span className="badge-neutral">{localizeSeverity(sub.severity_band, lang)}</span>
                     )}
                     {sub.high_risk_flag && (
                       <span className="badge-severe">{lang === 'ar' ? 'خطورة عالية' : 'High Risk'}</span>

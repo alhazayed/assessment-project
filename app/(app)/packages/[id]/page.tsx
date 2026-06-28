@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
+import { localizeSeverity } from '@/lib/severity-labels'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, CheckCircle2, Circle, Lock, Layers } from 'lucide-react'
@@ -282,7 +283,7 @@ export default async function PackageDetailPage({ params }: { params: { id: stri
                   </p>
                   {submission && (
                     <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-                      {t('packages.detail.score_label', lang)}: {submission.total_score} · {submission.severity_band}
+                      {t('packages.detail.score_label', lang)}: {submission.total_score} · {localizeSeverity(submission.severity_band, lang)}
                     </p>
                   )}
                   {!a.is_available && (

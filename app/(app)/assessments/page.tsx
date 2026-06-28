@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
+import { localizeSeverity } from '@/lib/severity-labels'
 import Link from 'next/link'
 import { ClipboardList, CheckCircle2, Clock, AlertCircle, ChevronRight } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentAssignment, AssessmentSubmission } from '@/lib/types'
@@ -176,7 +177,7 @@ export default async function AssessmentsPage() {
                       {t('assessments.last', lang)} {new Date(lastSubmission.submitted_at).toLocaleDateString()}
                     </span>
                     <span className={severityBadge(lastSubmission.severity_band)}>
-                      {lastSubmission.severity_band}
+                      {localizeSeverity(lastSubmission.severity_band, lang)}
                     </span>
                   </div>
                 )}
@@ -231,7 +232,7 @@ export default async function AssessmentsPage() {
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className="text-[13px] font-bold hidden sm:inline" style={{ color: 'var(--text-secondary)' }}>{t('assessments.score', lang)} {s.total_score}</span>
-                    <span className={`${severityBadge(s.severity_band)} hidden sm:inline-flex`}>{s.severity_band}</span>
+                    <span className={`${severityBadge(s.severity_band)} hidden sm:inline-flex`}>{localizeSeverity(s.severity_band, lang)}</span>
                     {s.high_risk_flag && <AlertCircle className="w-4 h-4" style={{ color: '#C02A2A' }} aria-label="High risk" />}
                     <ChevronRight className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                   </div>

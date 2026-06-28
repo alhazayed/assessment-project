@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import { localizeSeverity } from '@/lib/severity-labels'
 import type { Profile } from '@/lib/types'
 
 type ClinicalNote = {
@@ -466,7 +467,7 @@ export default function PatientsContent() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${severityColor(s.severity_band)}`}>
-                            {s.severity_band}
+                            {localizeSeverity(s.severity_band, lang)}
                           </span>
                           <div className="flex items-center gap-1 text-xs text-gray-400">
                             <Calendar className="w-3 h-3" />

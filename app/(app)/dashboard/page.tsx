@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
+import { localizeSeverity } from '@/lib/severity-labels'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ClipboardList, Heart, TrendingUp, AlertTriangle, CheckCircle2, ArrowRight, Activity, ChevronRight } from 'lucide-react'
@@ -198,7 +199,7 @@ export default async function DashboardPage() {
                         {new Date(s.submitted_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <span className={severityBadge(s.severity_band)}>{s.severity_band}</span>
+                    <span className={severityBadge(s.severity_band)}>{localizeSeverity(s.severity_band, lang)}</span>
                   </div>
                 )
               })}
