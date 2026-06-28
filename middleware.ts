@@ -88,11 +88,16 @@ export async function middleware(request: NextRequest) {
     supabaseResponse.headers.set('X-Frame-Options', 'DENY')
   }
 
-  // Add nonce-based CSP header (replaces unsafe-inline)
+  // CSP: scripts are nonce-locked (strict); styles allow inline (see note below)
   const cspHeader = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com`,
-    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
+    // Inline style attributes (React `style={{}}`, Next.js <Image fill>) cannot
+    // carry a nonce — a nonce only authorizes <style> elements, not style="".
+    // Keeping a nonce here (with no 'unsafe-inline') blocks every inline style
+    // app-wide, collapsing layouts (e.g. logos render at natural size). Scripts
+    // remain nonce-protected above; styles allow 'unsafe-inline' (low XSS risk).
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://challenges.cloudflare.com",
