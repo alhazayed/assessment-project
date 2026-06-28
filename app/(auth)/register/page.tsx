@@ -39,6 +39,9 @@ function RegisterForm() {
   const [success, setSuccess]               = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
   const [resending, setResending]           = useState(false)
+  // See login page: when Turnstile can't be used we stop hard-gating so a
+  // widget outage can't block all sign-ups.
+  const [captchaUnavailable, setCaptchaUnavailable] = useState(false)
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -47,13 +50,33 @@ function RegisterForm() {
   }, [resendCooldown])
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && turnstileRef.current) {
-      window.turnstile?.render(turnstileRef.current, {
-        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
-        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
-        callback: () => {}, // On successful verification
-      } as any)
+    const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+    if (typeof window === 'undefined' || !siteKey || !turnstileRef.current) return
+
+    let cancelled = false
+    const render = (): boolean => {
+      if (cancelled || !turnstileRef.current || !window.turnstile) return false
+      try {
+        window.turnstile.render(turnstileRef.current, {
+          sitekey: siteKey,
+          theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+          callback: () => setCaptchaUnavailable(false),
+          'error-callback': () => setCaptchaUnavailable(true),
+          'timeout-callback': () => setCaptchaUnavailable(true),
+        } as any)
+        return true
+      } catch {
+        return false
+      }
     }
+
+    if (render()) return () => { cancelled = true }
+    const started = Date.now()
+    const iv = setInterval(() => {
+      if (cancelled || render()) { clearInterval(iv); return }
+      if (Date.now() - started > 8000) { clearInterval(iv); setCaptchaUnavailable(true) }
+    }, 300)
+    return () => { cancelled = true; clearInterval(iv) }
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -98,9 +121,10 @@ function RegisterForm() {
         return
       }
 
-      // Step 2: Verify CAPTCHA if enabled
+      // Step 2: Verify CAPTCHA if enabled — only hard-block when the widget is
+      // actually usable (don't lock sign-up out on a Turnstile outage).
       const turnstileToken = window.turnstile?.getResponse()
-      if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken) {
+      if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken && !captchaUnavailable) {
         setError(isRtl ? 'يرجى التحقق من أنك لست روبوتاً' : 'Please complete the CAPTCHA verification')
         setLoading(false)
         window.turnstile?.reset()
@@ -353,6 +377,11 @@ function RegisterForm() {
         {/* Turnstile CAPTCHA */}
         {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
           <div className="flex justify-center my-4 cf-turnstile" ref={turnstileRef} data-theme={typeof window !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light'} />
+        )}
+        {captchaUnavailable && (
+          <p className="text-center text-xs text-gray-400 -mt-2 mb-2">
+            {isRtl ? 'تعذّر تحميل التحقق الأمني — يمكنك المتابعة.' : 'Security check unavailable — you can continue.'}
+          </p>
         )}
 
         {/* Submit */}

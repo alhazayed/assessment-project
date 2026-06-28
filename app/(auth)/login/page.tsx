@@ -32,15 +32,42 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState<string | null>(null)
+  // True when Turnstile can't be used (failed to connect, errored, timed out,
+  // or its script never loaded). We then stop hard-gating login on the CAPTCHA
+  // so a third-party widget outage can't lock every user out. Login is still
+  // protected server-side by the rate limiter.
+  const [captchaUnavailable, setCaptchaUnavailable] = useState(false)
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && turnstileRef.current) {
-      window.turnstile?.render(turnstileRef.current, {
-        sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
-        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
-        callback: () => {}, // On successful verification
-      } as any)
+    const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+    if (typeof window === 'undefined' || !siteKey || !turnstileRef.current) return
+
+    let cancelled = false
+    const render = (): boolean => {
+      if (cancelled || !turnstileRef.current || !window.turnstile) return false
+      try {
+        window.turnstile.render(turnstileRef.current, {
+          sitekey: siteKey,
+          theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+          callback: () => setCaptchaUnavailable(false),
+          'error-callback': () => setCaptchaUnavailable(true),
+          'timeout-callback': () => setCaptchaUnavailable(true),
+        } as any)
+        return true
+      } catch {
+        return false
+      }
     }
+
+    // api.js is async/defer, so it may not be ready at mount — poll briefly,
+    // and if it never loads, mark the CAPTCHA unavailable rather than blocking.
+    if (render()) return () => { cancelled = true }
+    const started = Date.now()
+    const iv = setInterval(() => {
+      if (cancelled || render()) { clearInterval(iv); return }
+      if (Date.now() - started > 8000) { clearInterval(iv); setCaptchaUnavailable(true) }
+    }, 300)
+    return () => { cancelled = true; clearInterval(iv) }
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -63,9 +90,11 @@ function LoginForm() {
         return
       }
 
-      // Step 2: Verify CAPTCHA if enabled
+      // Step 2: Verify CAPTCHA if enabled. Only hard-block when the widget is
+      // actually usable — if it failed to load/connect, don't lock the user
+      // out (rate limiting above is the brute-force defense).
       const turnstileToken = window.turnstile?.getResponse()
-      if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken) {
+      if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken && !captchaUnavailable) {
         setError(isRtl ? 'يرجى التحقق من أنك لست روبوتاً' : 'Please complete the CAPTCHA verification')
         setLoading(false)
         window.turnstile?.reset()
@@ -188,6 +217,11 @@ function LoginForm() {
         {/* Turnstile CAPTCHA */}
         {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
           <div className="flex justify-center my-4 cf-turnstile" ref={turnstileRef} data-theme={typeof window !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light'} />
+        )}
+        {captchaUnavailable && (
+          <p className="text-center text-xs text-gray-400 -mt-2 mb-2">
+            {isRtl ? 'تعذّر تحميل التحقق الأمني — يمكنك المتابعة.' : 'Security check unavailable — you can continue.'}
+          </p>
         )}
 
         {/* Submit */}
