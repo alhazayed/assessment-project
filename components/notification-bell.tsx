@@ -33,7 +33,7 @@ const TYPE_COLOR = {
   system:     'text-gray-600 bg-gray-100',
 }
 
-export default function NotificationBell({ lang }: { lang: Lang }) {
+export default function NotificationBell({ lang, placement = 'topbar' }: { lang: Lang; placement?: 'sidebar' | 'topbar' }) {
   const supabase = useMemo(() => createClient(), [])
   // Unique per component instance. The bell renders twice (desktop + mobile
   // bars); without a per-instance topic both would open the SAME realtime
@@ -168,7 +168,15 @@ export default function NotificationBell({ lang }: { lang: Lang }) {
 
       {open && (
         <div
-          className={`absolute ${isAr ? 'left-0' : 'right-0'} top-10 w-80 bg-white dark:bg-[#10202E] rounded-xl shadow-xl dark:shadow-none border border-gray-200 dark:border-[#233241] z-50 overflow-hidden`}
+          className={`absolute ${
+            // The sidebar bell sits at the inline-start edge (left in LTR), so its
+            // panel must open toward content; the top-bar bell sits at the
+            // inline-end edge and opens the other way. Using one fixed side
+            // clipped the sidebar panel off the viewport.
+            placement === 'sidebar'
+              ? (isAr ? 'right-0' : 'left-0')
+              : (isAr ? 'left-0' : 'right-0')
+          } top-10 w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#10202E] rounded-xl shadow-xl dark:shadow-none border border-gray-200 dark:border-[#233241] z-50 overflow-hidden`}
           role="dialog"
           aria-modal="true"
           aria-label={isAr ? 'الإشعارات' : 'Notifications'}

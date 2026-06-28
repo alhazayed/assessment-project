@@ -74,9 +74,10 @@ export default function CrisisBanner({ lang }: { lang: Lang }) {
         </div>
         <button
           onClick={() => setDismissed(true)}
+          aria-label={isAr ? 'إغلاق التنبيه' : 'Dismiss warning'}
           className="text-gray-400 hover:text-gray-600 flex-shrink-0 mt-0.5 transition-colors"
         >
-          <X className="w-4 h-4" />
+          <X className="w-4 h-4" aria-hidden="true" />
         </button>
       </div>
     </div>
