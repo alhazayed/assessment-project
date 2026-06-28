@@ -1,10 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { randomBytes } from 'crypto'
 
 export async function middleware(request: NextRequest) {
-  // Generate a cryptographic nonce for CSP
-  const nonce = randomBytes(16).toString('base64')
+  // Generate a cryptographic nonce for CSP.
+  // NOTE: middleware runs on the Edge Runtime, where Node's `crypto` module
+  // (randomBytes) is unavailable and throws MIDDLEWARE_INVOCATION_FAILED at
+  // runtime. Use the globally-available Web Crypto API instead.
+  const nonceBytes = crypto.getRandomValues(new Uint8Array(16))
+  const nonce = btoa(Array.from(nonceBytes, (b) => String.fromCharCode(b)).join(''))
 
   let supabaseResponse = NextResponse.next({ request })
 
