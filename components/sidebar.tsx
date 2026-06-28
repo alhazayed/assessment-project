@@ -141,7 +141,7 @@ export default function Sidebar({ profile, lang, showPackages = false }: Sidebar
         </Link>
         <div className="flex items-center gap-1">
           <DarkModeToggle />
-          <NotificationBell lang={lang} />
+          <NotificationBell lang={lang} placement="sidebar" />
           {/* Close button — mobile only */}
           <button
             className="lg:hidden p-1.5 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ms-1"
