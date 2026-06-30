@@ -14,10 +14,14 @@ interface HealthCheck {
 
 export async function GET() {
   const startTime = Date.now()
-  const checks = {
-    database: { status: 'error' as const },
-    ai_service: { status: 'unconfigured' as const },
-    environment: { status: 'ok' as const },
+  const checks: {
+    database: { status: 'ok' | 'error'; latency_ms?: number }
+    ai_service: { status: 'ok' | 'unconfigured' }
+    environment: { status: 'ok' | 'missing_vars' }
+  } = {
+    database: { status: 'error' },
+    ai_service: { status: 'unconfigured' },
+    environment: { status: 'ok' },
   }
 
   // Check database connectivity

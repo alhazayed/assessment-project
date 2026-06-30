@@ -14,7 +14,6 @@ Sentry.init({
   integrations: [
     new Sentry.Integrations.Http({
       tracing: true,
-      request: true,
     }),
   ],
 
