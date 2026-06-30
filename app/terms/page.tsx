@@ -7,8 +7,8 @@ import DarkModeToggle from '@/components/dark-mode-toggle'
 import LanguageToggle from '@/components/language-toggle'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service',
-  description: 'Read the Terms of Service for the V Welfare mental health assessment platform.',
+  title: 'Terms of Service | V Welfare',
+  description: 'Terms of Service for V Welfare. User rights, limitations, acceptable use policy, and disclaimers for our mental health assessment platform.',
   robots: { index: true, follow: true },
 }
 
