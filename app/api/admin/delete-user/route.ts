@@ -88,10 +88,21 @@ export async function DELETE(request: Request) {
     const countBeforeDeletion = await countUserData(db, userId)
 
     if (hardDelete) {
-      // Hard delete: remove all data
-      await hardDeleteUserData(db, userId)
+      // Hard delete: remove all user-owned data atomically via the RPC.
+      const { error: rpcError } = await db.rpc('admin_hard_delete_user', { target: userId })
+      if (rpcError) {
+        console.error('Hard delete RPC error:', rpcError)
+        return NextResponse.json(
+          { error: `Hard delete failed: ${rpcError.message}. No data was removed — try a soft delete instead.` },
+          { status: 500 }
+        )
+      }
+      // Remove the auth user so the login can no longer be used (best effort).
+      await db.auth.admin.deleteUser(userId).catch((e) => {
+        console.error('auth.admin.deleteUser error (profile already removed):', e)
+      })
     } else {
-      // Soft delete: mark as deleted_at
+      // Soft delete: mark as inactive (reversible, compliance-safe default)
       await softDeleteUserData(db, userId)
     }
 
@@ -134,18 +145,23 @@ async function countUserData(db: ReturnType<typeof createAdminClient>, userId: s
   const counts: Record<string, number> = {}
 
   // Count assessment submissions
-  const { count: submissionCount } = await db
+  const { data: submissionRows, count: submissionCount } = await db
     .from('assessment_submissions')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact' })
     .eq('patient_id', userId)
   counts['assessment_submissions'] = submissionCount || 0
 
-  // Count assessment responses (answers/results)
-  const { count: responseCount } = await db
-    .from('assessment_responses')
-    .select('*', { count: 'exact', head: true })
-    .eq('patient_id', userId)
-  counts['assessment_responses'] = responseCount || 0
+  // Count assessment responses — keyed by submission_id, not patient_id.
+  const submissionIds = (submissionRows || []).map((s: any) => s.id)
+  let responseCount = 0
+  if (submissionIds.length > 0) {
+    const { count } = await db
+      .from('assessment_responses')
+      .select('*', { count: 'exact', head: true })
+      .in('submission_id', submissionIds)
+    responseCount = count || 0
+  }
+  counts['assessment_responses'] = responseCount
 
   // Count messages
   const { count: messageCount } = await db
@@ -169,66 +185,6 @@ async function countUserData(db: ReturnType<typeof createAdminClient>, userId: s
   counts['clinical_notes'] = noteCount || 0
 
   return counts
-}
-
-/**
- * Hard delete: Remove all data from database
- */
-async function hardDeleteUserData(db: ReturnType<typeof createAdminClient>, userId: string) {
-  // Order matters: delete child records before parent
-  // Assessment responses must be deleted before submissions
-
-  // 1. Delete assessment responses (answers/results)
-  await db
-    .from('assessment_responses')
-    .delete()
-    .eq('patient_id', userId)
-
-  // 2. Delete assessment submissions
-  await db
-    .from('assessment_submissions')
-    .delete()
-    .eq('patient_id', userId)
-
-  // 3. Delete messages (both sent and received)
-  await db
-    .from('messages')
-    .delete()
-    .or(`patient_id.eq.${userId},clinician_id.eq.${userId}`)
-
-  // 4. Delete notifications
-  await db
-    .from('notifications')
-    .delete()
-    .eq('user_id', userId)
-
-  // 5. Delete clinical notes
-  await db
-    .from('clinical_notes')
-    .delete()
-    .eq('patient_id', userId)
-
-  // 6. Delete patient profile
-  await db
-    .from('patient_profiles')
-    .delete()
-    .eq('user_id', userId)
-
-  // 7. Delete clinician profile
-  await db
-    .from('clinician_profiles')
-    .delete()
-    .eq('user_id', userId)
-
-  // 8. Delete user profile
-  await db
-    .from('profiles')
-    .delete()
-    .eq('id', userId)
-
-  // 9. Delete from auth.users (if service role permits)
-  // NOTE: This requires server-side Supabase client with service role
-  // Supabase doesn't expose auth.users deletion via normal API
 }
 
 /**
@@ -273,10 +229,10 @@ export async function GET(request: Request) {
 
     const db = createAdminClient()
 
-    // Verify user exists
+    // Verify user exists (profiles has no email column — that lives in auth.users)
     const { data: profile } = await db
       .from('profiles')
-      .select('id, full_name_en, full_name_ar, email, role, created_at')
+      .select('id, full_name_en, full_name_ar, role, created_at')
       .eq('id', userId)
       .single()
 

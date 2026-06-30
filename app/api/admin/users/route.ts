@@ -7,7 +7,7 @@ const ALLOWED_ROLES = ['patient', 'clinician', 'admin', 'superadmin'] as const
 
 export async function GET(request: Request) {
   try {
-    await requireAdmin()
+    const { role: callerRole } = await requireAdmin()
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
     const role = searchParams.get('role') || ''
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
 
     const enriched = (users || []).map((u: any) => ({ ...u, submission_count: countMap[u.id] || 0 }))
 
-    return NextResponse.json({ users: enriched })
+    return NextResponse.json({ users: enriched, callerRole })
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

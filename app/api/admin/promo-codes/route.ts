@@ -164,7 +164,10 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false })
 
     if (active) {
-      query = query.eq('active', true).gte('valid_until', new Date().toISOString())
+      // Never-expiring codes have valid_until = NULL and must still count as active.
+      query = query
+        .eq('active', true)
+        .or(`valid_until.is.null,valid_until.gte.${new Date().toISOString()}`)
     }
 
     const { data: codes, error } = await query
