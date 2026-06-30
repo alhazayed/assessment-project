@@ -23,10 +23,8 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
-        executablePath: '/opt/pw-browsers/chromium',
-        launchArgs: ['--no-sandbox', '--disable-setuid-sandbox'],
       },
     },
   ],
