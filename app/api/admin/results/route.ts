@@ -23,7 +23,7 @@ function getAgeGroup(dob: string | null, referenceDate: string): string {
 
 export async function GET(request: Request) {
   try {
-    await requireAdmin()
+    const { role: callerRole } = await requireAdmin()
     const { searchParams } = new URL(request.url)
     const assessment = searchParams.get('assessment') || ''
     const severity = searchParams.get('severity') || ''
@@ -59,6 +59,7 @@ export async function GET(request: Request) {
           results: [],
           assessments: (defs0 || []).map((d: any) => ({ code: d.code, name: d.name_en })),
           pagination: { page, pageSize: PAGE_SIZE, total: 0, totalPages: 0 },
+          callerRole,
         })
       }
       definitionId = def.id
@@ -135,6 +136,7 @@ export async function GET(request: Request) {
     return NextResponse.json({
       results: pageResults,
       assessments,
+      callerRole,
       pagination: {
         page,
         pageSize: PAGE_SIZE,
