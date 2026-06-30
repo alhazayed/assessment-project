@@ -109,12 +109,14 @@ export async function POST(request: Request) {
 
     // Increment promo code usage if applicable
     if (promoCodeId) {
-      await supabase.rpc('increment_promo_code_usage', {
-        code_id: promoCodeId,
-      }).catch((err) => {
+      try {
+        await supabase.rpc('increment_promo_code_usage', {
+          code_id: promoCodeId,
+        })
+      } catch (err) {
         console.error('Promo code usage increment error:', err)
         // Don't fail the checkout if usage increment fails
-      })
+      }
     }
 
     return NextResponse.json({

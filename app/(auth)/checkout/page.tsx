@@ -1,12 +1,17 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, lazy } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
-import { StripePaymentFormWrapper } from '@/components/StripePaymentForm'
+
+const StripePaymentFormWrapper = lazy(() =>
+  import('@/components/StripePaymentForm').then(mod => ({
+    default: mod.StripePaymentFormWrapper
+  }))
+)
 
 interface Package {
   id: string
@@ -355,13 +360,21 @@ function CheckoutForm() {
 
         {/* Stripe Payment Form or Button */}
         {showStripeForm && clientSecret ? (
-          <StripePaymentFormWrapper
-            clientSecret={clientSecret}
-            onSuccess={handlePaymentSuccess}
-            onError={handlePaymentError}
-            isLoading={paymentLoading}
-            lang={lang as 'en' | 'ar'}
-          />
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#1D6296' }} />
+              </div>
+            }
+          >
+            <StripePaymentFormWrapper
+              clientSecret={clientSecret}
+              onSuccess={handlePaymentSuccess}
+              onError={handlePaymentError}
+              isLoading={paymentLoading}
+              lang={lang as 'en' | 'ar'}
+            />
+          </Suspense>
         ) : (
           <>
             {/* Payment Button */}
