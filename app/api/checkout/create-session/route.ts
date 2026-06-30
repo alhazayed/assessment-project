@@ -74,10 +74,10 @@ export async function POST(request: Request) {
     }
 
     // TODO: Integrate with actual Stripe API when keys are available
-    // For now, return mock response with required fields
+    // For now, generate mock client secret for frontend integration testing
 
+    const mockClientSecret = `pi_test_${Math.random().toString(36).substring(7)}_secret_${Math.random().toString(36).substring(7)}`
     const mockSessionId = `cs_test_${Math.random().toString(36).substring(7)}`
-    const mockUrl = `https://checkout.stripe.com/pay/${mockSessionId}`
 
     // Create payment record in database
     const { data: payment, error: paymentError } = await supabase
@@ -89,6 +89,7 @@ export async function POST(request: Request) {
         currency: 'USD',
         status: 'pending',
         stripe_session_id: mockSessionId,
+        stripe_client_secret: mockClientSecret,
         promo_code_id: promoCodeId,
         metadata: {
           promoCode,
@@ -119,7 +120,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       sessionId: mockSessionId,
-      url: mockUrl,
+      clientSecret: mockClientSecret,
       paymentId: payment.id,
     })
   } catch (error) {

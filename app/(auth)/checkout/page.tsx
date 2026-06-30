@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import { StripePaymentFormWrapper } from '@/components/StripePaymentForm'
 
 interface Package {
   id: string
@@ -52,6 +53,8 @@ function CheckoutForm() {
   const [promoApplied, setPromoApplied] = useState(false)
   const [paymentLoading, setPaymentLoading] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
+  const [clientSecret, setClientSecret] = useState<string | null>(null)
+  const [showStripeForm, setShowStripeForm] = useState(false)
 
   if (!selectedPackage) {
     return (
@@ -149,7 +152,7 @@ function CheckoutForm() {
         body: JSON.stringify({
           packageId: selectedPackage.id,
           promoCode: promoApplied ? promoCode : null,
-          amount: Math.round(finalPrice * 100),
+          amount: finalPrice,
         }),
       })
 
@@ -158,15 +161,16 @@ function CheckoutForm() {
         throw new Error(error.error || 'Failed to create checkout session')
       }
 
-      const { sessionId, url } = await response.json()
+      const { clientSecret, sessionId } = await response.json()
 
-      if (url) {
-        window.location.href = url
+      if (clientSecret) {
+        setClientSecret(clientSecret)
+        setShowStripeForm(true)
       } else {
         setPaymentError(
           lang === 'ar'
-            ? 'فشل في الانتقال إلى الدفع'
-            : 'Failed to redirect to payment'
+            ? 'فشل في إعداد الدفع'
+            : 'Failed to setup payment'
         )
       }
     } catch (error) {
@@ -180,6 +184,14 @@ function CheckoutForm() {
     } finally {
       setPaymentLoading(false)
     }
+  }
+
+  const handlePaymentSuccess = () => {
+    router.push('/checkout/success')
+  }
+
+  const handlePaymentError = (error: string) => {
+    setPaymentError(error)
   }
 
   return (
@@ -341,34 +353,47 @@ function CheckoutForm() {
           </div>
         )}
 
-        {/* Payment Button */}
-        <button
-          onClick={handlePayment}
-          disabled={paymentLoading}
-          className="w-full py-4 rounded-lg font-bold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-          style={{ backgroundColor: '#1D6296' }}
-        >
-          {paymentLoading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              {lang === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
-            </>
-          ) : (
-            <>
-              {lang === 'ar' ? 'متابعة الدفع' : 'Proceed to Payment'}
-            </>
-          )}
-        </button>
+        {/* Stripe Payment Form or Button */}
+        {showStripeForm && clientSecret ? (
+          <StripePaymentFormWrapper
+            clientSecret={clientSecret}
+            onSuccess={handlePaymentSuccess}
+            onError={handlePaymentError}
+            isLoading={paymentLoading}
+            lang={lang as 'en' | 'ar'}
+          />
+        ) : (
+          <>
+            {/* Payment Button */}
+            <button
+              onClick={handlePayment}
+              disabled={paymentLoading}
+              className="w-full py-4 rounded-lg font-bold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              style={{ backgroundColor: '#1D6296' }}
+            >
+              {paymentLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {lang === 'ar' ? 'جاري المعالجة...' : 'Processing...'}
+                </>
+              ) : (
+                <>
+                  {lang === 'ar' ? 'متابعة الدفع' : 'Proceed to Payment'}
+                </>
+              )}
+            </button>
 
-        {/* Trust Message */}
-        <p
-          className="text-center text-xs mt-6"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          {lang === 'ar'
-            ? '🔒 الدفع آمن ومشفر عبر Stripe'
-            : '🔒 Your payment is secure and encrypted via Stripe'}
-        </p>
+            {/* Trust Message */}
+            <p
+              className="text-center text-xs mt-6"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              {lang === 'ar'
+                ? '🔒 الدفع آمن ومشفر عبر Stripe'
+                : '🔒 Your payment is secure and encrypted via Stripe'}
+            </p>
+          </>
+        )}
       </div>
     </div>
   )
