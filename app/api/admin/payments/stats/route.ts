@@ -40,7 +40,7 @@ export async function GET(request: Request) {
     // Top packages by revenue
     const { data: topPackages } = await db
       .from('payments')
-      .select('package_id, amount_cents, package:packages(name)')
+      .select('package_id, amount_cents, package:packages(name_en, name_ar)')
       .eq('status', 'succeeded')
       .order('amount_cents', { ascending: false })
       .limit(5)

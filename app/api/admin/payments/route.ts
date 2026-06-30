@@ -39,7 +39,7 @@ export async function GET(request: Request) {
 
     let query = db
       .from('payments')
-      .select('*, user:profiles(full_name_en, email), package:packages(name)')
+      .select('*, user:profiles(full_name_en, full_name_ar), package:packages(name_en, name_ar)')
 
     if (userId) query = query.eq('user_id', userId)
     if (packageId) query = query.eq('package_id', packageId)
