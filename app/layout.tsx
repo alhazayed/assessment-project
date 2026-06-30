@@ -5,6 +5,7 @@ import './globals.css'
 import { getLanguage } from '@/lib/get-language'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { QueryClientProviderWrapper } from '@/components/providers/query-client-provider'
 import * as Sentry from '@sentry/nextjs'
 
 const inter = Inter({
@@ -77,15 +78,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
       </head>
       <body suppressHydrationWarning>
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:start-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-blue-700 focus:rounded focus:shadow-lg"
-        >
-          {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
-        </a>
-        {children}
-        <Analytics />
-        <SpeedInsights />
+        <QueryClientProviderWrapper>
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:start-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-blue-700 focus:rounded focus:shadow-lg"
+          >
+            {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
+          </a>
+          {children}
+          <Analytics />
+          <SpeedInsights />
+        </QueryClientProviderWrapper>
       </body>
     </html>
   )
