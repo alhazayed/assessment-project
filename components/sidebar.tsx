@@ -24,6 +24,7 @@ import {
   UserCheck,
   ShieldCheck,
   Link2,
+  CreditCard,
 } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 import type { Lang } from '@/lib/i18n'
@@ -69,6 +70,7 @@ export default function Sidebar({ profile, lang, showPackages = false }: Sidebar
     { href: '/insights',           label: t('nav.insights', lang),     icon: LineChart,       badge: undefined },
     { href: '/messages',           label: t('nav.messages', lang),     icon: MessageSquare,   badge: undefined },
     { href: '/patient/clinicians', label: lang === 'ar' ? 'طاقمي الطبي' : 'My Clinicians',    icon: UserCheck,   badge: undefined },
+    { href: '/billing',            label: t('nav.billing', lang),      icon: CreditCard,      badge: undefined },
     { href: '/profile',            label: t('nav.profile', lang),      icon: User,            badge: undefined },
   ]
 
