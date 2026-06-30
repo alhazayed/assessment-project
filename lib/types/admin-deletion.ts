@@ -32,12 +32,10 @@ export interface DeleteUserPreviewResponse {
   }
   willDelete: {
     assessment_submissions: number
-    assessment_answers: number
-    assessment_results: number
+    assessment_responses: number
     messages: number
     notifications: number
     clinical_notes: number
-    draft_assessments: number
   }
   totalRecords: number
 }
@@ -56,8 +54,7 @@ export interface DeleteResultsResponse {
   ok: true
   deleted: {
     submissionCount: number
-    answerCount: number
-    resultCount: number
+    responseCount: number
     timestamp: string
   }
 }
@@ -66,8 +63,7 @@ export interface DeleteResultsPreviewResponse {
   submissions: number
   willDelete: {
     submissions: number
-    answers: number
-    results: number
+    responses: number
     total: number
   }
   details: Array<{
@@ -92,6 +88,5 @@ export interface DeletionAuditMetadata {
   filter_type?: string
   filter_value?: string
   submissions_deleted?: number
-  answers_deleted?: number
-  results_deleted?: number
+  responses_deleted?: number
 }

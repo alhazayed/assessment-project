@@ -131,26 +131,42 @@ export async function DELETE(request: Request) {
  * Count all data associated with a user
  */
 async function countUserData(db: ReturnType<typeof createAdminClient>, userId: string) {
-  const tables = [
-    'assessment_submissions',
-    'assessment_answers',
-    'assessment_results',
-    'messages',
-    'notifications',
-    'clinical_notes',
-    'draft_assessments',
-  ]
-
   const counts: Record<string, number> = {}
 
-  for (const table of tables) {
-    const { count } = await db
-      .from(table)
-      .select('*', { count: 'exact', head: true })
-      .eq(table === 'notifications' ? 'user_id' : 'patient_id', userId)
+  // Count assessment submissions
+  const { count: submissionCount } = await db
+    .from('assessment_submissions')
+    .select('*', { count: 'exact', head: true })
+    .eq('patient_id', userId)
+  counts['assessment_submissions'] = submissionCount || 0
 
-    counts[table] = count || 0
-  }
+  // Count assessment responses (answers/results)
+  const { count: responseCount } = await db
+    .from('assessment_responses')
+    .select('*', { count: 'exact', head: true })
+    .eq('patient_id', userId)
+  counts['assessment_responses'] = responseCount || 0
+
+  // Count messages
+  const { count: messageCount } = await db
+    .from('messages')
+    .select('*', { count: 'exact', head: true })
+    .or(`patient_id.eq.${userId},clinician_id.eq.${userId}`)
+  counts['messages'] = messageCount || 0
+
+  // Count notifications
+  const { count: notificationCount } = await db
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+  counts['notifications'] = notificationCount || 0
+
+  // Count clinical notes
+  const { count: noteCount } = await db
+    .from('clinical_notes')
+    .select('*', { count: 'exact', head: true })
+    .eq('patient_id', userId)
+  counts['clinical_notes'] = noteCount || 0
 
   return counts
 }
@@ -160,11 +176,11 @@ async function countUserData(db: ReturnType<typeof createAdminClient>, userId: s
  */
 async function hardDeleteUserData(db: ReturnType<typeof createAdminClient>, userId: string) {
   // Order matters: delete child records before parent
-  // Assessment answers must be deleted before submissions
+  // Assessment responses must be deleted before submissions
 
-  // 1. Delete assessment answers first (no FK to other records)
+  // 1. Delete assessment responses (answers/results)
   await db
-    .from('assessment_answers')
+    .from('assessment_responses')
     .delete()
     .eq('patient_id', userId)
 
@@ -174,108 +190,58 @@ async function hardDeleteUserData(db: ReturnType<typeof createAdminClient>, user
     .delete()
     .eq('patient_id', userId)
 
-  // 3. Delete assessment results
-  await db
-    .from('assessment_results')
-    .delete()
-    .eq('patient_id', userId)
-
-  // 4. Delete draft assessments
-  await db
-    .from('draft_assessments')
-    .delete()
-    .eq('patient_id', userId)
-
-  // 5. Delete messages (both sent and received)
+  // 3. Delete messages (both sent and received)
   await db
     .from('messages')
     .delete()
     .or(`patient_id.eq.${userId},clinician_id.eq.${userId}`)
 
-  // 6. Delete conversations
-  await db
-    .from('conversations')
-    .delete()
-    .or(`patient_id.eq.${userId},clinician_id.eq.${userId}`)
-
-  // 7. Delete notifications
+  // 4. Delete notifications
   await db
     .from('notifications')
     .delete()
     .eq('user_id', userId)
 
-  // 8. Delete clinical notes
+  // 5. Delete clinical notes
   await db
     .from('clinical_notes')
     .delete()
     .eq('patient_id', userId)
 
-  // 9. Delete appointments
-  await db
-    .from('appointments')
-    .delete()
-    .or(`patient_id.eq.${userId},clinician_id.eq.${userId}`)
-
-  // 10. Delete patient profile
+  // 6. Delete patient profile
   await db
     .from('patient_profiles')
     .delete()
     .eq('user_id', userId)
 
-  // 11. Delete clinician profile
+  // 7. Delete clinician profile
   await db
     .from('clinician_profiles')
     .delete()
     .eq('user_id', userId)
 
-  // 12. Delete user profile
+  // 8. Delete user profile
   await db
     .from('profiles')
     .delete()
     .eq('id', userId)
 
-  // 13. Delete from auth.users (if service role permits)
+  // 9. Delete from auth.users (if service role permits)
   // NOTE: This requires server-side Supabase client with service role
   // Supabase doesn't expose auth.users deletion via normal API
-  // Consider using: supabase.auth.admin.deleteUser(userId)
-  // But this requires Supabase auth admin client
 }
 
 /**
- * Soft delete: Mark as deleted_at instead of removing
+ * Soft delete: Mark user as inactive instead of removing
  * Allows for recovery and preserves referential integrity
  */
 async function softDeleteUserData(db: ReturnType<typeof createAdminClient>, userId: string) {
-  const now = new Date().toISOString()
-
-  // Only soft-delete if the table has deleted_at column
-  const tables: string[] = [
-    'assessment_submissions',
-    'assessment_answers',
-    'assessment_results',
-    'draft_assessments',
-    'messages',
-    'conversations',
-    'notifications',
-    'clinical_notes',
-    'appointments',
-  ]
-
-  for (const table of tables) {
-    // Try to soft delete; ignore if column doesn't exist
-    await db
-      .from(table)
-      .update({ deleted_at: now })
-      .eq(table === 'notifications' ? 'user_id' : 'patient_id', userId)
-      .is('deleted_at', null)
-  }
-
-  // Soft delete profile
+  // Soft delete profile (mark as inactive)
   await db
     .from('profiles')
     .update({
       is_active: false,
-      deleted_at: now,
+      deactivated_at: new Date().toISOString(),
     })
     .eq('id', userId)
 }

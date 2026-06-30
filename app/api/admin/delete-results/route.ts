@@ -5,28 +5,27 @@ import { createAdminClient } from '@/lib/supabase/admin'
 /**
  * DELETE /api/admin/delete-results
  *
- * Superadmin-only endpoint to delete specific assessment results.
+ * Superadmin-only endpoint to delete specific assessment submissions and responses.
  *
  * Request body (one of):
  * {
- *   submissionId: string - Delete a single assessment submission and its results
+ *   submissionId: string - Delete a single assessment submission and its responses
  * }
  * OR
  * {
- *   patientId: string - Delete all assessment results for a patient
+ *   patientId: string - Delete all assessment submissions/responses for a patient
  * }
  * OR
  * {
- *   definitionId: string - Delete all results for a specific assessment definition
+ *   definitionId: string - Delete all submissions for a specific assessment definition
  * }
  *
  * Response:
  * {
  *   ok: true,
  *   deleted: {
- *     submissionIds: string[],
- *     answerCount: number,
- *     resultCount: number,
+ *     submissionCount: number,
+ *     responseCount: number,
  *     timestamp: string
  *   }
  * }
@@ -109,24 +108,14 @@ export async function DELETE(request: Request) {
     }
 
     // Count records before deletion
-    const { count: answerCount } = await db
-      .from('assessment_answers')
+    const { count: responseCount } = await db
+      .from('assessment_responses')
       .select('*', { count: 'exact', head: true })
       .in('submission_id', submissionsToDelete)
 
-    const { count: resultCount } = await db
-      .from('assessment_results')
-      .select('*', { count: 'exact', head: true })
-      .in('submission_id', submissionsToDelete)
-
-    // Delete in order (answers before submissions, results before submissions)
+    // Delete in order (responses before submissions)
     await db
-      .from('assessment_answers')
-      .delete()
-      .in('submission_id', submissionsToDelete)
-
-    await db
-      .from('assessment_results')
+      .from('assessment_responses')
       .delete()
       .in('submission_id', submissionsToDelete)
 
@@ -149,8 +138,7 @@ export async function DELETE(request: Request) {
         filter_type: filterType,
         filter_value: filterValue,
         submissions_deleted: submissionsToDelete.length,
-        answers_deleted: answerCount || 0,
-        results_deleted: resultCount || 0,
+        responses_deleted: responseCount || 0,
       },
     })
 
@@ -158,8 +146,7 @@ export async function DELETE(request: Request) {
       ok: true,
       deleted: {
         submissionCount: submissionsToDelete.length,
-        answerCount: answerCount || 0,
-        resultCount: resultCount || 0,
+        responseCount: responseCount || 0,
         timestamp: new Date().toISOString(),
       },
     })
@@ -229,13 +216,8 @@ export async function GET(request: Request) {
     const submissionIds = submissions.map((s: any) => s.id)
 
     // Count related records
-    const { count: answerCount } = await db
-      .from('assessment_answers')
-      .select('*', { count: 'exact', head: true })
-      .in('submission_id', submissionIds)
-
-    const { count: resultCount } = await db
-      .from('assessment_results')
+    const { count: responseCount } = await db
+      .from('assessment_responses')
       .select('*', { count: 'exact', head: true })
       .in('submission_id', submissionIds)
 
@@ -243,9 +225,8 @@ export async function GET(request: Request) {
       submissions: submissions.length,
       willDelete: {
         submissions: submissions.length,
-        answers: answerCount || 0,
-        results: resultCount || 0,
-        total: (submissions.length || 0) + (answerCount || 0) + (resultCount || 0),
+        responses: responseCount || 0,
+        total: (submissions.length || 0) + (responseCount || 0),
       },
       details: submissions,
     })
