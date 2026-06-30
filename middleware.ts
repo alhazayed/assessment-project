@@ -41,7 +41,8 @@ export async function middleware(request: NextRequest) {
   const isAuthPage =
     pathname.startsWith('/login') ||
     pathname.startsWith('/register') ||
-    pathname.startsWith('/forgot-password')
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password')
 
   // Admin area requires Supabase auth (admin PIN verified per-page via requireAdmin)
   if (isAdminArea && !user) {
