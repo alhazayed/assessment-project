@@ -9,6 +9,8 @@ const dict = {
     // Nav (public)
     'nav.services': 'Services',
     'nav.assessments': 'Assessments',
+    'nav.packages_menu': 'Packages',
+    'nav.adhd_checkin': 'ADHD Zone Check-in',
     'nav.about': 'About',
     'nav.signin': 'Sign in',
     'nav.signup': 'Get started free',
@@ -824,6 +826,8 @@ const dict = {
     // Nav (public)
     'nav.services': 'الخدمات',
     'nav.assessments': 'التقييمات',
+    'nav.packages_menu': 'الحزم',
+    'nav.adhd_checkin': 'فحص منطقة ADHD',
     'nav.about': 'عن المنصة',
     'nav.signin': 'تسجيل الدخول',
     'nav.signup': 'ابدأ مجاناً',
