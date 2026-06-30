@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+const VALID_TIERS = ['basic', 'standard', 'professional'] as const
+
 /**
  * POST /api/checkout/create-session
  *
- * Create a Stripe checkout session for package purchase
- * Validates promo codes and applies discounts
+ * Create a Stripe checkout session for a subscription tier purchase.
+ * Validates promo codes and applies discounts, then records a pending
+ * payment that the Stripe webhook fulfils once payment succeeds.
+ *
+ * NOTE: Stripe is mocked here until live API keys are configured. The mock
+ * still writes a correctly-shaped payment row (with a payment intent id) so
+ * the webhook flow can be exercised end to end.
  */
 export async function POST(request: Request) {
   try {
@@ -22,77 +29,94 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { packageId, promoCode, amount } = body
 
-    // Validate input
-    if (!packageId || !amount) {
+    // Validate input — packageId here is a subscription tier.
+    if (!packageId || amount === undefined || amount === null) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       )
     }
 
-    if (amount <= 0) {
+    if (!VALID_TIERS.includes(packageId)) {
+      return NextResponse.json(
+        { error: 'Invalid package tier' },
+        { status: 400 }
+      )
+    }
+
+    if (typeof amount !== 'number' || amount <= 0) {
       return NextResponse.json(
         { error: 'Invalid amount' },
         { status: 400 }
       )
     }
 
-    // Validate promo code if provided
+    // Validate promo code if provided.
     let promoCodeId: string | null = null
     if (promoCode) {
-      const { data: codes } = await supabase
+      const { data: code } = await supabase
         .from('promo_codes')
-        .select('id, code, type, discount_value, max_uses, times_used, valid_until, active')
+        .select('id, code, discount_type, discount_value, max_uses, current_uses, valid_from, valid_until, active')
         .eq('code', promoCode.toUpperCase())
         .eq('active', true)
-        .single()
+        .maybeSingle()
 
-      if (!codes) {
+      if (!code) {
         return NextResponse.json(
           { error: 'Invalid promo code' },
           { status: 400 }
         )
       }
 
-      // Check expiration
-      if (codes.valid_until && new Date(codes.valid_until) < new Date()) {
+      const now = new Date()
+      if (code.valid_from && new Date(code.valid_from) > now) {
+        return NextResponse.json(
+          { error: 'Promo code is not yet active' },
+          { status: 400 }
+        )
+      }
+      if (code.valid_until && new Date(code.valid_until) < now) {
         return NextResponse.json(
           { error: 'Promo code has expired' },
           { status: 400 }
         )
       }
-
-      // Check max uses
-      if (codes.max_uses && codes.times_used >= codes.max_uses) {
+      if (code.max_uses && (code.current_uses ?? 0) >= code.max_uses) {
         return NextResponse.json(
           { error: 'Promo code usage limit reached' },
           { status: 400 }
         )
       }
 
-      promoCodeId = codes.id
+      promoCodeId = code.id
     }
 
-    // TODO: Integrate with actual Stripe API when keys are available
-    // For now, generate mock client secret for frontend integration testing
+    // TODO: Replace with a real Stripe PaymentIntent when live keys exist.
+    const rand = () => Math.random().toString(36).substring(2, 12)
+    const mockIntentId = `pi_test_${rand()}`
+    const mockClientSecret = `${mockIntentId}_secret_${rand()}`
+    const mockSessionId = `cs_test_${rand()}`
 
-    const mockClientSecret = `pi_test_${Math.random().toString(36).substring(7)}_secret_${Math.random().toString(36).substring(7)}`
-    const mockSessionId = `cs_test_${Math.random().toString(36).substring(7)}`
+    // Amount arrives in dollars; persist in cents.
+    const amountCents = Math.round(amount * 100)
 
-    // Create payment record in database
+    // Create a pending payment record. package_id is null for tier
+    // subscriptions (tiers are not rows in the packages catalog).
     const { data: payment, error: paymentError } = await supabase
       .from('payments')
       .insert({
         user_id: user.id,
-        package_id: packageId,
-        amount_cents: Math.round(amount),
-        currency: 'USD',
+        package_id: null,
+        tier: packageId,
+        amount_cents: amountCents,
+        currency: 'usd',
         status: 'pending',
+        stripe_payment_intent_id: mockIntentId,
         stripe_session_id: mockSessionId,
         stripe_client_secret: mockClientSecret,
         promo_code_id: promoCodeId,
         metadata: {
-          promoCode,
+          promoCode: promoCode || null,
           originalAmount: amount,
         },
       })
@@ -107,17 +131,8 @@ export async function POST(request: Request) {
       )
     }
 
-    // Increment promo code usage if applicable
-    if (promoCodeId) {
-      try {
-        await supabase.rpc('increment_promo_code_usage', {
-          code_id: promoCodeId,
-        })
-      } catch (err) {
-        console.error('Promo code usage increment error:', err)
-        // Don't fail the checkout if usage increment fails
-      }
-    }
+    // Promo usage is recorded by the webhook on successful payment, so an
+    // abandoned checkout never consumes a use.
 
     return NextResponse.json({
       success: true,
