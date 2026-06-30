@@ -39,7 +39,31 @@ export async function GET(request: Request) {
       ;(subCounts || []).forEach((s: any) => { countMap[s.patient_id] = (countMap[s.patient_id] || 0) + 1 })
     }
 
-    const enriched = (users || []).map((u: any) => ({ ...u, submission_count: countMap[u.id] || 0 }))
+    // Email lives in auth.users, not profiles. Build an id -> email map via the
+    // service-role admin API. Use a perPage the GoTrue admin endpoint reliably
+    // honors (50) so the "short page = last page" termination is correct even
+    // if the server caps larger page sizes; cap total pages as a safety bound.
+    const emailMap: Record<string, string> = {}
+    try {
+      const perPage = 50
+      for (let pageNum = 1; pageNum <= 200; pageNum++) {
+        const { data: authData, error } = await db.auth.admin.listUsers({ page: pageNum, perPage })
+        const authUsers = authData?.users || []
+        if (error || authUsers.length === 0) break
+        for (const au of authUsers) {
+          if (au.email) emailMap[au.id] = au.email
+        }
+        if (authUsers.length < perPage) break
+      }
+    } catch (e) {
+      console.error('Failed to load user emails:', e)
+    }
+
+    const enriched = (users || []).map((u: any) => ({
+      ...u,
+      email: emailMap[u.id] || null,
+      submission_count: countMap[u.id] || 0,
+    }))
 
     return NextResponse.json({ users: enriched, callerRole })
   } catch {
