@@ -60,16 +60,23 @@ export default function LandingMobileMenu({ lang, isLoggedIn = false }: { lang: 
               {[
                 { href: '#services', labelKey: 'nav.services' as const },
                 { href: '#assessments', labelKey: 'nav.assessments' as const },
+                { href: '/packages', labelKey: 'nav.packages_menu' as const, badge: 'coming soon' as const },
+                { href: '/adhd-check-in', labelKey: 'nav.adhd_checkin' as const },
                 { href: '#about', labelKey: 'nav.about' as const },
               ].map(item => (
                 <a
                   key={item.href}
                   href={item.href}
                   onClick={close}
-                  className="px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-[var(--surface-alt)]"
+                  className="px-4 py-3 rounded-lg text-sm font-medium transition-colors hover:bg-[var(--surface-alt)] flex items-center justify-between"
                   style={{ color: 'var(--text-secondary)' }}
                 >
-                  {t(item.labelKey, lang)}
+                  <span>{t(item.labelKey, lang)}</span>
+                  {item.badge && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide ml-2 flex-shrink-0" style={{ backgroundColor: 'var(--accent-50)', color: 'var(--accent-600)' }}>
+                      {item.badge}
+                    </span>
+                  )}
                 </a>
               ))}
             </nav>

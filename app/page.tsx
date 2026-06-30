@@ -64,6 +64,13 @@ export default async function LandingPage() {
           <nav className="hidden md:flex items-center gap-6 text-[13.5px] font-medium ms-6" style={{ color: 'var(--text-secondary)' }}>
             <a href="#services" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.services', lang)}</a>
             <a href="#assessments" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.assessments', lang)}</a>
+            <a href="/packages" className="hover:text-[var(--text-primary)] transition-colors flex items-center gap-2">
+              {t('nav.packages_menu', lang)}
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide" style={{ backgroundColor: 'var(--accent-50)', color: 'var(--accent-600)' }}>
+                coming soon
+              </span>
+            </a>
+            <a href="/adhd-check-in" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.adhd_checkin', lang)}</a>
             <a href="#about" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.about', lang)}</a>
           </nav>
 
