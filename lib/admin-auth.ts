@@ -20,7 +20,7 @@ export async function requireAdmin() {
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (!profile || !['admin', 'superadmin'].includes(profile.role)) redirect('/x/control/login')
 
-  const store = cookies()
+  const store = await cookies()
   const cookie = store.get('admin_session')?.value
   // HMAC includes current role — if role was revoked, stored cookie will not match
   const expected = await computeHmac(user.id, profile.role)

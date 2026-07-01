@@ -10,12 +10,8 @@ Sentry.init({
 
   sampleRate: 1.0,
 
-  // Server-specific integrations
-  integrations: [
-    new Sentry.Integrations.Http({
-      tracing: true,
-    }),
-  ],
+  // In Sentry v8 the Node SDK auto-instruments HTTP (via OpenTelemetry), so the
+  // manual Sentry.Integrations.Http integration used in v7 is no longer needed.
 
   beforeSend(event) {
     // Don't report health checks (they're noise)

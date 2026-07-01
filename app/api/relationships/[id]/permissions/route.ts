@@ -16,10 +16,8 @@ const VALID_PERMISSION_KEYS = [
 ] as const
 type PermissionKey = (typeof VALID_PERMISSION_KEYS)[number]
 
-export async function GET(
-  _request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const supabase = createClient()
   const {
     data: { user },
@@ -67,10 +65,8 @@ export async function GET(
   return NextResponse.json({ permissions: permissions ?? [] })
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const supabase = createClient()
   const {
     data: { user },

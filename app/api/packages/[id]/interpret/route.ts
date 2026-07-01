@@ -24,10 +24,8 @@ interface PkgAssessment {
   is_available: boolean
 }
 
-export async function POST(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()

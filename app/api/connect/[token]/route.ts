@@ -3,12 +3,13 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 interface RouteContext {
-  params: { token: string }
+  params: Promise<{ token: string }>
 }
 
 // GET — public, no auth required
 // Returns safe, non-identifying invitation details for the invite page
-export async function GET(_request: Request, { params }: RouteContext) {
+export async function GET(_request: Request, props: RouteContext) {
+  const params = await props.params;
   const { token } = params
 
   if (!token || typeof token !== 'string') {
@@ -73,7 +74,8 @@ export async function GET(_request: Request, { params }: RouteContext) {
 }
 
 // POST — authenticated patient accepts invitation
-export async function POST(request: Request, { params }: RouteContext) {
+export async function POST(request: Request, props: RouteContext) {
+  const params = await props.params;
   const { token } = params
 
   if (!token || typeof token !== 'string') {
