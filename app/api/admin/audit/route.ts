@@ -109,7 +109,7 @@ export async function DELETE(request: Request) {
         .delete({ count: 'exact' })
         .eq('id', id)
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Database operation failed' }, { status: 500 })
       }
       deletedCount = count ?? 0
     } else {
@@ -123,7 +123,7 @@ export async function DELETE(request: Request) {
         .delete({ count: 'exact' })
         .lt('created_at', cutoff.toISOString())
       if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: 'Database operation failed' }, { status: 500 })
       }
       deletedCount = count ?? 0
     }
