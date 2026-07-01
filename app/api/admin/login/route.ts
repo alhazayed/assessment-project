@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     }
 
     const token = await computeHmac(data.user.id, profile.role)
-    const store = cookies()
+    const store = await cookies()
     store.set('admin_session', token, {
       httpOnly: true, secure: true,
       sameSite: 'lax', path: '/', maxAge: 60 * 60 * 8,
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE() {
-  const store = cookies()
+  const store = await cookies()
   store.set('admin_session', '', { maxAge: 0, path: '/' })
   const supabase = createClient()
   await supabase.auth.signOut()

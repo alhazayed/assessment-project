@@ -19,10 +19,8 @@ const VALID_PERMISSION_KEYS = [
 ] as const
 type PermissionKey = (typeof VALID_PERMISSION_KEYS)[number]
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   const supabase = createClient()
   const {
     data: { user },
