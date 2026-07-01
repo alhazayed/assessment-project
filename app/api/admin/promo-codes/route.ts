@@ -120,7 +120,7 @@ export async function POST(request: Request) {
       target_type: 'promo_code',
       target_id: newCode.id,
       reason: `Created ${codeType} code: ${code}`,
-      metadata: {
+      details: {
         code: code.toUpperCase(),
         code_type: codeType,
         discount_type: discountType,

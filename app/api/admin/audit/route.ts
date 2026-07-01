@@ -141,7 +141,7 @@ export async function DELETE(request: Request) {
         reason: id
           ? `Deleted audit entry ${id}`
           : `Purged ${deletedCount} audit entr${deletedCount === 1 ? 'y' : 'ies'} older than ${before}`,
-        metadata: { deleted_count: deletedCount, method: id ? 'single' : 'purge', before: before || null },
+        details: { deleted_count: deletedCount, method: id ? 'single' : 'purge', before: before || null },
       })
     }
 

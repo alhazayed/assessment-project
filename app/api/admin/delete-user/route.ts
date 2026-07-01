@@ -113,7 +113,7 @@ export async function DELETE(request: Request) {
       target_type: 'profile',
       target_id: userId,
       reason: `${hardDelete ? 'HARD' : 'SOFT'} DELETE: ${reason}`,
-      metadata: {
+      details: {
         deleted_records: countBeforeDeletion,
         method: hardDelete ? 'hard' : 'soft',
         timestamp: new Date().toISOString(),
