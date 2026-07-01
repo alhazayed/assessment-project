@@ -8,6 +8,7 @@ import { t } from '@/lib/i18n'
 type User = {
   id: string; full_name_en: string; full_name_ar: string | null; role: string
   is_active: boolean; created_at: string; language_preference: string
+  email?: string | null
   submission_count?: number
 }
 
@@ -191,6 +192,7 @@ export default function AdminUsersPage() {
               <tr key={u.id} className={updating === u.id ? 'opacity-50' : ''} style={{ borderBottom: '1px solid var(--divider)' }}>
                 <td className="px-4 py-3">
                   <p className="text-[13.5px] font-medium" style={{ color: 'var(--text-primary)' }}>{u.full_name_en}</p>
+                  {u.email && <p className="text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>{u.email}</p>}
                   {u.full_name_ar && <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{u.full_name_ar}</p>}
                 </td>
                 <td className="px-4 py-3">
