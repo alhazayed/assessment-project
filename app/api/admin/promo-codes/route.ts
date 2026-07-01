@@ -110,7 +110,7 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: 'Database operation failed' }, { status: 500 })
     }
 
     // Audit log
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
       target_type: 'promo_code',
       target_id: newCode.id,
       reason: `Created ${codeType} code: ${code}`,
-      metadata: {
+      details: {
         code: code.toUpperCase(),
         code_type: codeType,
         discount_type: discountType,
@@ -173,7 +173,7 @@ export async function GET(request: Request) {
     const { data: codes, error } = await query
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: 'Database operation failed' }, { status: 500 })
     }
 
     return NextResponse.json({
@@ -229,7 +229,7 @@ export async function PATCH(request: Request) {
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: 'Database operation failed' }, { status: 500 })
     }
 
     const supabase = createClient()
@@ -295,7 +295,7 @@ export async function DELETE(request: Request) {
       .eq('id', id)
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: 'Database operation failed' }, { status: 500 })
     }
 
     const supabase = createClient()

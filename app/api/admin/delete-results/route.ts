@@ -134,7 +134,7 @@ export async function DELETE(request: Request) {
       target_type: 'assessment_submissions',
       target_id: submissionsToDelete[0],
       reason: `Deleted ${submissionsToDelete.length} submission(s) by ${filterType}: ${filterValue}`,
-      metadata: {
+      details: {
         filter_type: filterType,
         filter_value: filterValue,
         submissions_deleted: submissionsToDelete.length,

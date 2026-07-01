@@ -1,73 +1,40 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-interface HealthCheck {
-  status: 'ok' | 'degraded' | 'unhealthy'
-  timestamp: string
-  version: string
-  checks: {
-    database: { status: 'ok' | 'error'; latency_ms?: number }
-    ai_service: { status: 'ok' | 'unconfigured' }
-    environment: { status: 'ok' | 'missing_vars' }
-  }
-}
-
+/**
+ * GET /api/health
+ *
+ * Public liveness/readiness probe. Intentionally minimal: it returns only an
+ * overall status and timestamp so anonymous callers cannot enumerate
+ * infrastructure internals (DB latency, which env vars are missing, AI
+ * configuration, app version). Uptime monitors only need the 200 vs 503 signal.
+ */
 export async function GET() {
-  const startTime = Date.now()
-  const checks: {
-    database: { status: 'ok' | 'error'; latency_ms?: number }
-    ai_service: { status: 'ok' | 'unconfigured' }
-    environment: { status: 'ok' | 'missing_vars' }
-  } = {
-    database: { status: 'error' },
-    ai_service: { status: 'unconfigured' },
-    environment: { status: 'ok' },
-  }
+  let databaseOk = false
 
-  // Check database connectivity
+  // Check database connectivity.
   try {
     const admin = createAdminClient()
-    const dbStart = Date.now()
     const { error } = await admin.from('assessment_definitions').select('id').limit(1)
-    const latency = Date.now() - dbStart
-
-    if (!error) {
-      checks.database.status = 'ok'
-      checks.database.latency_ms = latency
-    }
-  } catch (err) {
-    checks.database.status = 'error'
+    databaseOk = !error
+  } catch {
+    databaseOk = false
   }
 
-  // Check AI service configuration
-  const hasAiKey = !!(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your-gemini-api-key-here')
-  if (hasAiKey) {
-    checks.ai_service.status = 'ok'
-  }
-
-  // Check required environment variables
+  // Required environment variables must be present.
   const requiredVars = ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY']
-  const missingVars = requiredVars.filter((v) => !process.env[v])
-  if (missingVars.length > 0) {
-    checks.environment.status = 'missing_vars'
-  }
+  const envOk = requiredVars.every((v) => !!process.env[v])
 
-  // Determine overall status
-  const hasError = checks.database.status === 'error' || checks.environment.status === 'missing_vars'
-  const overallStatus = hasError ? 'unhealthy' : 'ok'
+  const healthy = databaseOk && envOk
 
-  const response: HealthCheck = {
-    status: overallStatus,
-    timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '0.1.0',
-    checks,
-  }
-
-  return NextResponse.json(response, {
-    status: hasError ? 503 : 200,
-    headers: {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Content-Type': 'application/json',
-    },
-  })
+  return NextResponse.json(
+    { status: healthy ? 'ok' : 'unhealthy', timestamp: new Date().toISOString() },
+    {
+      status: healthy ? 200 : 503,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Content-Type': 'application/json',
+      },
+    }
+  )
 }
