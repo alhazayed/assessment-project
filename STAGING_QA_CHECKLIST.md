@@ -1,7 +1,19 @@
 # Staging Runtime QA Checklist — PR #38 (Next 16 / React 19 + payments)
 **Purpose:** the one validation class that cannot be performed in the build/CI environment — authenticated end-to-end flows against **real Supabase + Stripe** — enumerated so it can be executed on staging and signed off before production merge.
 
-**Why this is the remaining gate:** everything else is already green — `npm audit` 0 HIGH, `tsc` 0 errors, `next build` 107/107 pages, 13/13 payment unit tests, ESLint 0 errors, Vercel real-environment build **Ready**, and local runtime smoke of the Next 16 server (public SSR pages 200, protected routes 307, async `createClient()`/`getLanguage()` exercised, no server errors). The items below require credentials and a real user session, which the CI environment does not have.
+**Why this is the remaining gate:** everything else is already green — `npm audit` 0 HIGH, `tsc` 0 errors, `next build` 107/107 pages, 13/13 payment unit tests, ESLint 0 errors, Vercel real-environment build **Ready**. The items in sections A–E below require credentials and a real user session, which the CI environment does not have.
+
+## ✅ Runtime-validated locally on the Next 16 / React 19 stack (2026-07-02)
+The upgraded production server was booted (`next start`, Next.js 16.2.10) and exercised over HTTP on localhost. This proves the server-side runtime of the upgrade — the riskiest part, the async `cookies()`/`headers()` refactor across ~58 call sites — actually works, independent of credentials:
+- **Server boots** on the Next 16 / React 19 build (`✓ Ready`); homepage **200** with real SSR content (`<title>V Welfare…</title>`), not an error page.
+- **async `cookies()` middleware works:** `/dashboard` → **307** `→ /login?next=%2Fdashboard`; `/x/control` → **307** `→ /x/control/login`. Auth gating intact at runtime (a broken async refactor would 500 or fail to redirect).
+- **Security headers injected by middleware:** `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, HSTS `max-age=63072000; preload`, full CSP.
+- **Per-request CSP nonce works** (distinct nonce each request) — the nonce mechanism relevant to GHSA-ffhc functions correctly under React 19.
+- **Routing/SSR:** `/login` 200, public `/clinicians` 200 (redirect fix holds), unknown route **404**.
+- **API routes run under Next 16:** `/api/health` returns clean JSON + `Cache-Control: no-store` (503 only because a placeholder service-role key was used locally — the route itself executes correctly).
+- **Fixed `/auth/confirm` handler runs:** no params → **307** `→ /login`.
+
+**What still requires staging + credentials (sections A–E):** authenticated *user-journey* E2E — real login session, in-browser checkout with Stripe test mode, PDF generation as a logged-in user, and admin/clinician UI flows.
 
 ## Preconditions
 - Staging deploy of branch `claude/new-session-2t01at` with real `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_SESSION_SECRET`, `ADMIN_PIN`, `GEMINI_API_KEY`, `STRIPE_WEBHOOK_SECRET`, Turnstile keys.
