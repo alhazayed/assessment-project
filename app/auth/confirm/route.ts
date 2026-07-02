@@ -17,10 +17,18 @@ export async function GET(request: NextRequest) {
   }
   const next = safeNext(searchParams.get('next'))
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vwelfare.vercel.app'
+  // Redirect on the SAME origin that served this request. Session cookies are
+  // written for this origin — redirecting to a different host (e.g. a hardcoded
+  // production URL while the user verified on a preview/custom domain) drops
+  // the session and bounces the user to /login instead of their destination.
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https'
+  const origin = forwardedHost
+    ? `${forwardedProto}://${forwardedHost}`
+    : process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin
 
   function makeRedirectUrl(pathname: string, errorMsg?: string) {
-    const url = new URL(siteUrl)
+    const url = new URL(origin)
     url.pathname = pathname
     if (errorMsg) url.searchParams.set('error', errorMsg)
     return url.toString()
@@ -53,7 +61,14 @@ export async function GET(request: NextRequest) {
     const supabase = makeSupabase(response)
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (error) return NextResponse.redirect(makeRedirectUrl('/login', 'verification_failed'))
+    if (error) {
+      // Token already consumed (email-scanner prefetch, double click, second tab).
+      // If the browser already carries a valid session the user IS verified —
+      // send them to their destination instead of a false failure screen.
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) return NextResponse.redirect(makeRedirectUrl(dest))
+      return NextResponse.redirect(makeRedirectUrl('/login', 'verification_failed'))
+    }
     return response   // carries the session cookies
   }
 
@@ -69,6 +84,11 @@ export async function GET(request: NextRequest) {
   const supabase = makeSupabase(response)
 
   const { error } = await supabase.auth.verifyOtp({ type, token_hash })
-  if (error) return NextResponse.redirect(makeRedirectUrl('/login', 'verification_failed'))
+  if (error) {
+    // Same already-consumed-token fallback as the PKCE branch above.
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) return NextResponse.redirect(makeRedirectUrl(dest))
+    return NextResponse.redirect(makeRedirectUrl('/login', 'verification_failed'))
+  }
   return response   // carries the session cookies
 }

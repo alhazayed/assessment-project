@@ -61,7 +61,7 @@ export default async function PackagesPage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-7 max-w-5xl" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="p-4 sm:p-6 lg:p-7 max-w-6xl" dir={isAr ? 'rtl' : 'ltr'}>
       {/* Page Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -113,7 +113,7 @@ export default async function PackagesPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {packages.map(pkg => {
             const name = isAr ? pkg.name_ar : pkg.name_en
             const description = isAr ? pkg.description_ar : pkg.description_en
@@ -180,17 +180,17 @@ export default async function PackagesPage() {
                     ))}
                   </div>
                   {totalWeight > 0 && (
-                    <div className="mt-2.5 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--surface-alt)' }}>
-                      {sortedAssessments.map((a, i) => {
-                        const left = sortedAssessments.slice(0, i).reduce((s, x) => s + x.weight_pct, 0)
-                        return (
-                          <div
-                            key={a.assessment_code}
-                            className="absolute h-full rounded-full"
-                            style={{ left: `${left}%`, width: `${a.weight_pct}%`, backgroundColor: a.is_available ? pkg.color : `${pkg.color}55` }}
-                          />
-                        )
-                      })}
+                    // Flex segments, not absolute positioning: absolute children here had
+                    // no `relative` ancestor on the track, so they anchored to the page and
+                    // painted across neighbouring cards (and `left` doesn't mirror in RTL).
+                    <div className="mt-2.5 h-1.5 rounded-full overflow-hidden flex" style={{ backgroundColor: 'var(--surface-alt)' }}>
+                      {sortedAssessments.map(a => (
+                        <div
+                          key={a.assessment_code}
+                          className="h-full"
+                          style={{ width: `${a.weight_pct}%`, backgroundColor: a.is_available ? pkg.color : `${pkg.color}55` }}
+                        />
+                      ))}
                     </div>
                   )}
                   <p className="text-[11px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
