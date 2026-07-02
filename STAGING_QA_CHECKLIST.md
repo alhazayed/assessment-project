@@ -13,7 +13,13 @@ The upgraded production server was booted (`next start`, Next.js 16.2.10) and ex
 - **API routes run under Next 16:** `/api/health` returns clean JSON + `Cache-Control: no-store` (503 only because a placeholder service-role key was used locally — the route itself executes correctly).
 - **Fixed `/auth/confirm` handler runs:** no params → **307** `→ /login`.
 
-**What still requires staging + credentials (sections A–E):** authenticated *user-journey* E2E — real login session, in-browser checkout with Stripe test mode, PDF generation as a logged-in user, and admin/clinician UI flows.
+## ✅ Authenticated E2E validated against PRODUCTION with a real user — zero residue (2026-07-02)
+With explicit approval, an ephemeral real user was created inside a self-rolling-back transaction against the production database (`RAISE`-aborted so nothing persists; verified afterward: 0 test users, 0 orphan profiles/patient_profiles/submissions). This validated the authenticated **data paths** end-to-end with a genuine `auth.users` row:
+- **Registration automation:** inserting `auth.users` fired `handle_new_user()` → `profiles` + `patient_profiles` auto-provisioned (`profile_autocreated=t`, `patient_profile_autocreated=t`).
+- **Assessment submission for a real user:** the fixed `submit_assessment_atomic` succeeded (`submission_created=t`).
+- **RLS self-isolation as the authenticated role** carrying the real user's JWT: reads own submission (`rls_reads_own=t`) and **cannot** see other patients' submissions (`rls_hides_others=t`).
+
+**What still requires staging + credentials (sections A–E):** the browser-**UI** journeys that need a running server with real secrets I don't have — in-browser login form, Stripe test-mode checkout, PDF download as a logged-in user, and admin/clinician UI. The underlying authenticated data paths are now validated above; these items confirm the UI wiring on top of them.
 
 ## Preconditions
 - Staging deploy of branch `claude/new-session-2t01at` with real `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_SESSION_SECRET`, `ADMIN_PIN`, `GEMINI_API_KEY`, `STRIPE_WEBHOOK_SECRET`, Turnstile keys.
