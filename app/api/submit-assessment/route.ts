@@ -73,7 +73,7 @@ function calcBand(scoringLogic: ScoringBand[], score: number): ScoringBand | nul
 export async function POST(request: Request) {
   try {
     // Auth check via SSR client (validates session cookie)
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

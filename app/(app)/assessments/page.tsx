@@ -18,8 +18,8 @@ function severityBadge(band: string) {
 }
 
 export default async function AssessmentsPage() {
-  const supabase = createClient()
-  const lang = getLanguage()
+  const supabase = await createClient()
+  const lang = await getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?next=/assessments')
 

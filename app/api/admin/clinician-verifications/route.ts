@@ -6,7 +6,7 @@ const ALLOWED_REVIEW_STATUSES = ['verified', 'rejected', 'suspended'] as const
 type ReviewStatus = (typeof ALLOWED_REVIEW_STATUSES)[number]
 
 async function requireAdminUser() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 

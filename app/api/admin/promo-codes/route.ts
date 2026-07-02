@@ -71,7 +71,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -232,7 +232,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Database operation failed' }, { status: 500 })
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     if (currentUser) {
       await db.from('audit_log').insert({
@@ -298,7 +298,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Database operation failed' }, { status: 500 })
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user: currentUser } } = await supabase.auth.getUser()
     if (currentUser) {
       await db.from('audit_log').insert({

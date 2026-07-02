@@ -12,8 +12,8 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 }
 
-export default function TermsPage() {
-  const lang = getLanguage()
+export default async function TermsPage() {
+  const lang = await getLanguage()
   const isRtl = lang === 'ar'
 
   const sections = isRtl ? [

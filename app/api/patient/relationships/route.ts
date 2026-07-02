@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 // Returns all clinician relationships for the authenticated patient,
 // including clinician profile, verification details, and permission rows.
 export async function GET() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const {
     data: { user },

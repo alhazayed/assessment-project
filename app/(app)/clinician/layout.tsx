@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 // URL directly. The API enforces clinician+verified independently, but the
 // pages themselves should not be reachable by non-clinicians.
 export default async function ClinicianLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
