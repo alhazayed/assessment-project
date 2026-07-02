@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, LogOut, TrendingUp, Menu, X, Layers, ShieldAlert, DollarSign, Ticket } from 'lucide-react'
+import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, LogOut, TrendingUp, Menu, X, Layers, ShieldAlert, ShieldCheck, DollarSign, Ticket } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 import BrandLogo from '@/components/brand-logo'
@@ -29,6 +29,7 @@ export default function AdminNav({ role }: { role: string }) {
     { href: '/x/control/analytics',     label: t('admin.nav.analytics', lang),      icon: TrendingUp },
     { href: '/x/control/revenue',       label: t('admin.nav.revenue', lang),        icon: DollarSign },
     { href: '/x/control/users',         label: t('admin.nav.users', lang),          icon: Users },
+    { href: '/x/control/verifications', label: t('admin.nav.verifications', lang),  icon: ShieldCheck },
     { href: '/x/control/assessments',   label: t('admin.nav.assessments', lang),    icon: ClipboardList },
     { href: '/x/control/packages',      label: t('admin.nav.packages', lang),       icon: Layers },
     // Promo code management is a superadmin-only function.

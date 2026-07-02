@@ -520,6 +520,7 @@ const dict = {
     'admin.nav.announcements': 'Announcements',
     'admin.nav.audit': 'Audit Log',
     'admin.nav.risk': 'Clinical Risk',
+    'admin.nav.verifications': 'Verifications',
     'admin.nav.back': '← Back to platform',
     'admin.nav.signout': 'Sign out',
 
@@ -1371,6 +1372,7 @@ const dict = {
     'admin.nav.announcements': 'الإعلانات',
     'admin.nav.audit': 'سجل التدقيق',
     'admin.nav.risk': 'المخاطر السريرية',
+    'admin.nav.verifications': 'توثيق الأخصائيين',
     'admin.nav.back': '← العودة إلى المنصة',
     'admin.nav.signout': 'تسجيل الخروج',
 
