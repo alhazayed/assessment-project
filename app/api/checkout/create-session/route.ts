@@ -1,32 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-
-const VALID_TIERS = ['basic', 'standard', 'professional'] as const
-
-// Authoritative, server-side tier pricing in whole USD dollars. The client is
-// NEVER trusted to supply the amount — doing so let a caller POST amount:0.01
-// and receive full access. Prices mirror the checkout UI (app/(auth)/checkout).
-const TIER_PRICES_USD: Record<(typeof VALID_TIERS)[number], number> = {
-  basic: 9.99,
-  standard: 24.99,
-  professional: 49.99,
-}
-
-/**
- * Apply a validated promo discount to a base price, clamped to >= 0.
- * discount_type values written by the admin API: 'percentage' | 'fixed_amount' | 'free'.
- */
-function applyDiscount(base: number, discountType: string | null, discountValue: number | null): number {
-  if (!discountType) return base
-  if (discountType === 'free') return 0
-  if (discountValue == null) return base
-  const discounted =
-    discountType === 'percentage'
-      ? base * (1 - discountValue / 100)
-      : base - discountValue // fixed_amount discount
-  return Math.max(0, Math.round(discounted * 100) / 100)
-}
+import { VALID_TIERS, TIER_PRICES_USD, isValidTier, applyDiscount } from '@/lib/billing/pricing'
 
 /**
  * POST /api/checkout/create-session

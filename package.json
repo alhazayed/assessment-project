@@ -9,6 +9,7 @@
     "lint": "next lint",
     "test:security": "npx tsx --test __tests__/security/*.test.ts",
     "test:phi": "npx tsx --test __tests__/security/phi.test.ts",
+    "test:payments": "npx tsx --test __tests__/security/payments.test.ts",
     "load:100": "k6 run load-tests/scenarios/100vus.js",
     "load:250": "k6 run load-tests/scenarios/250vus.js",
     "load:500": "k6 run load-tests/scenarios/500vus.js",
