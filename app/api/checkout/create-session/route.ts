@@ -1,7 +1,32 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const VALID_TIERS = ['basic', 'standard', 'professional'] as const
+
+// Authoritative, server-side tier pricing in whole USD dollars. The client is
+// NEVER trusted to supply the amount — doing so let a caller POST amount:0.01
+// and receive full access. Prices mirror the checkout UI (app/(auth)/checkout).
+const TIER_PRICES_USD: Record<(typeof VALID_TIERS)[number], number> = {
+  basic: 9.99,
+  standard: 24.99,
+  professional: 49.99,
+}
+
+/**
+ * Apply a validated promo discount to a base price, clamped to >= 0.
+ * discount_type values written by the admin API: 'percentage' | 'fixed_amount' | 'free'.
+ */
+function applyDiscount(base: number, discountType: string | null, discountValue: number | null): number {
+  if (!discountType) return base
+  if (discountType === 'free') return 0
+  if (discountValue == null) return base
+  const discounted =
+    discountType === 'percentage'
+      ? base * (1 - discountValue / 100)
+      : base - discountValue // fixed_amount discount
+  return Math.max(0, Math.round(discounted * 100) / 100)
+}
 
 /**
  * POST /api/checkout/create-session
@@ -26,11 +51,19 @@ export async function POST(request: Request) {
       )
     }
 
+    // Payment/promo tables are intentionally RLS-locked so users cannot write
+    // their own payment rows or read promo codes directly. This endpoint has
+    // already authenticated the user and computes the amount server-side, so it
+    // performs those controlled operations with the service-role client.
+    const db = createAdminClient()
+
     const body = await request.json()
-    const { packageId, promoCode, amount } = body
+    // NOTE: any client-supplied `amount` is deliberately ignored. The charge
+    // amount is derived server-side from the tier price and validated promo.
+    const { packageId, promoCode } = body
 
     // Validate input — packageId here is a subscription tier.
-    if (!packageId || amount === undefined || amount === null) {
+    if (!packageId) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -44,17 +77,15 @@ export async function POST(request: Request) {
       )
     }
 
-    if (typeof amount !== 'number' || amount <= 0) {
-      return NextResponse.json(
-        { error: 'Invalid amount' },
-        { status: 400 }
-      )
-    }
+    const basePrice = TIER_PRICES_USD[packageId as (typeof VALID_TIERS)[number]]
 
-    // Validate promo code if provided.
+    // Validate promo code if provided, and capture its discount for server-side
+    // price computation.
     let promoCodeId: string | null = null
+    let discountType: string | null = null
+    let discountValue: number | null = null
     if (promoCode) {
-      const { data: code } = await supabase
+      const { data: code } = await db
         .from('promo_codes')
         .select('id, code, discount_type, discount_value, max_uses, current_uses, valid_from, valid_until, active')
         .eq('code', promoCode.toUpperCase())
@@ -89,7 +120,12 @@ export async function POST(request: Request) {
       }
 
       promoCodeId = code.id
+      discountType = code.discount_type
+      discountValue = code.discount_value
     }
+
+    // Final charge amount is computed entirely server-side.
+    const amount = applyDiscount(basePrice, discountType, discountValue)
 
     // TODO: Replace with a real Stripe PaymentIntent when live keys exist.
     const rand = () => Math.random().toString(36).substring(2, 12)
@@ -97,12 +133,12 @@ export async function POST(request: Request) {
     const mockClientSecret = `${mockIntentId}_secret_${rand()}`
     const mockSessionId = `cs_test_${rand()}`
 
-    // Amount arrives in dollars; persist in cents.
+    // Server-computed amount in dollars; persist in cents.
     const amountCents = Math.round(amount * 100)
 
     // Create a pending payment record. package_id is null for tier
     // subscriptions (tiers are not rows in the packages catalog).
-    const { data: payment, error: paymentError } = await supabase
+    const { data: payment, error: paymentError } = await db
       .from('payments')
       .insert({
         user_id: user.id,
@@ -117,7 +153,8 @@ export async function POST(request: Request) {
         promo_code_id: promoCodeId,
         metadata: {
           promoCode: promoCode || null,
-          originalAmount: amount,
+          basePrice,
+          finalAmount: amount,
         },
       })
       .select()
