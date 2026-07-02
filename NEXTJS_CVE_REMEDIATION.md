@@ -67,17 +67,25 @@ No application code changes required (only image source is local). Verified: `ts
 
 ---
 
-## React 19 + Next upgrade runbook (scheduled sprint)
+## React 19 + Next upgrade — trial run findings (2026-07-02)
 
-Target: **`next@15.5.20`** (backport line, smaller surface than 16.x) unless a 16.x-only feature is needed.
+An upgrade to `next@15.5.20 + react@19` was **attempted and reverted** in a controlled trial to scope the work empirically. Results:
 
-1. Branch from `main`. `npm i next@15.5.20 eslint-config-next@15.5.20 react@19 react-dom@19`.
-2. Run the React 19 codemods: `npx codemod@latest react/19/migration-recipe`.
-3. Dependency compatibility check — verify React 19 peer support for:
-   `@react-pdf/renderer`, `recharts`, `@supabase/ssr`, `@tanstack/react-query`, `@stripe/react-stripe-js`.
-4. `npx tsc --noEmit && npm run lint && npm run build`.
-5. Manual smoke (staging): register → email verify → onboarding → assessment → PDF export; checkout → Stripe webhook → billing; admin dashboards + charts; clinician verification review.
-6. Confirm CSP nonce, Turnstile, and Supabase realtime still function on a Vercel preview.
-7. `npm audit` → expect **0 HIGH**. Remove this file's residual note and update the certification to GO LIVE.
+**Good news — dependencies are ready.** Every React-sensitive package already declares React 19 peer support, so none block the upgrade:
+`@react-pdf/renderer@4.5.1` (`^19`), `recharts@2.15.4` (`^19`), `@tanstack/react-query@5` (`^18||^19`), `lucide-react@0.454.0` (`^19.0.0-rc`), `@supabase/ssr` (React-agnostic). `@stripe/react-stripe-js` is not installed (Stripe mocked).
 
-**Estimated effort:** 1–2 engineer-days incl. QA.
+**Blocker 1 — async `cookies()`/`headers()` ripple (the big one).**
+Next 15 makes `cookies()` and `headers()` **async** (return Promises). `tsc` after the trial flagged the synchronous call sites: `lib/supabase/server.ts`, `lib/admin-auth.ts`, `lib/get-language.ts`, `app/layout.tsx`, `app/api/admin/login/route.ts`, `app/connect/[token]/page.tsx`. The critical one is `lib/supabase/server.ts` → `createClient()`, which is called **synchronously in ~50+ route handlers and server components**. Converting it to `await createClient()` forces every caller (and their enclosing functions) async — a whole-codebase, **auth-critical** refactor that must be runtime-validated, not just type-checked.
+
+**Blocker 2 — version target + Sentry.**
+`npm audit` still reported HIGH for `next` at 15.5.20, and `@sentry/nextjs` requires a coordinated major bump (→`10.63.0`). Confirm whether the clean-audit target is 15.5.x or `16.2.10` (`latest`) before committing; 16.x adds breaking changes beyond the async-cookies refactor.
+
+### Runbook (scheduled sprint — ~1–2 engineer-days incl. QA)
+1. Branch from `main`. `npm i next@<confirmed-target> eslint-config-next@<same> react@19 react-dom@19 @types/react@19 @types/react-dom@19 @sentry/nextjs@10`.
+2. Refactor async `cookies()`/`headers()`: make `lib/supabase/server.ts createClient()` async and `await` it at all call sites (codemod `npx @next/codemod@latest next-async-request-api .` covers most).
+3. `npx tsc --noEmit && npm run lint && npm run build` → resolve residual React 19 type changes.
+4. Manual smoke (staging): register → email verify → onboarding → assessment → PDF export; checkout → Stripe webhook → billing; admin dashboards + charts; clinician verification review.
+5. Confirm CSP nonce, Turnstile, and Supabase realtime function on a Vercel preview.
+6. `npm audit` → expect **0 HIGH**. Remove this file's residual note and update the certification to GO LIVE.
+
+Until then the image-optimizer mitigation above stands, and the residual CSP-nonce advisory is the one accepted item keeping the certification at **GO LIVE WITH CONDITIONS**.
