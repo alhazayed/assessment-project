@@ -130,7 +130,7 @@ export async function DELETE(request: Request) {
 
     // Record a meta audit entry so the purge itself leaves a trace.
     // Use the caller's server client so actor_id resolves to the caller.
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user: actor } } = await supabase.auth.getUser()
     if (actor) {
       await db.from('audit_log').insert({

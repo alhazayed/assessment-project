@@ -57,9 +57,10 @@ function ScoreGauge({ score, color, maxScore = 100 }: ScoreGaugeProps) {
   )
 }
 
-export default async function PackageResultPage({ params }: { params: { id: string } }) {
-  const supabase = createClient()
-  const lang = getLanguage()
+export default async function PackageResultPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient()
+  const lang = await getLanguage()
   const isAr = lang === 'ar'
 
   const { data: { user } } = await supabase.auth.getUser()

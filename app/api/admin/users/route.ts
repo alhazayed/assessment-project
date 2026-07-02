@@ -106,7 +106,7 @@ export async function PATCH(request: Request) {
     await db.from('profiles').update(update).eq('id', id)
 
     // Audit log — use caller's server client so actor_id = caller
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user: callerUser } } = await supabase.auth.getUser()
     if (callerUser) {
       const reason = Object.entries(update)

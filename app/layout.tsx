@@ -65,9 +65,9 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const lang = getLanguage()
-  const headersList = headers()
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const lang = await getLanguage()
+  const headersList = await headers()
   const nonce = headersList.get('x-nonce') || ''
 
   return (

@@ -17,8 +17,8 @@ import LandingMobileMenu from '@/components/landing-mobile-menu'
 import AIAssessmentFinder from '@/components/ai-assessment-finder'
 
 export default async function LandingPage() {
-  const supabase = createClient()
-  const lang = getLanguage()
+  const supabase = await createClient()
+  const lang = await getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
 
   let isLoggedIn = false

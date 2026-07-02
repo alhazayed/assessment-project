@@ -2,12 +2,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { kpiId: string } }
-) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ kpiId: string }> }) {
+  const params = await props.params;
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const db = createAdminClient()
 
     // Verify admin access
@@ -86,12 +84,10 @@ export async function PATCH(
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { kpiId: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ kpiId: string }> }) {
+  const params = await props.params;
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const db = createAdminClient()
 
     // Verify admin access

@@ -43,15 +43,29 @@ export async function POST(request: Request) {
 
   const supabase = createAdminClient()
 
-  // ---- Idempotency: skip events we have already processed ------------------
-  const { data: existing } = await supabase
+  // ---- Idempotency: atomically CLAIM the event before processing -----------
+  // Insert-first (not insert-after): the stripe_event_id UNIQUE constraint makes
+  // this the concurrency-safe dedup point. Two simultaneous redeliveries of the
+  // same event can otherwise both pass a read-then-check and both fulfil the
+  // order (double package_purchase / double promo increment). Whoever inserts
+  // first wins; the loser gets a unique-violation (23505) and is acknowledged as
+  // a duplicate. If processing then fails we delete the claim so Stripe's retry
+  // can reprocess — preserving the original "transient failures retry" behaviour.
+  const { error: claimError } = await supabase
     .from('stripe_webhook_events')
-    .select('id')
-    .eq('stripe_event_id', event.id)
-    .maybeSingle()
+    .insert({
+      stripe_event_id: event.id,
+      event_type: event.type,
+      payload: event as unknown as Record<string, unknown>,
+    })
 
-  if (existing) {
-    return NextResponse.json({ received: true, duplicate: true })
+  if (claimError) {
+    // 23505 = unique_violation → already claimed/processed by another delivery.
+    if ((claimError as { code?: string }).code === '23505') {
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+    console.error('Failed to claim webhook event:', claimError)
+    return NextResponse.json({ error: 'Failed to record webhook' }, { status: 500 })
   }
 
   try {
@@ -74,16 +88,11 @@ export async function POST(request: Request) {
         break
     }
 
-    // Record the event AFTER successful handling so transient failures retry.
-    await supabase.from('stripe_webhook_events').insert({
-      stripe_event_id: event.id,
-      event_type: event.type,
-      payload: event as unknown as Record<string, unknown>,
-    })
-
     return NextResponse.json({ received: true })
   } catch (err) {
     console.error('Error processing Stripe webhook:', err)
+    // Release the claim so the Stripe retry reprocesses this event.
+    await supabase.from('stripe_webhook_events').delete().eq('stripe_event_id', event.id)
     // Return 500 so Stripe retries delivery.
     return NextResponse.json(
       { error: 'Failed to process webhook' },

@@ -65,8 +65,11 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/assessments') ||
     pathname.startsWith('/packages') ||
     pathname.startsWith('/adhd-zones') ||
-    pathname.startsWith('/clinician') ||
-    pathname.startsWith('/patient') ||
+    // Match the private /clinician/* area WITHOUT catching the public
+    // /clinicians marketing page (startsWith('/clinician') matched both,
+    // making /clinicians redirect unauthenticated visitors to login).
+    pathname === '/clinician' || pathname.startsWith('/clinician/') ||
+    pathname === '/patient' || pathname.startsWith('/patient/') ||
     pathname.startsWith('/admin')
 
   if (!user && isPrivateRoute) {

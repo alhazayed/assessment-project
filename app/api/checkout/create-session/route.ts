@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-
-const VALID_TIERS = ['basic', 'standard', 'professional'] as const
+import { createAdminClient } from '@/lib/supabase/admin'
+import { VALID_TIERS, TIER_PRICES_USD, isValidTier, applyDiscount } from '@/lib/billing/pricing'
 
 /**
  * POST /api/checkout/create-session
@@ -16,7 +16,7 @@ const VALID_TIERS = ['basic', 'standard', 'professional'] as const
  */
 export async function POST(request: Request) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -26,11 +26,19 @@ export async function POST(request: Request) {
       )
     }
 
+    // Payment/promo tables are intentionally RLS-locked so users cannot write
+    // their own payment rows or read promo codes directly. This endpoint has
+    // already authenticated the user and computes the amount server-side, so it
+    // performs those controlled operations with the service-role client.
+    const db = createAdminClient()
+
     const body = await request.json()
-    const { packageId, promoCode, amount } = body
+    // NOTE: any client-supplied `amount` is deliberately ignored. The charge
+    // amount is derived server-side from the tier price and validated promo.
+    const { packageId, promoCode } = body
 
     // Validate input — packageId here is a subscription tier.
-    if (!packageId || amount === undefined || amount === null) {
+    if (!packageId) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -44,17 +52,15 @@ export async function POST(request: Request) {
       )
     }
 
-    if (typeof amount !== 'number' || amount <= 0) {
-      return NextResponse.json(
-        { error: 'Invalid amount' },
-        { status: 400 }
-      )
-    }
+    const basePrice = TIER_PRICES_USD[packageId as (typeof VALID_TIERS)[number]]
 
-    // Validate promo code if provided.
+    // Validate promo code if provided, and capture its discount for server-side
+    // price computation.
     let promoCodeId: string | null = null
+    let discountType: string | null = null
+    let discountValue: number | null = null
     if (promoCode) {
-      const { data: code } = await supabase
+      const { data: code } = await db
         .from('promo_codes')
         .select('id, code, discount_type, discount_value, max_uses, current_uses, valid_from, valid_until, active')
         .eq('code', promoCode.toUpperCase())
@@ -89,7 +95,12 @@ export async function POST(request: Request) {
       }
 
       promoCodeId = code.id
+      discountType = code.discount_type
+      discountValue = code.discount_value
     }
+
+    // Final charge amount is computed entirely server-side.
+    const amount = applyDiscount(basePrice, discountType, discountValue)
 
     // TODO: Replace with a real Stripe PaymentIntent when live keys exist.
     const rand = () => Math.random().toString(36).substring(2, 12)
@@ -97,12 +108,12 @@ export async function POST(request: Request) {
     const mockClientSecret = `${mockIntentId}_secret_${rand()}`
     const mockSessionId = `cs_test_${rand()}`
 
-    // Amount arrives in dollars; persist in cents.
+    // Server-computed amount in dollars; persist in cents.
     const amountCents = Math.round(amount * 100)
 
     // Create a pending payment record. package_id is null for tier
     // subscriptions (tiers are not rows in the packages catalog).
-    const { data: payment, error: paymentError } = await supabase
+    const { data: payment, error: paymentError } = await db
       .from('payments')
       .insert({
         user_id: user.id,
@@ -117,7 +128,8 @@ export async function POST(request: Request) {
         promo_code_id: promoCodeId,
         metadata: {
           promoCode: promoCode || null,
-          originalAmount: amount,
+          basePrice,
+          finalAmount: amount,
         },
       })
       .select()
