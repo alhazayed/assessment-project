@@ -1,11 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
-  eslint: {
-    // Don't fail build on ESLint errors during production builds
-    // ESLint is still run and warnings are shown
-    ignoreDuringBuilds: false,
-  },
+  // Next 16 removed `next lint` and no longer reads the `eslint` config key here;
+  // linting runs separately via the ESLint CLI (see package.json "lint" + eslint.config.mjs).
   // ── Next.js image-optimizer CVE mitigation (14.2.35, pending React 19 upgrade) ──
   // The app renders exactly one image — the local /logo.png. No remote images
   // are used anywhere. Denying remote optimization entirely neutralizes the
