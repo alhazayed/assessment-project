@@ -10,12 +10,8 @@ Sentry.init({
 
   sampleRate: 1.0,
 
-  // Server-specific integrations
-  integrations: [
-    new Sentry.Integrations.Http({
-      tracing: true,
-    }),
-  ],
+  // HTTP request tracing is a default integration in the Sentry Next.js SDK
+  // (the removed Sentry.Integrations.Http namespace API is no longer needed).
 
   beforeSend(event) {
     // Don't report health checks (they're noise)

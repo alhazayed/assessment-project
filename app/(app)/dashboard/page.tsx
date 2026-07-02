@@ -8,7 +8,7 @@ import { ClipboardList, Heart, TrendingUp, AlertTriangle, CheckCircle2, ArrowRig
 import type { Profile, AssessmentSubmission, MoodLog, AssessmentAssignment } from '@/lib/types'
 import CrisisBanner from '@/components/crisis-banner'
 
-async function getPatientDashboard(supabase: ReturnType<typeof createClient>, userId: string) {
+async function getPatientDashboard(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const [submissions, moods, assignments] = await Promise.all([
     supabase
       .from('assessment_submissions')
@@ -46,8 +46,8 @@ function severityBadge(band: string) {
 }
 
 export default async function DashboardPage() {
-  const supabase = createClient()
-  const lang = getLanguage()
+  const supabase = await createClient()
+  const lang = await getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 

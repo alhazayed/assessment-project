@@ -131,7 +131,7 @@ export async function POST(request: Request) {
     }
 
     // Reject if the caller is already authenticated — they should use the regular endpoint
-    const anonClient = createClient()
+    const anonClient = await createClient()
     const { data: { user } } = await anonClient.auth.getUser()
     if (user) {
       return NextResponse.json({ error: 'Authenticated users must use /api/submit-assessment' }, { status: 400 })

@@ -1,7 +1,28 @@
 # Next.js CVE Remediation — V Welfare Platform
 **Date:** 2026-07-02
-**Current version:** `next@14.2.35` (last release of the EOL 14.x line; React 18)
-**Status:** Interim mitigation applied in code + config. Full fix (major upgrade) documented below and scheduled.
+**Status:** ✅ **Full upgrade applied and statically validated** — `next@16.2.10` + `react@19.2.7` + `@sentry/nextjs@10` + `eslint@9`. `npm audit` now reports **0 HIGH** (was 4 HIGH). The interim image-optimizer mitigation below is retained as defence-in-depth.
+
+> **Remaining gate:** runtime QA on a staging environment (auth, checkout, PDF, admin, clinician flows). The change is static-validated only (tsc 0 errors · `next build` succeeds · 13/13 payment tests · ESLint 0 errors) because this environment has no runtime. **Do not merge to production until staging smoke passes** — the async `createClient()` refactor touches auth-critical paths.
+
+### Upgrade validation summary (2026-07-02)
+| Gate | Result |
+|---|---|
+| `npm audit` | 0 HIGH (5 moderate remain, none HIGH) |
+| `npx tsc --noEmit` | 0 errors |
+| `next build` | ✓ compiled, 107/107 pages generated |
+| payment unit tests | 13/13 pass |
+| ESLint 9 (flat config) | 0 errors |
+| next / react | 16.2.10 / 19.2.7 |
+
+### What the upgrade touched
+- **Async request APIs:** `cookies()`/`headers()` are async in Next 16. `lib/supabase/server.ts` `createClient()` and `lib/get-language.ts` `getLanguage()` are now `async`; **~77 call sites** updated to `await` (codemod + manual). Client-param helper types wrapped in `Awaited<…>`. Seven sync page/layout components made `async`.
+- **Sentry 10:** removed the deleted `Sentry.Integrations.Http` namespace (HTTP tracing is a default integration).
+- **ESLint 9:** migrated `.eslintrc.json` → `eslint.config.mjs` flat config (native `@next/eslint-plugin-next` flat exports; `next lint` removed in 16 → `lint` script now calls the ESLint CLI).
+
+---
+
+### (Historical) Interim mitigation — retained as defence-in-depth
+The pre-upgrade state was `next@14.2.35` (EOL 14.x, React 18). The notes below documented the interim posture and remain valid as layered hardening.
 
 ---
 

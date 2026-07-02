@@ -16,7 +16,7 @@ import { VALID_TIERS, TIER_PRICES_USD, isValidTier, applyDiscount } from '@/lib/
  */
 export async function POST(request: Request) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {

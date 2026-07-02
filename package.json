@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test:security": "npx tsx --test __tests__/security/*.test.ts",
     "test:phi": "npx tsx --test __tests__/security/phi.test.ts",
     "test:payments": "npx tsx --test __tests__/security/payments.test.ts",

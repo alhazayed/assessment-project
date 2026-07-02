@@ -4,8 +4,8 @@ import LanguageToggle from '@/components/language-toggle'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import Link from 'next/link'
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  const lang = getLanguage()
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+  const lang = await getLanguage()
   const isRtl = lang === 'ar'
 
   return (

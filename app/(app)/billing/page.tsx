@@ -83,8 +83,8 @@ const PAY_STATUS: Record<string, { icon: typeof CheckCircle2; color: string; bg:
 }
 
 export default async function BillingPage() {
-  const supabase = createClient()
-  const lang = getLanguage()
+  const supabase = await createClient()
+  const lang = await getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?next=/billing')
 

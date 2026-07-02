@@ -11,8 +11,8 @@ export const metadata = {
 }
 
 export default async function ADHDCheckInPage() {
-  const supabase = createClient()
-  const lang = getLanguage()
+  const supabase = await createClient()
+  const lang = await getLanguage()
   const isRtl = lang === 'ar'
 
   const { data: { user } } = await supabase.auth.getUser()

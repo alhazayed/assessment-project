@@ -10,7 +10,7 @@ async function getUser(req: NextRequest) {
     const { data: { user }, error } = await admin.auth.getUser(token)
     if (!error && user) return user
   }
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   return user ?? null
 }

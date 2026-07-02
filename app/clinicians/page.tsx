@@ -5,8 +5,8 @@ import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import LanguageToggle from '@/components/language-toggle'
 
-export default function CliniciansPage() {
-  const lang = getLanguage()
+export default async function CliniciansPage() {
+  const lang = await getLanguage()
   const isRtl = lang === 'ar'
 
   const features = isRtl ? [

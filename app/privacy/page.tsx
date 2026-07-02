@@ -12,8 +12,8 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 }
 
-export default function PrivacyPage() {
-  const lang = getLanguage()
+export default async function PrivacyPage() {
+  const lang = await getLanguage()
   const isRtl = lang === 'ar'
 
   const sections = isRtl ? [

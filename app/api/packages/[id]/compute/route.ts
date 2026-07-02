@@ -17,12 +17,10 @@ function findBand(bands: InterpretationBand[], score: number): InterpretationBan
   return bands.find(b => score >= b.min && score <= b.max) ?? bands[bands.length - 1] ?? null
 }
 
-export async function POST(
-  _req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

@@ -93,8 +93,8 @@ const PERMISSION_LABELS: Record<string, { en: string; ar: string; icon: React.El
 
 // ─── Language detection ───────────────────────────────────────────────────────
 
-function detectLang(): Lang {
-  const headersList = headers()
+async function detectLang(): Promise<Lang> {
+  const headersList = await headers()
   const acceptLanguage = headersList.get('accept-language') ?? ''
   if (acceptLanguage.toLowerCase().startsWith('en')) return 'en'
   return 'ar'
@@ -197,12 +197,13 @@ function ErrorState({ lang }: { lang: Lang }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function ConnectTokenPage({
-  params,
-}: {
-  params: { token: string }
-}) {
-  const lang = detectLang()
+export default async function ConnectTokenPage(
+  props: {
+    params: Promise<{ token: string }>
+  }
+) {
+  const params = await props.params;
+  const lang = await detectLang()
   const isRtl = lang === 'ar'
   const { token } = params
 

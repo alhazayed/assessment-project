@@ -6,8 +6,8 @@ export const metadata = {
   description: 'Identify your current ADHD regulation zone and get actionable, science-backed guidance.',
 }
 
-export default function ADHDZonesPage() {
-  const lang = getLanguage()
+export default async function ADHDZonesPage() {
+  const lang = await getLanguage()
   return (
     <div className="py-6 px-4">
       <ADHDZoneChecker lang={lang} />

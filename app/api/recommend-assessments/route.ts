@@ -121,7 +121,7 @@ export async function POST(request: Request) {
     const query = scrubPHI(text.trim())
 
     // Fetch active assessments to get real IDs and names
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: assessments } = await supabase
       .from('assessment_definitions')
       .select('id, code, name_en, name_ar')
