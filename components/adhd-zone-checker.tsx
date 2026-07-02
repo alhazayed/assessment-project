@@ -1,7 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { ArrowLeft, ArrowRight, RotateCcw, CheckCircle2, AlertTriangle, XCircle, MinusCircle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { ArrowLeft, ArrowRight, RotateCcw, CheckCircle2, AlertTriangle, XCircle, MinusCircle, Check, Loader2 } from 'lucide-react'
+
+interface CheckinHistoryItem {
+  id: string
+  zone: Zone
+  created_at: string
+}
 
 type Zone = 'green' | 'yellow' | 'red' | 'black'
 
@@ -217,17 +223,59 @@ const ZONE_OPTION_BORDER: Record<Zone, string> = {
 }
 
 export default function ADHDZoneChecker({ lang }: { lang: 'en' | 'ar' }) {
+  const isAr = lang === 'ar'
   const [step, setStep] = useState<'intro' | number | 'result'>('intro')
   const [answers, setAnswers] = useState<Record<string, Zone>>({})
   const [selected, setSelected] = useState<Zone | null>(null)
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [history, setHistory] = useState<CheckinHistoryItem[]>([])
+  const savedForRef = useRef<string | null>(null)
 
   const currentQ = typeof step === 'number' ? QUESTIONS[step] : null
   const resultZone = step === 'result' ? determineZone(answers) : null
   const zoneMeta = resultZone ? ZONE_META[resultZone] : null
 
+  // Load recent check-in history on mount.
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/adhd-zones/checkin')
+      .then((r) => (r.ok ? r.json() : { checkins: [] }))
+      .then((d) => { if (!cancelled) setHistory(d.checkins || []) })
+      .catch(() => { /* history is non-critical */ })
+    return () => { cancelled = true }
+  }, [])
+
+  // Persist the result exactly once when the user reaches the result screen.
+  useEffect(() => {
+    if (step !== 'result' || !resultZone) return
+    // Guard against double-save for the same answer set.
+    const fingerprint = JSON.stringify(answers)
+    if (savedForRef.current === fingerprint) return
+    savedForRef.current = fingerprint
+
+    setSaveState('saving')
+    fetch('/api/adhd-zones/checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zone: resultZone, answers }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error('save failed')
+        return r.json()
+      })
+      .then((d) => {
+        setSaveState('saved')
+        if (d.checkin) {
+          setHistory((prev) => [d.checkin as CheckinHistoryItem, ...prev].slice(0, 14))
+        }
+      })
+      .catch(() => setSaveState('error'))
+  }, [step, resultZone, answers])
+
   function handleStart() {
     setAnswers({})
     setSelected(null)
+    setSaveState('idle')
     setStep(0)
   }
 
@@ -256,6 +304,7 @@ export default function ADHDZoneChecker({ lang }: { lang: 'en' | 'ar' }) {
   function handleRetake() {
     setAnswers({})
     setSelected(null)
+    setSaveState('idle')
     setStep('intro')
   }
 
@@ -299,9 +348,36 @@ export default function ADHDZoneChecker({ lang }: { lang: 'en' | 'ar' }) {
           onClick={handleStart}
           className="btn-primary w-full py-3 text-base gap-2"
         >
-          Check my zone now
+          {isAr ? 'تحقق من منطقتي الآن' : 'Check my zone now'}
           <ArrowRight className="w-4 h-4" />
         </button>
+
+        {/* Recent check-in history */}
+        {history.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              {isAr ? 'عمليات التحقق الأخيرة' : 'Your recent check-ins'}
+            </h2>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {history.slice(0, 14).map((h) => (
+                <div
+                  key={h.id}
+                  className="flex flex-col items-center gap-1"
+                  title={`${ZONE_META[h.zone].label} · ${new Date(h.created_at).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')}`}
+                >
+                  <span className={`w-7 h-7 rounded-md flex items-center justify-center text-sm ${ZONE_BADGE_CLASSES[h.zone]}`}>
+                    {ZONE_META[h.zone].emoji}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              {isAr
+                ? 'يتم حفظ كل عملية تحقق تلقائياً لتتبع نمط تنظيمك.'
+                : 'Each check-in is saved automatically so you can track your regulation pattern.'}
+            </p>
+          </div>
+        )}
       </div>
     )
   }
@@ -411,6 +487,27 @@ export default function ADHDZoneChecker({ lang }: { lang: 'en' | 'ar' }) {
               {zoneMeta.description}
             </p>
           </div>
+        </div>
+
+        {/* Saved-to-history indicator */}
+        <div className="mb-6 -mt-2 flex items-center justify-center">
+          {saveState === 'saving' && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-gray-400">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              {isAr ? 'جارٍ الحفظ في سجلك...' : 'Saving to your history…'}
+            </span>
+          )}
+          {saveState === 'saved' && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-600">
+              <Check className="w-3.5 h-3.5" />
+              {isAr ? 'تم الحفظ في سجلك' : 'Saved to your history'}
+            </span>
+          )}
+          {saveState === 'error' && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-gray-400">
+              {isAr ? 'تعذّر حفظ هذا التحقق' : 'Could not save this check-in'}
+            </span>
+          )}
         </div>
 
         {/* Domain breakdown */}

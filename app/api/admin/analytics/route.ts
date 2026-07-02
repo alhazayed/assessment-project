@@ -10,7 +10,8 @@ export async function GET() {
     const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
 
     const [recent30Res, defsRes, allUsersRes, recentUsersRes, prevPeriodRes,
-      allTimeTotalsRes, severityDistRes, assessStatsRes] = await Promise.all([
+      allTimeTotalsRes, severityDistRes, assessStatsRes,
+      totalCountRes, highRiskCountRes] = await Promise.all([
       // Last 30 days for daily chart only — small window
       db.from('assessment_submissions')
         .select('id, definition_id, high_risk_flag, submitted_at')
@@ -36,6 +37,9 @@ export async function GET() {
       db.from('assessment_submissions')
         .select('definition_id, total_score, high_risk_flag, severity_band')
         .limit(5000),
+      // True totals (not derived from the capped score sample).
+      db.from('assessment_submissions').select('id', { count: 'exact', head: true }),
+      db.from('assessment_submissions').select('id', { count: 'exact', head: true }).eq('high_risk_flag', true),
     ])
 
     const subs30 = recent30Res.data || []
@@ -130,7 +134,9 @@ export async function GET() {
     // Overall stats from capped sample
     const allScores = allTimeSubs.map(s => s.total_score ?? 0)
     const n = allScores.length
-    const highRiskTotal = allTimeSubs.filter(s => s.high_risk_flag).length
+    // True counts across all submissions, independent of the capped score sample.
+    const totalSubmissions = totalCountRes.count ?? n
+    const highRiskTotal = highRiskCountRes.count ?? allTimeSubs.filter(s => s.high_risk_flag).length
     const sorted = [...allScores].sort((a, b) => a - b)
     const avg = n ? allScores.reduce((s, v) => s + v, 0) / n : 0
     const median = n === 0 ? 0 : n % 2 === 0 ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2 : sorted[Math.floor(n / 2)]
@@ -147,9 +153,9 @@ export async function GET() {
       stddev: +Math.sqrt(variance).toFixed(2),
       min: n ? sorted[0] : 0,
       max: n ? sorted[n - 1] : 0,
-      total: allTimeTotalsRes.count ?? n,
+      total: totalSubmissions,
       highRisk: highRiskTotal,
-      highRiskPct: n ? +((highRiskTotal / n) * 100).toFixed(1) : 0,
+      highRiskPct: totalSubmissions ? +((highRiskTotal / totalSubmissions) * 100).toFixed(1) : 0,
       totalUsers: allUsers.length,
       newUsersThisMonth: recentUsers.length,
       last30DaySubmissions: currentPeriodCount,
