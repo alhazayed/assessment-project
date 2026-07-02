@@ -78,7 +78,12 @@ An upgrade to `next@15.5.20 + react@19` was **attempted and reverted** in a cont
 Next 15 makes `cookies()` and `headers()` **async** (return Promises). `tsc` after the trial flagged the synchronous call sites: `lib/supabase/server.ts`, `lib/admin-auth.ts`, `lib/get-language.ts`, `app/layout.tsx`, `app/api/admin/login/route.ts`, `app/connect/[token]/page.tsx`. The critical one is `lib/supabase/server.ts` → `createClient()`, which is called **synchronously in ~50+ route handlers and server components**. Converting it to `await createClient()` forces every caller (and their enclosing functions) async — a whole-codebase, **auth-critical** refactor that must be runtime-validated, not just type-checked.
 
 **Blocker 2 — version target + Sentry.**
-`npm audit` still reported HIGH for `next` at 15.5.20, and `@sentry/nextjs` requires a coordinated major bump (→`10.63.0`). Confirm whether the clean-audit target is 15.5.x or `16.2.10` (`latest`) before committing; 16.x adds breaking changes beyond the async-cookies refactor.
+`npm audit` still reported HIGH for `next` at 15.5.20; **npm audit's own `fixAvailable` names `next@16.2.10` (semver-major)** as the clean-audit target. `@sentry/nextjs` requires a coordinated major bump (→`10.x`). So the 0-HIGH target is confirmed 16.2.10, not 15.5.x.
+
+**Blocker 3 — ESLint 9 / flat-config (discovered 2026-07-02, second trial).**
+`eslint-config-next@16.2.10` has a hard peer requirement of **`eslint@>=9`** (project is on `eslint@8`). The install aborts with ERESOLVE otherwise. ESLint 9 defaults to **flat config** (`eslint.config.js`), so `.eslintrc.json` must be migrated. This adds a lint-toolchain migration on top of the runtime refactor. (The failed install was confirmed to leave `package.json`, the lockfile, and `node_modules` unchanged — the branch's validated 14.2.35 state is intact.)
+
+**Confirmed full breaking-change chain for the sprint:** `next@16.2.10` + `react@19`/`react-dom@19` + `@sentry/nextjs@10` + `eslint@9` (flat-config migration) + the 58-call-site async `cookies()`/`createClient()` refactor. This is why it is a staged, staging-QA-gated sprint and not an in-session change: the async refactor is auth-critical and only static validation (tsc/build/lint) is possible without a runtime.
 
 ### Runbook (scheduled sprint — ~1–2 engineer-days incl. QA)
 1. Branch from `main`. `npm i next@<confirmed-target> eslint-config-next@<same> react@19 react-dom@19 @types/react@19 @types/react-dom@19 @sentry/nextjs@10`.
