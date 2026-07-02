@@ -47,7 +47,7 @@ create table assessment_responses (
 );
 
 -- ── Function under test — mirrored verbatim from the fix migration ────────────
---   supabase/migrations/20260702180000_fix_submit_assessment_atomic_service_role.sql
+--   supabase/migrations/20260702193104_fix_submit_assessment_atomic_service_role.sql
 CREATE OR REPLACE FUNCTION public.submit_assessment_atomic(
   p_patient_id uuid, p_definition_id uuid, p_total_score integer,
   p_severity_band text, p_high_risk_flag boolean, p_is_self_initiated boolean,
