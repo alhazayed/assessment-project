@@ -76,7 +76,12 @@ export async function GET(req: Request) {
   ]
 
   const escape = (v: unknown): string => {
-    const s = v === null || v === undefined ? '' : String(v)
+    let s = v === null || v === undefined ? '' : String(v)
+    // Guard against CSV formula injection: a leading =, +, -, @, |, %, or control
+    // char is treated as a formula by spreadsheet apps. Prefix with an apostrophe
+    // so the cell is imported as text. Applied before quoting so values that also
+    // contain a comma/quote still keep the guard.
+    if (/^[=+\-@|%\t\r]/.test(s)) s = `'${s}`
     if (s.includes(',') || s.includes('"') || s.includes('\n')) {
       return `"${s.replace(/"/g, '""')}"`
     }

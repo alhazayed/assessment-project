@@ -38,9 +38,13 @@ function computeStats(values: number[]) {
 
 function rowsToCsv(headers: string[], rows: (string | number | boolean)[][]): string {
   const esc = (v: any) => {
-    const s = String(v ?? '')
+    // Apply the formula-injection guard FIRST so a value that also needs quoting
+    // (e.g. "=cmd(),x") still gets the leading apostrophe. Otherwise the
+    // quote-wrap branch returned "=cmd(),x" and Excel parses the leading = as a
+    // formula once it strips the CSV quotes on import.
+    const s = csvSafe(String(v ?? ''))
     if (s.includes(',') || s.includes('"') || s.includes('\n')) return `"${s.replace(/"/g, '""')}"`
-    return csvSafe(s)
+    return s
   }
   return [headers.map(esc).join(','), ...rows.map(r => r.map(esc).join(','))].join('\n')
 }
