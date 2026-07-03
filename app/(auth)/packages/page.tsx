@@ -125,11 +125,15 @@ function PackageCard({
   const desc = lang === 'ar' ? pkg.descAr : pkg.descEn
   const features = pkg.features[lang]
 
+  // Emphasise the popular card with ring + shadow (and a small upward lift on
+  // wide screens) instead of `scale-105`. Scaling a grid item grows its rendered
+  // box into its neighbours, which cropped adjacent card titles, prices, and
+  // buttons — especially inside the narrower auth layout panel.
   return (
     <div
       className={`relative flex flex-col h-full rounded-2xl border-2 transition-all ${
         pkg.popular
-          ? 'border-[#1D6296] shadow-lg scale-105'
+          ? 'border-[#1D6296] shadow-xl ring-2 ring-[#1D6296] lg:-translate-y-2'
           : 'border-[var(--border)]'
       }`}
       style={{
@@ -284,7 +288,7 @@ export default function PackagesPage() {
 
         {/* Pricing Cards */}
         <div
-          className="grid md:grid-cols-3 gap-8 mb-16"
+          className="grid gap-8 mb-16 sm:grid-cols-2 lg:grid-cols-3 overflow-visible"
           style={{ gridAutoRows: 'max-content' }}
         >
           {PACKAGES.map((pkg) => (
