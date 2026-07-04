@@ -7,7 +7,7 @@ import DarkModeToggle from '@/components/dark-mode-toggle'
 import LanguageToggle from '@/components/language-toggle'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | V Welfare',
+  title: 'Privacy Policy',
   description: 'GDPR-compliant privacy policy for V Welfare. Learn how we collect, use, store, and protect your personal and mental health data. Your privacy and security are our priority.',
   robots: { index: true, follow: true },
 }

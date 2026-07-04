@@ -32,6 +32,7 @@ export default function MoodContent() {
   const [saved, setSaved]       = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving]     = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<{ sleep_hours?: string; activity_minutes?: string }>({})
   const [form, setForm] = useState({
     mood_score:        5,
     energy_score:      5,
@@ -57,10 +58,41 @@ export default function MoodContent() {
 
   useEffect(() => { loadLogs() }, [loadLogs])
 
+  // App-level validation, independent of the input's native min/max — those
+  // browser constraints alone are not a reliable guard (inconsistent across
+  // browsers/devices, easy to bypass programmatically) and there was no
+  // fallback if they didn't fire, so an invalid value (e.g. negative sleep
+  // hours) could reach the database with no check at any layer.
+  function validateForm(): boolean {
+    const errors: { sleep_hours?: string; activity_minutes?: string } = {}
+
+    if (form.sleep_hours !== '') {
+      const hours = parseFloat(form.sleep_hours)
+      if (isNaN(hours) || hours < 0 || hours > 24) {
+        errors.sleep_hours = lang === 'ar'
+          ? 'يجب أن تكون ساعات النوم بين 0 و24'
+          : 'Sleep hours must be between 0 and 24'
+      }
+    }
+
+    if (form.activity_minutes !== '') {
+      const minutes = parseInt(form.activity_minutes)
+      if (isNaN(minutes) || minutes < 0 || minutes > 600) {
+        errors.activity_minutes = lang === 'ar'
+          ? 'يجب أن تكون دقائق النشاط بين 0 و600'
+          : 'Activity minutes must be between 0 and 600'
+      }
+    }
+
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setSaving(true)
     setSaveError(null)
+    if (!validateForm()) return
+    setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setSaving(false); return }
@@ -120,7 +152,7 @@ export default function MoodContent() {
           </h1>
           <p style={{ color: 'var(--text-secondary)' }}>{t('mood.subtitle', lang)}</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn-accent gap-2">
+        <button onClick={() => { setShowForm(!showForm); setFieldErrors({}); setSaveError(null) }} className="btn-accent gap-2">
           <Plus className="w-4 h-4" />
           {todayLog ? t('mood.update', lang) : t('mood.log', lang)}
         </button>
@@ -174,21 +206,37 @@ export default function MoodContent() {
                 <label className="label">{t('mood.sleep', lang)}</label>
                 <input
                   type="number" min="0" max="24" step="0.5"
+                  aria-invalid={!!fieldErrors.sleep_hours}
+                  aria-describedby={fieldErrors.sleep_hours ? 'sleep-hours-error' : undefined}
                   className="input"
                   value={form.sleep_hours}
-                  onChange={e => setForm(prev => ({ ...prev, sleep_hours: e.target.value }))}
+                  onChange={e => {
+                    setForm(prev => ({ ...prev, sleep_hours: e.target.value }))
+                    if (fieldErrors.sleep_hours) setFieldErrors(prev => ({ ...prev, sleep_hours: undefined }))
+                  }}
                   placeholder={t('mood.sleep.ph', lang)}
                 />
+                {fieldErrors.sleep_hours && (
+                  <p id="sleep-hours-error" className="text-[12px] text-red-600 mt-1">{fieldErrors.sleep_hours}</p>
+                )}
               </div>
               <div>
                 <label className="label">{t('mood.activity', lang)}</label>
                 <input
                   type="number" min="0" max="600"
+                  aria-invalid={!!fieldErrors.activity_minutes}
+                  aria-describedby={fieldErrors.activity_minutes ? 'activity-minutes-error' : undefined}
                   className="input"
                   value={form.activity_minutes}
-                  onChange={e => setForm(prev => ({ ...prev, activity_minutes: e.target.value }))}
+                  onChange={e => {
+                    setForm(prev => ({ ...prev, activity_minutes: e.target.value }))
+                    if (fieldErrors.activity_minutes) setFieldErrors(prev => ({ ...prev, activity_minutes: undefined }))
+                  }}
                   placeholder={t('mood.activity.ph', lang)}
                 />
+                {fieldErrors.activity_minutes && (
+                  <p id="activity-minutes-error" className="text-[12px] text-red-600 mt-1">{fieldErrors.activity_minutes}</p>
+                )}
               </div>
             </div>
 

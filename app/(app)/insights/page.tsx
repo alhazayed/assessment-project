@@ -1,11 +1,20 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import { Flame, TrendingUp, Calendar, BarChart2 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
-import MentalHealthRadar from '@/components/mental-health-radar'
+
+// recharts (used inside MentalHealthRadar) is a heavy dependency (~100KB+ with
+// its d3 internals) that was previously bundled into every visit to this page
+// even before any assessment data loaded. Split it into its own chunk, loaded
+// only once there's data to actually render a chart.
+const MentalHealthRadar = dynamic(() => import('@/components/mental-health-radar'), {
+  ssr: false,
+  loading: () => <div className="card p-6 h-[320px] animate-pulse" style={{ backgroundColor: 'var(--surface-alt)' }} />,
+})
 
 type MoodLog = {
   log_date: string

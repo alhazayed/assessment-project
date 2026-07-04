@@ -1,17 +1,26 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import {
   ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle,
-  BookOpen, FlaskConical, ArrowRight, Brain,
+  BookOpen, FlaskConical, ArrowRight, Brain, Loader2, CloudOff, Cloud,
 } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentItem, ResponseOption } from '@/lib/types'
 import { getAssessmentContent, getLocalizedBandContent, getLocalizedAssessmentMeta, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
 import { ASSESSMENT_CONTENT_AR } from '@/lib/assessment-content-ar'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import CrisisBanner from '@/components/crisis-banner'
+
+// @react-pdf/renderer is a heavy dependency — only load it once the user has
+// an actual result to export, not on every visit to the assessment-taking flow.
+const AssessmentPdfDownloadButton = dynamic(
+  () => import('./pdf-download-button').then(m => m.AssessmentPdfDownloadButton),
+  { ssr: false, loading: () => <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px]" style={{ color: 'var(--text-muted)' }}><Loader2 className="w-4 h-4 animate-spin" /></span> }
+)
 
 function severityColor(band: string) {
   const b = band.toLowerCase()
@@ -50,13 +59,36 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [result, setResult] = useState<{ score: number; band_en: string; band_ar: string; high_risk: boolean } | null>(null)
+  const [completedOn, setCompletedOn] = useState<string>('')
+  const [patientNames, setPatientNames] = useState<{ en: string; ar: string | null }>({ en: '', ar: null })
   const [domainScores, setDomainScores] = useState<Record<string, number> | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [hasSavedProgress, setHasSavedProgress] = useState(false)
+  const [pendingResume, setPendingResume] = useState<{ answers: Record<string, { value: number; label_en: string; label_ar: string }>; currentIndex: number } | null>(null)
+  const [syncState, setSyncState] = useState<'idle' | 'saving' | 'saved' | 'offline' | 'error'>('idle')
+  const [isOnline, setIsOnline] = useState(true)
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isFirstAnswerEffect = useRef(true)
 
   const storageKey = `vw_assessment_${id}_${userId}`
 
+  // Track network status so we can show an honest "Offline — saved locally"
+  // state instead of silently failing the server sync.
+  useEffect(() => {
+    setIsOnline(navigator.onLine)
+    const goOnline = () => setIsOnline(true)
+    const goOffline = () => setIsOnline(false)
+    window.addEventListener('online', goOnline)
+    window.addEventListener('offline', goOffline)
+    return () => {
+      window.removeEventListener('online', goOnline)
+      window.removeEventListener('offline', goOffline)
+    }
+  }, [])
+
+  // Local-first backup: write instantly on every change so a crashed tab or
+  // closed browser never loses the most recent answer, even offline.
   useEffect(() => {
     if (Object.keys(answers).length === 0) return
     try {
@@ -64,44 +96,87 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
     } catch {}
   }, [answers, currentIndex, storageKey])
 
+  // Cross-device backup: debounce a sync to Supabase so progress survives
+  // clearing browser storage or switching devices, and reflect real state
+  // (Saving.../Saved/Offline/Failed) instead of a silent write.
+  useEffect(() => {
+    if (Object.keys(answers).length === 0) return
+    if (isFirstAnswerEffect.current) { isFirstAnswerEffect.current = false; return }
+
+    if (!isOnline) {
+      setSyncState('offline')
+      return
+    }
+
+    if (syncTimer.current) clearTimeout(syncTimer.current)
+    setSyncState('saving')
+    syncTimer.current = setTimeout(async () => {
+      const { error: syncError } = await supabase
+        .from('assessment_drafts')
+        .upsert(
+          { patient_id: userId, definition_id: id, answers, current_index: currentIndex },
+          { onConflict: 'patient_id,definition_id' }
+        )
+      setSyncState(syncError ? 'error' : 'saved')
+    }, 800)
+
+    return () => { if (syncTimer.current) clearTimeout(syncTimer.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers, currentIndex, isOnline])
+
   useEffect(() => {
     async function load() {
-      const [defRes, itemsRes] = await Promise.all([
+      const [defRes, itemsRes, draftRes, profileRes] = await Promise.all([
         supabase.from('assessment_definitions').select('*').eq('id', id).single(),
         supabase.from('assessment_items').select('*').eq('definition_id', id).order('item_number'),
+        supabase.from('assessment_drafts').select('answers, current_index, updated_at').eq('patient_id', userId).eq('definition_id', id).maybeSingle(),
+        supabase.from('profiles').select('full_name_en, full_name_ar').eq('id', userId).single(),
       ])
       if (defRes.error || !defRes.data) { setLoadError(true); return }
       if (defRes.data) setDefinition(defRes.data as AssessmentDefinition)
       if (itemsRes.data) setItems(itemsRes.data as AssessmentItem[])
+      if (profileRes.data) {
+        setPatientNames({ en: profileRes.data.full_name_en, ar: profileRes.data.full_name_ar })
+      }
 
-      try {
-        const saved = localStorage.getItem(storageKey)
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (parsed.answers && Object.keys(parsed.answers).length > 0) {
-            setHasSavedProgress(true)
+      // Prefer the server draft (survives cleared storage / other devices);
+      // fall back to localStorage if the server has nothing or is unreachable.
+      let resumable: { answers: Record<string, { value: number; label_en: string; label_ar: string }>; currentIndex: number } | null = null
+      const serverAnswers = draftRes.data?.answers as Record<string, { value: number; label_en: string; label_ar: string }> | undefined
+      if (serverAnswers && Object.keys(serverAnswers).length > 0) {
+        resumable = { answers: serverAnswers, currentIndex: draftRes.data?.current_index ?? 0 }
+      } else {
+        try {
+          const saved = localStorage.getItem(storageKey)
+          if (saved) {
+            const parsed = JSON.parse(saved)
+            if (parsed.answers && Object.keys(parsed.answers).length > 0) {
+              resumable = { answers: parsed.answers, currentIndex: parsed.currentIndex ?? 0 }
+            }
           }
-        }
-      } catch {}
+        } catch {}
+      }
+      if (resumable) {
+        setPendingResume(resumable)
+        setHasSavedProgress(true)
+      }
     }
     load()
-  }, [id, storageKey, supabase])
+  }, [id, userId, storageKey, supabase])
 
   function resumeSavedProgress() {
-    try {
-      const saved = localStorage.getItem(storageKey)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        setAnswers(parsed.answers ?? {})
-        setCurrentIndex(parsed.currentIndex ?? 0)
-      }
-    } catch {}
+    if (pendingResume) {
+      setAnswers(pendingResume.answers)
+      setCurrentIndex(pendingResume.currentIndex)
+    }
     setHasSavedProgress(false)
   }
 
-  function discardSavedProgress() {
+  async function discardSavedProgress() {
     try { localStorage.removeItem(storageKey) } catch {}
+    await supabase.from('assessment_drafts').delete().eq('patient_id', userId).eq('definition_id', id)
     setHasSavedProgress(false)
+    setPendingResume(null)
   }
 
   async function loadRelated(code: string) {
@@ -147,7 +222,9 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
 
     const data = await res.json()
     try { localStorage.removeItem(storageKey) } catch {}
+    await supabase.from('assessment_drafts').delete().eq('patient_id', userId).eq('definition_id', definition.id)
     setResult({ score: data.score, band_en: data.band_en, band_ar: data.band_ar, high_risk: data.high_risk })
+    setCompletedOn(new Date().toLocaleDateString(lang === 'ar' ? 'ar' : 'en', { year: 'numeric', month: 'long', day: 'numeric' }))
     setSubmitted(true)
     setSubmitting(false)
     await loadRelated(definition.code)
@@ -220,9 +297,34 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
             </div>
           )}
 
+          {/* Same crisis-resources banner shown on the dashboard — a patient
+              who just received a high-risk result should see hotline numbers
+              immediately, not only later if they happen to visit the dashboard. */}
+          {isHighRisk && <div className="mt-4"><CrisisBanner lang={lang} /></div>}
+
           <p className="mt-4 text-[13.5px] text-green-600 flex items-center justify-center gap-1.5">
             <CheckCircle2 className="w-4 h-4" /> {t('assessment.result.saved', lang)}
           </p>
+
+          {patientNames.en && (
+            <div className="mt-4 flex justify-center">
+              <AssessmentPdfDownloadButton
+                lang={lang as 'en' | 'ar'}
+                patientName={(lang === 'ar' && patientNames.ar) ? patientNames.ar : patientNames.en}
+                assessmentName={defName}
+                assessmentCode={definition.code}
+                completedOn={completedOn}
+                score={result.score}
+                band={displayBand}
+                highRisk={isHighRisk}
+                explanation={bandContent?.explanation ?? ''}
+                whatThisMeans={bandContent?.whatThisMeans ?? []}
+                recommendations={bandContent?.recommendations ?? []}
+                labelDownload={t('assessment.result.download_pdf', lang)}
+                labelGenerating={t('assessment.result.generating_pdf', lang)}
+              />
+            </div>
+          )}
         </div>
 
         {definition.code === 'IPIP120' && domainScores && (
@@ -391,6 +493,14 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
         <div className="progress-track">
           <div className="progress-fill transition-all duration-300" style={{ width: `${progress}%`, backgroundColor: 'var(--vw-blue)' }} />
         </div>
+        {Object.keys(answers).length > 0 && (
+          <p className="mt-1.5 text-[11.5px] flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }} role="status" aria-live="polite">
+            {syncState === 'saving' && (<><Loader2 className="w-3 h-3 animate-spin" /> {lang === 'ar' ? 'جارٍ الحفظ...' : 'Saving...'}</>)}
+            {syncState === 'saved' && (<><Cloud className="w-3 h-3 text-green-600" /> {lang === 'ar' ? 'تم الحفظ' : 'Saved'}</>)}
+            {syncState === 'offline' && (<><CloudOff className="w-3 h-3 text-orange-500" /> {lang === 'ar' ? 'غير متصل — تم الحفظ محلياً' : 'Offline — saved locally'}</>)}
+            {syncState === 'error' && (<><CloudOff className="w-3 h-3 text-red-500" /> {lang === 'ar' ? 'تعذّر الحفظ عبر الإنترنت — محفوظ محلياً' : 'Couldn’t sync online — saved locally'}</>)}
+          </p>
+        )}
       </div>
 
       {hasSavedProgress && (
