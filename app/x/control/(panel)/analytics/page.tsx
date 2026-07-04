@@ -1,10 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts'
+import dynamic from 'next/dynamic'
 import {
   Download, TrendingUp, TrendingDown, AlertTriangle, Users, Brain,
   ChevronUp, ChevronDown, Minus, BarChart3, Globe, Lightbulb,
@@ -12,6 +9,12 @@ import {
 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+
+const chartLoading = (h: number) => () => <div className="rounded-xl animate-pulse" style={{ backgroundColor: 'var(--surface-alt)', height: h }} />
+const DailySubmissionsChart = dynamic(() => import('./analytics-charts').then(m => m.DailySubmissionsChart), { ssr: false, loading: chartLoading(200) })
+const UserGrowthChart = dynamic(() => import('./analytics-charts').then(m => m.UserGrowthChart), { ssr: false, loading: chartLoading(180) })
+const TrendVolumeChart = dynamic(() => import('./analytics-charts').then(m => m.TrendVolumeChart), { ssr: false, loading: chartLoading(200) })
+const TrendMeanScoreChart = dynamic(() => import('./analytics-charts').then(m => m.TrendMeanScoreChart), { ssr: false, loading: chartLoading(180) })
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -88,18 +91,6 @@ function severityBadge(band: string): string {
   return 'badge-neutral'
 }
 function fmt(n: number | null | undefined) { return n == null ? '—' : n.toLocaleString() }
-
-function ChartTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="card px-3 py-2 text-xs space-y-1 shadow-card-md min-w-[120px]">
-      <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</p>
-      {payload.map((p: any) => (
-        <p key={p.name} style={{ color: p.color }}>{p.name}: <b>{fmt(p.value)}</b></p>
-      ))}
-    </div>
-  )
-}
 
 function LoadingSkeleton() {
   return (
@@ -302,16 +293,7 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 card p-6">
             <h2 className="text-[13.5px] font-bold mb-5" style={{ color: 'var(--text-primary)' }}>{isAr ? 'الاتجاهات اليومية (30 يوماً)' : 'Daily Submission Trends (30 days)'}</h2>
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={dailySubmissions} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 9, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} interval={4} />
-                <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="submissions" name={isAr ? 'التقييمات' : 'Submissions'} stroke="#1D6296" fill="#EAF2F9" strokeWidth={1.5} dot={false} />
-                <Area type="monotone" dataKey="highRisk" name={isAr ? 'مخاطر عالية' : 'High Risk'} stroke="#ef4444" fill="#FEF2F2" strokeWidth={1.5} dot={false} />
-              </AreaChart>
-            </ResponsiveContainer>
+            <DailySubmissionsChart dailySubmissions={dailySubmissions} isAr={isAr} />
           </div>
 
           <div className="card p-6">
@@ -402,15 +384,7 @@ export default function AnalyticsPage() {
 
           <div className="card p-6">
             <h2 className="text-[13.5px] font-bold mb-5" style={{ color: 'var(--text-primary)' }}>{isAr ? 'نمو المستخدمين (30 يوماً)' : 'User Growth (30 days)'}</h2>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={userGrowth} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 9, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} interval={4} />
-                <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="count" name={isAr ? 'مستخدمون جدد' : 'New Users'} fill="#F3650A" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <UserGrowthChart userGrowth={userGrowth} isAr={isAr} />
           </div>
         </div>
       </div>
@@ -727,29 +701,12 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 gap-5">
           <div className="card p-6">
             <h2 className="text-[13.5px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>{isAr ? 'عدد التقييمات عبر الزمن' : 'Assessment Volume Over Time'}</h2>
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 9, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} allowDecimals={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="count" name={isAr ? 'التقييمات' : 'Assessments'} stroke="#1D6296" fill="#EAF2F9" strokeWidth={1.5} dot={false} />
-                <Area type="monotone" dataKey="highRisk" name={isAr ? 'مخاطر عالية' : 'High Risk'} stroke="#ef4444" fill="#FEF2F2" strokeWidth={1.5} dot={false} />
-              </AreaChart>
-            </ResponsiveContainer>
+            <TrendVolumeChart data={data} isAr={isAr} />
           </div>
 
           <div className="card p-6">
             <h2 className="text-[13.5px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>{isAr ? 'متوسط الدرجات عبر الزمن' : 'Mean Score Over Time'}</h2>
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 9, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Line type="monotone" dataKey="mean" name={isAr ? 'متوسط الدرجة' : 'Mean Score'} stroke="#F3650A" strokeWidth={2} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <TrendMeanScoreChart data={data} isAr={isAr} />
           </div>
         </div>
 
