@@ -486,6 +486,8 @@ const dict = {
 
     // Assessment result extras
     'assessment.result.saved': 'Results saved to your account',
+    'assessment.result.download_pdf': 'Download PDF Report',
+    'assessment.result.generating_pdf': 'Generating...',
     'assessment.unanswered': 'question(s) still need an answer',
     'assessment.result.clinician_note': 'Only a qualified clinician can provide a diagnosis.',
     'assessment.result.promo.title': 'Your results aren\'t saved yet',
@@ -1338,6 +1340,8 @@ const dict = {
 
     // Assessment result extras
     'assessment.result.saved': 'تم حفظ النتائج في حسابك',
+    'assessment.result.download_pdf': 'تنزيل تقرير PDF',
+    'assessment.result.generating_pdf': 'جارٍ الإنشاء...',
     'assessment.unanswered': 'سؤال (أسئلة) لم تتم الإجابة عليها',
     'assessment.result.clinician_note': 'لا يستطيع تقديم التشخيص إلا اختصاصي مؤهل.',
     'assessment.result.promo.title': 'نتائجك لم تُحفظ بعد',

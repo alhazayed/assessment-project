@@ -187,7 +187,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ── Services ────────────────────────────────────────────────────── */}
-      <section id="services" className="py-20 px-6" style={{ backgroundColor: 'var(--surface-alt)' }}>
+      <section id="services" className="py-20 px-6 scroll-mt-16" style={{ backgroundColor: 'var(--surface-alt)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-extrabold mb-3" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
@@ -216,7 +216,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ── Assessments ─────────────────────────────────────────────────── */}
-      <section id="assessments" className="py-20 px-6">
+      <section id="assessments" className="py-20 px-6 scroll-mt-16">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-extrabold mb-3" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
@@ -284,7 +284,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ── About ───────────────────────────────────────────────────────── */}
-      <section id="about" className="py-20 px-6">
+      <section id="about" className="py-20 px-6 scroll-mt-16">
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>

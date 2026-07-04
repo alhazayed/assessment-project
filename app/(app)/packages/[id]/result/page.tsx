@@ -5,7 +5,7 @@ import { t } from '@/lib/i18n'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Lightbulb, ShieldAlert } from 'lucide-react'
-import { PdfDownloadButton } from '../pdf-download-button'
+import { PdfDownloadButtonLazy as PdfDownloadButton } from '../pdf-download-button-lazy'
 import type { InterpretationBand, OutputDimension, PackageResult } from '@/lib/types'
 
 

@@ -1,14 +1,22 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import {
-  AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
-} from 'recharts'
+import dynamic from 'next/dynamic'
 import {
   DollarSign, CreditCard, TrendingUp, Percent, RefreshCw, Tag, Brain, Users,
 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
+
+// recharts is a heavy dependency — split into its own chunk instead of
+// bundling it eagerly with this page.
+const RevenueTrendChart = dynamic(() => import('./revenue-charts').then(m => m.RevenueTrendChart), {
+  ssr: false,
+  loading: () => <div className="h-[260px] rounded-xl animate-pulse" style={{ backgroundColor: 'var(--surface-alt)' }} />,
+})
+const RevenueByTierChart = dynamic(() => import('./revenue-charts').then(m => m.RevenueByTierChart), {
+  ssr: false,
+  loading: () => <div className="h-[200px] rounded-xl animate-pulse" style={{ backgroundColor: 'var(--surface-alt)' }} />,
+})
 
 interface RevenueData {
   headline: {
@@ -173,24 +181,7 @@ export default function RevenuePage() {
         <p className="text-[12.5px] mb-4" style={{ color: 'var(--text-muted)' }}>
           {tr('Daily successful payment volume (USD)', 'حجم المدفوعات الناجحة اليومية (دولار)')}
         </p>
-        <ResponsiveContainer width="100%" height={260}>
-          <AreaChart data={data.dailyTrend.map((d) => ({ ...d, revenue: d.revenueCents / 100 }))}>
-            <defs>
-              <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#1D6296" stopOpacity={0.35} />
-                <stop offset="95%" stopColor="#1D6296" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" vertical={false} />
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} interval={4} />
-            <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-            <Tooltip
-              formatter={(v: number) => [fmtUSD(v), tr('Revenue', 'الإيراد')]}
-              contentStyle={{ fontSize: 12, borderRadius: 8 }}
-            />
-            <Area type="monotone" dataKey="revenue" stroke="#1D6296" strokeWidth={2} fill="url(#revGrad)" />
-          </AreaChart>
-        </ResponsiveContainer>
+        <RevenueTrendChart dailyTrend={data.dailyTrend} revenueLabel={tr('Revenue', 'الإيراد')} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -205,19 +196,7 @@ export default function RevenuePage() {
             </p>
           ) : (
             <>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={data.revenueByTier}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" vertical={false} />
-                  <XAxis dataKey="tier" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-                  <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-                  <Tooltip formatter={(v: number) => [fmtUSD(v), tr('Revenue', 'الإيراد')]} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                  <Bar dataKey="revenueUSD" radius={[6, 6, 0, 0]}>
-                    {data.revenueByTier.map((entry) => (
-                      <Cell key={entry.tier} fill={TIER_COLORS[entry.tier] || TIER_COLORS.other} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <RevenueByTierChart revenueByTier={data.revenueByTier} revenueLabel={tr('Revenue', 'الإيراد')} />
               <div className="mt-4 space-y-2">
                 {data.revenueByTier.map((tier) => (
                   <div key={tier.tier} className="flex items-center justify-between text-sm">

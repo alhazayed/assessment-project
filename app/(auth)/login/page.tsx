@@ -125,9 +125,17 @@ function LoginForm() {
         }
       }
 
-      // Step 3: Attempt login
+      // Step 3: Attempt login. Also pass the Turnstile token to Supabase Auth
+      // itself (options.captchaToken) — if the project's Auth > Attack
+      // Protection captcha provider is enabled, GoTrue verifies it server-side
+      // independent of this frontend, which is the only enforcement a scripted
+      // client hitting the Auth REST endpoint directly can't bypass.
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        ...(turnstileToken ? { options: { captchaToken: turnstileToken } } : {}),
+      })
 
       if (error) {
         setError(

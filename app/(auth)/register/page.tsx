@@ -147,7 +147,11 @@ function RegisterForm() {
         }
       }
 
-      // Step 3: Attempt signup
+      // Step 3: Attempt signup. Also pass the Turnstile token to Supabase Auth
+      // itself (options.captchaToken) — if the project's Auth > Attack
+      // Protection captcha provider is enabled, GoTrue verifies it server-side
+      // independent of this frontend, which is the only enforcement a scripted
+      // client hitting the Auth REST endpoint directly can't bypass.
       const supabase = createClient()
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -155,6 +159,7 @@ function RegisterForm() {
         options: {
           data: { full_name_en: fullName },
           emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vwelfare.vercel.app'}/auth/confirm?next=${encodeURIComponent(next || '/onboarding')}`,
+          ...(turnstileToken ? { captchaToken: turnstileToken } : {}),
         },
       })
 
