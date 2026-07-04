@@ -128,7 +128,7 @@ function PackageCard({
   // Emphasise the popular card with ring + shadow (and a small upward lift on
   // wide screens) instead of `scale-105`. Scaling a grid item grows its rendered
   // box into its neighbours, which cropped adjacent card titles, prices, and
-  // buttons — especially inside the narrower auth layout panel.
+  // buttons.
   return (
     <div
       className={`relative flex flex-col h-full rounded-2xl border-2 transition-all ${
