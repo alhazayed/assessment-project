@@ -18,7 +18,9 @@
   },
   "dependencies": {
     "@capacitor/app": "^6.0.2",
+    "@capacitor/app-launcher": "^6.0.2",
     "@capacitor/core": "^6.2.0",
+    "@capacitor/device": "^6.0.2",
     "@capacitor/push-notifications": "^6.0.4",
     "@capacitor/status-bar": "^6.0.2",
     "@react-pdf/renderer": "^4.5.1",
