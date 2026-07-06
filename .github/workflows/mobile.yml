@@ -75,15 +75,39 @@ jobs:
           keyPassword=$ANDROID_KEY_PASSWORD
           EOF
 
-      - name: Build Android App Bundle
+      - name: Build Android release (AAB + APK)
         working-directory: capacitor/android
-        run: ./gradlew bundleRelease --no-daemon --stacktrace
+        run: ./gradlew bundleRelease assembleRelease --no-daemon --stacktrace
 
-      - name: Upload AAB artifact
+      - name: Verify release build (identifiers + no debug flags)
+        working-directory: capacitor/android
+        run: |
+          set -e
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          AAB=$(ls app/build/outputs/bundle/release/*.aab | head -1)
+          echo "APK: $APK"
+          echo "AAB: $AAB"
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)
+          BADGING=$("$AAPT" dump badging "$APK")
+          echo "$BADGING" | grep -E "package: name=|sdkVersion:|targetSdkVersion:"
+          # Fail the build if the release artifact is debuggable
+          if echo "$BADGING" | grep -q "application-debuggable"; then
+            echo "::error::Release APK is DEBUGGABLE — aborting"; exit 1
+          fi
+          echo "OK: release APK is not debuggable"
+          # Assert expected identifiers
+          echo "$BADGING" | grep -q "package: name='com.vwelfare.app'" || { echo "::error::wrong package name"; exit 1; }
+          echo "$BADGING" | grep -q "versionCode='1'" || { echo "::error::unexpected versionCode"; exit 1; }
+          echo "$BADGING" | grep -q "versionName='1.0.0'" || { echo "::error::unexpected versionName"; exit 1; }
+          echo "Release identifiers verified: com.vwelfare.app / versionCode 1 / versionName 1.0.0"
+
+      - name: Upload release artifacts (AAB + APK)
         uses: actions/upload-artifact@v4
         with:
-          name: vwelfare-android-aab
-          path: capacitor/android/app/build/outputs/bundle/release/*.aab
+          name: vwelfare-android-release
+          path: |
+            capacitor/android/app/build/outputs/bundle/release/*.aab
+            capacitor/android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 
   ios:
