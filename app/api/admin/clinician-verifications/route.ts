@@ -6,7 +6,7 @@ const ALLOWED_REVIEW_STATUSES = ['verified', 'rejected', 'suspended'] as const
 type ReviewStatus = (typeof ALLOWED_REVIEW_STATUSES)[number]
 
 async function requireAdminUser() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
@@ -113,6 +113,40 @@ export async function PATCH(request: Request) {
     target_id: id,
     details: { new_status: typedStatus },
   })
+
+  // Tell the clinician the outcome — otherwise they never learn their
+  // submission was reviewed unless they revisit the verification page.
+  try {
+    const reason = typeof updatePayload.rejection_reason === 'string' ? updatePayload.rejection_reason : null
+    const copy: Record<ReviewStatus, { title_en: string; title_ar: string; body_en: string; body_ar: string }> = {
+      verified: {
+        title_en: 'Verification approved',
+        title_ar: 'تم اعتماد التوثيق',
+        body_en: 'Your credentials were approved. You now have full clinician access.',
+        body_ar: 'تم اعتماد وثائقك. لديك الآن صلاحيات الأخصائي الكاملة.',
+      },
+      rejected: {
+        title_en: 'Verification rejected',
+        title_ar: 'تم رفض التوثيق',
+        body_en: reason ? `Your submission was rejected: ${reason}` : 'Your submission was rejected. Please review and resubmit.',
+        body_ar: reason ? `تم رفض طلبك: ${reason}` : 'تم رفض طلبك. يرجى المراجعة وإعادة التقديم.',
+      },
+      suspended: {
+        title_en: 'Verification suspended',
+        title_ar: 'تم تعليق التوثيق',
+        body_en: 'Your clinician verification has been suspended. Contact support for details.',
+        body_ar: 'تم تعليق توثيقك كأخصائي. يرجى التواصل مع الدعم للتفاصيل.',
+      },
+    }
+    await admin.from('notifications').insert({
+      user_id: updated.clinician_id,
+      type: 'verification_result',
+      ...copy[typedStatus],
+      link: '/clinician/verification',
+    })
+  } catch (err) {
+    console.error('[verification-review] clinician notification failed (non-fatal):', err)
+  }
 
   return NextResponse.json(updated)
 }

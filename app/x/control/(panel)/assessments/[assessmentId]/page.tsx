@@ -3,14 +3,22 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import {
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts'
+import dynamic from 'next/dynamic'
 import { ArrowLeft, ClipboardList, AlertTriangle, RefreshCw, CheckCircle, XCircle, ShieldAlert } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 
 const BLUE = '#1D6296'
 const ORANGE = '#F3650A'
+
+// recharts is a heavy dependency — split each chart into its own chunk so
+// switching tabs (most of which don't need a chart at all, e.g. Item
+// Analysis) doesn't pull it in unnecessarily.
+const chartLoading = (h: number) => () => <div className="h-full rounded-xl animate-pulse" style={{ backgroundColor: 'var(--surface-alt)', height: h }} />
+const SeverityBandChart = dynamic(() => import('./assessment-charts').then(m => m.SeverityBandChart), { ssr: false, loading: chartLoading(220) })
+const CompletionsTrendChart = dynamic(() => import('./assessment-charts').then(m => m.CompletionsTrendChart), { ssr: false, loading: chartLoading(220) })
+const AvgScoreTrendChart = dynamic(() => import('./assessment-charts').then(m => m.AvgScoreTrendChart), { ssr: false, loading: chartLoading(240) })
+const ScoreHistogramChart = dynamic(() => import('./assessment-charts').then(m => m.ScoreHistogramChart), { ssr: false, loading: chartLoading(300) })
+const BreakdownChart = dynamic(() => import('./assessment-charts').then(m => m.BreakdownChart), { ssr: false, loading: chartLoading(160) })
 
 type Breakdown = { group: string; count: number; avgScore: number }
 type ItemRow = {
@@ -30,44 +38,11 @@ type Analytics = {
 
 type Tab = 'overview' | 'distribution' | 'items' | 'demographics' | 'trends'
 
-function ChartTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="card px-3 py-2 text-xs space-y-1 shadow-card-md min-w-[120px]">
-      <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</p>
-      {payload.map((p: any) => (
-        <p key={p.name} style={{ color: p.color }}>{p.name}: <b>{typeof p.value === 'number' ? p.value.toLocaleString() : p.value}</b></p>
-      ))}
-    </div>
-  )
-}
-
 function StatTile({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="card p-4">
       <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{value}</p>
       <p className="text-[11.5px] mt-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
-    </div>
-  )
-}
-
-function BreakdownChart({ title, data, isAr }: { title: string; data: Breakdown[]; isAr: boolean }) {
-  return (
-    <div className="card p-4">
-      <h3 className="text-[13px] font-bold mb-3" style={{ color: 'var(--text-primary)' }}>{title}</h3>
-      {!data.length ? (
-        <p className="text-[12.5px] py-8 text-center" style={{ color: 'var(--text-muted)' }}>{isAr ? 'لا توجد بيانات' : 'No data'}</p>
-      ) : (
-        <ResponsiveContainer width="100%" height={Math.max(140, data.length * 38)}>
-          <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--divider)" />
-            <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-            <YAxis type="category" dataKey="group" width={90} tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
-            <Tooltip content={<ChartTooltip />} />
-            <Bar dataKey="count" name={isAr ? 'العدد' : 'Count'} fill={BLUE} radius={[0, 4, 4, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      )}
     </div>
   )
 }
@@ -181,27 +156,11 @@ export default function AssessmentDetailPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <div className="card p-4">
                 <h3 className="text-[13px] font-bold mb-3" style={{ color: 'var(--text-primary)' }}>{isAr ? 'حسب شدة الأعراض' : 'By severity band'}</h3>
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={data.severityBands} margin={{ left: -10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" />
-                    <XAxis dataKey="band" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="count" name={isAr ? 'العدد' : 'Count'} fill={ORANGE} radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <SeverityBandChart severityBands={data.severityBands} isAr={isAr} />
               </div>
               <div className="card p-4">
                 <h3 className="text-[13px] font-bold mb-3" style={{ color: 'var(--text-primary)' }}>{isAr ? 'الإكمالات عبر الزمن' : 'Completions over time'}</h3>
-                <ResponsiveContainer width="100%" height={220}>
-                  <LineChart data={data.trend} margin={{ left: -10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Line type="monotone" dataKey="completions" name={isAr ? 'الإكمالات' : 'Completions'} stroke={BLUE} strokeWidth={2} dot={{ r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+                <CompletionsTrendChart trend={data.trend} isAr={isAr} />
               </div>
             </div>
           )}
@@ -209,15 +168,7 @@ export default function AssessmentDetailPage() {
           {tab === 'distribution' && (
             <div className="card p-4">
               <h3 className="text-[13px] font-bold mb-3" style={{ color: 'var(--text-primary)' }}>{isAr ? 'توزيع الدرجات الكلية' : 'Total score distribution'}</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={data.scoreHistogram} margin={{ left: -10 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" />
-                  <XAxis dataKey="score" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} label={{ value: isAr ? 'الدرجة' : 'Score', position: 'insideBottom', offset: -2, fontSize: 11, fill: 'var(--text-muted)' }} />
-                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="count" name={isAr ? 'عدد المرضى' : 'Respondents'} fill={BLUE} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <ScoreHistogramChart scoreHistogram={data.scoreHistogram} isAr={isAr} />
               {def?.high_risk_threshold != null && (
                 <p className="text-[11.5px] mt-3 flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
                   <ShieldAlert className="w-3.5 h-3.5" style={{ color: '#ef4444' }} />
@@ -289,27 +240,11 @@ export default function AssessmentDetailPage() {
             <div className="grid grid-cols-1 gap-5">
               <div className="card p-4">
                 <h3 className="text-[13px] font-bold mb-3" style={{ color: 'var(--text-primary)' }}>{isAr ? 'الإكمالات عبر الزمن' : 'Completions over time'}</h3>
-                <ResponsiveContainer width="100%" height={240}>
-                  <LineChart data={data.trend} margin={{ left: -10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Line type="monotone" dataKey="completions" name={isAr ? 'الإكمالات' : 'Completions'} stroke={BLUE} strokeWidth={2} dot={{ r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+                <CompletionsTrendChart trend={data.trend} isAr={isAr} height={240} />
               </div>
               <div className="card p-4">
                 <h3 className="text-[13px] font-bold mb-3" style={{ color: 'var(--text-primary)' }}>{isAr ? 'متوسط الدرجة عبر الزمن' : 'Average score over time'}</h3>
-                <ResponsiveContainer width="100%" height={240}>
-                  <LineChart data={data.trend} margin={{ left: -10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--divider)" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Line type="monotone" dataKey="avgScore" name={isAr ? 'متوسط الدرجة' : 'Avg score'} stroke={ORANGE} strokeWidth={2} dot={{ r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+                <AvgScoreTrendChart trend={data.trend} isAr={isAr} />
               </div>
             </div>
           )}

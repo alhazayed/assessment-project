@@ -45,9 +45,10 @@ const CATEGORY_LABELS: Record<string, { en: string; ar: string }> = {
   general:    { en: 'General',                   ar: 'عام' },
 }
 
-export default async function PackageDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createClient()
-  const lang = getLanguage()
+export default async function PackageDetailPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient()
+  const lang = await getLanguage()
   const isAr = lang === 'ar'
 
   const { data: { user } } = await supabase.auth.getUser()

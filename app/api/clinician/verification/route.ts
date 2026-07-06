@@ -6,7 +6,7 @@ import { checkRateLimit } from '@/lib/rate-limit'
 const REQUIRED_FIELDS = ['full_name', 'professional_title', 'license_number', 'country', 'specialty', 'organization'] as const
 
 export async function GET() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -21,7 +21,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -90,6 +90,31 @@ export async function POST(request: Request) {
     target_type: 'clinician_verification',
     target_id: user.id,
   })
+
+  // Alert every admin/superadmin that a verification is awaiting review.
+  // Without this, submissions sit silently until an admin happens to check.
+  try {
+    const { data: admins } = await admin
+      .from('profiles')
+      .select('id')
+      .in('role', ['admin', 'superadmin'])
+    if (admins && admins.length > 0) {
+      const fullName = (body.full_name as string).trim()
+      await admin.from('notifications').insert(
+        admins.map(a => ({
+          user_id: a.id,
+          type: 'verification_pending',
+          title_en: 'Clinician verification submitted',
+          title_ar: 'تم تقديم طلب توثيق أخصائي',
+          body_en: `${fullName} submitted credentials for review.`,
+          body_ar: `قدّم ${fullName} وثائق الاعتماد للمراجعة.`,
+          link: '/x/control/verifications',
+        }))
+      )
+    }
+  } catch (err) {
+    console.error('[verification] admin notification failed (non-fatal):', err)
+  }
 
   return NextResponse.json(record, { status: 201 })
 }

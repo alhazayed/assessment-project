@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { BarChart3, Download, AlertTriangle, Filter, TrendingUp, Hash, Sigma } from 'lucide-react'
+import { BarChart3, Download, AlertTriangle, Filter, TrendingUp, Hash, Sigma, Trash2, Loader2 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
@@ -51,6 +51,10 @@ export default function AdminResultsPage() {
   const [exporting, setExporting] = useState<string | null>(null)
   const [sortKey, setSortKey] = useState<'submitted_at' | 'total_score'>('submitted_at')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [callerRole, setCallerRole] = useState('')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [msg, setMsg] = useState('')
+  const [msgError, setMsgError] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -65,8 +69,38 @@ export default function AdminResultsPage() {
     setResults(data.results || [])
     if (data.assessments) setAssessmentList(data.assessments)
     if (data.pagination) setPagination(data.pagination)
+    if (data.callerRole !== undefined) setCallerRole(data.callerRole || '')
     setLoading(false)
   }, [assessment, severity, from, to, page])
+
+  const canDelete = callerRole === 'superadmin'
+
+  async function deleteResult(r: Submission) {
+    const label = `${r.assessment_name} (${r.code}) · ${new Date(r.submitted_at).toLocaleDateString()}`
+    if (!confirm(lang === 'ar'
+      ? `حذف هذه النتيجة نهائياً؟\n${label}\nلا يمكن التراجع عن هذا الإجراء.`
+      : `Permanently delete this result?\n${label}\nThis cannot be undone.`)) return
+    setDeletingId(r.id)
+    setMsg('')
+    try {
+      const res = await fetch('/api/admin/delete-results', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submissionId: r.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      setMsgError(!res.ok)
+      if (res.ok) {
+        setMsg(lang === 'ar' ? 'تم حذف النتيجة' : 'Result deleted')
+        setResults(prev => prev.filter(x => x.id !== r.id))
+      } else {
+        setMsg(data.error || 'Failed to delete result')
+      }
+      setTimeout(() => setMsg(''), 4000)
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   useEffect(() => { setPage(1) }, [assessment, severity, from, to])
   useEffect(() => { load() }, [load])
@@ -154,6 +188,10 @@ export default function AdminResultsPage() {
         </div>
       </div>
 
+      {msg && (
+        <div className={`mb-4 ${msgError ? 'alert-error' : 'alert-success'}`}>{msg}</div>
+      )}
+
       {/* Filters */}
       <div className="card p-4 mb-4 flex flex-wrap gap-3 items-center">
         <Filter className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
@@ -227,13 +265,18 @@ export default function AdminResultsPage() {
                 onClick={() => toggleSort('submitted_at')}>
                 {t('admin.results.col.date', lang)} {sortKey === 'submitted_at' && (sortDir === 'asc' ? '↑' : '↓')}
               </th>
+              {canDelete && (
+                <th className="text-right px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                  {lang === 'ar' ? 'إجراءات' : 'Actions'}
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="text-center py-12 text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.loading', lang)}</td></tr>
+              <tr><td colSpan={canDelete ? 7 : 6} className="text-center py-12 text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.loading', lang)}</td></tr>
             ) : sorted.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-12 text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.results.empty', lang)}</td></tr>
+              <tr><td colSpan={canDelete ? 7 : 6} className="text-center py-12 text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.results.empty', lang)}</td></tr>
             ) : sorted.map(r => (
               <tr key={r.id} style={{ borderBottom: '1px solid var(--divider)' }}>
                 <td className="px-4 py-3 text-[13.5px] font-medium" style={{ color: 'var(--text-primary)' }}>{r.patient_name || t('admin.anonymous', lang)}</td>
@@ -253,6 +296,19 @@ export default function AdminResultsPage() {
                   )}
                 </td>
                 <td className="px-4 py-3 text-[12.5px] whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{new Date(r.submitted_at).toLocaleDateString()}</td>
+                {canDelete && (
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      onClick={() => deleteResult(r)}
+                      disabled={deletingId === r.id}
+                      title={lang === 'ar' ? 'حذف النتيجة' : 'Delete result'}
+                      aria-label={lang === 'ar' ? 'حذف النتيجة' : 'Delete result'}
+                      className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50"
+                    >
+                      {deletingId === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

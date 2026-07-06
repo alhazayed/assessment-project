@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Valid email is required' }, { status: 400 })
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
     // Always return success to prevent user enumeration (whether email exists or not)
     await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
       redirectTo: typeof redirectTo === 'string' ? redirectTo : undefined,

@@ -17,8 +17,8 @@ import LandingMobileMenu from '@/components/landing-mobile-menu'
 import AIAssessmentFinder from '@/components/ai-assessment-finder'
 
 export default async function LandingPage() {
-  const supabase = createClient()
-  const lang = getLanguage()
+  const supabase = await createClient()
+  const lang = await getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
 
   let isLoggedIn = false
@@ -64,6 +64,13 @@ export default async function LandingPage() {
           <nav className="hidden md:flex items-center gap-6 text-[13.5px] font-medium ms-6" style={{ color: 'var(--text-secondary)' }}>
             <a href="#services" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.services', lang)}</a>
             <a href="#assessments" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.assessments', lang)}</a>
+            <a href="/packages" className="hover:text-[var(--text-primary)] transition-colors flex items-center gap-2">
+              {t('nav.packages_menu', lang)}
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide" style={{ backgroundColor: 'var(--accent-50)', color: 'var(--accent-600)' }}>
+                coming soon
+              </span>
+            </a>
+            <a href="/adhd-check-in" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.adhd_checkin', lang)}</a>
             <a href="#about" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.about', lang)}</a>
           </nav>
 
@@ -180,7 +187,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ── Services ────────────────────────────────────────────────────── */}
-      <section id="services" className="py-20 px-6" style={{ backgroundColor: 'var(--surface-alt)' }}>
+      <section id="services" className="py-20 px-6 scroll-mt-16" style={{ backgroundColor: 'var(--surface-alt)' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-extrabold mb-3" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
@@ -209,7 +216,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ── Assessments ─────────────────────────────────────────────────── */}
-      <section id="assessments" className="py-20 px-6">
+      <section id="assessments" className="py-20 px-6 scroll-mt-16">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-extrabold mb-3" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
@@ -277,7 +284,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ── About ───────────────────────────────────────────────────────── */}
-      <section id="about" className="py-20 px-6">
+      <section id="about" className="py-20 px-6 scroll-mt-16">
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>

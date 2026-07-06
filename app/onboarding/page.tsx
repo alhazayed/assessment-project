@@ -24,6 +24,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [stepError, setStepError] = useState<string | null>(null)
 
   // Step 1 — Identity
   const [nameAr, setNameAr] = useState('')
@@ -47,6 +48,45 @@ export default function OnboardingPage() {
   const [medicationDuration, setMedicationDuration] = useState('')
   const [consent, setConsent] = useState(false)
 
+  // Assessments are gated on these exact fields (see app/(app)/assessments/[id]/page.tsx).
+  // Each step must not advance until its gated fields are filled, otherwise users
+  // "finish" onboarding yet remain profile-incomplete and loop on the banner.
+  function validateStep(s: number): string | null {
+    const msg = (en: string, ar: string) => (isAr ? ar : en)
+    if (s === 1) {
+      if (!dob || !gender) {
+        return msg(
+          'Please fill in your date of birth and gender to continue.',
+          'يرجى تعبئة تاريخ الميلاد والجنس للمتابعة.'
+        )
+      }
+    }
+    if (s === 2) {
+      if (!maritalStatus || !educationalStatus || !employmentStatus || !country) {
+        return msg(
+          'Please fill in marital status, education, employment, and country to continue.',
+          'يرجى تعبئة الحالة الاجتماعية والمستوى التعليمي والحالة الوظيفية والدولة للمتابعة.'
+        )
+      }
+    }
+    if (s === 3) {
+      if (hasMedications === null) {
+        return msg(
+          'Please answer the medication question to finish.',
+          'يرجى الإجابة على سؤال الأدوية لإكمال التسجيل.'
+        )
+      }
+    }
+    return null
+  }
+
+  function handleNext() {
+    const err = validateStep(step)
+    if (err) { setStepError(err); return }
+    setStepError(null)
+    setStep(s => s + 1)
+  }
+
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -54,6 +94,9 @@ export default function OnboardingPage() {
   }
 
   async function handleFinish() {
+    const err = validateStep(3)
+    if (err) { setStepError(err); return }
+    setStepError(null)
     setSaving(true)
     setError(null)
     try {
@@ -195,7 +238,7 @@ export default function OnboardingPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="label">{t('profile.dob', lang)}</label>
+                  <label className="label">{t('profile.dob', lang)} <span className="text-red-500">*</span></label>
                   <input
                     type="date"
                     className="input"
@@ -205,7 +248,7 @@ export default function OnboardingPage() {
                   />
                 </div>
                 <div>
-                  <label className="label">{t('profile.gender', lang)}</label>
+                  <label className="label">{t('profile.gender', lang)} <span className="text-red-500">*</span></label>
                   <select className="input" value={gender} onChange={e => setGender(e.target.value as 'male' | 'female' | '')}>
                     <option value="">{t('profile.gender.select', lang)}</option>
                     <option value="male">{t('profile.gender.male', lang)}</option>
@@ -221,7 +264,7 @@ export default function OnboardingPage() {
             <div className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="label">{t('profile.marital', lang)}</label>
+                  <label className="label">{t('profile.marital', lang)} <span className="text-red-500">*</span></label>
                   <select className="input" value={maritalStatus} onChange={e => setMaritalStatus(e.target.value as MaritalStatus | '')}>
                     <option value="">{t('profile.marital.select', lang)}</option>
                     <option value="single">{t('profile.marital.single', lang)}</option>
@@ -231,7 +274,7 @@ export default function OnboardingPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="label">{t('profile.employment', lang)}</label>
+                  <label className="label">{t('profile.employment', lang)} <span className="text-red-500">*</span></label>
                   <select className="input" value={employmentStatus} onChange={e => setEmploymentStatus(e.target.value as EmploymentStatus | '')}>
                     <option value="">{t('profile.employment.select', lang)}</option>
                     <option value="employed">{t('profile.employment.employed', lang)}</option>
@@ -246,7 +289,7 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="label">{t('profile.education', lang)}</label>
+                <label className="label">{t('profile.education', lang)} <span className="text-red-500">*</span></label>
                 <select className="input" value={educationalStatus} onChange={e => setEducationalStatus(e.target.value as EducationalStatus | '')}>
                   <option value="">{t('profile.education.select', lang)}</option>
                   <option value="none">{t('profile.education.none', lang)}</option>
@@ -262,7 +305,7 @@ export default function OnboardingPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="label">{t('profile.country', lang)}</label>
+                  <label className="label">{t('profile.country', lang)} <span className="text-red-500">*</span></label>
                   <select className="input" value={country} onChange={e => setCountry(e.target.value)}>
                     <option value="">{t('profile.country.ph', lang)}</option>
                     {COUNTRIES.map(c => (
@@ -371,8 +414,8 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {error && (
-            <div className="mt-6 alert-error">{error}</div>
+          {(error || stepError) && (
+            <div className="mt-6 alert-error" role="alert">{error || stepError}</div>
           )}
 
           {/* Navigation buttons */}
@@ -381,7 +424,7 @@ export default function OnboardingPage() {
               {step > 1 ? (
                 <button
                   type="button"
-                  onClick={() => setStep(s => s - 1)}
+                  onClick={() => { setStepError(null); setStep(s => s - 1) }}
                   className="btn-secondary gap-2"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -402,7 +445,7 @@ export default function OnboardingPage() {
             {step < TOTAL_STEPS ? (
               <button
                 type="button"
-                onClick={() => setStep(s => s + 1)}
+                onClick={handleNext}
                 className="btn-primary gap-2"
               >
                 {t('onboarding.next', lang)}

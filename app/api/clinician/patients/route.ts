@@ -8,7 +8,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // Also updates last_access_at on every returned relationship so the clinician's
 // most recent portal visit is recorded.
 export async function GET() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const {
     data: { user },

@@ -8,12 +8,12 @@ import LanguageToggle from '@/components/language-toggle'
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
-  description: 'Read the Terms of Service for the V Welfare mental health assessment platform.',
+  description: 'Terms of Service for V Welfare. User rights, limitations, acceptable use policy, and disclaimers for our mental health assessment platform.',
   robots: { index: true, follow: true },
 }
 
-export default function TermsPage() {
-  const lang = getLanguage()
+export default async function TermsPage() {
+  const lang = await getLanguage()
   const isRtl = lang === 'ar'
 
   const sections = isRtl ? [

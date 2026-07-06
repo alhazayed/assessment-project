@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, LogOut, TrendingUp, Menu, X, Layers, ShieldAlert } from 'lucide-react'
+import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, LogOut, TrendingUp, Menu, X, Layers, ShieldAlert, ShieldCheck, DollarSign, Ticket } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 import BrandLogo from '@/components/brand-logo'
@@ -27,9 +27,13 @@ export default function AdminNav({ role }: { role: string }) {
   const NAV = [
     { href: '/x/control/overview',      label: t('admin.nav.overview', lang),       icon: LayoutDashboard },
     { href: '/x/control/analytics',     label: t('admin.nav.analytics', lang),      icon: TrendingUp },
+    { href: '/x/control/revenue',       label: t('admin.nav.revenue', lang),        icon: DollarSign },
     { href: '/x/control/users',         label: t('admin.nav.users', lang),          icon: Users },
+    { href: '/x/control/verifications', label: t('admin.nav.verifications', lang),  icon: ShieldCheck },
     { href: '/x/control/assessments',   label: t('admin.nav.assessments', lang),    icon: ClipboardList },
     { href: '/x/control/packages',      label: t('admin.nav.packages', lang),       icon: Layers },
+    // Promo code management is a superadmin-only function.
+    ...(role === 'superadmin' ? [{ href: '/x/control/promo-codes', label: t('admin.nav.promo_codes', lang), icon: Ticket }] : []),
     { href: '/x/control/results',       label: t('admin.nav.results', lang),        icon: BarChart3 },
     { href: '/x/control/risk',          label: t('admin.nav.risk', lang),           icon: ShieldAlert },
     { href: '/x/control/platform',      label: t('admin.nav.platform', lang),       icon: Settings },

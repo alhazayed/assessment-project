@@ -3,6 +3,10 @@ import { headers } from 'next/headers'
 import { Inter, Tajawal } from 'next/font/google'
 import './globals.css'
 import { getLanguage } from '@/lib/get-language'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import { QueryClientProviderWrapper } from '@/components/providers/query-client-provider'
+import * as Sentry from '@sentry/nextjs'
 import NativeBootstrap from '@/components/native/NativeBootstrap'
 
 const inter = Inter({
@@ -62,9 +66,9 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const lang = getLanguage()
-  const headersList = headers()
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const lang = await getLanguage()
+  const headersList = await headers()
   const nonce = headersList.get('x-nonce') || ''
 
   return (
@@ -75,14 +79,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
       </head>
       <body suppressHydrationWarning>
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:start-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-blue-700 focus:rounded focus:shadow-lg"
-        >
-          {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
-        </a>
-        {children}
-        <NativeBootstrap />
+        <QueryClientProviderWrapper>
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:start-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:text-blue-700 focus:rounded focus:shadow-lg"
+          >
+            {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
+          </a>
+          {children}
+          <Analytics />
+          <SpeedInsights />
+          <NativeBootstrap />
+        </QueryClientProviderWrapper>
       </body>
     </html>
   )

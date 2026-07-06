@@ -3,12 +3,14 @@ import { redirect } from 'next/navigation'
 import AssessmentContent from './assessment-content'
 
 interface Props {
-  params: { id: string }
-  searchParams: { assignment?: string }
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ assignment?: string }>
 }
 
-export default async function TakeAssessmentPage({ params, searchParams }: Props) {
-  const supabase = createClient()
+export default async function TakeAssessmentPage(props: Props) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   // Optional clinician-assignment context — preserved across auth/profile

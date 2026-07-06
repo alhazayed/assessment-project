@@ -23,7 +23,7 @@ function getAgeGroup(dob: string | null, referenceDate: string): string {
 
 export async function GET(request: Request) {
   try {
-    await requireAdmin()
+    const { role: callerRole } = await requireAdmin()
     const { searchParams } = new URL(request.url)
     const assessment = searchParams.get('assessment') || ''
     const severity = searchParams.get('severity') || ''
@@ -42,6 +42,34 @@ export async function GET(request: Request) {
 
     const db = createAdminClient()
 
+    // Resolve the assessment code -> definition_id so it can be filtered in the
+    // database (it lives on a joined table and previously could only be matched
+    // in-memory against a single page).
+    let definitionId: string | null = null
+    if (assessment) {
+      const { data: def } = await db
+        .from('assessment_definitions')
+        .select('id')
+        .eq('code', assessment)
+        .maybeSingle()
+      if (!def) {
+        // Unknown assessment code → no matching rows.
+        const { data: defs0 } = await db.from('assessment_definitions').select('code, name_en').order('name_en')
+        return NextResponse.json({
+          results: [],
+          assessments: (defs0 || []).map((d: any) => ({ code: d.code, name: d.name_en })),
+          pagination: { page, pageSize: PAGE_SIZE, total: 0, totalPages: 0 },
+          callerRole,
+        })
+      }
+      definitionId = def.id
+    }
+
+    // Cap on rows scanned for filtering — matches the research endpoint's cap.
+    const SCAN_CAP = 5000
+
+    // Apply every DB-feasible filter, then fetch the matching set (no range yet)
+    // so demographic filters and pagination operate on the full filtered data.
     let query = db.from('assessment_submissions')
       .select(`
         id, total_score, severity_band, high_risk_flag, submitted_at,
@@ -50,17 +78,19 @@ export async function GET(request: Request) {
         assessment_definitions(name_en, code),
         profiles(gender, date_of_birth, country_of_residence, educational_status,
           patient_profiles(employment_status, has_psychiatric_medications))
-      `, { count: 'exact' })
+      `)
       .order('submitted_at', { ascending: false })
-      .range(offset, offset + PAGE_SIZE - 1)
+      .limit(SCAN_CAP)
 
     if (from) query = query.gte('submitted_at', from)
     if (to) query = query.lte('submitted_at', to + 'T23:59:59')
     if (severity === 'high_risk') query = query.eq('high_risk_flag', true)
+    else if (severity) query = query.ilike('severity_band', `%${severity}%`)
     if (minScore) query = query.gte('total_score', parseInt(minScore))
     if (maxScore) query = query.lte('total_score', parseInt(maxScore))
+    if (definitionId) query = query.eq('definition_id', definitionId)
 
-    const { data: subs, count } = await query
+    const { data: subs } = await query
 
     let results = (subs || []).map((s: any) => {
       const p = s.profiles
@@ -85,9 +115,10 @@ export async function GET(request: Request) {
       }
     })
 
-    // In-memory filters for joined/derived columns
-    if (assessment) results = results.filter((r: any) => r.code === assessment)
-    if (severity && severity !== 'high_risk') results = results.filter((r: any) => (r.severity_band || '').toLowerCase().includes(severity.toLowerCase()))
+    // Demographic filters depend on the patient/guest fallback (e.g. gender =
+    // profiles.gender OR guest_gender), so they're derived after mapping and
+    // applied to the full filtered set BEFORE pagination — otherwise totals and
+    // pages would not match the rows shown.
     if (gender) results = results.filter((r: any) => r.gender.toLowerCase() === gender.toLowerCase())
     if (ageGroup) results = results.filter((r: any) => r.age_group === ageGroup)
     if (country) results = results.filter((r: any) => r.country.toLowerCase().includes(country.toLowerCase()))
@@ -95,17 +126,22 @@ export async function GET(request: Request) {
     if (employment) results = results.filter((r: any) => r.employment === employment)
     if (medication) results = results.filter((r: any) => r.medication === medication)
 
+    // Paginate the fully-filtered set so total/pages are consistent with results.
+    const total = results.length
+    const pageResults = results.slice(offset, offset + PAGE_SIZE)
+
     const { data: defs } = await db.from('assessment_definitions').select('code, name_en').order('name_en')
     const assessments = (defs || []).map((d: any) => ({ code: d.code, name: d.name_en }))
 
     return NextResponse.json({
-      results,
+      results: pageResults,
       assessments,
+      callerRole,
       pagination: {
         page,
         pageSize: PAGE_SIZE,
-        total: count ?? 0,
-        totalPages: Math.ceil((count ?? 0) / PAGE_SIZE),
+        total,
+        totalPages: Math.ceil(total / PAGE_SIZE),
       },
     })
   } catch {

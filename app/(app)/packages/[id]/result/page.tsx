@@ -5,7 +5,7 @@ import { t } from '@/lib/i18n'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Lightbulb, ShieldAlert } from 'lucide-react'
-import { PdfDownloadButton } from '../pdf-download-button'
+import { PdfDownloadButtonLazy as PdfDownloadButton } from '../pdf-download-button-lazy'
 import type { InterpretationBand, OutputDimension, PackageResult } from '@/lib/types'
 
 
@@ -57,9 +57,10 @@ function ScoreGauge({ score, color, maxScore = 100 }: ScoreGaugeProps) {
   )
 }
 
-export default async function PackageResultPage({ params }: { params: { id: string } }) {
-  const supabase = createClient()
-  const lang = getLanguage()
+export default async function PackageResultPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient()
+  const lang = await getLanguage()
   const isAr = lang === 'ar'
 
   const { data: { user } } = await supabase.auth.getUser()

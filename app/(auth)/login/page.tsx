@@ -31,7 +31,15 @@ function LoginForm() {
   const [password, setPassword]       = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading]         = useState(false)
-  const [error, setError]             = useState<string | null>(null)
+  // Surface auth-callback failures (/auth/confirm redirects here with ?error=…)
+  // so a failed email verification isn't a silent blank login page.
+  const [error, setError]             = useState<string | null>(
+    searchParams.get('error') === 'verification_failed'
+      ? (lang === 'ar'
+          ? 'انتهت صلاحية رابط التحقق أو تم استخدامه. سجّل الدخول أو اطلب رابطاً جديداً.'
+          : 'Your verification link has expired or was already used. Sign in, or request a new link.')
+      : null
+  )
   // True when Turnstile can't be used (failed to connect, errored, timed out,
   // or its script never loaded). We then stop hard-gating login on the CAPTCHA
   // so a third-party widget outage can't lock every user out. Login is still
@@ -117,9 +125,17 @@ function LoginForm() {
         }
       }
 
-      // Step 3: Attempt login
+      // Step 3: Attempt login. Also pass the Turnstile token to Supabase Auth
+      // itself (options.captchaToken) — if the project's Auth > Attack
+      // Protection captcha provider is enabled, GoTrue verifies it server-side
+      // independent of this frontend, which is the only enforcement a scripted
+      // client hitting the Auth REST endpoint directly can't bypass.
       const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        ...(turnstileToken ? { options: { captchaToken: turnstileToken } } : {}),
+      })
 
       if (error) {
         setError(

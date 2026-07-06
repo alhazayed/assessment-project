@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server'
+import crypto from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { computeHmac } from '@/lib/admin-auth'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { cookies } from 'next/headers'
+
+// Constant-time comparison for the admin PIN. HMAC-wrapping both sides with a
+// per-call random key yields fixed-length digests, so neither the comparison
+// nor a length difference leaks timing information about the secret.
+function timingSafeStrEqual(a: unknown, b: unknown): boolean {
+  const key = crypto.randomBytes(32)
+  const ah = crypto.createHmac('sha256', key).update(String(a ?? '')).digest()
+  const bh = crypto.createHmac('sha256', key).update(String(b ?? '')).digest()
+  return crypto.timingSafeEqual(ah, bh)
+}
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +32,7 @@ export async function POST(request: Request) {
     const expectedPin = process.env.ADMIN_PIN
     if (!expectedPin) return NextResponse.json({ error: 'Admin PIN not configured on server' }, { status: 503 })
     // Validate PIN and credentials with a unified error to prevent factor enumeration
-    if (pin !== expectedPin) {
+    if (!timingSafeStrEqual(pin, expectedPin)) {
       try {
         const logDb = createAdminClient()
         await logDb.from('audit_log').insert({
@@ -33,7 +44,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error || !data.user) {
       try {
@@ -54,7 +65,7 @@ export async function POST(request: Request) {
     }
 
     const token = await computeHmac(data.user.id, profile.role)
-    const store = cookies()
+    const store = await cookies()
     store.set('admin_session', token, {
       httpOnly: true, secure: true,
       sameSite: 'lax', path: '/', maxAge: 60 * 60 * 8,
@@ -67,9 +78,9 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE() {
-  const store = cookies()
+  const store = await cookies()
   store.set('admin_session', '', { maxAge: 0, path: '/' })
-  const supabase = createClient()
+  const supabase = await createClient()
   await supabase.auth.signOut()
   return NextResponse.json({ ok: true })
 }

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 // Returns all clinician relationships for the authenticated patient,
 // including clinician profile, verification details, and permission rows.
 export async function GET() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const {
     data: { user },
@@ -35,6 +35,13 @@ export async function GET() {
   // RLS on clinician_patient_relationships must permit the patient to read
   // their own rows; the joined tables are read through the same query so
   // their policies also apply.
+  //
+  // NOTE: clinician_verifications is fetched SEPARATELY (below) rather than as an
+  // embedded resource. There is no foreign key between
+  // clinician_patient_relationships and clinician_verifications — both only
+  // reference profiles(id) via clinician_id — so PostgREST cannot resolve an
+  // embed of clinician_verifications here and returns an error, which surfaced
+  // to patients as a "Failed to load data" banner.
   const { data: relationships, error: relError } = await supabase
     .from('clinician_patient_relationships')
     .select(`
@@ -51,11 +58,6 @@ export async function GET() {
         full_name_ar,
         avatar_url
       ),
-      clinician_verification:clinician_verifications!clinician_verifications_clinician_id_fkey (
-        specialty,
-        organization,
-        professional_title
-      ),
       relationship_permissions (
         permission_key,
         granted,
@@ -71,6 +73,35 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch relationships' }, { status: 500 })
   }
 
+  // Fetch verification details for the involved clinicians in one query and
+  // index by clinician_id for merge. Missing rows are fine (null fields).
+  const clinicianIds = Array.from(
+    new Set((relationships ?? []).map((r) => r.clinician_id).filter(Boolean))
+  ) as string[]
+
+  const verificationByClinician = new Map<
+    string,
+    { specialty: string | null; organization: string | null; professional_title: string | null }
+  >()
+  if (clinicianIds.length > 0) {
+    const { data: verifications, error: verErr } = await supabase
+      .from('clinician_verifications')
+      .select('clinician_id, specialty, organization, professional_title')
+      .in('clinician_id', clinicianIds)
+    if (verErr) {
+      // Non-fatal: relationships still render without verification metadata.
+      console.error('[GET /api/patient/relationships] verification query error:', verErr)
+    } else {
+      for (const v of verifications ?? []) {
+        verificationByClinician.set(v.clinician_id as string, {
+          specialty: v.specialty ?? null,
+          organization: v.organization ?? null,
+          professional_title: v.professional_title ?? null,
+        })
+      }
+    }
+  }
+
   // Reshape into the documented response schema
   const shaped = (relationships ?? []).map((rel) => {
     // Supabase infers joined foreign-key rows as arrays in its generic types,
@@ -82,11 +113,9 @@ export async function GET() {
       avatar_url: string | null
     } | null
 
-    const verification = rel.clinician_verification as unknown as {
-      specialty: string | null
-      organization: string | null
-      professional_title: string | null
-    } | null
+    const verification = rel.clinician_id
+      ? verificationByClinician.get(rel.clinician_id as string) ?? null
+      : null
 
     const permissions = (
       rel.relationship_permissions as Array<{

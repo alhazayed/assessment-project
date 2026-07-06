@@ -12,8 +12,8 @@ export const metadata = {
 }
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createClient()
-  const lang = getLanguage()
+  const supabase = await createClient()
+  const lang = await getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) redirect('/login')
@@ -24,7 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ])
   const profile = data as Profile | null
   const showPackages = flagRow?.is_enabled ?? false
-  const isMobileApp = isMobileAppUserAgent(headers().get('user-agent'))
+  const isMobileApp = isMobileAppUserAgent((await headers()).get('user-agent'))
 
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--page-bg)' }}>

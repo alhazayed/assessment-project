@@ -1,10 +1,17 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { KPI_DEFINITIONS, type KPIValue } from '@/lib/types/kpi'
 import { EnhancedKPICard } from '@/components/kpi-card-enhanced'
-import { KpiTrendCharts } from '@/components/kpi-trend-charts'
 import { RefreshCw, Download, AlertCircle } from 'lucide-react'
+
+// recharts is a heavy dependency — split the chart section into its own chunk
+// instead of bundling it with every load of this dashboard.
+const KpiTrendCharts = dynamic(() => import('@/components/kpi-trend-charts').then(m => m.KpiTrendCharts), {
+  ssr: false,
+  loading: () => <div className="h-64 rounded-xl animate-pulse bg-gray-100" />,
+})
 
 const ROWS: [number, number, string][] = [
   [0, 4, 'User Metrics'],

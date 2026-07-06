@@ -90,9 +90,13 @@ type AccessCode = {
 type Lang = 'ar' | 'en'
 
 function getLang(): Lang {
-  if (typeof window === 'undefined') return 'ar'
-  const stored = localStorage.getItem('vw-lang')
-  return stored === 'en' ? 'en' : 'ar'
+  // Read the app-wide `lang` cookie (single source of truth, defaults to English)
+  // — the same source components/language-toggle and lib/use-lang use. Previously
+  // this read localStorage['vw-lang'] defaulting to 'ar', so the page rendered in
+  // Arabic regardless of the user's actual language selection.
+  if (typeof document === 'undefined') return 'en'
+  const match = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/)
+  return match?.[1] === 'ar' ? 'ar' : 'en'
 }
 
 const labels = {
@@ -351,7 +355,7 @@ function Avatar({ name, size = 40 }: AvatarProps) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function PatientCliniciansPage() {
-  const [lang, setLang] = useState<Lang>('ar')
+  const [lang, setLang] = useState<Lang>(getLang)
   const L = labels[lang]
   const isRtl = lang === 'ar'
 

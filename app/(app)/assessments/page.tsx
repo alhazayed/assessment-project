@@ -18,8 +18,8 @@ function severityBadge(band: string) {
 }
 
 export default async function AssessmentsPage() {
-  const supabase = createClient()
-  const lang = getLanguage()
+  const supabase = await createClient()
+  const lang = await getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?next=/assessments')
 
@@ -61,7 +61,7 @@ export default async function AssessmentsPage() {
   )
 
   return (
-    <div className="p-4 sm:p-6 lg:p-7 max-w-5xl">
+    <div className="p-4 sm:p-6 lg:p-7 max-w-6xl">
       {/* Page header */}
       <div className="mb-7">
         <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
@@ -151,7 +151,7 @@ export default async function AssessmentsPage() {
             {t('assessments.available.title', lang)}
           </h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {allDefinitions.map((d) => {
             const lastSubmission = submissions.find(s => s.definition_id === d.id)
             const dName = lang === 'ar' && d.name_ar ? d.name_ar : d.name_en

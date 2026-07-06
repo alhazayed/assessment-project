@@ -9,7 +9,7 @@ import DashboardOverview from '@/components/admin/dashboard-overview'
 export default async function AdminOverviewPage() {
   await requireAdmin()
   const db = createAdminClient()
-  const lang = getLanguage()
+  const lang = await getLanguage()
 
   const now = new Date()
   const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString()

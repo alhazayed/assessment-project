@@ -1,0 +1,14 @@
+-- SECURITY: revoke the pre-existing anon EXECUTE grant on submit_assessment_atomic.
+--
+-- Context: the preceding migration (20260702193104) relaxed the function's guard
+-- so the trusted service-role server path (auth.uid() NULL) can submit. The IDOR
+-- self-check now only fires when auth.uid() IS NOT NULL. A leftover role-specific
+-- anon grant (not removed by REVOKE ... FROM PUBLIC) therefore became dangerous:
+-- an unauthenticated caller hitting /rest/v1/rpc/submit_assessment_atomic has
+-- auth.uid() NULL, skips the guard, and could forge submissions for ANY
+-- patient_id. Revoke anon so only the service role (server) and authenticated
+-- users (self, via the guard) can reach it.
+--
+-- Verified on production: anon EXECUTE = false after this change; authenticated
+-- and service_role retained.
+REVOKE EXECUTE ON FUNCTION public.submit_assessment_atomic(uuid, uuid, integer, text, boolean, boolean, jsonb) FROM anon;

@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     const { data: { user } } = await admin.auth.getUser(token)
     userId = user?.id ?? null
   } else {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     userId = user?.id ?? null
   }
