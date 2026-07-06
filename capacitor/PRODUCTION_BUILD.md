@@ -12,7 +12,7 @@ Before any release build, point the shell at production and sync:
 
 ```bash
 cd capacitor
-# CAP_SERVER_URL defaults to https://vwelfare.vercel.app
+# CAP_SERVER_URL defaults to https://app.vwelfare.com
 npx cap sync
 ```
 

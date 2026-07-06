@@ -5,8 +5,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // — the native shell loads the live, deployed web platform inside a native WebView.
 //
 // Point this at your deployment by setting CAP_SERVER_URL, otherwise it defaults
-// to the production URL used by the rest of the project.
-const serverUrl = process.env.CAP_SERVER_URL || 'https://vwelfare.vercel.app';
+// to the production custom domain.
+const serverUrl = process.env.CAP_SERVER_URL || 'https://app.vwelfare.com';
 
 const config: CapacitorConfig = {
   appId: 'com.vwelfare.app',
@@ -23,11 +23,13 @@ const config: CapacitorConfig = {
     // Only the platform's own origin is treated as in-app navigation; everything
     // else (external links) opens in the system browser.
     allowNavigation: [
-      'vwelfare.vercel.app',
-      '*.vwelfare.vercel.app',
+      'app.vwelfare.com',
+      '*.vwelfare.com',
       'wyzezyctpvlohuuhzyof.supabase.co',
       '*.supabase.co',
     ],
+    // HTTPS only — never fall back to plaintext HTTP in the WebView.
+    cleartext: false,
     androidScheme: 'https',
     iosScheme: 'https',
   },

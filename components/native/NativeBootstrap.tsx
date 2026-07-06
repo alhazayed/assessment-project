@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { isNativeApp, getNativePlatform } from '@/lib/capacitor/client'
 
 /**
@@ -15,10 +16,28 @@ import { isNativeApp, getNativePlatform } from '@/lib/capacitor/client'
  * never pulled into server rendering.
  */
 export default function NativeBootstrap() {
+  const router = useRouter()
+
   useEffect(() => {
     if (!isNativeApp()) return
 
     let removeBackButton: (() => void) | undefined
+    let removeAppUrlOpen: (() => void) | undefined
+
+    // Map a deep link (vwelfare://<path> or an app.vwelfare.com URL) to in-app
+    // navigation.
+    const toInAppPath = (url: string): string | null => {
+      if (url.startsWith('vwelfare://')) {
+        return '/' + url.slice('vwelfare://'.length).replace(/^\/+/, '')
+      }
+      try {
+        const u = new URL(url)
+        if (u.hostname.endsWith('vwelfare.com')) return u.pathname + u.search
+      } catch {
+        /* not a parseable URL */
+      }
+      return null
+    }
 
     ;(async () => {
       try {
@@ -33,14 +52,20 @@ export default function NativeBootstrap() {
 
       try {
         const { App } = await import('@capacitor/app')
-        const handle = await App.addListener('backButton', ({ canGoBack }) => {
+        const backHandle = await App.addListener('backButton', ({ canGoBack }) => {
           if (canGoBack && window.history.length > 1) {
             window.history.back()
           } else {
             App.exitApp()
           }
         })
-        removeBackButton = () => handle.remove()
+        removeBackButton = () => backHandle.remove()
+
+        const urlHandle = await App.addListener('appUrlOpen', ({ url }) => {
+          const path = toInAppPath(url)
+          if (path && path.startsWith('/')) router.push(path)
+        })
+        removeAppUrlOpen = () => urlHandle.remove()
       } catch {
         /* app plugin unavailable — non-fatal */
       }
@@ -48,8 +73,9 @@ export default function NativeBootstrap() {
 
     return () => {
       removeBackButton?.()
+      removeAppUrlOpen?.()
     }
-  }, [])
+  }, [router])
 
   return null
 }
