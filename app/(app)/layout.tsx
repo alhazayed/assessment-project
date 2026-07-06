@@ -1,7 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { getLanguage } from '@/lib/get-language'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import Sidebar from '@/components/sidebar'
+import PushRegistration from '@/components/native/PushRegistration'
+import { isMobileAppUserAgent } from '@/lib/capacitor/server'
 import type { Profile } from '@/lib/types'
 
 export const metadata = {
@@ -21,6 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ])
   const profile = data as Profile | null
   const showPackages = flagRow?.is_enabled ?? false
+  const isMobileApp = isMobileAppUserAgent(headers().get('user-agent'))
 
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--page-bg)' }}>
@@ -30,7 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       >
         {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
       </a>
-      <Sidebar profile={profile} lang={lang} showPackages={showPackages} />
+      <Sidebar profile={profile} lang={lang} showPackages={showPackages} isMobileApp={isMobileApp} />
       <main
         id="main-content"
         className="flex-1 min-w-0 overflow-auto pt-16 lg:pt-0 lg:ms-[248px]"
@@ -38,6 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       >
         {children}
       </main>
+      <PushRegistration />
     </div>
   )
 }

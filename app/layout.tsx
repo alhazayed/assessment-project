@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { Inter, Tajawal } from 'next/font/google'
 import './globals.css'
 import { getLanguage } from '@/lib/get-language'
+import NativeBootstrap from '@/components/native/NativeBootstrap'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -81,6 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {lang === 'ar' ? 'تخطي إلى المحتوى الرئيسي' : 'Skip to main content'}
         </a>
         {children}
+        <NativeBootstrap />
       </body>
     </html>
   )

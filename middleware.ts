@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isMobileAppUserAgent } from '@/lib/capacitor/server'
 
 export async function middleware(request: NextRequest) {
   // Generate a cryptographic nonce for CSP.
@@ -36,6 +37,24 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
+
+  // Keep every admin surface out of the Capacitor native app (defense in depth:
+  // admin also requires an admin PIN that mobile patients/clinicians never
+  // have). The native shell tags its WebView User-Agent; any admin path from it
+  // is bounced to the dashboard.
+  if (isMobileAppUserAgent(request.headers.get('user-agent'))) {
+    const isAdminPath =
+      pathname.startsWith('/x/control') ||
+      pathname === '/admin' ||
+      pathname.startsWith('/admin/')
+    if (isAdminPath) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      url.search = ''
+      return NextResponse.redirect(url)
+    }
+  }
+
   const isAdminLogin = pathname === '/x/control/login'
   const isAdminArea = pathname.startsWith('/x/control') && !isAdminLogin
   const isAuthPage =

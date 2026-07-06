@@ -38,9 +38,11 @@ interface SidebarProps {
   profile: Profile | null
   lang: Lang
   showPackages?: boolean
+  /** True when rendered inside the Capacitor native app; admin nav is suppressed. */
+  isMobileApp?: boolean
 }
 
-export default function Sidebar({ profile, lang, showPackages = false }: SidebarProps) {
+export default function Sidebar({ profile, lang, showPackages = false, isMobileApp = false }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
@@ -90,7 +92,11 @@ export default function Sidebar({ profile, lang, showPackages = false }: Sidebar
     { href: '/admin/settings', label: t('nav.settings', lang),       icon: Settings,      badge: undefined as string | undefined },
   ]
 
-  const nav = profile?.role === 'admin' || profile?.role === 'superadmin'
+  // The native app never exposes admin surfaces (see middleware + server UA
+  // check). An admin who signs in on mobile falls back to the standard
+  // patient/clinician nav rather than the admin panel.
+  const isAdminRole = profile?.role === 'admin' || profile?.role === 'superadmin'
+  const nav = isAdminRole && !isMobileApp
     ? adminNav
     : profile?.role === 'clinician'
       ? clinicianNav

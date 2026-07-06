@@ -4,6 +4,15 @@ node_modules/
 # env
 .env
 
+# signing secrets & push credentials (never commit)
+android/keystore.properties
+android/*.keystore
+android/*.jks
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
+ios/App/App/*.p8
+ios/App/App/*.p12
+
 # Capacitor / native build outputs
 android/app/build/
 android/build/

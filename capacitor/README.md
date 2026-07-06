@@ -68,6 +68,32 @@ After changing `capacitor.config.ts` or the `www/` fallback assets, run
 - **iOS:** open in Xcode → set your signing team → *Product > Archive* → upload
   to App Store Connect. Bundle ID: `com.vwelfare.app`.
 
+## Native integration
+
+The web platform is Capacitor-aware. When it loads inside the native WebView it
+lights up native features; in a normal browser everything below is inert.
+
+- **Detection** — `lib/capacitor/client.ts` (`isNativeApp()`, platform) and
+  `lib/capacitor/server.ts` (server-side, via the `VWelfareApp` User-Agent tag
+  set by `appendUserAgent`).
+- **Auth** — unchanged Supabase cookie-based SSR; cookies persist in the app's
+  sandboxed, encrypted WebView store. App-managed values (push token, marker)
+  use the hardware keystore via `lib/capacitor/secure-storage.ts`.
+- **No admin in the app** — `middleware.ts` redirects `/x/control` and `/admin*`
+  to `/dashboard` for the native User-Agent, and the sidebar hides admin nav
+  (`components/sidebar.tsx`). Admin also still requires an admin PIN.
+- **Push** — `components/native/PushRegistration.tsx` registers and posts the
+  token to the existing `/api/user/push-token`. See [PUSH_SETUP.md](./PUSH_SETUP.md).
+- **Shell** — `components/native/NativeBootstrap.tsx` handles status bar and the
+  Android back button.
+
+## Docs
+
+- [PRODUCTION_BUILD.md](./PRODUCTION_BUILD.md) — signed Play/App Store builds.
+- [PUSH_SETUP.md](./PUSH_SETUP.md) — FCM/APNs wiring.
+- [MOBILE_QA_CHECKLIST.md](./MOBILE_QA_CHECKLIST.md) — device verification for
+  patient & clinician workflows.
+
 ## What's in `www/`
 
 A minimal local loading/offline page shown only while the remote platform loads,
