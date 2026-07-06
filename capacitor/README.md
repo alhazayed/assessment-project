@@ -40,7 +40,7 @@ npx cap add ios
 ## Configuration
 
 The wrapped platform URL is read from `CAP_SERVER_URL` (see `capacitor.config.ts`),
-defaulting to `https://vwelfare.vercel.app`.
+defaulting to `https://app.vwelfare.com`.
 
 ```bash
 cp .env.example .env         # optional — only to override the default URL
@@ -79,13 +79,31 @@ lights up native features; in a normal browser everything below is inert.
 - **Auth** — unchanged Supabase cookie-based SSR; cookies persist in the app's
   sandboxed, encrypted WebView store. App-managed values (push token, marker)
   use the hardware keystore via `lib/capacitor/secure-storage.ts`.
-- **No admin in the app** — `middleware.ts` redirects `/x/control` and `/admin*`
-  to `/dashboard` for the native User-Agent, and the sidebar hides admin nav
-  (`components/sidebar.tsx`). Admin also still requires an admin PIN.
+- **Admin is web-only in the app** — `middleware.ts` redirects any admin deep
+  link (`/x/control`, `/admin*`, `/dashboard/admin*`, `/settings/admin*`) to the
+  `/mobile/web-only` notice for the native User-Agent; the app layout bounces
+  admin-role accounts to that notice; and the sidebar hides admin nav
+  (`components/sidebar.tsx`). Admin also still requires an admin PIN → defense in
+  depth. Supabase RLS remains the only backend security layer.
 - **Push** — `components/native/PushRegistration.tsx` registers and posts the
   token to the existing `/api/user/push-token`. See [PUSH_SETUP.md](./PUSH_SETUP.md).
-- **Shell** — `components/native/NativeBootstrap.tsx` handles status bar and the
-  Android back button.
+- **Deep linking** — `vwelfare://<path>` (and `app.vwelfare.com` links) route to
+  in-app navigation via an `appUrlOpen` handler in `NativeBootstrap.tsx`
+  (scheme registered in the iOS Info.plist and Android manifest).
+- **Device / App Launcher** — `lib/capacitor/device.ts` wraps `@capacitor/device`
+  and `@capacitor/app-launcher` (SSR-safe, no-ops on web).
+- **Shell** — `NativeBootstrap.tsx` handles status bar and the Android back button.
+
+## CI/CD
+
+`.github/workflows/mobile.yml` runs on push to `main` (and `workflow_dispatch`):
+installs deps → `next build` → `cap sync` → builds a **release AAB** (signed when
+the `ANDROID_KEYSTORE_*` secrets are set, otherwise unsigned) → uploads the AAB
+artifact. The iOS archive job is opt-in via the `ENABLE_IOS_BUILD=true` repo
+variable and runs on a mac runner. No credentials are hardcoded — all come from
+repo **secrets** (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+`ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`).
 
 ## Docs
 
@@ -93,6 +111,31 @@ lights up native features; in a normal browser everything below is inert.
 - [PUSH_SETUP.md](./PUSH_SETUP.md) — FCM/APNs wiring.
 - [MOBILE_QA_CHECKLIST.md](./MOBILE_QA_CHECKLIST.md) — device verification for
   patient & clinician workflows.
+
+## Known limitations
+
+- **Server-URL mode**: the app renders the live site, so it needs connectivity;
+  offline shows the local `www/` loading page, not cached content.
+- **Push sending** is scaffolded (client registration + token storage only);
+  delivery needs FCM/APNs credentials (see PUSH_SETUP.md).
+- **iOS builds** require macOS + Xcode + CocoaPods; not runnable on Linux CI.
+- **Admin gating** relies on the app's own User-Agent tag for UX; the real
+  backend security boundary is Supabase RLS + the admin PIN.
+- **Signed store binaries** are produced by you (keystore / Apple & Google
+  accounts) — the pipeline builds unsigned without the secrets.
+
+## Production readiness checklist
+
+- [x] Server-URL wrapper (`https://app.vwelfare.com`, `cleartext:false`, HTTPS).
+- [x] No frontend duplication; no breaking changes to the Next.js app.
+- [x] Supabase auth preserved (cookie SSR); secure keystore for app-managed values.
+- [x] Admin web-only (middleware + layout + hidden nav + PIN + RLS).
+- [x] Deep linking (`vwelfare://`), status bar, splash, back button.
+- [x] Push registration wired to existing backend (send credentials pending).
+- [x] CI pipeline builds AAB + uploads artifact; secrets injected, none hardcoded.
+- [x] `next build` green on Next 16 / React 19; `cap sync` registers all plugins.
+- [ ] **You:** add signing secrets, `google-services.json`/APNs key, run device QA
+      ([MOBILE_QA_CHECKLIST.md](./MOBILE_QA_CHECKLIST.md)), submit to stores.
 
 ## What's in `www/`
 

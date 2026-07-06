@@ -1,0 +1,129 @@
+name: Mobile Build
+
+# Builds the Capacitor native apps. Runs after changes land on main; can also be
+# triggered manually. The web app is validated with `next build`, then Capacitor
+# syncs and the Android App Bundle is produced. iOS is opt-in (needs a mac
+# runner + signing) via the ENABLE_IOS_BUILD repo variable.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: mobile-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android (AAB)
+    runs-on: ubuntu-latest
+    env:
+      # Fall back to harmless placeholders so the web build succeeds even before
+      # the deployment secrets are configured. Real values come from repo secrets.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL || 'https://app.vwelfare.com' }}
+      # Android signing (optional): if unset, an unsigned release bundle is built.
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install web dependencies
+        run: npm ci
+
+      - name: Build Next.js (validate web)
+        run: npm run build
+
+      - name: Install Capacitor dependencies
+        working-directory: capacitor
+        run: npm ci
+
+      - name: Capacitor sync (Android)
+        working-directory: capacitor
+        run: npx cap sync android
+
+      - name: Configure release signing
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        working-directory: capacitor/android
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > vwelfare-upload.keystore
+          cat > keystore.properties <<EOF
+          storeFile=vwelfare-upload.keystore
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Build Android App Bundle
+        working-directory: capacitor/android
+        run: ./gradlew bundleRelease --no-daemon --stacktrace
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vwelfare-android-aab
+          path: capacitor/android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+
+  ios:
+    name: iOS (archive)
+    # Opt-in: set repository variable ENABLE_IOS_BUILD=true to run on a mac runner.
+    if: ${{ vars.ENABLE_IOS_BUILD == 'true' }}
+    runs-on: macos-14
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL || 'https://app.vwelfare.com' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install web dependencies
+        run: npm ci
+
+      - name: Build Next.js (validate web)
+        run: npm run build
+
+      - name: Install Capacitor dependencies
+        working-directory: capacitor
+        run: npm ci
+
+      - name: Capacitor sync (iOS)
+        working-directory: capacitor
+        run: npx cap sync ios
+
+      - name: CocoaPods install
+        working-directory: capacitor/ios/App
+        run: pod install
+
+      - name: Build (no code signing)
+        working-directory: capacitor/ios/App
+        run: |
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
