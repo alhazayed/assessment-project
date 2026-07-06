@@ -89,10 +89,15 @@ Apple Developer account ($99/year), and (for push) an APNs key.
 
 ## App icons & splash
 
-Source art lives at `../mobile/assets/logo.png`. Regenerate native icon/splash
-sets with:
+Branded assets are already generated for all Android densities and iOS from the
+V Welfare logo — app icon is the brain mark (wordmark cropped for legibility),
+splash is the full logo centered on white. Source art is committed under
+`capacitor/assets/` (`icon.png` 1024², `splash.png`/`splash-dark.png` 2732²).
+
+To regenerate after changing the source art:
 
 ```bash
 cd capacitor
-npx @capacitor/assets generate --iconBackgroundColor '#12273C' --splashBackgroundColor '#12273C'
+# Preferred (needs network for the sharp binary):
+npx @capacitor/assets generate --iconBackgroundColor '#ffffff' --splashBackgroundColor '#ffffff' --splashBackgroundColorDark '#ffffff'
 ```

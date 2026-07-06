@@ -115,7 +115,7 @@ Patient list, patient view (consent-gated notes), messaging, connect, verificati
 
 ## Unresolved / carry-over blockers (from `mobile-production-readiness.md`)
 1. **Android `targetSdkVersion 34 → 35`** (Play requirement) — needs Capacitor 7 / AGP bump + rebuild. **[M build]**
-2. **Branded app icons / splash** (default Capacitor icons) — `npx @capacitor/assets generate`. 
+2. ~~Branded app icons / splash~~ ✅ **RESOLVED** — brain icon + full-logo splash generated for all Android densities + iOS from the V Welfare logo (`capacitor/assets/`).
 3. **Apple Guideline 4.2** thin-wrapper rejection risk — product decision; ship Android first.
 4. Optional: enable Supabase leaked-password protection; branded offline screen; enlarge sub-40px login tap targets.
 

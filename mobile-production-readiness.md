@@ -65,9 +65,8 @@ Defense in depth confirmed: (1) middleware UA redirect, (2) `(app)` layout bounc
 Google Play requires new/updated apps to target **API 35** (Android 15) since Aug 2025. Current `capacitor/android/variables.gradle` targets 34.
 **Fix:** bump `compileSdkVersion`/`targetSdkVersion` to 35 — cleanest via **Capacitor 7** (targets 35 and bumps AGP/Gradle), or bump AGP to ≥ 8.6 with Capacitor 6. Must rebuild + re-test (not doable in this env). Est. 0.5–1 day.
 
-### B2 — Default Capacitor app icons / splash · [C] · **both stores**
-Native projects still use the placeholder Capacitor launcher icon; stores reject default icons. Source art exists at `mobile/assets/logo.png`.
-**Fix:** `cd capacitor && npx @capacitor/assets generate --iconBackgroundColor '#12273C' --splashBackgroundColor '#12273C'`, then `cap sync`. Est. 1–2 hrs (needs a 1024² source).
+### B2 — App icons / splash · ✅ **RESOLVED**
+Branded launcher icons (brain mark) and splash (full logo on white) generated from the V Welfare logo into all Android densities + iOS AppIcon/Splash; splash background set to `#FFFFFF`. Source art committed under `capacitor/assets/`.
 
 ### B3 — Apple App Store Guideline 4.2 (minimum functionality / "web wrapper") · [C] · **iOS risk, not a hard block**
 Server-URL wrappers are frequently rejected under 4.2/4.2.3. Mitigations already present (native push, deep links `vwelfare://`, device info, secure storage, status bar/back-button) strengthen the native-value case but do **not** guarantee approval.
