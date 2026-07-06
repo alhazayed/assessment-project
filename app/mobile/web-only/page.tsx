@@ -55,8 +55,13 @@ export default async function WebOnlyNoticePage() {
       >
         🔒
       </div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{t.title}</h1>
-      <p style={{ maxWidth: '26rem', lineHeight: 1.6, opacity: 0.85, margin: 0 }}>{t.body}</p>
+      {/* Explicit colors: the app's global CSS sets a dark default heading
+          color that would otherwise render this title invisibly on the dark
+          background. */}
+      <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: '#ffffff' }}>{t.title}</h1>
+      <p style={{ maxWidth: '26rem', lineHeight: 1.6, opacity: 0.85, margin: 0, color: '#ffffff' }}>
+        {t.body}
+      </p>
       <Link
         href="https://app.vwelfare.com"
         style={{
@@ -64,8 +69,10 @@ export default async function WebOnlyNoticePage() {
           padding: '12px 24px',
           borderRadius: 10,
           backgroundColor: '#F3650A',
-          color: '#ffffff',
-          fontWeight: 600,
+          // Dark navy text on the orange accent meets WCAG AA (~4.7:1);
+          // white text on #F3650A fails (~2.6:1).
+          color: '#12273C',
+          fontWeight: 700,
           textDecoration: 'none',
         }}
       >

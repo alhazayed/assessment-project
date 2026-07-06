@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 11 and below (legacy Auto Backup). Excludes all app data from backup;
+  combined with android:allowBackup="false" no PHI leaves the device sandbox.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" />
+    <exclude domain="database" />
+    <exclude domain="file" />
+    <exclude domain="external" />
+</full-backup-content>
