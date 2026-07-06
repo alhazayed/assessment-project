@@ -7,6 +7,12 @@ name: Mobile Build
 on:
   push:
     branches: [main]
+  pull_request:
+    paths:
+      - 'capacitor/**'
+      - '.github/workflows/mobile.yml'
+      - 'package.json'
+      - 'package-lock.json'
   workflow_dispatch:
 
 concurrency:
@@ -41,7 +47,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Install web dependencies
         run: npm ci
