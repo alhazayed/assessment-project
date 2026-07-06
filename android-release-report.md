@@ -61,9 +61,25 @@ Both are uploaded by CI as the **`vwelfare-android-release`** artifact on each `
 4. **Install-test the APK:** `./gradlew assembleRelease` then `adb install -r app/build/outputs/apk/release/app-release.apk` on a device/emulator; confirm launch + smoke test.
 5. **Play Console → Internal testing → Create release →** upload the AAB, add testers, roll out. Complete the Data safety + content rating forms (health data).
 
-## CI result
+## CI result — ✅ GREEN
 
-_This report is committed alongside the CI change; the `mobile.yml` run for this commit builds APK+AAB, runs the no-debug/identifier assertions, and uploads artifacts. Status will be confirmed from the run (updated to ✅ green + run link once complete)._
+`mobile.yml` [run #5](https://github.com/alhazayed/assessment-project/actions/runs/28824943349) (branch `claude/capacitor-mobile-setup-xflg5y`) — Android job **success**. Verbatim from the runner (JDK 21 / SDK 35):
+
+```
+BUILD SUCCESSFUL in 2m 5s
+APK: app/build/outputs/apk/release/app-release-unsigned.apk
+AAB: app/build/outputs/bundle/release/app-release.aab
+package: name='com.vwelfare.app' versionCode='1' versionName='1.0.0' compileSdkVersion='35'
+sdkVersion:'23'
+targetSdkVersion:'35'
+OK: release APK is not debuggable
+Release identifiers verified: com.vwelfare.app / versionCode 1 / versionName 1.0.0
+```
+
+- **Release AAB + APK built:** ✅ `app-release.aab` and `app-release-unsigned.apk` (unsigned — the signing step is skipped because keystore secrets aren't set; add them to sign).
+- **No debug flags:** ✅ aapt confirms the release APK is **not** debuggable.
+- **Identifiers:** ✅ `com.vwelfare.app` / versionCode 1 / versionName 1.0.0 / minSdk 23 / targetSdk 35.
+- **Artifact:** ✅ `vwelfare-android-release` (8.9 MB, contains the AAB + APK), retained ~90 days — [download](https://github.com/alhazayed/assessment-project/actions/runs/28824943349/artifacts/8122281375).
 
 ## Go / No-Go — Internal Testing
 
