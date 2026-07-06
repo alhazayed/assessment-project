@@ -26,6 +26,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const showPackages = flagRow?.is_enabled ?? false
   const isMobileApp = isMobileAppUserAgent((await headers()).get('user-agent'))
 
+  // Admin accounts are web-only in the native app: bounce them to the notice
+  // instead of the standard app shell (defense in depth on top of middleware +
+  // the admin PIN).
+  if (isMobileApp && (profile?.role === 'admin' || profile?.role === 'superadmin')) {
+    redirect('/mobile/web-only')
+  }
+
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: 'var(--page-bg)' }}>
       <a

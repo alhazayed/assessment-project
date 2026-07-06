@@ -40,16 +40,18 @@ export async function middleware(request: NextRequest) {
 
   // Keep every admin surface out of the Capacitor native app (defense in depth:
   // admin also requires an admin PIN that mobile patients/clinicians never
-  // have). The native shell tags its WebView User-Agent; any admin path from it
-  // is bounced to the dashboard.
+  // have). The native shell tags its WebView User-Agent; any admin deep link
+  // from it is bounced to the web-only access notice.
   if (isMobileAppUserAgent(request.headers.get('user-agent'))) {
     const isAdminPath =
       pathname.startsWith('/x/control') ||
       pathname === '/admin' ||
-      pathname.startsWith('/admin/')
+      pathname.startsWith('/admin/') ||
+      pathname.startsWith('/dashboard/admin') ||
+      pathname.startsWith('/settings/admin')
     if (isAdminPath) {
       const url = request.nextUrl.clone()
-      url.pathname = '/dashboard'
+      url.pathname = '/mobile/web-only'
       url.search = ''
       return NextResponse.redirect(url)
     }
