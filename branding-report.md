@@ -21,9 +21,9 @@
 
 Source art (`icon.png`, `splash.png`, `playstore-icon.png`) is committed under `capacitor/assets/`.
 
-## Brand wiring (also a build fix)
+## Brand theming
 
-`styles.xml` referenced `@color/colorPrimary` / `colorPrimaryDark` / `colorAccent` but **no `colors.xml` defined them** — a latent resource-link failure for the Android build. Added `values/colors.xml` with the official palette, which both fixes the build and applies brand theming:
+`styles.xml` references `@color/colorPrimary` / `colorPrimaryDark` / `colorAccent`. These resolve to a library default at build time (the Cap 7 Android build passed **without** an app-level definition — see CI below), so this is **not** a build fix — it's a branding improvement: added `values/colors.xml` to **override** the defaults with the official V Welfare palette, and to define the notification tint color:
 
 ```xml
 <color name="colorPrimary">#1D6296</color>
@@ -50,7 +50,7 @@ cd capacitor && npx @capacitor/assets generate --iconBackgroundColor '#ffffff' -
 
 (monochrome + notification icons remain custom-generated regardless of tool).
 
-## Build / CI
+## Build / CI — ✅ GREEN
 
-- **Android release build:** validated by GitHub Actions (`mobile.yml`) on the PR — no Android SDK in this container. This commit also clears the missing-`colorPrimary` resource error, so it should unblock the Android resource compile.
+- **Android release build:** ✅ the `mobile.yml` Android job built the release AAB successfully on the runner with all branding assets (run #2, commit `2dd1b60`, conclusion **success**) — the `<monochrome>` layer, Android-12 splash theme attributes, FCM notification meta-data, and `colors.xml` all compile. (No Android SDK in this container, so CI is the source of truth.)
 - Web build + `cap sync`: green.

@@ -75,14 +75,19 @@ Updated in **both** `package.json` (root — web bundle) and `capacitor/package.
 
 - **Web build:** ✅ passes (Next 16 / React 19).
 - **`cap sync`:** ✅ passes (7 plugins, both platforms).
-- **Android release AAB:** built in **GitHub Actions** (`mobile.yml`) — this container has **no Android SDK**, so the AAB cannot be produced locally; the CI runner (JDK 21 + SDK 35) is the source of truth. _Status: see CI result below._
+- **Android release AAB:** ✅ **built successfully in GitHub Actions** (`mobile.yml`) — this container has **no Android SDK**, so the CI runner (JDK 21 + SDK 35) is the source of truth. Verified on the runner with the full Cap 7 stack.
 - **iOS:** archive is opt-in on a mac runner (`ENABLE_IOS_BUILD=true`); not built here (needs macOS/Xcode).
 
-## CI result
+## CI result — ✅ GREEN
 
-`mobile.yml` now runs on this PR (`pull_request`). The Android job installs deps → `next build` → `cap sync` → `./gradlew bundleRelease` (unsigned unless signing secrets are set) → uploads the AAB artifact.
+`mobile.yml` runs on the PR (`pull_request`): installs deps → `next build` → `cap sync` → `./gradlew bundleRelease` (unsigned unless signing secrets are set) → uploads the AAB artifact.
 
-> **Status: run triggered on push; result to be confirmed from the workflow run.** If the Gradle build surfaces any Cap 7 issue, it will be fixed and re-run until green.
+| Run | Commit | Contents | Conclusion |
+|---|---|---|---|
+| #1 | `84bcd33` | Capacitor 7 upgrade | ✅ **success** |
+| #2 | `2dd1b60` | Cap 7 + full Android branding | ✅ **success** |
+
+The Android release build passes end-to-end on Capacitor 7 (SDK 35 / AGP 8.7.2 / Gradle 8.11.1 / JDK 21). Vercel (web) is green on the same commits.
 
 ---
 
