@@ -28,7 +28,11 @@ android {
     signingConfigs {
         release {
             if (keystorePropertiesFile.exists()) {
-                storeFile file(keystoreProperties['storeFile'])
+                // Resolve storeFile against the root project (capacitor/android), where
+                // keystore.properties lives and CI writes the keystore — matching the
+                // contract documented in keystore.properties.example. Plain file() would
+                // resolve relative to this app/ module and fail to find the keystore.
+                storeFile rootProject.file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']

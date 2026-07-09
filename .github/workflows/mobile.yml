@@ -101,6 +101,25 @@ jobs:
           echo "$BADGING" | grep -q "versionName='1.0.0'" || { echo "::error::unexpected versionName"; exit 1; }
           echo "Release identifiers verified: com.vwelfare.app / versionCode 1 / versionName 1.0.0"
 
+      - name: Verify release is signed (when keystore secrets are set)
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        working-directory: capacitor/android
+        run: |
+          set -e
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          AAB=$(ls app/build/outputs/bundle/release/*.aab | head -1)
+          # A signed release must not be the unsigned artifact Gradle emits without a keystore.
+          case "$APK" in
+            *-unsigned.apk) echo "::error::keystore secrets are set but the APK is unsigned ($APK) — signing did not apply"; exit 1 ;;
+          esac
+          # Assert the APK carries a valid signature (apksigner is the source of truth).
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+          echo "OK: release APK is signed"
+          # Assert the AAB is signed (jarsigner reports the upload-key signature block).
+          jarsigner -verify "$AAB" | grep -q "jar verified" || { echo "::error::release AAB is not signed"; exit 1; }
+          echo "OK: release AAB is signed"
+
       - name: Upload release artifacts (AAB + APK)
         uses: actions/upload-artifact@v4
         with:
