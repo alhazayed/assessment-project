@@ -7,6 +7,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { QueryClientProviderWrapper } from '@/components/providers/query-client-provider'
 import * as Sentry from '@sentry/nextjs'
+import NativeBootstrap from '@/components/native/NativeBootstrap'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -88,6 +89,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {children}
           <Analytics />
           <SpeedInsights />
+          <NativeBootstrap />
         </QueryClientProviderWrapper>
       </body>
     </html>

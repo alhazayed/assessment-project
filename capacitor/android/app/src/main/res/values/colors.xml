@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Official V Welfare brand palette -->
+    <color name="colorPrimary">#1D6296</color>
+    <color name="colorPrimaryDark">#12273C</color>
+    <color name="colorAccent">#F3650A</color>
+    <!-- Status-bar notification tint (FCM default_notification_color) -->
+    <color name="vw_notification">#1D6296</color>
+</resources>

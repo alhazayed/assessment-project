@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>V Welfare</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #12273c;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      .wrap {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        text-align: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      .spinner {
+        width: 42px;
+        height: 42px;
+        border: 4px solid rgba(255, 255, 255, 0.2);
+        border-top-color: #f3650a;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+      h1 {
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0;
+        color: #ffffff;
+      }
+      p {
+        margin: 0;
+        max-width: 22rem;
+        font-size: 14px;
+        line-height: 1.5;
+        opacity: 0.8;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      This local page is only shown briefly while the native shell loads the
+      remote platform (see `server.url` in capacitor.config.ts), or if the
+      device is offline. The real application is served from the deployed web
+      platform and is not bundled here.
+    -->
+    <div class="wrap">
+      <div class="spinner"></div>
+      <h1>V Welfare</h1>
+      <p>Loading your wellbeing platform…</p>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">V Welfare</string>
+    <string name="title_activity_main">V Welfare</string>
+    <string name="package_name">com.vwelfare.app</string>
+    <string name="custom_url_scheme">com.vwelfare.app</string>
+</resources>

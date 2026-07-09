@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# env
+.env
+
+# signing secrets & push credentials (never commit)
+android/keystore.properties
+android/*.keystore
+android/*.jks
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
+ios/App/App/*.p8
+ios/App/App/*.p12
+
+# Capacitor / native build outputs
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/app/release/
+android/capacitor-cordova-android-plugins/
+ios/App/Pods/
+ios/App/build/
+ios/App/App/public/
+DerivedData/
+*.xcuserstate
+
+# misc
+.DS_Store
