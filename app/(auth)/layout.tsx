@@ -73,9 +73,9 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
       </div>
 
       {/* Form panel */}
-      <div className={`flex-1 flex flex-col ${isRtl ? 'order-1' : 'order-2'}`} style={{ backgroundColor: 'var(--page-bg)' }}>
+      <div className={`flex-1 min-w-0 flex flex-col ${isRtl ? 'order-1' : 'order-2'}`} style={{ backgroundColor: 'var(--page-bg)' }}>
         {/* Topbar */}
-        <div className="flex items-center justify-between px-8 py-5">
+        <div className="flex items-center justify-between px-4 sm:px-8 py-5 gap-2 safe-top safe-x">
           {/* Mobile logo */}
           <Link href="/" className="flex items-center gap-2 no-underline lg:invisible">
             <div className="w-8 h-8 rounded-[9px] flex items-center justify-center" style={{ background: '#1D6296' }}>
@@ -92,14 +92,14 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         </div>
 
         {/* Form content */}
-        <div className="flex-1 flex items-center justify-center px-6 py-10">
-          <div className="w-full max-w-[400px]">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-10">
+          <div className="w-full max-w-[400px] min-w-0">
             {children}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-8 py-5 text-center">
+        <div className="px-4 sm:px-8 py-5 text-center">
           <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
             {isRtl ? `© ${new Date().getFullYear()} V Welfare. جميع الحقوق محفوظة.` : `© ${new Date().getFullYear()} V Welfare. All rights reserved.`}
           </p>

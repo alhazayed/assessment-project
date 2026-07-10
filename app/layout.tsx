@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
 import { Inter, Tajawal } from 'next/font/google'
 import './globals.css'
@@ -22,6 +22,17 @@ const tajawal = Tajawal({
   variable: '--font-tajawal',
   display: 'swap',
 })
+
+// Explicit viewport so the layout scales to every device and extends into the
+// safe areas (notch / Dynamic Island / status + navigation bars) of the native
+// shell. viewport-fit=cover is what makes env(safe-area-inset-*) resolve to real
+// values; paired with the .safe-* utilities in globals.css.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#12273C',
+}
 
 export const metadata: Metadata = {
   title: {

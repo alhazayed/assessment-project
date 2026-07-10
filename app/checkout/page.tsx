@@ -200,7 +200,7 @@ function CheckoutForm() {
   }
 
   return (
-    <div className="grid md:grid-cols-2 gap-12">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
       {/* Order Summary */}
       <div>
         <h2
@@ -306,7 +306,7 @@ function CheckoutForm() {
               onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
               placeholder={lang === 'ar' ? 'أدخل الرمز' : 'Enter code'}
               disabled={promoApplied || promoLoading}
-              className="flex-1 px-4 py-2 rounded-lg border"
+              className="flex-1 min-w-0 px-4 py-2 rounded-lg border"
               style={{
                 borderColor: 'var(--border)',
                 backgroundColor: 'var(--page-bg)',

@@ -50,7 +50,7 @@ export default async function LandingPage() {
     <div className="min-h-screen" style={{ backgroundColor: 'var(--page-bg)' }}>
 
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40" style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+      <header className="sticky top-0 z-40 safe-top safe-x" style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 flex-shrink-0 no-underline">
@@ -61,7 +61,7 @@ export default async function LandingPage() {
           </Link>
 
           {/* Desktop nav links */}
-          <nav className="hidden md:flex items-center gap-6 text-[13.5px] font-medium ms-6" style={{ color: 'var(--text-secondary)' }}>
+          <nav className="hidden lg:flex items-center gap-6 text-[13.5px] font-medium ms-6" style={{ color: 'var(--text-secondary)' }}>
             <a href="#services" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.services', lang)}</a>
             <a href="#assessments" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.assessments', lang)}</a>
             <a href="/packages" className="hover:text-[var(--text-primary)] transition-colors flex items-center gap-2">
