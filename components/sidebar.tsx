@@ -236,7 +236,7 @@ export default function Sidebar({ profile, lang, showPackages = false, isMobileA
     <>
       {/* Mobile top bar — hidden on lg+ */}
       <div
-        className="lg:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 h-16 flex-shrink-0"
+        className="lg:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 h-16 flex-shrink-0 safe-top safe-x"
         style={{ backgroundColor: 'var(--sidebar-bg)', borderBottom: '1px solid var(--sidebar-border)' }}
       >
         <button

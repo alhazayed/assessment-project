@@ -613,3 +613,16 @@ html.dark { color-scheme: dark; }
 .dark .from-brand-50 { --tw-gradient-from: rgba(76,155,224,0.08); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(76,155,224,0)); }
 .dark .to-blue-50    { --tw-gradient-to: rgba(59,130,246,0.05); }
 .dark .to-purple-50  { --tw-gradient-to: rgba(168,85,247,0.05); }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Safe-area insets — native shell (notch / Dynamic Island / status + nav bars)
+   viewport-fit=cover (see app/layout.tsx) makes env(safe-area-inset-*) resolve
+   to real values on notched devices. On Android the app opts out of Android 15
+   edge-to-edge enforcement, so these insets are 0 there (content already sits
+   within the system bars); on iOS they protect content from the notch / home
+   indicator. Apply to sticky/fixed top bars, bottom bars, and full-bleed panels.
+   ───────────────────────────────────────────────────────────────────────── */
+.safe-top    { padding-top: max(env(safe-area-inset-top, 0px), 0px); }
+.safe-bottom { padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px); }
+.safe-x      { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+.min-h-dvh   { min-height: 100dvh; }

@@ -27,18 +27,18 @@ export default async function CliniciansPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--page-bg)' }}>
-      <header className="sticky top-0 z-50" style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 no-underline">
+      <header className="sticky top-0 z-50 safe-top safe-x" style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
+          <Link href="/" className="flex items-center gap-2.5 no-underline min-w-0">
             <BrandLogo variant="icon" size={36} />
-            <span className="text-base font-extrabold tracking-tight" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+            <span className="hidden sm:inline text-base font-extrabold tracking-tight truncate" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
               V Welfare
             </span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <DarkModeToggle />
             <LanguageToggle lang={lang} />
-            <Link href="/login" className="btn-ghost">{isRtl ? 'تسجيل الدخول' : 'Sign in'}</Link>
+            <Link href="/login" className="hidden sm:inline-flex btn-ghost">{isRtl ? 'تسجيل الدخول' : 'Sign in'}</Link>
             <Link href="/register" className="btn-accent">{isRtl ? 'إنشاء حساب' : 'Create account'}</Link>
           </div>
         </div>
