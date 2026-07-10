@@ -31,9 +31,20 @@
 - **Safe-area insets** wired (`viewport-fit=cover` + `.safe-*`), active on iOS notch; no-op on the current Android edge-to-edge opt-out. ✅
 - **Desktop unaffected** — no regressions 1280–1920. ✅
 
+## Authenticated surface — code-certified, runtime pending
+
+The ~36 authenticated routes could not be logged into from the audit environment (no network egress to Supabase). They were **audited by code inspection** for the overflow bug-classes fixed on the public surface and are **clean**: no base-less grids, every wide table wrapped in `overflow-x-auto`, only `max-w-*` container caps, no layout-fixed pixel widths. See `RESPONSIVE_AUDIT.md`.
+
+**To finish runtime certification** (one command, in an env that can reach Supabase):
+
+```bash
+BASE_URL=https://<preview-or-prod> E2E_EMAIL='…' E2E_PASSWORD='…' \
+  node scripts/responsive-audit.mjs   # exits non-zero on any overflow
+```
+
 ## Not yet certified (requires session / device)
 
-- **~36 authenticated routes** — need a seeded Supabase session (patient/clinician/admin) to run through the same harness. Shared shell is hardened; data-dense views (tables/charts/calendars) unverified at runtime.
+- **Authenticated routes at runtime** — code-clean; run the harness above with a session to certify rendering/data-density.
 - **On-device Capacitor behaviors** — mobile keyboard resize (plugin not yet added), physical notch/Dynamic Island rendering, real touch-target hit testing.
 
 ---

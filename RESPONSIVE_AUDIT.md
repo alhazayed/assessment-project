@@ -63,9 +63,37 @@ Breakpoints per route: 320, 360, 375, 390, 412, 414, 430, 480, 540, 600, 768, 82
 
 ---
 
+## Authenticated routes — code-level audit (session-blocked at runtime)
+
+A live Supabase session could not be established in the audit environment (no network egress to the Supabase host; repo ships placeholder keys), so the ~36 authenticated routes were audited by **code inspection** for the same overflow bug-classes that were fixed on the public surface. **Result: clean — no changes required.**
+
+| Bug-class checked | Finding in `app/(app)/**` and `app/x/control/**` |
+|---|---|
+| Base-less responsive grids (`grid md:grid-cols-N` w/o `grid-cols-1`) | **None** — the checkout defect does not recur here |
+| Wide tables without a scroll wrapper | **None** — every `min-w-[500–700px]` table is wrapped in `overflow-x-auto` (admin: promo-codes, results, assessments, packages, audit, users; patient: billing, assessments, insights heatmap) |
+| Fixed pixel widths used for layout | **None** — only `max-w-[1200/1400px]` container caps and `min-w-[120px]` chart tooltips (both safe) |
+| Flex rows with non-shrinking inputs | **None** observed |
+
+This certifies the authenticated surface at the **code level**. **Runtime** certification (real data density, exact rendering, touch targets) still requires a session or device — use the harness below.
+
+## Reusable harness — `scripts/responsive-audit.mjs`
+
+A turnkey Playwright sweep (18 breakpoints + landscape, native UA, overflow gate) that also **logs in and certifies the authenticated routes** when credentials are supplied. Credentials are read from env at runtime — never hardcoded/committed.
+
+```bash
+# public routes only, local dev server:
+BASE_URL=http://localhost:3111 node scripts/responsive-audit.mjs
+
+# full run incl. authenticated routes (against a reachable env with real Supabase):
+BASE_URL=https://<preview-or-prod-url> E2E_EMAIL='…' E2E_PASSWORD='…' \
+  node scripts/responsive-audit.mjs
+```
+
+Exits non-zero on any overflow, so it can gate CI (a Playwright job with network egress + credentials-as-secrets pointed at the Vercel preview would fully automate authenticated certification).
+
 ## Remaining risks
 
-1. **Authenticated routes not runtime-certified** (dashboard, assessments/[id], messages, journal, mood, insights, profile, billing, patient/clinician, `/x/control/*`). They share the audited/hardened shell, but data-dense views (tables, charts, calendars) need a seeded session or on-device QA to certify. Tables already use the `overflow-x-auto` + `min-w` wrapper pattern (17 instances), which is the correct responsive-table approach.
+1. **Authenticated routes not *runtime*-certified.** Code-level audit is clean (above); run `scripts/responsive-audit.mjs` with credentials against a reachable deployment to complete runtime certification.
 2. **Latent grid pattern.** 7 other `grid <bp>:grid-cols-N` usages lack a base `grid-cols-1`. They passed the sweep (their content wraps), but are the same shrink-risk class as the checkout bug — normalizing them to `grid-cols-1 <bp>:grid-cols-N` is recommended (defensive; not an observed defect).
 3. **Capacitor Keyboard plugin not installed.** Keyboard open/close viewport resize relies on WebView defaults. Recommend adding `@capacitor/keyboard` with `resize: 'native'` and testing focused-input scroll on device.
 4. **Safe-area is wired but currently a no-op on Android** (the app opts out of Android 15 edge-to-edge, so insets are 0). It becomes active on iOS (notch/Dynamic Island) once the iOS target is built.
