@@ -7,6 +7,16 @@ import { secureSet } from '@/lib/capacitor/secure-storage'
 
 const PUSH_TOKEN_KEY = 'vw_push_token'
 
+// Push requires a configured Firebase project (google-services.json on Android /
+// APNs on iOS). Until that is in place, calling PushNotifications.register()
+// throws a *native* error (Android: "Default FirebaseApp is not initialized")
+// that the JS try/catch cannot catch — it crashes the app the moment the user
+// grants notification permission. Gate registration behind an explicit flag so
+// the app never registers (and never crashes) unless push is actually set up.
+// To enable: add google-services.json (+ CI step) / APNs, then set
+// NEXT_PUBLIC_PUSH_ENABLED=true.
+const PUSH_ENABLED = process.env.NEXT_PUBLIC_PUSH_ENABLED === 'true'
+
 /**
  * Registers the device for push notifications when running in the native app,
  * and forwards the token to the existing backend (`/api/user/push-token`, which
@@ -21,7 +31,7 @@ export default function PushRegistration() {
   const router = useRouter()
 
   useEffect(() => {
-    if (!isNativeApp()) return
+    if (!isNativeApp() || !PUSH_ENABLED) return
 
     const removers: Array<() => void> = []
     let cancelled = false

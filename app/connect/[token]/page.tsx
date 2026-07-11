@@ -139,7 +139,7 @@ function ErrorState({ lang }: { lang: Lang }) {
     >
       {/* Header */}
       <header
-        className="sticky top-0 z-50"
+        className="sticky top-0 z-50 safe-top safe-x"
         style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
       >
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center gap-2.5">
@@ -251,7 +251,7 @@ export default async function ConnectTokenPage(
 
       {/* ── Header ── */}
       <header
-        className="sticky top-0 z-50"
+        className="sticky top-0 z-50 safe-top safe-x"
         style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}
       >
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center gap-2.5">

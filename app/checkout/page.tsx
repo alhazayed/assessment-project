@@ -419,7 +419,7 @@ export default function CheckoutPage() {
     <div style={{ backgroundColor: 'var(--page-bg)' }} className="min-h-screen">
       {/* Header */}
       <header
-        className="sticky top-0 z-40 border-b"
+        className="sticky top-0 z-40 border-b safe-top safe-x"
         style={{
           backgroundColor: 'var(--surface)',
           borderColor: 'var(--border)',
