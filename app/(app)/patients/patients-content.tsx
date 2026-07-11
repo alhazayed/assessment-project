@@ -234,7 +234,7 @@ export default function PatientsContent() {
   return (
     <div className="flex h-full">
       {/* Main list */}
-      <div className={`flex-1 p-8 overflow-y-auto ${selected ? 'hidden md:block' : ''}`}>
+      <div className={`flex-1 p-4 sm:p-8 overflow-y-auto ${selected ? 'hidden md:block' : ''}`}>
         <div className="max-w-5xl">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -254,8 +254,8 @@ export default function PatientsContent() {
             />
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="text-left px-4 py-3 font-medium text-gray-600">{t('patients.col.patient', lang)}</th>
