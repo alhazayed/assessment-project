@@ -1721,7 +1721,38 @@ export const ASSESSMENT_CONTENT: Record<string, AssessmentContent> = {
   IPIP120: {
     overview: 'The IPIP-NEO-120 is a 120-item public-domain personality inventory measuring the five major personality domains — Neuroticism, Extraversion, Openness to Experience, Agreeableness, and Conscientiousness — and 30 specific facets (six per domain). Developed from the International Personality Item Pool (IPIP) by Goldberg et al. as a free alternative to the commercial NEO-PI-R, the IPIP-NEO shows comparable validity and reliability. Each domain captures a broad dimension of personality; the 30 facets provide the granular picture. Domain scores range from 24 to 120; the midpoint is 72. Results are descriptive, not diagnostic — there is no "good" or "bad" personality profile.',
     measuresDomain: 'Five major personality domains (OCEAN) and 30 specific personality facets',
-    bands: {},
+    bands: {
+      'Reserved & Structured Profile': {
+        explanation: 'An overall IPIP-120 total in the 120–299 range reflects a personality orientation that tends toward introversion, practicality, emotional sensitivity, and/or more structured or conventional approaches. The total is only a summary — your five domain scores (each 24–120) and the 30 facets tell the real story. For example, high Conscientiousness with low Extraversion describes many highly effective, disciplined people who prefer working independently.',
+        whatThisMeans: ['You likely prefer familiar environments, routine, and depth over breadth in social connection', 'Practicality and conscientiousness can be strengths even with a lower overall total', 'A higher Neuroticism domain indicates emotional sensitivity that can be both a source of depth and of distress', 'This is a common and functional personality profile — the total does not indicate a problem'],
+        recommendations: ['Review your individual OCEAN domain and facet scores — they are far more informative than the total', 'High introversion paired with high Conscientiousness predicts strong performance in focused, independent work', 'If the Neuroticism domain is elevated, evidence-based approaches (CBT, mindfulness) help manage emotional reactivity'],
+        relatedDisorders: [],
+      },
+      'Moderate Trait Expression': {
+        explanation: 'A total of 300–360 reflects moderate expression across the Big Five. You show a mix of introversion and extraversion, emotional stability and sensitivity, and a blend of open and conventional tendencies. Moderate profiles are the most common in population samples; which specific domains and facets are higher vs. lower is what matters.',
+        whatThisMeans: ['You adapt reasonably well across social, work, and personal contexts', 'Extreme tendencies in any single domain are unlikely — your overall profile is relatively balanced', 'Strengths and challenges depend on your specific domain and facet pattern'],
+        recommendations: ['Explore your domain and facet scores to identify your strongest and lowest traits', 'Moderate Conscientiousness suggests room to strengthen organisation, goal-setting, or follow-through', 'Moderate Agreeableness means you can be both collaborative and assertive depending on context'],
+        relatedDisorders: [],
+      },
+      'Balanced Personality Profile': {
+        explanation: 'A total of 361–420 reflects broadly balanced personality expression. You show meaningful engagement across multiple domains — likely a combination of openness, social engagement, warmth, and organisation — while Neuroticism is moderate or below average. This profile is associated with adaptability and wellbeing.',
+        whatThisMeans: ['You engage positively across social and intellectual domains with moderate emotional stability', 'A balance of Openness and Conscientiousness supports both creative thinking and follow-through', 'Agreeableness at this level supports healthy, cooperative relationships without necessarily being conflict-avoidant'],
+        recommendations: ['Identify your two or three highest facets — these are your personality strengths to leverage', 'Balanced profiles adapt well across roles; consider how your particular trait combination fits your career and relationships', 'High Openness + Conscientiousness pairs creativity with the discipline to execute'],
+        relatedDisorders: [],
+      },
+      'Expressive & Engaged Profile': {
+        explanation: 'A total of 421–480 reflects high expression across the Big Five. You likely show above-average Openness, Extraversion, Agreeableness, and Conscientiousness, with lower Neuroticism. This profile is associated with intellectual curiosity, social energy, warmth, and organised goal-pursuit.',
+        whatThisMeans: ['You tend to be socially engaged, intellectually curious, warm, and organised', 'This combination is associated with leadership effectiveness, relationship satisfaction, and creative achievement', 'Very high Openness can make finishing projects harder — balancing novelty-seeking with follow-through helps'],
+        recommendations: ['Leverage high Openness and Conscientiousness in creative, intellectually demanding roles', 'High Agreeableness can lead to over-accommodating others — assertiveness skills complement this strength', 'Check the facet breakdown: very high Extraversion benefits from built-in recovery time'],
+        relatedDisorders: [],
+      },
+      'Highly Active & Open Profile': {
+        explanation: 'A total of 481–600 reflects very high expression across most Big Five domains — particularly Openness, Extraversion, Agreeableness, and Conscientiousness — with minimal Neuroticism. This is the highest-engagement profile, associated with intellectual vitality, social drive, and organisational strength.',
+        whatThisMeans: ['You are likely highly socially engaged, intellectually curious, warm, and achievement-oriented', 'This profile appears more often in leadership, entrepreneurial, creative, and helping professions', 'Very high Openness can mean breadth of interests over depth — intentional focus is valuable', 'Very high Agreeableness can conflict with assertiveness and boundary-setting'],
+        recommendations: ['Identify the 1–2 facets where your score is highest and pursue roles that leverage them', 'Very high Extraversion + Openness with high Conscientiousness is characteristic of effective leaders and innovators', 'Watch for "too much of a good thing": very high Agreeableness can make saying no hard; very high Openness can scatter attention'],
+        relatedDisorders: [],
+      },
+    },
     relatedCodes: ['BFI44', 'RSES', 'PSS10', 'SWLS'],
   },
 
