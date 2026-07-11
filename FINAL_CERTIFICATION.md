@@ -28,7 +28,7 @@
 - **Critical:** 0
 - **High:** 0
 - **Medium:** 0 code-level. *Process*: authenticated **browser** E2E certification (responsive/functional/a11y) not yet executed; live rate-limit exercise pending; Play Console compliance forms not yet completed.
-- **Low:** 4 — **SEC-3** (admin auth-failure returns 500 + echoes internal `NEXT_REDIRECT`; access still denied — see `SECURITY_AUDIT.md`), **SEC-4** (Supabase leaked-password protection disabled; one-toggle fix), SEC-1 (legacy anon key hardcoded in `mobile/app.json`, publishable/RLS-guarded), plus tech-debt (Keyboard plugin, shared-header refactor, doc archiving).
+- **Low:** 3 — **SEC-4** (Supabase leaked-password protection disabled; one-toggle fix), SEC-1 (legacy anon key hardcoded in `mobile/app.json`, publishable/RLS-guarded), plus tech-debt (Keyboard plugin, shared-header refactor, doc archiving). *(SEC-3 — admin auth-failure 500/`NEXT_REDIRECT` echo — **fixed in this PR**: clean 401 via `adminRouteError()`.)*
 
 ## Runtime gate to reach 🟢 (status)
 

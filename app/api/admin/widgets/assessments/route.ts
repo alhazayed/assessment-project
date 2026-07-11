@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-auth'
 import * as Sentry from '@sentry/nextjs'
 
 export const maxDuration = 30
@@ -38,15 +38,13 @@ export async function GET(): Promise<Response> {
       }
     )
   } catch (error) {
+    if (isAuthRedirectError(error)) return adminRouteError(error)
     console.error('[widget:assessments] Error:', error)
     Sentry.captureException(error, {
       tags: { widget: 'assessments', type: 'api' },
       extra: { duration: Date.now() - startTime },
     })
 
-    return Response.json(
-      { error: 'Failed to fetch assessments count', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
+    return adminRouteError(error)
   }
 }
