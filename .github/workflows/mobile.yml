@@ -14,6 +14,11 @@ on:
       - 'package.json'
       - 'package-lock.json'
   workflow_dispatch:
+    inputs:
+      cap_server_url:
+        description: 'URL the native app loads (server.url). Leave blank for production; set to a preview URL to build a test APK.'
+        required: false
+        default: ''
 
 concurrency:
   group: mobile-build-${{ github.ref }}
@@ -29,6 +34,9 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
       NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL || 'https://app.vwelfare.com' }}
+      # Overrides Capacitor server.url at `cap sync` time when set via workflow_dispatch.
+      # Empty on push/PR builds → capacitor.config.ts falls back to production.
+      CAP_SERVER_URL: ${{ github.event.inputs.cap_server_url }}
       # Android signing (optional): if unset, an unsigned release bundle is built.
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

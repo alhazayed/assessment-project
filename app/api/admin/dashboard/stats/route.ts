@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-auth'
 import * as Sentry from '@sentry/nextjs'
 
 export const maxDuration = 60
@@ -111,13 +111,11 @@ export async function GET(request: Request) {
       warning: 'Using live query instead of cached materialized view',
     })
   } catch (error) {
+    if (isAuthRedirectError(error)) return adminRouteError(error)
     console.error('Dashboard API error:', error)
     Sentry.captureException(error, {
       tags: { endpoint: 'admin_dashboard_stats' },
     })
-    return Response.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    )
+    return adminRouteError(error)
   }
 }

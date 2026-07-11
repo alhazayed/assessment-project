@@ -121,7 +121,7 @@ export default function Sidebar({ profile, lang, showPackages = false, isMobileA
 
   const sidebarContent = (
     <aside
-      className={`fixed inset-y-0 z-40 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+      className={`fixed inset-y-0 z-40 flex flex-col safe-top transition-transform duration-300 ease-in-out lg:translate-x-0 ${
         isOpen
           ? 'translate-x-0'
           : isRtl ? 'translate-x-full' : '-translate-x-full'
@@ -236,7 +236,7 @@ export default function Sidebar({ profile, lang, showPackages = false, isMobileA
     <>
       {/* Mobile top bar — hidden on lg+ */}
       <div
-        className="lg:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 h-16 flex-shrink-0 safe-top safe-x"
+        className="lg:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 h-[calc(var(--topbar-h)_+_env(safe-area-inset-top))] flex-shrink-0 safe-top safe-x"
         style={{ backgroundColor: 'var(--sidebar-bg)', borderBottom: '1px solid var(--sidebar-border)' }}
       >
         <button

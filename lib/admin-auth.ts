@@ -1,6 +1,25 @@
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { NextResponse } from 'next/server'
+
+// requireAdmin() denies access via Next.js redirect(), which throws a
+// NEXT_REDIRECT control error. Inside an API route handler that surfaces as a
+// 500 that echoes the internal "NEXT_REDIRECT" token unless it is caught and
+// translated. Use adminRouteError() in admin API catch blocks so an auth
+// denial returns a clean 401 and any genuine error returns a generic 500
+// (never leaking an internal error message/stack). See SEC-3 in SECURITY_AUDIT.md.
+export function isAuthRedirectError(error: unknown): boolean {
+  const digest = (error as { digest?: unknown } | null)?.digest
+  return digest != null && String(digest).startsWith('NEXT_REDIRECT')
+}
+
+export function adminRouteError(error: unknown): NextResponse {
+  if (isAuthRedirectError(error)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+}
 
 // Role is bound into the HMAC so that revoking admin access invalidates the existing cookie.
 export async function computeHmac(userId: string, role: string): Promise<string> {

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError } from '@/lib/admin-auth'
 
 export const maxDuration = 60
 
@@ -22,9 +22,6 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('Engagement API error:', error)
-    return Response.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return adminRouteError(error)
   }
 }

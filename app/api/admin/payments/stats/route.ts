@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
@@ -62,9 +62,6 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('Payment stats error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    )
+    return adminRouteError(error)
   }
 }

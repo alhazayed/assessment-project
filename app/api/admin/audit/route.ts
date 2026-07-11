@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
@@ -148,9 +148,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ ok: true, deletedCount })
   } catch (error) {
     console.error('Audit delete error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
-      { status: 500 }
-    )
+    return adminRouteError(error)
   }
 }
