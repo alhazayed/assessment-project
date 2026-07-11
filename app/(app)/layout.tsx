@@ -44,7 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Sidebar profile={profile} lang={lang} showPackages={showPackages} isMobileApp={isMobileApp} />
       <main
         id="main-content"
-        className="flex-1 min-w-0 overflow-auto pt-16 lg:pt-0 lg:ms-[248px]"
+        className="flex-1 min-w-0 overflow-auto pt-[calc(var(--topbar-h)_+_env(safe-area-inset-top))] lg:pt-0 lg:ms-[248px]"
         style={{ backgroundColor: 'var(--page-bg)' }}
       >
         {children}
