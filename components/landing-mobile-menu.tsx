@@ -37,7 +37,7 @@ export default function LandingMobileMenu({ lang, isLoggedIn = false }: { lang: 
           />
           {/* Drawer */}
           <div
-            className={`fixed top-0 ${isRtl ? 'left-0' : 'right-0'} z-50 h-full w-72 flex flex-col shadow-2xl`}
+            className={`fixed top-0 ${isRtl ? 'left-0' : 'right-0'} z-50 h-full w-72 flex flex-col shadow-2xl safe-top safe-x`}
             style={{ backgroundColor: 'var(--surface)' }}
           >
             {/* Drawer header */}

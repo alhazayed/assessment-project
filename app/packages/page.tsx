@@ -248,7 +248,7 @@ export default function PackagesPage() {
     >
       {/* Header */}
       <header
-        className="sticky top-0 z-40 border-b"
+        className="sticky top-0 z-40 border-b safe-top safe-x"
         style={{
           backgroundColor: 'var(--surface)',
           borderColor: 'var(--border)',
