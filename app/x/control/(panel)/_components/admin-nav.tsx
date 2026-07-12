@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, LogOut, TrendingUp, Menu, X, Layers, ShieldAlert, ShieldCheck, DollarSign, Ticket } from 'lucide-react'
+import { LayoutDashboard, Users, ClipboardList, BarChart3, Settings, Megaphone, ScrollText, LogOut, TrendingUp, Menu, X, Layers, ShieldAlert, ShieldCheck, DollarSign, Ticket, PieChart } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 import BrandLogo from '@/components/brand-logo'
@@ -35,6 +35,7 @@ export default function AdminNav({ role }: { role: string }) {
     // Promo code management is a superadmin-only function.
     ...(role === 'superadmin' ? [{ href: '/x/control/promo-codes', label: t('admin.nav.promo_codes', lang), icon: Ticket }] : []),
     { href: '/x/control/results',       label: t('admin.nav.results', lang),        icon: BarChart3 },
+    ...(role === 'superadmin' ? [{ href: '/x/control/item-analytics', label: lang === 'ar' ? 'تحليل الإجابات' : 'Answer analytics', icon: PieChart }] : []),
     { href: '/x/control/risk',          label: t('admin.nav.risk', lang),           icon: ShieldAlert },
     { href: '/x/control/platform',      label: t('admin.nav.platform', lang),       icon: Settings },
     { href: '/x/control/announcements', label: t('admin.nav.announcements', lang),  icon: Megaphone },

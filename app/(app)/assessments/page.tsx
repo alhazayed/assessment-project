@@ -199,6 +199,11 @@ export default async function AssessmentsPage() {
                       {t('assessments.score', lang)} {lastSubmission.total_score}
                     </span>
                   )}
+                  {lastSubmission && (
+                    <Link href={`/assessments/${d.id}/history`} className="btn-ghost flex items-center">
+                      {lang === 'ar' ? 'السجل والمقارنة' : 'History & compare'}
+                    </Link>
+                  )}
                 </div>
               </div>
             )

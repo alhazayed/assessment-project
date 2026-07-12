@@ -13,6 +13,7 @@ import { getAssessmentContent, getLocalizedBandContent, getLocalizedAssessmentMe
 import { ASSESSMENT_CONTENT_AR } from '@/lib/assessment-content-ar'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import AttemptCompareCard from '@/components/attempt-compare-card'
 import CrisisBanner from '@/components/crisis-banner'
 
 // @react-pdf/renderer is a heavy dependency — only load it once the user has
@@ -326,6 +327,8 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
             </div>
           )}
         </div>
+
+        <AttemptCompareCard definitionId={definition.id} lang={lang} />
 
         {definition.code === 'IPIP120' && domainScores && (
           <div className="card p-6">
