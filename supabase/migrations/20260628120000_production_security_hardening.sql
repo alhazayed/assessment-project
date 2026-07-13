@@ -2,11 +2,8 @@
 -- PREREQUISITE: deploy app code that uses createAdminClient() for admin RPCs
 -- and lib/clinician-patient-access.ts for clinical-notes API guards.
 --
--- 1. Revoke admin RPC functions from Data API roles (service_role only)
--- 2. Revoke remaining admin matview grant
--- 3. Replace clinical_notes policies (drop weak cn_* + strengthen baseline)
--- 4. Lock down generate_patient_access_code to service_role
--- 5. Add deletion_requested_at for GDPR account deletion workflow
+-- Uses conditional blocks for objects that may not exist on all environments
+-- (e.g. admin_demographics_summary, optional admin RPCs).
 
 -- ── Helper: clinician may access patient clinical data ─────────────────────
 CREATE OR REPLACE FUNCTION public.clinician_can_access_patient_notes(p_patient_id uuid)
@@ -36,37 +33,59 @@ AS $$
     );
 $$;
 
-REVOKE ALL ON FUNCTION public.clinician_can_access_patient_notes(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.clinician_can_access_patient_notes(uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.clinician_can_access_patient_notes(uuid) TO authenticated, service_role;
 
--- ── 1. Admin RPC functions — service_role only ─────────────────────────────
-REVOKE EXECUTE ON FUNCTION public.get_admin_dashboard_stats(INTEGER) FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.get_top_assessments(INTEGER) FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.get_high_risk_patients(INTEGER) FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.get_user_engagement_metrics() FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.get_assessment_completion_funnel(INTEGER) FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.get_demographics_breakdown(TEXT) FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.get_assessment_performance_comparison(UUID) FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.get_patient_risk_profile(UUID) FROM PUBLIC, anon, authenticated;
+-- ── 1. Admin RPC functions — service_role only (existing functions only) ─
+DO $migrate$
+DECLARE
+  fn record;
+BEGIN
+  FOR fn IN
+    SELECT p.oid, p.proname, pg_get_function_identity_arguments(p.oid) AS args
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname IN (
+        'get_admin_dashboard_stats',
+        'get_top_assessments',
+        'get_high_risk_patients',
+        'get_user_engagement_metrics',
+        'get_assessment_completion_funnel',
+        'get_demographics_breakdown',
+        'get_assessment_performance_comparison',
+        'get_patient_risk_profile'
+      )
+  LOOP
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION public.%I(%s) FROM PUBLIC, anon, authenticated', fn.proname, fn.args);
+    EXECUTE format('GRANT EXECUTE ON FUNCTION public.%I(%s) TO service_role', fn.proname, fn.args);
+  END LOOP;
+END
+$migrate$;
 
-GRANT EXECUTE ON FUNCTION public.get_admin_dashboard_stats(INTEGER) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_top_assessments(INTEGER) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_high_risk_patients(INTEGER) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_user_engagement_metrics() TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_assessment_completion_funnel(INTEGER) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_demographics_breakdown(TEXT) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_assessment_performance_comparison(UUID) TO service_role;
-GRANT EXECUTE ON FUNCTION public.get_patient_risk_profile(UUID) TO service_role;
-
--- Ensure service_role can read admin matviews used by RPCs and API routes
-GRANT SELECT ON public.admin_daily_stats TO service_role;
-GRANT SELECT ON public.admin_assessment_stats TO service_role;
-GRANT SELECT ON public.admin_user_engagement_stats TO service_role;
-GRANT SELECT ON public.admin_high_risk_alerts TO service_role;
-GRANT SELECT ON public.admin_demographics_summary TO service_role;
-
--- ── 2. Admin demographics matview — revoke Data API access ─────────────────
-REVOKE ALL ON public.admin_demographics_summary FROM anon, authenticated;
+-- ── 2. Admin matviews — grant service_role; revoke authenticated where present
+DO $migrate$
+DECLARE
+  mv text;
+BEGIN
+  FOREACH mv IN ARRAY ARRAY[
+    'admin_daily_stats',
+    'admin_assessment_stats',
+    'admin_user_engagement_stats',
+    'admin_high_risk_alerts',
+    'admin_demographics_summary'
+  ]
+  LOOP
+    IF EXISTS (
+      SELECT 1 FROM pg_matviews
+      WHERE schemaname = 'public' AND matviewname = mv
+    ) THEN
+      EXECUTE format('GRANT SELECT ON public.%I TO service_role', mv);
+      EXECUTE format('REVOKE ALL ON public.%I FROM anon, authenticated', mv);
+    END IF;
+  END LOOP;
+END
+$migrate$;
 
 -- ── 3. clinical_notes — drop weak cn_* policies; replace baseline policy ───
 DROP POLICY IF EXISTS "cn_clinician_own" ON public.clinical_notes;
@@ -87,7 +106,7 @@ CREATE POLICY clinician_own_notes ON public.clinical_notes
     AND public.clinician_can_access_patient_notes(patient_id)
   );
 
--- notes_admin_all and notes_patient_read_nonprivate from baseline remain unchanged.
+-- notes_admin_all, notes_patient_read_nonprivate, superadmin policies unchanged.
 
 -- ── 4. generate_patient_access_code — service_role only ────────────────────
 REVOKE EXECUTE ON FUNCTION public.generate_patient_access_code() FROM PUBLIC, anon, authenticated;
