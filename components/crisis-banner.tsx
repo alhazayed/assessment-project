@@ -2,15 +2,10 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { AlertTriangle, X, Phone, ExternalLink } from 'lucide-react'
+import { AlertTriangle, X } from 'lucide-react'
 import type { Lang } from '@/lib/i18n'
 import { t } from '@/lib/i18n'
-
-const CRISIS_LINES = [
-  { country_en: 'Saudi Arabia', country_ar: 'المملكة العربية السعودية', number: '920033360' },
-  { country_en: 'UAE',          country_ar: 'الإمارات',                  number: '800HOPE (4673)' },
-  { country_en: 'International', country_ar: 'دولي',                    number: '+1-800-273-8255' },
-]
+import CrisisResources from '@/components/crisis-resources'
 
 export default function CrisisBanner({ lang }: { lang: Lang }) {
   const supabase = useMemo(() => createClient(), [])
@@ -46,31 +41,7 @@ export default function CrisisBanner({ lang }: { lang: Lang }) {
           <AlertTriangle className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900 mb-0.5">{t('crisis.title', lang)}</p>
-          <p className="text-sm text-gray-600 mb-3">{t('crisis.body', lang)}</p>
-          <div className="flex flex-wrap gap-2">
-            {CRISIS_LINES.map(line => (
-              <a
-                key={line.number}
-                href={`tel:${line.number.replace(/\D/g, '')}`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-opacity hover:opacity-90"
-                style={{ backgroundColor: '#F3650A' }}
-              >
-                <Phone className="w-3 h-3" />
-                {isAr ? line.country_ar : line.country_en} · {line.number}
-              </a>
-            ))}
-            <a
-              href="https://findahelpline.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-              style={{ backgroundColor: '#1D6296', color: 'white' }}
-            >
-              <ExternalLink className="w-3 h-3" />
-              {t('crisis.more', lang)}
-            </a>
-          </div>
+          <CrisisResources lang={lang} />
         </div>
         <button
           onClick={() => setDismissed(true)}

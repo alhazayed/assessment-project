@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { scrubPHI } from '@/lib/security/anonymizePHI'
+import { clinicianCanAccessPatientNotes } from '@/lib/clinician-patient-access'
 
 async function requireClinician() {
   const supabase = createClient()
@@ -20,13 +22,17 @@ export async function GET(request: Request) {
   const patientId = searchParams.get('patient_id')
   if (!patientId) return NextResponse.json({ error: 'patient_id required' }, { status: 400 })
 
-  // Clinicians may only fetch notes for their own assigned patients
+  // Clinicians may only fetch notes for assigned or consent-linked patients
   const { data: callerProfile } = await supabase
     .from('profiles').select('role').eq('id', user.id).single()
   if (callerProfile?.role === 'clinician') {
-    const { data: patientProfile } = await supabase
-      .from('profiles').select('assigned_clinician_id').eq('id', patientId).single()
-    if (patientProfile?.assigned_clinician_id !== user.id) {
+    const allowed = await clinicianCanAccessPatientNotes(
+      supabase,
+      user.id,
+      patientId,
+      callerProfile.role,
+    )
+    if (!allowed) {
       return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
     }
   }
@@ -64,9 +70,13 @@ export async function POST(request: Request) {
   const { data: callerProfile } = await supabase
     .from('profiles').select('role').eq('id', user.id).single()
   if (callerProfile?.role === 'clinician') {
-    const { data: patientProfile } = await supabase
-      .from('profiles').select('assigned_clinician_id').eq('id', patient_id).single()
-    if (patientProfile?.assigned_clinician_id !== user.id) {
+    const allowed = await clinicianCanAccessPatientNotes(
+      supabase,
+      user.id,
+      patient_id,
+      callerProfile.role,
+    )
+    if (!allowed) {
       return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
     }
   }
@@ -100,9 +110,13 @@ export async function PUT(request: Request) {
   const { data: callerProfile } = await supabase
     .from('profiles').select('role').eq('id', user.id).single()
   if (callerProfile?.role === 'clinician') {
-    const { data: patientProfile } = await supabase
-      .from('profiles').select('assigned_clinician_id').eq('id', patient_id).single()
-    if (patientProfile?.assigned_clinician_id !== user.id) {
+    const allowed = await clinicianCanAccessPatientNotes(
+      supabase,
+      user.id,
+      patient_id,
+      callerProfile.role,
+    )
+    if (!allowed) {
       return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
     }
   }
@@ -133,7 +147,7 @@ export async function PUT(request: Request) {
   const context = [
     submissions?.length ? `Recent assessments: ${submissions.map(s => `${(s as any).assessment_definitions?.name_en} (${s.severity_band})`).join(', ')}` : null,
     moods?.length ? `Mood last ${moods.length} days: avg ${Math.round(moods.reduce((a, m) => a + m.mood_score, 0) / moods.length)}/10` : null,
-    notes?.length ? `Prior note excerpt: "${notes[0].body.slice(0, 200)}"` : null,
+    notes?.length ? `Prior note excerpt: "${scrubPHI(notes[0].body.slice(0, 200))}"` : null,
   ].filter(Boolean).join('. ')
 
   try {
@@ -141,7 +155,7 @@ export async function PUT(request: Request) {
     if (!apiKey) return NextResponse.json({ error: 'AI service not configured' }, { status: 503 })
 
     const { callGemini } = await import('@/lib/gemini')
-    const prompt = `You are a mental health clinician. Based on the following patient data, write a brief clinical progress note template (under 200 words). Write in the first-person clinician voice. Use only the data provided — do not invent clinical observations.\n\nPatient data: ${context || 'No recent data available.'}\n\nNote:`
+    const prompt = `You are a mental health clinician. Based on the following patient data, write a brief clinical progress note template (under 200 words). Write in the first-person clinician voice. Use only the data provided — do not invent clinical observations.\n\nPatient data: ${scrubPHI(context || 'No recent data available.')}\n\nNote:`
     const geminiBody = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: { maxOutputTokens: 300, temperature: 0.4 },

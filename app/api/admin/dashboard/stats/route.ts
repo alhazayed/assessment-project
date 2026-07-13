@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-auth'
 
 export const maxDuration = 60
@@ -7,7 +7,7 @@ export async function GET(request: Request) {
   try {
     await requireAdmin()
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Get days parameter from query
     const url = new URL(request.url)
