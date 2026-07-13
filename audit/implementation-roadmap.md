@@ -244,3 +244,19 @@ Only after all launch blockers pass:
 
 No critical/high authorization, clinical-integrity, payment-integrity, accessibility blocker, or recovery gap belongs in a post-launch backlog.
 
+## Audit verification baseline
+
+Executed against this checkout after installing the committed lockfile:
+
+| Check | Result |
+|---|---|
+| `npm run lint` | Pass; no warnings/errors |
+| `tsc --noEmit` | Pass |
+| `npm run test:phi` | Pass; 17/17 |
+| `npm run build` | Pass |
+| `npm audit` | Fail; 5 vulnerabilities (4 high, 1 moderate) |
+| `npm run test:security` without server | Invalid environment; fetch failures |
+| `npm run test:security` with local server | Fail; 19/35 pass, 16 fail |
+
+The local security failures returned HTTP 500 instead of expected 4xx because required Supabase environment variables were not provisioned in this cloud checkout. This does not prove an authorization bypass, but it does prove the suite is not hermetic and does not fail safely in an unconfigured environment. CI must provision an isolated test Supabase project and distinguish configuration failure from security assertions.
+
