@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { KPI_DEFINITIONS, type KPIValue } from '@/lib/types/kpi'
 import { EnhancedKPICard } from '@/components/kpi-card-enhanced'
-import { KpiTrendCharts } from '@/components/kpi-trend-charts'
+import { KpiTrendCharts } from '@/components/lazy-heavy'
 import { RefreshCw, Download, AlertCircle } from 'lucide-react'
 
 const ROWS: [number, number, string][] = [

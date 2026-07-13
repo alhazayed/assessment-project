@@ -3,10 +3,6 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 // GET /api/clinician/patients
-// Returns all active patients for the authenticated clinician, with
-// permission rows and the most recent assessment submission for each patient.
-// Also updates last_access_at on every returned relationship so the clinician's
-// most recent portal visit is recorded.
 export async function GET() {
   const supabase = createClient()
 
@@ -19,7 +15,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Verify the caller holds the clinician role
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('role')
@@ -34,9 +29,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden: clinician role required' }, { status: 403 })
   }
 
-  // Fetch all active relationships where this user is the clinician.
-  // Patient PII (email, phone, etc.) is intentionally excluded; only
-  // display-safe profile fields are returned.
   const { data: relationships, error: relError } = await supabase
     .from('clinician_patient_relationships')
     .select(`
@@ -63,9 +55,6 @@ export async function GET() {
   }
 
   const rows = relationships ?? []
-
-  // Collect all patient IDs so we can fetch the most recent submission for
-  // each patient in a single query rather than N individual round-trips.
   const patientIds = rows.map((r) => r.patient_id as string).filter(Boolean)
 
   let latestSubmissionsByPatient: Record<
@@ -74,27 +63,19 @@ export async function GET() {
   > = {}
 
   if (patientIds.length > 0) {
-    // Fetch the single most-recent submission per patient using a window
-    // function exposed through a Supabase RPC, or fall back to fetching all
-    // recent submissions and reducing client-side.
-    // We use a straightforward approach: fetch the latest submission_id per
-    // patient by ordering desc and deduplicating in-memory (avoids a stored
-    // procedure dependency).
-    const { data: submissions, error: subError } = await supabase
-      .from('assessment_submissions')
-      .select('user_id, submitted_at, severity_band')
-      .in('user_id', patientIds)
-      .order('submitted_at', { ascending: false })
+    const admin = createAdminClient()
+    const { data: submissions, error: subError } = await admin.rpc(
+      'get_latest_submissions_for_patients',
+      { p_patient_ids: patientIds }
+    )
 
     if (subError) {
-      // Non-fatal: log and continue without last assessment data
-      console.error('[GET /api/clinician/patients] submissions query error:', subError)
+      console.error('[GET /api/clinician/patients] submissions RPC error:', subError)
     } else {
-      // Keep only the first (most recent) submission seen for each patient
       for (const sub of submissions ?? []) {
-        const uid = sub.user_id as string
-        if (uid && !latestSubmissionsByPatient[uid]) {
-          latestSubmissionsByPatient[uid] = {
+        const pid = sub.patient_id as string
+        if (pid) {
+          latestSubmissionsByPatient[pid] = {
             submitted_at: sub.submitted_at,
             severity_band: sub.severity_band ?? null,
           }
@@ -103,28 +84,21 @@ export async function GET() {
     }
   }
 
-  // Update last_access_at on all active relationships for this clinician.
-  // Use the admin client so this write is not blocked by RLS policies that
-  // restrict patient-owned rows.
+  // Update last_access_at only for relationships returned (not all active rows)
   if (rows.length > 0) {
     const admin = createAdminClient()
+    const relationshipIds = rows.map((r) => r.id as string)
     const { error: updateError } = await admin
       .from('clinician_patient_relationships')
       .update({ last_access_at: new Date().toISOString() })
-      .eq('clinician_id', user.id)
-      .eq('status', 'active')
+      .in('id', relationshipIds)
 
     if (updateError) {
-      // Non-fatal: the read response is still valid; log for monitoring.
       console.error('[GET /api/clinician/patients] last_access_at update error:', updateError)
     }
   }
 
-  // Reshape into the documented response schema
   const patients = rows.map((rel) => {
-    // Supabase infers joined foreign-key rows as arrays in its generic types,
-    // but at runtime a to-one join returns a single object or null.
-    // We cast through `unknown` to bridge the type mismatch safely.
     const patientProfile = rel.patient as unknown as {
       full_name_en: string | null
       full_name_ar: string | null

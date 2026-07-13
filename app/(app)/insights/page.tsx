@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { Flame, TrendingUp, Calendar, BarChart2 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
-import MentalHealthRadar from '@/components/mental-health-radar'
+import MentalHealthRadar from '@/components/mental-health-radar-lazy'
+import RescreeningTrigger from '@/components/rescreening-trigger'
 
 type MoodLog = {
   log_date: string
@@ -85,9 +86,6 @@ export default function InsightsPage() {
       setMoodLogs(logs)
       setScoreHistory(scores)
 
-      // Fire rescreening check in background
-      fetch('/api/check-rescreening', { method: 'POST' }).catch(() => {})
-
       // Default to first assessment with multiple entries
       const codes = Array.from(new Set(scores.map(s => s.assessment_definitions?.code).filter((c): c is string => Boolean(c))))
       const firstWithMultiple = codes.find(code => scores.filter(s => s.assessment_definitions?.code === code).length > 1)
@@ -97,20 +95,24 @@ export default function InsightsPage() {
     load()
   }, [supabase])
 
-  const streak = calcStreak(moodLogs)
-  const last30 = getLast30Days()
-  const moodByDay = Object.fromEntries(
-    moodLogs.map(l => [l.log_date, l.mood_score])
+  const streak = useMemo(() => calcStreak(moodLogs), [moodLogs])
+  const last30 = useMemo(() => getLast30Days(), [])
+  const moodByDay = useMemo(
+    () => Object.fromEntries(moodLogs.map(l => [l.log_date, l.mood_score])),
+    [moodLogs]
   )
 
   // Available assessments with enough data for a trend line
-  const uniqueAssessments = Array.from(new Map(
+  const uniqueAssessments = useMemo(() => Array.from(new Map(
     scoreHistory
       .filter(s => s.assessment_definitions)
       .map(s => [s.assessment_definitions!.code, s.assessment_definitions!])
-  ).values())
+  ).values()), [scoreHistory])
 
-  const trendData = scoreHistory.filter(s => s.assessment_definitions?.code === selectedAssessmentCode)
+  const trendData = useMemo(
+    () => scoreHistory.filter(s => s.assessment_definitions?.code === selectedAssessmentCode),
+    [scoreHistory, selectedAssessmentCode]
+  )
 
   const maxScore = trendData.length > 0 ? Math.max(...trendData.map(s => s.total_score)) : 1
   const minScore = trendData.length > 0 ? Math.min(...trendData.map(s => s.total_score)) : 0
@@ -118,6 +120,7 @@ export default function InsightsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-7 max-w-4xl">
+      <RescreeningTrigger />
       <div className="mb-7">
         <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
           {t('insights.title', lang)}

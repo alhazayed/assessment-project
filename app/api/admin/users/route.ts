@@ -32,11 +32,12 @@ export async function GET(request: Request) {
     const userIds = (users || []).map((u: any) => u.id)
     const countMap: Record<string, number> = {}
     if (userIds.length > 0) {
-      const { data: subCounts } = await db
-        .from('assessment_submissions')
-        .select('patient_id')
-        .in('patient_id', userIds)
-      ;(subCounts || []).forEach((s: any) => { countMap[s.patient_id] = (countMap[s.patient_id] || 0) + 1 })
+      const { data: subCounts } = await db.rpc('get_submission_counts_by_patient', {
+        p_patient_ids: userIds,
+      })
+      ;(subCounts || []).forEach((s: { patient_id: string; submission_count: number }) => {
+        countMap[s.patient_id] = Number(s.submission_count)
+      })
     }
 
     const enriched = (users || []).map((u: any) => ({ ...u, submission_count: countMap[u.id] || 0 }))

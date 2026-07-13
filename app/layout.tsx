@@ -4,18 +4,21 @@ import { Inter, Tajawal } from 'next/font/google'
 import './globals.css'
 import { getLanguage } from '@/lib/get-language'
 
+// Load only commonly used weights — one font family per locale at render time.
 const inter = Inter({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-inter',
   display: 'swap',
+  preload: true,
 })
 
 const tajawal = Tajawal({
   subsets: ['arabic'],
-  weight: ['300', '400', '500', '700', '800'],
+  weight: ['400', '500', '700'],
   variable: '--font-tajawal',
   display: 'swap',
+  preload: false,
 })
 
 export const metadata: Metadata = {
@@ -67,11 +70,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const nonce = headersList.get('x-nonce') || ''
 
   return (
-    <html lang={lang} dir={lang === 'ar' ? 'rtl' : 'ltr'} className={`${inter.variable} ${tajawal.variable}`} suppressHydrationWarning>
+    <html lang={lang} dir={lang === 'ar' ? 'rtl' : 'ltr'} className={lang === 'ar' ? tajawal.variable : inter.variable} suppressHydrationWarning>
       {/* Anti-flash: apply saved dark preference before first paint */}
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('vw-theme');var d=window.matchMedia('(prefers-color-scheme:dark)').matches;if(t==='dark'||(t===null&&d)){document.documentElement.classList.add('dark')}}catch(e){}})()` }} />
-        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
       </head>
       <body suppressHydrationWarning>
         <a

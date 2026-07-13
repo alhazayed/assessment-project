@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import { Activity } from 'lucide-react'
 
@@ -138,7 +139,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 }
 
 export default function MentalHealthRadar({ scoreHistory, isAr }: { scoreHistory: ScoreEntry[]; isAr: boolean }) {
-  const data = buildRadarData(scoreHistory, isAr)
+  const data = useMemo(() => buildRadarData(scoreHistory, isAr), [scoreHistory, isAr])
 
   if (data.length < 3) return null
 

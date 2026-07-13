@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -59,42 +59,44 @@ export default function Sidebar({ profile, lang, showPackages = false }: Sidebar
     return () => { document.body.style.overflow = '' }
   }, [isOpen])
 
-  const patientNav = [
-    { href: '/dashboard',          label: t('nav.dashboard', lang),   icon: LayoutDashboard, badge: undefined },
-    { href: '/assessments',        label: t('nav.assessments', lang),  icon: ClipboardList,   badge: undefined },
-    ...(showPackages ? [{ href: '/packages', label: t('nav.packages', lang), icon: Layers, badge: t('nav.packages_badge', lang) }] : []),
-    { href: '/adhd-zones',         label: t('nav.adhd_zones', lang),   icon: Brain,           badge: undefined },
-    { href: '/mood',               label: t('nav.mood', lang),         icon: Heart,           badge: undefined },
-    { href: '/journal',            label: t('nav.journal', lang),      icon: BookOpen,        badge: undefined },
-    { href: '/insights',           label: t('nav.insights', lang),     icon: LineChart,       badge: undefined },
-    { href: '/messages',           label: t('nav.messages', lang),     icon: MessageSquare,   badge: undefined },
-    { href: '/patient/clinicians', label: lang === 'ar' ? 'طاقمي الطبي' : 'My Clinicians',    icon: UserCheck,   badge: undefined },
-    { href: '/profile',            label: t('nav.profile', lang),      icon: User,            badge: undefined },
-  ]
+  const nav = useMemo(() => {
+    const patientNav = [
+      { href: '/dashboard',          label: t('nav.dashboard', lang),   icon: LayoutDashboard, badge: undefined as string | undefined },
+      { href: '/assessments',        label: t('nav.assessments', lang),  icon: ClipboardList,   badge: undefined as string | undefined },
+      ...(showPackages ? [{ href: '/packages', label: t('nav.packages', lang), icon: Layers, badge: t('nav.packages_badge', lang) }] : []),
+      { href: '/adhd-zones',         label: t('nav.adhd_zones', lang),   icon: Brain,           badge: undefined as string | undefined },
+      { href: '/mood',               label: t('nav.mood', lang),         icon: Heart,           badge: undefined as string | undefined },
+      { href: '/journal',            label: t('nav.journal', lang),      icon: BookOpen,        badge: undefined as string | undefined },
+      { href: '/insights',           label: t('nav.insights', lang),     icon: LineChart,       badge: undefined as string | undefined },
+      { href: '/messages',           label: t('nav.messages', lang),     icon: MessageSquare,   badge: undefined as string | undefined },
+      { href: '/patient/clinicians', label: lang === 'ar' ? 'طاقمي الطبي' : 'My Clinicians',    icon: UserCheck,   badge: undefined as string | undefined },
+      { href: '/profile',            label: t('nav.profile', lang),      icon: User,            badge: undefined as string | undefined },
+    ]
 
-  const clinicianNav = [
-    { href: '/dashboard',              label: t('nav.dashboard', lang),                                  icon: LayoutDashboard, badge: undefined },
-    { href: '/patients',               label: t('nav.admin_patients', lang),                             icon: Users,           badge: undefined },
-    { href: '/messages',               label: t('nav.messages', lang),                                   icon: MessageSquare,   badge: undefined },
-    { href: '/clinician/connect',      label: lang === 'ar' ? 'ربط المرضى' : 'Connect Patients',        icon: Link2,           badge: undefined },
-    { href: '/clinician/verification', label: lang === 'ar' ? 'التحقق من الهوية' : 'Verification',      icon: ShieldCheck,     badge: undefined },
-    { href: '/profile',                label: t('nav.profile', lang),                                    icon: User,            badge: undefined },
-  ]
+    const clinicianNav = [
+      { href: '/dashboard',              label: t('nav.dashboard', lang),                                  icon: LayoutDashboard, badge: undefined as string | undefined },
+      { href: '/patients',               label: t('nav.admin_patients', lang),                             icon: Users,           badge: undefined as string | undefined },
+      { href: '/messages',               label: t('nav.messages', lang),                                   icon: MessageSquare,   badge: undefined as string | undefined },
+      { href: '/clinician/connect',      label: lang === 'ar' ? 'ربط المرضى' : 'Connect Patients',        icon: Link2,           badge: undefined as string | undefined },
+      { href: '/clinician/verification', label: lang === 'ar' ? 'التحقق من الهوية' : 'Verification',      icon: ShieldCheck,     badge: undefined as string | undefined },
+      { href: '/profile',                label: t('nav.profile', lang),                                    icon: User,            badge: undefined as string | undefined },
+    ]
 
-  const adminNav = [
-    { href: '/x/control',      label: t('nav.admin_panel', lang),    icon: Shield,        badge: undefined as string | undefined },
-    { href: '/dashboard',      label: t('nav.dashboard', lang),      icon: LayoutDashboard, badge: undefined as string | undefined },
-    { href: '/patients',       label: t('nav.admin_patients', lang), icon: Users,         badge: undefined as string | undefined },
-    { href: '/assessments',    label: t('nav.assessments', lang),    icon: ClipboardList, badge: undefined as string | undefined },
-    { href: '/profile',        label: t('nav.profile', lang),        icon: User,          badge: undefined as string | undefined },
-    { href: '/admin/settings', label: t('nav.settings', lang),       icon: Settings,      badge: undefined as string | undefined },
-  ]
+    const adminNav = [
+      { href: '/x/control',      label: t('nav.admin_panel', lang),    icon: Shield,        badge: undefined as string | undefined },
+      { href: '/dashboard',      label: t('nav.dashboard', lang),      icon: LayoutDashboard, badge: undefined as string | undefined },
+      { href: '/patients',       label: t('nav.admin_patients', lang), icon: Users,         badge: undefined as string | undefined },
+      { href: '/assessments',    label: t('nav.assessments', lang),    icon: ClipboardList, badge: undefined as string | undefined },
+      { href: '/profile',        label: t('nav.profile', lang),        icon: User,          badge: undefined as string | undefined },
+      { href: '/admin/settings', label: t('nav.settings', lang),       icon: Settings,      badge: undefined as string | undefined },
+    ]
 
-  const nav = profile?.role === 'admin' || profile?.role === 'superadmin'
-    ? adminNav
-    : profile?.role === 'clinician'
-      ? clinicianNav
-      : patientNav
+    return profile?.role === 'admin' || profile?.role === 'superadmin'
+      ? adminNav
+      : profile?.role === 'clinician'
+        ? clinicianNav
+        : patientNav
+  }, [lang, showPackages, profile?.role])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -141,7 +143,10 @@ export default function Sidebar({ profile, lang, showPackages = false }: Sidebar
         </Link>
         <div className="flex items-center gap-1">
           <DarkModeToggle />
-          <NotificationBell lang={lang} placement="sidebar" />
+          {/* Single notification bell — mobile top bar reuses sidebar instance via CSS */}
+          <div className="hidden lg:block">
+            <NotificationBell lang={lang} placement="sidebar" />
+          </div>
           {/* Close button — mobile only */}
           <button
             className="lg:hidden p-1.5 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ms-1"
@@ -247,7 +252,9 @@ export default function Sidebar({ profile, lang, showPackages = false }: Sidebar
         </Link>
         <div className="flex items-center gap-1">
           <DarkModeToggle />
-          <NotificationBell lang={lang} />
+          <div className="lg:hidden">
+            <NotificationBell lang={lang} />
+          </div>
         </div>
       </div>
 

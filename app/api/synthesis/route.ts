@@ -39,6 +39,7 @@ export async function POST(_request: Request) {
       .select('submitted_at, total_score, severity_band, high_risk_flag, assessment_definitions(name_en, name_ar, code, description_en)')
       .eq('patient_id', user.id)
       .order('submitted_at', { ascending: false })
+      .limit(200)
 
     if (!submissions?.length) {
       return NextResponse.json({ error: 'No assessment results found', code: 'NO_DATA' }, { status: 404 })

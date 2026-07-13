@@ -61,6 +61,7 @@ export async function POST(request: Request) {
       .select('submitted_at, total_score, definition_id, assessment_definitions(code, name_en, name_ar)')
       .eq('patient_id', user.id)
       .order('submitted_at', { ascending: false })
+      .limit(250)
 
     if (!submissions?.length) return NextResponse.json({ created: 0 })
 

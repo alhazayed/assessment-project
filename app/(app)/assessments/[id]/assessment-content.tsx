@@ -8,8 +8,14 @@ import {
   BookOpen, FlaskConical, ArrowRight, Brain,
 } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentItem, ResponseOption } from '@/lib/types'
-import { getAssessmentContent, getLocalizedBandContent, getLocalizedAssessmentMeta, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
-import { ASSESSMENT_CONTENT_AR } from '@/lib/assessment-content-ar'
+import type { BandContent } from '@/lib/assessment-content'
+import {
+  ensureAssessmentContentLoaded,
+  getAssessmentContentAsync,
+  getLocalizedBandContentAsync,
+  getLocalizedAssessmentMetaAsync,
+  getIpipModules,
+} from '@/lib/assessment-content-loader'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
@@ -54,14 +60,21 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [hasSavedProgress, setHasSavedProgress] = useState(false)
+  const [assessmentMeta, setAssessmentMeta] = useState<{ overview: string; measuresDomain: string } | null>(null)
+  const [bandContent, setBandContent] = useState<BandContent | null>(null)
+  const [ipipModules, setIpipModules] = useState<Awaited<ReturnType<typeof getIpipModules>> | null>(null)
+  const [contentLoading, setContentLoading] = useState(false)
 
   const storageKey = `vw_assessment_${id}_${userId}`
 
   useEffect(() => {
     if (Object.keys(answers).length === 0) return
-    try {
-      localStorage.setItem(storageKey, JSON.stringify({ answers, currentIndex }))
-    } catch {}
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify({ answers, currentIndex }))
+      } catch {}
+    }, 500)
+    return () => clearTimeout(timer)
   }, [answers, currentIndex, storageKey])
 
   useEffect(() => {
@@ -105,7 +118,7 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
   }
 
   async function loadRelated(code: string) {
-    const content = getAssessmentContent(code)
+    const content = await getAssessmentContentAsync(code)
     if (!content || content.relatedCodes.length === 0) return
     const { data } = await supabase
       .from('assessment_definitions')
@@ -119,6 +132,9 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
     if (!definition) return
     setSubmitting(true)
     setError(null)
+
+    // Preload interpretation content while submission is in flight
+    const contentPromise = ensureAssessmentContentLoaded()
 
     if (definition.code === 'IPIP120') {
       const scores: Record<string, number> = { N: 0, E: 0, O: 0, A: 0, C: 0 }
@@ -146,12 +162,31 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
     }
 
     const data = await res.json()
+    await contentPromise
     try { localStorage.removeItem(storageKey) } catch {}
     setResult({ score: data.score, band_en: data.band_en, band_ar: data.band_ar, high_risk: data.high_risk })
     setSubmitted(true)
     setSubmitting(false)
     await loadRelated(definition.code)
   }
+
+  useEffect(() => {
+    if (!submitted || !result || !definition) return
+    let cancelled = false
+    setContentLoading(true)
+    Promise.all([
+      getLocalizedAssessmentMetaAsync(definition.code, lang),
+      getLocalizedBandContentAsync(definition.code, result.band_en, lang),
+      definition.code === 'IPIP120' ? getIpipModules() : Promise.resolve(null),
+    ]).then(([meta, band, ipip]) => {
+      if (cancelled) return
+      setAssessmentMeta(meta)
+      setBandContent(band)
+      setIpipModules(ipip)
+      setContentLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [submitted, result, definition, lang])
 
   if (loadError) {
     return (
@@ -184,8 +219,6 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
 
   if (submitted && result) {
     const isHighRisk = result.high_risk
-    const assessmentMeta = getLocalizedAssessmentMeta(definition.code, lang, ASSESSMENT_CONTENT_AR)
-    const bandContent = getLocalizedBandContent(definition.code, result.band_en, lang, ASSESSMENT_CONTENT_AR)
     const displayBand = lang === 'ar' ? result.band_ar : result.band_en
     const isPositive = result.band_en.toLowerCase().includes('minimal') || result.band_en.toLowerCase().includes('none') || result.band_en.toLowerCase().includes('normal') || result.band_en.toLowerCase().includes('low risk') || result.band_en.toLowerCase().includes('below') || result.band_en.toLowerCase().includes('no problem')
     const defName = lang === 'ar' && definition.name_ar ? definition.name_ar : definition.name_en
@@ -225,7 +258,7 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
           </p>
         </div>
 
-        {definition.code === 'IPIP120' && domainScores && (
+        {definition.code === 'IPIP120' && domainScores && ipipModules && (
           <div className="card p-6">
             <div className="flex items-center gap-2 mb-4">
               <Brain className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
@@ -233,9 +266,9 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
             </div>
             <p className="text-[11.5px] mb-5" style={{ color: 'var(--text-muted)' }}>{lang === 'ar' ? 'النتائج تتراوح 24–120 لكل بُعد. منخفض <65 · متوسط 65–88 · مرتفع >88' : 'Scores range 24–120 per domain. Low <65 · Average 65–88 · High >88'}</p>
             <div className="space-y-4">
-              {Object.entries(IPIP_DOMAINS).map(([key, info]) => {
+              {Object.entries(ipipModules.IPIP_DOMAINS).map(([key, info]) => {
                 const score = domainScores[key] ?? 0
-                const level = getIpipDomainLevel(score)
+                const level = ipipModules.getIpipDomainLevel(score)
                 const pct = Math.round(((score - 24) / 96) * 100)
                 const desc = lang === 'ar' ? info[`${level}_ar`] : info[level]
                 return (
@@ -255,6 +288,13 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
                 )
               })}
             </div>
+          </div>
+        )}
+
+        {contentLoading && (
+          <div className="card p-6 text-center">
+            <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-2" style={{ borderColor: 'var(--vw-blue)', borderTopColor: 'transparent' }} />
+            <p className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('assessment.loading', lang)}</p>
           </div>
         )}
 

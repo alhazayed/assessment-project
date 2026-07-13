@@ -8,12 +8,10 @@ export default function UnreadMessagesBadge() {
 
   useEffect(() => {
     const supabase = createClient()
-    let userId: string | null = null
 
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      userId = user.id
 
       const { count: n } = await supabase
         .from('messages')
@@ -27,16 +25,30 @@ export default function UnreadMessagesBadge() {
 
     load()
 
-    const channel = supabase
-      .channel('unread-messages-badge')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'messages',
-      }, () => load())
-      .subscribe()
+    let channel: ReturnType<typeof supabase.channel> | null = null
 
-    return () => { supabase.removeChannel(channel) }
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      channel = supabase
+        .channel(`unread-messages-badge-${user.id}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `patient_id=eq.${user.id}`,
+        }, () => load())
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `clinician_id=eq.${user.id}`,
+        }, () => load())
+        .subscribe()
+    })
+
+    return () => {
+      if (channel) supabase.removeChannel(channel)
+    }
   }, [])
 
   if (count === 0) return null

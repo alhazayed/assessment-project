@@ -1,7 +1,7 @@
 import { getLanguage } from '@/lib/get-language'
-import { t } from '@/lib/i18n'
 import LanguageToggle from '@/components/language-toggle'
 import DarkModeToggle from '@/components/dark-mode-toggle'
+import TurnstileScript from '@/components/turnstile-script'
 import Link from 'next/link'
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -10,6 +10,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="min-h-screen flex">
+      <TurnstileScript />
       {/* Brand panel — left (or right in RTL) */}
       <div
         className={`hidden lg:flex flex-col justify-between p-10 w-[440px] flex-shrink-0 relative overflow-hidden ${isRtl ? 'order-2' : 'order-1'}`}

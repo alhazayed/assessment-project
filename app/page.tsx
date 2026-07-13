@@ -14,7 +14,7 @@ import AssessmentsByCategory from '@/components/assessments-by-category'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import LandingMobileMenu from '@/components/landing-mobile-menu'
-import AIAssessmentFinder from '@/components/ai-assessment-finder'
+import AIAssessmentFinder from '@/components/ai-assessment-finder-lazy'
 
 export default async function LandingPage() {
   const supabase = createClient()

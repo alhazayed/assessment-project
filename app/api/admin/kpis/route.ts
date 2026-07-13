@@ -63,6 +63,15 @@ export async function GET() {
 
     const count = (q: any) => q.then((r: any) => r.count ?? 0)
 
+    const countDistinct = async (since: string) => {
+      const { data, error } = await db.rpc('count_distinct_active_patients', { p_since: since })
+      if (error) {
+        console.error('count_distinct_active_patients error:', error)
+        return 0
+      }
+      return Number(data ?? 0)
+    }
+
     // Fire the real queries in parallel.
     const [
       totalPatients,
@@ -80,9 +89,9 @@ export async function GET() {
       completionRows,
     ] = await Promise.all([
       count(db.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'patient')),
-      db.from('assessment_submissions').select('patient_id').gte('submitted_at', todayIso),
-      db.from('assessment_submissions').select('patient_id').gte('submitted_at', iso7d),
-      db.from('assessment_submissions').select('patient_id').gte('submitted_at', iso30d),
+      countDistinct(todayIso),
+      countDistinct(iso7d),
+      countDistinct(iso30d),
       count(db.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', todayIso)),
       count(db.from('audit_log').select('id', { count: 'exact', head: true }).eq('action', 'password_reset').gte('created_at', todayIso)),
       count(db.from('audit_log').select('id', { count: 'exact', head: true }).eq('action', 'email_verified').gte('created_at', todayIso)),
@@ -91,11 +100,8 @@ export async function GET() {
       count(db.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'clinician')),
       count(db.from('clinician_verifications').select('id', { count: 'exact', head: true }).eq('status', 'pending_verification')),
       count(db.from('messages').select('id', { count: 'exact', head: true }).gte('created_at', todayIso)),
-      db.from('assessment_submissions').select('started_at, submitted_at').gte('submitted_at', iso7d).not('started_at', 'is', null),
+      db.from('assessment_submissions').select('started_at, submitted_at').gte('submitted_at', iso7d).not('started_at', 'is', null).limit(500),
     ])
-
-    const distinct = (rows: any) =>
-      new Set((rows?.data ?? []).map((r: any) => r.patient_id).filter(Boolean)).size
 
     // Average completion time (minutes) over the last 7 days
     const durations: number[] = (completionRows?.data ?? [])
@@ -111,9 +117,9 @@ export async function GET() {
 
     const realValues: Record<string, number> = {
       total_users: totalPatients,
-      active_users_today: distinct(activeToday),
-      active_users_7d: distinct(active7d),
-      active_users_30d: distinct(active30d),
+      active_users_today: activeToday,
+      active_users_7d: active7d,
+      active_users_30d: active30d,
       new_signups_today: newSignupsToday,
       password_resets_today: passwordResetsToday,
       email_verifications_today: emailVerifsToday,

@@ -33,8 +33,6 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
-
   const pathname = request.nextUrl.pathname
   const isAdminLogin = pathname === '/x/control/login'
   const isAdminArea = pathname.startsWith('/x/control') && !isAdminLogin
@@ -43,13 +41,6 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/register') ||
     pathname.startsWith('/forgot-password') ||
     pathname.startsWith('/reset-password')
-
-  // Admin area requires Supabase auth (admin PIN verified per-page via requireAdmin)
-  if (isAdminArea && !user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/x/control/login'
-    return NextResponse.redirect(url)
-  }
 
   // Private app routes require Supabase auth
   const isPrivateRoute =
@@ -68,6 +59,20 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/clinician') ||
     pathname.startsWith('/patient') ||
     pathname.startsWith('/admin')
+
+  const needsAuthCheck = isAdminArea || isPrivateRoute || isAuthPage
+  let user: { id: string } | null = null
+
+  if (needsAuthCheck) {
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    user = authUser
+  }
+  // Admin area requires Supabase auth (admin PIN verified per-page via requireAdmin)
+  if (isAdminArea && !user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/x/control/login'
+    return NextResponse.redirect(url)
+  }
 
   if (!user && isPrivateRoute) {
     const url = request.nextUrl.clone()

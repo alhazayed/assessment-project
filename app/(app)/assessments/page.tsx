@@ -34,7 +34,8 @@ export default async function AssessmentsPage() {
       .from('assessment_submissions')
       .select('*, assessment_definitions(name_en, name_ar, code)')
       .eq('patient_id', user.id)
-      .order('submitted_at', { ascending: false }),
+      .order('submitted_at', { ascending: false })
+      .limit(100),
     supabase
       .from('profiles')
       .select('date_of_birth, gender, marital_status, educational_status, country_of_residence')
