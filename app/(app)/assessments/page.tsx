@@ -64,7 +64,7 @@ export default async function AssessmentsPage() {
     <div className="p-4 sm:p-6 lg:p-7 max-w-5xl">
       {/* Page header */}
       <div className="mb-7">
-        <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
           {t('assessments.page.title', lang)}
         </h1>
         <p style={{ color: 'var(--text-secondary)' }}>{t('assessments.page.sub', lang)}</p>
@@ -89,7 +89,7 @@ export default async function AssessmentsPage() {
               style={{ color: '#9B3D08' }}
             >
               {lang === 'ar' ? 'اذهب إلى ملفي الشخصي' : 'Go to my profile'}
-              <ChevronRight className="w-3 h-3" />
+              <ChevronRight className={`w-3 h-3 ${lang === 'ar' ? 'rotate-180' : ''}`} />
             </Link>
           </div>
         </div>
@@ -111,7 +111,7 @@ export default async function AssessmentsPage() {
               const note = lang === 'ar' && a.note_to_patient_ar ? a.note_to_patient_ar : a.note_to_patient_en
               return (
                 <div key={a.id} className="card p-4" style={{ borderInlineStart: '4px solid #F3650A' }}>
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="text-[14.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>{aName}</h3>
                       {note && (
@@ -234,7 +234,7 @@ export default async function AssessmentsPage() {
                     <span className="text-[13px] font-bold hidden sm:inline" style={{ color: 'var(--text-secondary)' }}>{t('assessments.score', lang)} {s.total_score}</span>
                     <span className={`${severityBadge(s.severity_band)} hidden sm:inline-flex`}>{localizeSeverity(s.severity_band, lang)}</span>
                     {s.high_risk_flag && <AlertCircle className="w-4 h-4" style={{ color: '#C02A2A' }} aria-label="High risk" />}
-                    <ChevronRight className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                    <ChevronRight className={`w-4 h-4 ${lang === 'ar' ? 'rotate-180' : ''}`} style={{ color: 'var(--text-muted)' }} />
                   </div>
                 </div>
               )

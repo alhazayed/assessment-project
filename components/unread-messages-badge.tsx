@@ -42,7 +42,7 @@ export default function UnreadMessagesBadge() {
   if (count === 0) return null
 
   return (
-    <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-accent-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+    <span className="ms-auto min-w-[18px] h-[18px] px-1 rounded-full bg-accent-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
       {count > 99 ? '99+' : count}
     </span>
   )

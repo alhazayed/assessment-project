@@ -366,7 +366,7 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
           </div>
         )}
 
-        <div className="flex gap-3 justify-center pb-8">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center pb-8">
           <Link href="/assessments" className="btn-secondary">{t('nav.assessments', lang)}</Link>
           <Link href="/dashboard" className="btn-primary">{t('nav.dashboard', lang)}</Link>
         </div>
@@ -394,15 +394,15 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
       </div>
 
       {hasSavedProgress && (
-        <div className="mb-4 p-3 rounded-xl border flex items-center justify-between gap-3" style={{ backgroundColor: '#EEF5FB', borderColor: '#1D6296' }}>
+        <div className="mb-4 p-3 sm:p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ backgroundColor: '#EEF5FB', borderColor: '#1D6296' }}>
           <p className="text-sm font-medium" style={{ color: '#1D6296' }}>
             {lang === 'ar' ? 'لديك تقدم محفوظ في هذا التقييم.' : 'You have saved progress for this assessment.'}
           </p>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button onClick={resumeSavedProgress} className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white transition-opacity hover:opacity-90" style={{ backgroundColor: '#1D6296' }}>
+          <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto">
+            <button onClick={resumeSavedProgress} className="flex-1 sm:flex-none text-xs font-semibold px-3 py-2.5 min-h-[44px] rounded-lg text-white transition-opacity hover:opacity-90" style={{ backgroundColor: '#1D6296' }}>
               {lang === 'ar' ? 'استئناف' : 'Resume'}
             </button>
-            <button onClick={discardSavedProgress} className="text-xs text-gray-500 hover:text-gray-700 transition-colors">
+            <button onClick={discardSavedProgress} className="flex-1 sm:flex-none text-xs text-gray-500 hover:text-gray-700 transition-colors px-3 py-2.5 min-h-[44px]">
               {lang === 'ar' ? 'بدء من جديد' : 'Start over'}
             </button>
           </div>
@@ -448,27 +448,27 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <button
           onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))}
           disabled={currentIndex === 0}
-          className="btn-secondary gap-2 disabled:opacity-40"
+          className="btn-secondary gap-2 disabled:opacity-40 w-full sm:w-auto justify-center"
         >
-          <ChevronLeft className="w-4 h-4" /> {t('assessment.prev', lang)}
+          <ChevronLeft className={`w-4 h-4 ${lang === 'ar' ? 'rotate-180' : ''}`} /> {t('assessment.prev', lang)}
         </button>
         {currentIndex < items.length - 1 ? (
           <button
             onClick={() => setCurrentIndex(prev => prev + 1)}
             disabled={!currentAnswer}
-            className="btn-primary gap-2 disabled:opacity-40"
+            className="btn-primary gap-2 disabled:opacity-40 w-full sm:w-auto justify-center"
           >
-            {t('assessment.next', lang)} <ChevronRight className="w-4 h-4" />
+            {t('assessment.next', lang)} <ChevronRight className={`w-4 h-4 ${lang === 'ar' ? 'rotate-180' : ''}`} />
           </button>
         ) : (
           <button
             onClick={handleSubmit}
             disabled={!allAnswered || submitting}
-            className="btn-primary gap-2 disabled:opacity-40"
+            className="btn-primary gap-2 disabled:opacity-40 w-full sm:w-auto justify-center"
           >
             {submitting ? t('assessment.submitting', lang) : t('assessment.submit', lang)} <CheckCircle2 className="w-4 h-4" />
           </button>

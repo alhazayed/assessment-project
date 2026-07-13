@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Send, MessageSquare, AlertCircle } from 'lucide-react'
+import { Send, MessageSquare, AlertCircle, ChevronLeft, Users } from 'lucide-react'
 import type { Message, Profile } from '@/lib/types'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
@@ -10,6 +10,7 @@ import { t } from '@/lib/i18n'
 export default function MessagesPage() {
   const supabase = useMemo(() => createClient(), [])
   const lang = useLang()
+  const isRtl = lang === 'ar'
   const [profile, setProfile] = useState<Profile | null>(null)
   const [clinician, setClinician] = useState<Profile | null>(null)
   const [patients, setPatients] = useState<Profile[]>([])
@@ -19,6 +20,7 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [isUrgent, setIsUrgent] = useState(false)
+  const [mobileShowList, setMobileShowList] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const loadMessages = useCallback(async (patientId: string, clinicianId: string) => {
@@ -31,7 +33,6 @@ export default function MessagesPage() {
       .order('created_at')
     setMessages(msgs as Message[] || [])
 
-    // Mark unread messages sent by the other party as read
     if (user) {
       const unreadIds = (msgs || [])
         .filter(m => m.sender_id !== user.id && !m.read_at)
@@ -109,6 +110,15 @@ export default function MessagesPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  function selectPatient(p: Profile) {
+    setSelectedPatient(p)
+    setMobileShowList(false)
+  }
+
+  function backToPatientList() {
+    setMobileShowList(true)
+  }
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault()
     if (!newMessage.trim() || !profile) return
@@ -129,7 +139,6 @@ export default function MessagesPage() {
       is_urgent: isUrgent,
     })
 
-    // Notify recipient via server endpoint (admin client bypasses RLS for cross-user notification inserts)
     const recipientId = profile.role === 'patient' ? clinicianId : patientId
     const senderName = lang === 'ar' && profile.full_name_ar ? profile.full_name_ar : profile.full_name_en
     fetch('/api/notify-message', {
@@ -150,12 +159,21 @@ export default function MessagesPage() {
     loadMessages(patientId, clinicianId)
   }
 
-  if (loading) return <div className="p-7" style={{ color: 'var(--text-muted)' }}>{t('messages.loading', lang)}</div>
+  if (loading) {
+    return (
+      <div className="p-4 sm:p-7 flex items-center justify-center app-page-fill" style={{ color: 'var(--text-muted)' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--vw-blue)', borderTopColor: 'transparent' }} />
+          {t('messages.loading', lang)}
+        </div>
+      </div>
+    )
+  }
 
   if (profile?.role === 'patient' && !profile.assigned_clinician_id) {
     return (
-      <div className="p-7 flex items-center justify-center min-h-64">
-        <div className="card p-10 text-center max-w-sm">
+      <div className="p-4 sm:p-7 flex items-center justify-center app-page-fill">
+        <div className="card p-8 sm:p-10 text-center max-w-sm w-full">
           <div className="w-14 h-14 rounded-[16px] flex items-center justify-center mx-auto mb-4" style={{ background: '#EAF2F9' }}>
             <MessageSquare className="w-7 h-7" style={{ color: '#1D6296' }} />
           </div>
@@ -168,8 +186,8 @@ export default function MessagesPage() {
 
   if (profile?.role === 'clinician' && patients.length === 0) {
     return (
-      <div className="p-7 flex items-center justify-center min-h-64">
-        <div className="card p-10 text-center max-w-sm">
+      <div className="p-4 sm:p-7 flex items-center justify-center app-page-fill">
+        <div className="card p-8 sm:p-10 text-center max-w-sm w-full">
           <div className="w-14 h-14 rounded-[16px] flex items-center justify-center mx-auto mb-4" style={{ background: '#EAF2F9' }}>
             <MessageSquare className="w-7 h-7" style={{ color: '#1D6296' }} />
           </div>
@@ -186,26 +204,35 @@ export default function MessagesPage() {
     ? (lang === 'ar' && otherParty.full_name_ar ? otherParty.full_name_ar : otherParty.full_name_en)
     : t('messages.clinician', lang)
 
+  const showPatientSidebar = isClinician && (!selectedPatient || mobileShowList)
+  const showChat = !isClinician || (selectedPatient && !mobileShowList)
+
   return (
-    <div className="flex h-screen max-h-screen overflow-hidden">
+    <div className="flex flex-col lg:flex-row app-page-fill max-h-[calc(100dvh-var(--topbar-h)-env(safe-area-inset-top))] lg:max-h-[100dvh] overflow-hidden">
       {isClinician && (
-        <div className="w-64 flex-shrink-0 flex flex-col" style={{ backgroundColor: 'var(--surface)', borderRight: '1px solid var(--border)' }}>
-          <div className="px-4 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-            <p className="section-label">{t('messages.patients', lang)}</p>
+        <div
+          className={`${showPatientSidebar ? 'flex' : 'hidden'} lg:flex w-full lg:w-64 flex-shrink-0 flex-col border-b lg:border-b-0`}
+          style={{
+            backgroundColor: 'var(--surface)',
+            borderInlineEnd: '1px solid var(--border)',
+          }}
+        >
+          <div className="px-4 py-4 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+            <p className="section-label flex items-center gap-2">
+              <Users className="w-3.5 h-3.5" />
+              {t('messages.patients', lang)}
+            </p>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0 max-h-[40dvh] lg:max-h-none">
             {patients.map(p => {
               const name = lang === 'ar' && p.full_name_ar ? p.full_name_ar : p.full_name_en
               const isSelected = selectedPatient?.id === p.id
               return (
                 <button
                   key={p.id}
-                  onClick={() => setSelectedPatient(p)}
-                  className="w-full text-start px-4 py-3 flex items-center gap-3 transition-colors"
-                  style={isSelected
-                    ? { background: '#EAF2F9' }
-                    : undefined
-                  }
+                  onClick={() => selectPatient(p)}
+                  className="w-full text-start px-4 py-3.5 min-h-[52px] flex items-center gap-3 transition-colors"
+                  style={isSelected ? { background: '#EAF2F9' } : undefined}
                 >
                   <div className="avatar-sm" style={{ background: '#1D6296' }}>{name.charAt(0).toUpperCase()}</div>
                   <span className="text-[13.5px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{name}</span>
@@ -216,20 +243,29 @@ export default function MessagesPage() {
         </div>
       )}
 
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className={`flex flex-col flex-1 min-w-0 min-h-0 ${showChat ? 'flex' : 'hidden lg:flex'}`}>
         {(!isClinician || selectedPatient) ? (
           <>
-            {/* Chat header */}
-            <div className="px-6 py-4 flex-shrink-0 flex items-center gap-3" style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
-              <div className="avatar-lg" style={{ background: '#1D6296' }}>{otherName.charAt(0).toUpperCase()}</div>
-              <div>
-                <p className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{otherName}</p>
+            <div className="px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0 flex items-center gap-3" style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
+              {isClinician && (
+                <button
+                  type="button"
+                  onClick={backToPatientList}
+                  className="lg:hidden touch-target -ms-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+                  aria-label={lang === 'ar' ? 'العودة إلى قائمة المرضى' : 'Back to patient list'}
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  <ChevronLeft className={`w-5 h-5 ${isRtl ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+              <div className="avatar-lg flex-shrink-0" style={{ background: '#1D6296' }}>{otherName.charAt(0).toUpperCase()}</div>
+              <div className="min-w-0">
+                <p className="text-[14.5px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{otherName}</p>
                 <p className="text-[12px] capitalize" style={{ color: 'var(--text-muted)' }}>{otherParty?.role || ''}</p>
               </div>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4" style={{ backgroundColor: 'var(--page-bg)' }}>
+            <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-4 sm:py-6 space-y-4" style={{ backgroundColor: 'var(--page-bg)' }}>
               {messages.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-12 h-12 rounded-[14px] flex items-center justify-center mx-auto mb-3" style={{ background: 'var(--surface-alt)' }}>
@@ -250,12 +286,14 @@ export default function MessagesPage() {
                       </div>
                     )}
                     <div
-                      className="max-w-md px-4 py-3 text-[14px] text-white"
+                      className="max-w-[85%] sm:max-w-md px-4 py-3 text-[14px] break-words"
                       style={{
                         backgroundColor: msg.is_urgent ? '#F3650A' : isMine ? '#1D6296' : 'var(--surface)',
                         color: isMine || msg.is_urgent ? 'white' : 'var(--text-primary)',
                         border: !isMine && !msg.is_urgent ? '1px solid var(--border)' : 'none',
-                        borderRadius: isMine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                        borderRadius: isMine
+                          ? (isRtl ? '16px 16px 16px 4px' : '16px 16px 4px 16px')
+                          : (isRtl ? '16px 16px 4px 16px' : '16px 16px 16px 4px'),
                       }}
                     >
                       <p className="leading-relaxed">{msg.body}</p>
@@ -269,13 +307,12 @@ export default function MessagesPage() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Input */}
-            <div className="px-6 py-4 flex-shrink-0" style={{ borderTop: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
+            <div className="px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]" style={{ borderTop: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
               <form onSubmit={handleSend} className="space-y-2">
-                <div className="flex gap-3">
+                <div className="flex gap-2 sm:gap-3">
                   <input
                     type="text"
-                    className="input flex-1"
+                    className="input flex-1 min-w-0"
                     value={newMessage}
                     onChange={e => setNewMessage(e.target.value)}
                     placeholder={t('messages.placeholder', lang)}
@@ -284,16 +321,17 @@ export default function MessagesPage() {
                   <button
                     type="submit"
                     disabled={!newMessage.trim() || sending}
-                    className="w-11 h-11 flex items-center justify-center rounded-[10px] text-white disabled:opacity-40 transition-opacity hover:opacity-90 flex-shrink-0"
+                    className="touch-target w-11 h-11 flex items-center justify-center rounded-[10px] text-white disabled:opacity-40 transition-opacity hover:opacity-90 flex-shrink-0"
                     style={{ backgroundColor: isUrgent ? '#F3650A' : '#1D6296' }}
+                    aria-label={lang === 'ar' ? 'إرسال' : 'Send'}
                   >
-                    <Send className="w-4 h-4" />
+                    <Send className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsUrgent(v => !v)}
-                  className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1.5 rounded-[8px] transition-colors"
+                  className="flex items-center gap-1.5 text-[12px] font-semibold px-3 py-2 min-h-[44px] rounded-[8px] transition-colors"
                   style={isUrgent
                     ? { backgroundColor: '#F3650A', color: 'white' }
                     : { backgroundColor: 'var(--surface-alt)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
@@ -306,7 +344,7 @@ export default function MessagesPage() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center" style={{ backgroundColor: 'var(--page-bg)' }}>
+          <div className="flex-1 flex items-center justify-center p-6" style={{ backgroundColor: 'var(--page-bg)' }}>
             <div className="text-center">
               <div className="w-14 h-14 rounded-[16px] flex items-center justify-center mx-auto mb-3" style={{ background: 'var(--surface-alt)' }}>
                 <MessageSquare className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />

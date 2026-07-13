@@ -234,14 +234,14 @@ export default function PatientsContent() {
   return (
     <div className="flex h-full">
       {/* Main list */}
-      <div className={`flex-1 p-8 overflow-y-auto ${selected ? 'hidden md:block' : ''}`}>
+      <div className={`flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto ${selected ? 'hidden md:block' : ''}`}>
         <div className="max-w-5xl">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-              <p className="text-gray-500 mt-1">{t('patients.subtitle', lang)}</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h1>
+              <p className="text-gray-500 mt-1 text-sm">{t('patients.subtitle', lang)}</p>
             </div>
-            <Users className="w-6 h-6 text-gray-400" />
+            <Users className="w-6 h-6 text-gray-400 hidden sm:block" />
           </div>
 
           <div className="relative mb-6">
@@ -254,8 +254,51 @@ export default function PatientsContent() {
             />
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
+          {/* Mobile card list */}
+          <div className="md:hidden space-y-3">
+            {loading ? (
+              <p className="text-center py-12 text-gray-400">{t('admin.loading', lang)}</p>
+            ) : filtered.length === 0 ? (
+              <div className="py-16 text-center">
+                <Users className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                <p className="text-sm text-gray-400">{t('patients.empty', lang)}</p>
+                <p className="text-xs text-gray-300 mt-1">{t('patients.empty.sub', lang)}</p>
+              </div>
+            ) : filtered.map(p => {
+              const name = isAr && p.full_name_ar ? p.full_name_ar : p.full_name_en
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => openPatient(p)}
+                  className={`w-full text-start bg-white border border-gray-200 rounded-xl p-4 transition-colors hover:bg-gray-50 ${selected?.id === p.id ? 'ring-2 ring-brand-500' : ''}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-brand-700">{name.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {p.submission_count} {t('patients.col.count', lang).toLowerCase()} · {p.last_submission_at ? new Date(p.last_submission_at).toLocaleDateString() : t('patients.no_submissions', lang)}
+                      </p>
+                    </div>
+                    <ChevronRight className={`w-4 h-4 text-gray-300 flex-shrink-0 ${isAr ? 'rotate-180' : ''}`} />
+                  </div>
+                  {p.has_high_risk && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full mt-3">
+                      <AlertTriangle className="w-3 h-3" />
+                      {t('patients.high_risk', lang)}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="hidden md:block bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="text-left px-4 py-3 font-medium text-gray-600">{t('patients.col.patient', lang)}</th>
@@ -308,21 +351,22 @@ export default function PatientsContent() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <ChevronRight className="w-4 h-4 text-gray-300 inline-block" />
+                      <td className="px-4 py-3 text-end">
+                        <ChevronRight className={`w-4 h-4 text-gray-300 inline-block ${isAr ? 'rotate-180' : ''}`} />
                       </td>
                     </tr>
                   )
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Detail panel */}
       {selected && (
-        <div className="w-full md:w-96 border-l border-gray-200 bg-white flex flex-col h-full overflow-hidden flex-shrink-0">
+        <div className="w-full md:w-96 border-s border-gray-200 bg-white flex flex-col h-full overflow-hidden flex-shrink-0 fixed inset-0 z-20 md:static md:z-auto pt-16 md:pt-0">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
@@ -345,12 +389,12 @@ export default function PatientsContent() {
                 target="_blank"
                 rel="noopener noreferrer"
                 title={t('report.download', lang)}
-                className="p-1.5 rounded-lg transition-opacity hover:opacity-80"
+                className="touch-target rounded-lg transition-opacity hover:opacity-80"
                 style={{ backgroundColor: '#1D6296', color: 'white' }}
               >
-                <Download className="w-3.5 h-3.5" />
+                <Download className="w-4 h-4" />
               </a>
-              <button onClick={() => setSelected(null)} className="text-gray-300 hover:text-gray-500 transition-colors">
+              <button onClick={() => setSelected(null)} className="touch-target text-gray-300 hover:text-gray-500 transition-colors" aria-label={isAr ? 'إغلاق' : 'Close'}>
                 <X className="w-5 h-5" />
               </button>
             </div>

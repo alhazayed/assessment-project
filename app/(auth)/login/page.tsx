@@ -205,9 +205,9 @@ function LoginForm() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="flex-shrink-0 transition-colors"
+              className="touch-target flex-shrink-0 transition-colors -me-1"
               style={{ color: 'var(--text-icon)' }}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-label={showPassword ? (isRtl ? 'إخفاء كلمة المرور' : 'Hide password') : (isRtl ? 'إظهار كلمة المرور' : 'Show password')}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -233,7 +233,7 @@ function LoginForm() {
           {loading ? (t('auth.login.submitting', lang)) : (
             <>
               {t('auth.login.submit', lang)}
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''}`} />
             </>
           )}
         </button>

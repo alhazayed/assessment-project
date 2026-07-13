@@ -73,7 +73,7 @@ export default async function DashboardPage() {
 
       {/* Page header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
           {t('dashboard.welcome', lang)}, {firstName}
         </h1>
         <p style={{ color: 'var(--text-secondary)' }}>{t('dashboard.subtitle', lang)}</p>
@@ -99,7 +99,7 @@ export default async function DashboardPage() {
                     style={{ background: '#FEF2EC', color: '#F3650A', border: '1px solid #FBC29D' }}
                   >
                     {aName}
-                    <ArrowRight className="w-3 h-3" />
+                    <ArrowRight className={`w-3 h-3 ${lang === 'ar' ? 'rotate-180' : ''}`} />
                   </Link>
                 )
               })}
@@ -173,7 +173,7 @@ export default async function DashboardPage() {
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('dashboard.recent', lang)}</h2>
             <Link href="/assessments" className="text-[12.5px] font-semibold flex items-center gap-1 hover:opacity-80" style={{ color: '#1D6296' }}>
-              {t('dashboard.view_all', lang)} <ChevronRight className="w-3.5 h-3.5" />
+              {t('dashboard.view_all', lang)} <ChevronRight className={`w-3.5 h-3.5 ${lang === 'ar' ? 'rotate-180' : ''}`} />
             </Link>
           </div>
           {submissions.length === 0 ? (
@@ -192,7 +192,7 @@ export default async function DashboardPage() {
                 const def = (s as any).assessment_definitions
                 const sName = lang === 'ar' && def?.name_ar ? def.name_ar : def?.name_en
                 return (
-                  <div key={s.id} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--divider)' }}>
+                  <div key={s.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3" style={{ borderBottom: '1px solid var(--divider)' }}>
                     <div>
                       <p className="text-[13.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>{sName}</p>
                       <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
@@ -212,7 +212,7 @@ export default async function DashboardPage() {
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('dashboard.mood_week', lang)}</h2>
             <Link href="/mood" className="text-[12.5px] font-semibold flex items-center gap-1 hover:opacity-80" style={{ color: '#1D6296' }}>
-              {t('dashboard.log_mood', lang)} <ChevronRight className="w-3.5 h-3.5" />
+              {t('dashboard.log_mood', lang)} <ChevronRight className={`w-3.5 h-3.5 ${lang === 'ar' ? 'rotate-180' : ''}`} />
             </Link>
           </div>
           {moods.length === 0 ? (

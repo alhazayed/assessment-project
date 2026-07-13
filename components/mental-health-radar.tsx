@@ -147,20 +147,20 @@ export default function MentalHealthRadar({ scoreHistory, isAr }: { scoreHistory
 
   return (
     <div className="card p-6">
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-gray-500" />
           <h2 className="text-base font-semibold text-gray-900">
             {isAr ? 'خريطة الصحة النفسية' : 'Mental Health Radar'}
           </h2>
         </div>
-        <div className="text-right">
+        <div className="text-end">
           <p className="text-2xl font-bold" style={{ color: wellnessColor }}>{avgWellness}%</p>
           <p className="text-[10px] text-gray-400">{isAr ? 'متوسط الرفاهية' : 'Avg. Wellness'}</p>
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={320}>
+      <ResponsiveContainer width="100%" height={280} className="min-h-[220px] sm:min-h-[280px]">
         <RadarChart data={data} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
           <PolarGrid stroke="#E5E7EB" />
           <PolarAngleAxis

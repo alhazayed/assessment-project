@@ -144,9 +144,9 @@ export default function Sidebar({ profile, lang, showPackages = false }: Sidebar
           <NotificationBell lang={lang} placement="sidebar" />
           {/* Close button — mobile only */}
           <button
-            className="lg:hidden p-1.5 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ms-1"
+            className="lg:hidden touch-target rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ms-1"
             onClick={() => setIsOpen(false)}
-            aria-label="Close menu"
+            aria-label={isRtl ? 'إغلاق القائمة' : 'Close menu'}
             style={{ color: 'var(--text-muted)' }}
           >
             <X className="w-4 h-4" />
@@ -228,13 +228,13 @@ export default function Sidebar({ profile, lang, showPackages = false }: Sidebar
     <>
       {/* Mobile top bar — hidden on lg+ */}
       <div
-        className="lg:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 h-16 flex-shrink-0"
+        className="lg:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 mobile-topbar flex-shrink-0"
         style={{ backgroundColor: 'var(--sidebar-bg)', borderBottom: '1px solid var(--sidebar-border)' }}
       >
         <button
-          className="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+          className="touch-target rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
           onClick={() => setIsOpen(true)}
-          aria-label="Open menu"
+          aria-label={isRtl ? 'فتح القائمة' : 'Open menu'}
           style={{ color: 'var(--text-primary)' }}
         >
           <Menu className="w-5 h-5" />

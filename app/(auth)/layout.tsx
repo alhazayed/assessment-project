@@ -48,7 +48,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </p>
 
           {/* Trust stats */}
-          <div className="flex gap-8 mt-8">
+          <div className="flex flex-wrap gap-4 sm:gap-8 mt-8">
             {[
               { value: '39+', label: isRtl ? 'تقييم معتمد' : 'Validated tools' },
               { value: '100%', label: isRtl ? 'سرية تامة' : 'Confidential' },
@@ -75,7 +75,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* Form panel */}
       <div className={`flex-1 flex flex-col ${isRtl ? 'order-1' : 'order-2'}`} style={{ backgroundColor: 'var(--page-bg)' }}>
         {/* Topbar */}
-        <div className="flex items-center justify-between px-8 py-5">
+        <div className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-5">
           {/* Mobile logo */}
           <Link href="/" className="flex items-center gap-2 no-underline lg:invisible">
             <div className="w-8 h-8 rounded-[9px] flex items-center justify-center" style={{ background: '#1D6296' }}>
@@ -85,7 +85,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             </div>
             <span className="font-bold text-base" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>V Welfare</span>
           </Link>
-          <div className={`flex items-center gap-2 ${isRtl ? 'mr-auto' : 'ml-auto'}`}>
+          <div className={`flex items-center gap-2 ms-auto`}>
             <DarkModeToggle />
             <LanguageToggle lang={lang} />
           </div>

@@ -33,7 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Sidebar profile={profile} lang={lang} showPackages={showPackages} />
       <main
         id="main-content"
-        className="flex-1 min-w-0 overflow-auto pt-16 lg:pt-0 lg:ms-[248px]"
+        className="flex-1 min-w-0 overflow-auto pt-16 lg:pt-0 lg:ms-[248px] app-shell-main"
         style={{ backgroundColor: 'var(--page-bg)' }}
       >
         {children}

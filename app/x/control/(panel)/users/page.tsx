@@ -89,12 +89,12 @@ export default function AdminUsersPage() {
         <div className={`mb-5 ${msgError ? 'alert-error' : 'alert-success'}`}>{msg}</div>
       )}
 
-      <div className="flex gap-3 mb-6">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1 min-w-0">
           <Search className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 ${lang === 'ar' ? 'right-3' : 'left-3'}`} style={{ color: 'var(--text-muted)' }} />
           <input className={`input w-full ${lang === 'ar' ? 'pr-9' : 'pl-9'}`} placeholder={t('admin.users.search', lang)} value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <select className="input w-44" value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
+        <select className="input w-full sm:w-44" value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
           <option value="">{t('admin.users.all_roles', lang)}</option>
           {ROLES.map(r => <option key={r} value={r} className="capitalize">{r}</option>)}
         </select>

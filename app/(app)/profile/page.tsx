@@ -290,7 +290,7 @@ export default function ProfilePage() {
   return (
     <div className="p-4 sm:p-6 lg:p-7 max-w-2xl">
       <div className="mb-7">
-        <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
           {t('profile.title', lang)}
         </h1>
         <p style={{ color: 'var(--text-secondary)' }}>{t('profile.subtitle', lang)}</p>
@@ -667,12 +667,12 @@ export default function ProfilePage() {
                 { year: 'numeric', month: 'short', day: 'numeric' }
               )
               return (
-                <div key={sub.id} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--divider)' }}>
+                <div key={sub.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3" style={{ borderBottom: '1px solid var(--divider)' }}>
                   <div className="min-w-0">
                     <p className="text-[13.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{name}</p>
                     <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{date}</p>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0 ms-4">
+                  <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                     <span className="text-[13px] font-bold" style={{ color: 'var(--text-secondary)' }}>{sub.total_score}</span>
                     {sub.severity_band && (
                       <span className="badge-neutral">{localizeSeverity(sub.severity_band, lang)}</span>

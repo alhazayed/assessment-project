@@ -119,7 +119,7 @@ export default function InsightsPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-7 max-w-4xl">
       <div className="mb-7">
-        <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
           {t('insights.title', lang)}
         </h1>
         <p style={{ color: 'var(--text-secondary)' }}>{t('insights.subtitle', lang)}</p>
@@ -156,10 +156,10 @@ export default function InsightsPage() {
 
           {/* Mood calendar */}
           <div className="card p-6">
-            <div className="flex items-center gap-2 mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-5">
               <Calendar className="w-4 h-4" style={{ color: 'var(--text-icon)' }} />
               <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('insights.mood_cal', lang)}</h2>
-              <span className="text-xs text-gray-400 ml-1">— {t('insights.last_30_days', lang)}</span>
+              <span className="text-xs text-gray-400 ms-1">— {t('insights.last_30_days', lang)}</span>
             </div>
 
             {moodLogs.length === 0 ? (
@@ -186,7 +186,7 @@ export default function InsightsPage() {
               </div>
             )}
 
-            <div className="flex items-center gap-4 mt-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-4">
               <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{isAr ? 'أقل' : 'Less'}</span>
               {MOOD_COLORS.map((c, i) => (
                 <div key={i} className="flex items-center gap-1">
@@ -200,14 +200,14 @@ export default function InsightsPage() {
 
           {/* Score trend chart */}
           <div className="card p-6">
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" style={{ color: 'var(--text-icon)' }} />
                 <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('insights.score_trend', lang)}</h2>
               </div>
               {uniqueAssessments.length > 1 && (
                 <select
-                  className="input text-xs py-1 max-w-48"
+                  className="input text-xs py-2 w-full sm:w-auto sm:max-w-48"
                   value={selectedAssessmentCode}
                   onChange={e => setSelectedAssessmentCode(e.target.value)}
                 >
