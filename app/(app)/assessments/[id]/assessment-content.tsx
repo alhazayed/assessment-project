@@ -12,6 +12,7 @@ import { getAssessmentContent, getLocalizedBandContent, getLocalizedAssessmentMe
 import { ASSESSMENT_CONTENT_AR } from '@/lib/assessment-content-ar'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import CrisisResources from '@/components/crisis-resources'
 
 function severityColor(band: string) {
   const b = band.toLowerCase()
@@ -216,7 +217,8 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
           {isHighRisk && (
             <div className={`mt-4 alert-error ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
               <p className="text-sm font-semibold mb-1">⚠ {t('assessment.high_risk_note', lang)}</p>
-              <p className="text-sm">{t('assessment.result.high_risk', lang)}</p>
+              <p className="text-sm mb-2">{t('assessment.result.high_risk', lang)}</p>
+              <CrisisResources lang={lang} compact showEmergencyLink />
             </div>
           )}
 

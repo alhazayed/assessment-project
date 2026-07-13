@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-auth'
 
 export const maxDuration = 60
@@ -6,7 +6,7 @@ export const maxDuration = 60
 export async function GET(request: Request) {
   try {
     await requireAdmin()
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const url = new URL(request.url)
     const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '10', 10)))

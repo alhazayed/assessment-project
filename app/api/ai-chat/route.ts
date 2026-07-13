@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
 import { callGemini } from '@/lib/gemini'
+import { scrubPHI } from '@/lib/security/anonymizePHI'
 
 const MAX_MESSAGE_LEN = 1000
 
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const message = typeof body.message === 'string' ? body.message.slice(0, MAX_MESSAGE_LEN).trim() : ''
+  const message = typeof body.message === 'string' ? scrubPHI(body.message.slice(0, MAX_MESSAGE_LEN).trim()) : ''
   const lang = body.lang === 'ar' ? 'ar' : 'en'
   const history = Array.isArray(body.history) ? body.history.slice(-10) : []
 
@@ -114,7 +115,7 @@ export async function POST(request: Request) {
     // Validate role to prevent prompt injection via history
     if (turn.role !== 'user' && turn.role !== 'model') continue
     const role = turn.role === 'user' ? 'user' : 'model'
-    contents.push({ role, parts: [{ text: turn.text.slice(0, MAX_MESSAGE_LEN) }] })
+    contents.push({ role, parts: [{ text: scrubPHI(turn.text.slice(0, MAX_MESSAGE_LEN)) }] })
   }
 
   const langInstruction = lang === 'ar'

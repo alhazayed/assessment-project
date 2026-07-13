@@ -13,13 +13,24 @@ export async function POST() {
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
 
   const db = createAdminClient()
-  // Log deletion request in audit log
+  const requestedAt = new Date().toISOString()
+
+  const { error: profileError } = await db
+    .from('profiles')
+    .update({ deletion_requested_at: requestedAt })
+    .eq('id', user.id)
+
+  if (profileError) {
+    console.error('delete-request profile update error:', profileError)
+    return NextResponse.json({ error: 'Failed to schedule deletion' }, { status: 500 })
+  }
+
   await db.from('audit_log').insert({
     actor_id: user.id,
     action: 'account_deletion_requested',
     target_type: 'user',
     target_id: user.id,
-    details: { email: user.email, requested_at: new Date().toISOString() },
+    details: { email: user.email, requested_at: requestedAt },
   })
 
   return NextResponse.json({ ok: true, message: 'Account deletion scheduled within 30 days' })

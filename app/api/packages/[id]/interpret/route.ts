@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { generateRichNarrative } from '@/lib/package-interpret'
+import { scrubPHI } from '@/lib/security/anonymizePHI'
 import type { InterpretationBand } from '@/lib/types'
 
 const GEMINI_API_URL =
@@ -131,7 +132,7 @@ Rules:
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            contents: [{ role: 'user', parts: [{ text: scrubPHI(prompt) }] }],
             generationConfig: { temperature: 0.3, maxOutputTokens: 1200 },
           }),
         })

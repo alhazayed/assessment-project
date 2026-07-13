@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/admin-auth'
 
 export const maxDuration = 60
@@ -6,7 +6,7 @@ export const maxDuration = 60
 export async function GET(request: Request) {
   try {
     await requireAdmin()
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Get user engagement metrics
     const { data: metrics, error } = await supabase.rpc('get_user_engagement_metrics')
