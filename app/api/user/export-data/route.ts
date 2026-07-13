@@ -2,11 +2,17 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { buildContentDisposition, getMimeTypeForFormat } from '@/lib/security/file-export'
+import { checkRateLimit } from '@/lib/rate-limit'
 
-export async function GET() {
+export async function GET(_request: Request) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const rl = await checkRateLimit(`user-export:${user.id}`, { limit: 3, windowMs: 60 * 60 * 1000 })
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': '3600' } })
+  }
 
   const [{ data: profile }, { data: assessments }, { data: mood }, { data: journal }] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),

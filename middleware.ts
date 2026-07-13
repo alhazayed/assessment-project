@@ -87,8 +87,12 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/')) {
     supabaseResponse.headers.set('X-Content-Type-Options', 'nosniff')
     supabaseResponse.headers.set('Cache-Control', 'no-store')
-    // Prevent API responses from being embedded by other origins
     supabaseResponse.headers.set('X-Frame-Options', 'DENY')
+    supabaseResponse.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    supabaseResponse.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+    if (process.env.NODE_ENV === 'production') {
+      supabaseResponse.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    }
   }
 
   // CSP: scripts are nonce-locked (strict); styles allow inline (see note below)

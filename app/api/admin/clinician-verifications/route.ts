@@ -1,28 +1,32 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { AdminAuthError, requireAdminApi } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const ALLOWED_REVIEW_STATUSES = ['verified', 'rejected', 'suspended'] as const
 type ReviewStatus = (typeof ALLOWED_REVIEW_STATUSES)[number]
 
-async function requireAdminUser() {
-  const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || !['admin', 'superadmin'].includes(profile.role)) return null
-  return user
+function adminAuthResponse(err: unknown) {
+  if (err instanceof AdminAuthError) {
+    return NextResponse.json({ error: err.message }, { status: err.status })
+  }
+  return null
 }
 
 export async function GET(request: Request) {
-  const user = await requireAdminUser()
-  if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  try {
+    await requireAdminApi()
+  } catch (err) {
+    const res = adminAuthResponse(err)
+    if (res) return res
+    throw err
+  }
+
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const rl = await checkRateLimit(`admin-clinician-verifications:${ip}`, { limit: 60, windowMs: 60 * 60 * 1000 })
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
   const { searchParams } = new URL(request.url)
   const statusFilter = searchParams.get('status') || ''
@@ -57,8 +61,23 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const user = await requireAdminUser()
-  if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  let adminUser
+  try {
+    const auth = await requireAdminApi()
+    adminUser = auth.user
+  } catch (err) {
+    const res = adminAuthResponse(err)
+    if (res) return res
+    throw err
+  }
+
+  const rl = await checkRateLimit(`admin-clinician-verifications-patch:${adminUser.id}`, {
+    limit: 30,
+    windowMs: 60 * 60 * 1000,
+  })
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
 
   let body: Record<string, unknown>
   try {
@@ -84,7 +103,7 @@ export async function PATCH(request: Request) {
 
   const updatePayload: Record<string, unknown> = {
     status: typedStatus,
-    reviewed_by: user.id,
+    reviewed_by: adminUser.id,
     reviewed_at: new Date().toISOString(),
   }
 
@@ -107,7 +126,7 @@ export async function PATCH(request: Request) {
   }
 
   await admin.from('audit_log').insert({
-    actor_id: user.id,
+    actor_id: adminUser.id,
     action: 'verification_reviewed',
     target_type: 'clinician_verification',
     target_id: id,
