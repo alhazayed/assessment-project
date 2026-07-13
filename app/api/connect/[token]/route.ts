@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 interface RouteContext {
   params: { token: string }
@@ -8,7 +9,13 @@ interface RouteContext {
 
 // GET — public, no auth required
 // Returns safe, non-identifying invitation details for the invite page
-export async function GET(_request: Request, { params }: RouteContext) {
+export async function GET(request: Request, { params }: RouteContext) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const rl = await checkRateLimit(`connect-invite:${ip}`, { limit: 30, windowMs: 15 * 60 * 1000 })
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+  }
+
   const { token } = params
 
   if (!token || typeof token !== 'string') {

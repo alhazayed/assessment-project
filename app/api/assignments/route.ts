@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { clinicianCanAccessPatient } from '@/lib/clinician-access'
 
 export async function GET(request: Request) {
   const supabase = createClient()
@@ -22,9 +23,14 @@ export async function GET(request: Request) {
     .order('assigned_at', { ascending: false })
 
   if (patientId) {
-    // Clinicians/admins may query any patient; patients may only query themselves
     if (!isClinician && patientId !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    if (role === 'clinician') {
+      const allowed = await clinicianCanAccessPatient(supabase, user.id, patientId)
+      if (!allowed) {
+        return NextResponse.json({ error: 'Forbidden — patient is not in your care' }, { status: 403 })
+      }
     }
     query = query.eq('patient_id', patientId)
   } else if (isClinician) {
@@ -69,15 +75,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'patient_id and definition_id are required' }, { status: 400 })
   }
 
-  // Clinicians may only assign to their own patients; admins/superadmins may assign to anyone
+  // Clinicians may only assign to patients in their care; admins/superadmins may assign to anyone
   if (callerRole === 'clinician') {
-    const { data: patientProfile } = await supabase
-      .from('profiles')
-      .select('assigned_clinician_id')
-      .eq('id', patient_id)
-      .single()
-    if (patientProfile?.assigned_clinician_id !== user.id) {
-      return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
+    const allowed = await clinicianCanAccessPatient(supabase, user.id, patient_id)
+    if (!allowed) {
+      return NextResponse.json({ error: 'Forbidden — patient is not in your care' }, { status: 403 })
     }
   }
 
