@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isVerifiedClinician } from '@/lib/clinician-access'
+import { logError } from '@/lib/safe-log'
 
 // GET /api/clinician/patients
 // Returns all active patients for the authenticated clinician, with
@@ -34,6 +36,14 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden: clinician role required' }, { status: 403 })
   }
 
+  const verified = await isVerifiedClinician(supabase, user.id)
+  if (!verified) {
+    return NextResponse.json(
+      { error: 'Clinician account must be verified before accessing patient data' },
+      { status: 403 }
+    )
+  }
+
   // Fetch all active relationships where this user is the clinician.
   // Patient PII (email, phone, etc.) is intentionally excluded; only
   // display-safe profile fields are returned.
@@ -58,7 +68,7 @@ export async function GET() {
     .order('last_access_at', { ascending: false, nullsFirst: false })
 
   if (relError) {
-    console.error('[GET /api/clinician/patients] relationships query error:', relError)
+    logError('[GET /api/clinician/patients] relationships query error:', relError)
     return NextResponse.json({ error: 'Failed to fetch patients' }, { status: 500 })
   }
 
@@ -82,19 +92,17 @@ export async function GET() {
     // procedure dependency).
     const { data: submissions, error: subError } = await supabase
       .from('assessment_submissions')
-      .select('user_id, submitted_at, severity_band')
-      .in('user_id', patientIds)
+      .select('patient_id, submitted_at, severity_band')
+      .in('patient_id', patientIds)
       .order('submitted_at', { ascending: false })
 
     if (subError) {
-      // Non-fatal: log and continue without last assessment data
-      console.error('[GET /api/clinician/patients] submissions query error:', subError)
+      logError('[GET /api/clinician/patients] submissions query error:', subError)
     } else {
-      // Keep only the first (most recent) submission seen for each patient
       for (const sub of submissions ?? []) {
-        const uid = sub.user_id as string
-        if (uid && !latestSubmissionsByPatient[uid]) {
-          latestSubmissionsByPatient[uid] = {
+        const pid = sub.patient_id as string
+        if (pid && !latestSubmissionsByPatient[pid]) {
+          latestSubmissionsByPatient[pid] = {
             submitted_at: sub.submitted_at,
             severity_band: sub.severity_band ?? null,
           }
@@ -115,8 +123,7 @@ export async function GET() {
       .eq('status', 'active')
 
     if (updateError) {
-      // Non-fatal: the read response is still valid; log for monitoring.
-      console.error('[GET /api/clinician/patients] last_access_at update error:', updateError)
+      logError('[GET /api/clinician/patients] last_access_at update error:', updateError)
     }
   }
 

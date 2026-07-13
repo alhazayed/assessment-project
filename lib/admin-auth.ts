@@ -28,3 +28,20 @@ export async function requireAdmin() {
 
   return { user, role: profile.role as 'admin' | 'superadmin' }
 }
+
+/** API-route variant: returns null instead of redirecting (no HMAC cookie leak in JSON). */
+export async function requireAdminApi() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (!profile || !['admin', 'superadmin'].includes(profile.role)) return null
+
+  const store = cookies()
+  const cookie = store.get('admin_session')?.value
+  const expected = await computeHmac(user.id, profile.role)
+  if (cookie !== expected) return null
+
+  return { user, role: profile.role as 'admin' | 'superadmin' }
+}

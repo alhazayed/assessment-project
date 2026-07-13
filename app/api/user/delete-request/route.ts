@@ -19,7 +19,7 @@ export async function POST() {
     action: 'account_deletion_requested',
     target_type: 'user',
     target_id: user.id,
-    details: { email: user.email, requested_at: new Date().toISOString() },
+    details: { requested_at: new Date().toISOString() },
   })
 
   return NextResponse.json({ ok: true, message: 'Account deletion scheduled within 30 days' })

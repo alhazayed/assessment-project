@@ -2,7 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
+import { scrubPHI } from '@/lib/security/anonymizePHI'
 import { callGemini } from '@/lib/gemini'
+import { logError } from '@/lib/safe-log'
 
 export async function POST(_request: Request) {
   try {
@@ -104,12 +106,12 @@ Rules:
 
     const res = await callGemini(apiKey, {
       systemInstruction: { parts: [{ text: systemInstruction }] },
-      contents: [{ role: 'user', parts: [{ text: `Assessment Results:\n${resultsSummary}` }] }],
+      contents: [{ role: 'user', parts: [{ text: scrubPHI(`Assessment Results:\n${resultsSummary}`) }] }],
       generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
     })
 
     if (!res.ok) {
-      console.error('Gemini synthesis error:', res.status, await res.text())
+      logError('Gemini synthesis error:', `HTTP ${res.status}`)
       return NextResponse.json({ error: 'AI service error' }, { status: 502 })
     }
 

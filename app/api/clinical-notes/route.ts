@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { scrubPHI } from '@/lib/security/anonymizePHI'
+import { logError } from '@/lib/safe-log'
 
 async function requireClinician() {
   const supabase = createClient()
@@ -39,7 +41,7 @@ export async function GET(request: Request) {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('clinical-notes GET error:', error)
+    logError('clinical-notes GET error:', error)
     return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 })
   }
   return NextResponse.json({ notes: data })
@@ -78,7 +80,7 @@ export async function POST(request: Request) {
     .single()
 
   if (error) {
-    console.error('clinical-notes POST error:', error)
+    logError('clinical-notes POST error:', error)
     return NextResponse.json({ error: 'Failed to create note' }, { status: 500 })
   }
   return NextResponse.json({ note: data })
@@ -133,7 +135,7 @@ export async function PUT(request: Request) {
   const context = [
     submissions?.length ? `Recent assessments: ${submissions.map(s => `${(s as any).assessment_definitions?.name_en} (${s.severity_band})`).join(', ')}` : null,
     moods?.length ? `Mood last ${moods.length} days: avg ${Math.round(moods.reduce((a, m) => a + m.mood_score, 0) / moods.length)}/10` : null,
-    notes?.length ? `Prior note excerpt: "${notes[0].body.slice(0, 200)}"` : null,
+    notes?.length ? `Prior note excerpt: "${scrubPHI(notes[0].body.slice(0, 200))}"` : null,
   ].filter(Boolean).join('. ')
 
   try {
@@ -141,22 +143,21 @@ export async function PUT(request: Request) {
     if (!apiKey) return NextResponse.json({ error: 'AI service not configured' }, { status: 503 })
 
     const { callGemini } = await import('@/lib/gemini')
-    const prompt = `You are a mental health clinician. Based on the following patient data, write a brief clinical progress note template (under 200 words). Write in the first-person clinician voice. Use only the data provided — do not invent clinical observations.\n\nPatient data: ${context || 'No recent data available.'}\n\nNote:`
+    const prompt = scrubPHI(`You are a mental health clinician. Based on the following patient data, write a brief clinical progress note template (under 200 words). Write in the first-person clinician voice. Use only the data provided — do not invent clinical observations.\n\nPatient data: ${context || 'No recent data available.'}\n\nNote:`)
     const geminiBody = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: { maxOutputTokens: 300, temperature: 0.4 },
     }
     const res = await callGemini(apiKey, geminiBody)
     if (!res.ok) {
-      const errText = await res.text()
-      console.error('Gemini error:', res.status, errText)
+      logError('Gemini clinical-notes error:', `HTTP ${res.status}`)
       return NextResponse.json({ error: 'AI service unavailable' }, { status: 503 })
     }
     const json = await res.json()
     const draft = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
     return NextResponse.json({ draft })
   } catch (err) {
-    console.error('AI draft error:', err)
+    logError('AI draft error:', err)
     return NextResponse.json({ error: 'AI service unavailable' }, { status: 503 })
   }
 }
@@ -177,7 +178,7 @@ export async function DELETE(request: Request) {
     .eq('clinician_id', user.id)
 
   if (error) {
-    console.error('clinical-notes DELETE error:', error)
+    logError('clinical-notes DELETE error:', error)
     return NextResponse.json({ error: 'Failed to delete note' }, { status: 500 })
   }
   return NextResponse.json({ ok: true })

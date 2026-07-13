@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { isAllowedRedirectUrl } from '@/lib/validate-redirect'
+import { logError } from '@/lib/safe-log'
 
 export async function POST(request: Request) {
   try {
@@ -22,15 +24,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Valid email is required' }, { status: 400 })
     }
 
+    const resetOptions: { redirectTo?: string } = {}
+    if (typeof redirectTo === 'string' && isAllowedRedirectUrl(redirectTo)) {
+      resetOptions.redirectTo = redirectTo
+    }
+
     const supabase = createClient()
     // Always return success to prevent user enumeration (whether email exists or not)
-    await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      redirectTo: typeof redirectTo === 'string' ? redirectTo : undefined,
-    })
+    await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), resetOptions)
 
     return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error('forgot-password error:', err)
+    logError('forgot-password error:', err)
     // Return success even on error — don't reveal backend state
     return NextResponse.json({ ok: true })
   }
