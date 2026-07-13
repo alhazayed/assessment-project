@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 import KPICard from './kpi-card'
 import { BarChart3, Users, TrendingUp, AlertTriangle } from 'lucide-react'
 
@@ -26,7 +25,6 @@ interface TopAssessment {
 }
 
 export default function DashboardOverview() {
-  const supabase = useMemo(() => createClient(), [])
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [assessments, setAssessments] = useState<TopAssessment[]>([])
   const [loading, setLoading] = useState(true)
@@ -69,7 +67,7 @@ export default function DashboardOverview() {
     return () => {
       mounted = false
     }
-  }, [supabase])
+  }, [])
 
   if (error) {
     return (
