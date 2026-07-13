@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { verifyTurnstileToken } from '@/lib/security/verifyTurnstile'
+import { logError } from '@/lib/safe-log'
 import type { ScoringBand } from '@/lib/types'
 
 async function notifyAdminsHighRiskGuest(submissionId: string, definitionId: string) {
@@ -309,7 +310,7 @@ export async function POST(request: Request) {
       .single()
 
     if (subErr || !submission) {
-      console.error('guest submission insert error:', subErr)
+      logError('guest submission insert error:', subErr)
       return NextResponse.json({ error: 'Failed to save submission' }, { status: 500 })
     }
 
@@ -327,13 +328,7 @@ export async function POST(request: Request) {
       notifyAdminsHighRiskGuest(submission.id, definition_id).catch(() => {})
     }
 
-    // Log guest submission to audit trail (no actor_id since anonymous)
-    await supabase.from('audit_log').insert({
-      action: 'guest_assessment_submitted',
-      target_type: 'assessment_submission',
-      target_id: submission.id,
-      reason: `${def.name_en} — score ${totalScore}${band ? ` (${band.severity_en})` : ''}${highRisk ? ' HIGH RISK' : ''} — guest from ${country}`,
-    }).then(() => {}) // fire-and-forget
+    // Guest submissions are anonymous — audit_log requires actor_id; skip DB audit here.
 
     return NextResponse.json({
       submission_id: submission.id,
@@ -343,7 +338,7 @@ export async function POST(request: Request) {
       high_risk: highRisk,
     })
   } catch (err) {
-    console.error('submit-assessment-guest error:', err)
+    logError('submit-assessment-guest error:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

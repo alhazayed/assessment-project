@@ -159,7 +159,16 @@ function RegisterForm() {
       })
 
       if (error) {
-        setError(error.message)
+        const msg = error.message?.toLowerCase() ?? ''
+        if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) {
+          setError(isRtl
+            ? 'تعذر إكمال التسجيل. إذا كان لديك حساب، يرجى تسجيل الدخول.'
+            : 'Unable to complete registration. If you already have an account, please sign in.')
+        } else {
+          setError(isRtl
+            ? 'تعذر إكمال التسجيل. يرجى المحاولة مرة أخرى.'
+            : 'Unable to complete registration. Please try again.')
+        }
         setLoading(false)
         if (turnstileToken) window.turnstile?.reset()
       } else if (data.session) {

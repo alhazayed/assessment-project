@@ -36,6 +36,27 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
+
+  // CSRF protection for cookie-authenticated state-changing API requests.
+  // Bearer-token clients (mobile) are exempt — they do not send session cookies.
+  const isApiMutation =
+    pathname.startsWith('/api/') &&
+    !['GET', 'HEAD', 'OPTIONS'].includes(request.method)
+  const hasBearerAuth = request.headers.get('Authorization')?.startsWith('Bearer ')
+  if (isApiMutation && !hasBearerAuth) {
+    const origin = request.headers.get('origin')
+    const host = request.headers.get('host')
+    if (origin && host) {
+      try {
+        if (new URL(origin).host !== host) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+      } catch {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+  }
+
   const isAdminLogin = pathname === '/x/control/login'
   const isAdminArea = pathname.startsWith('/x/control') && !isAdminLogin
   const isAuthPage =

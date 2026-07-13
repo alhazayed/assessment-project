@@ -12,10 +12,6 @@ export async function GET() {
     healthy = false
   }
 
-  // Check AI key presence without exposing configuration details
-  const hasAiKey = !!(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your-gemini-api-key-here')
-  if (!hasAiKey) healthy = false
-
   return NextResponse.json(
     { status: healthy ? 'ok' : 'degraded', ts: new Date().toISOString() },
     { status: healthy ? 200 : 503 }

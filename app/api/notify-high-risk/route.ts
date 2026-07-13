@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { logError } from '@/lib/safe-log'
 
 export async function POST(request: Request) {
   try {
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error('notify-high-risk error:', err)
+    logError('notify-high-risk error:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
+import { scrubPHI } from '@/lib/security/anonymizePHI'
 import { callGemini } from '@/lib/gemini'
 
 const MAX_MESSAGE_LEN = 1000
@@ -114,16 +115,17 @@ export async function POST(request: Request) {
     // Validate role to prevent prompt injection via history
     if (turn.role !== 'user' && turn.role !== 'model') continue
     const role = turn.role === 'user' ? 'user' : 'model'
-    contents.push({ role, parts: [{ text: turn.text.slice(0, MAX_MESSAGE_LEN) }] })
+    contents.push({ role, parts: [{ text: scrubPHI(turn.text.slice(0, MAX_MESSAGE_LEN)) }] })
   }
 
   const langInstruction = lang === 'ar'
     ? 'Please respond in Arabic (Modern Standard Arabic, MSA). Use clear, warm, accessible language.'
     : 'Please respond in English.'
 
+  const scrubbedMessage = scrubPHI(message)
   contents.push({
     role: 'user',
-    parts: [{ text: `${langInstruction}\n\nUser message: ${message}` }],
+    parts: [{ text: `${langInstruction}\n\nUser message: ${scrubbedMessage}` }],
   })
 
   const res = await callGemini(apiKey, {
