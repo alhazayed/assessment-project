@@ -1,6 +1,33 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+// A clinician may only reach another user's assignments when they have an
+// actual treating relationship with that patient: a legacy direct assignment
+// (profiles.assigned_clinician_id) OR an active consent relationship granting
+// `view_assessment_history` (check_relationship_permission). This mirrors the
+// assign_read RLS policy so the API returns a clean 403 instead of leaking that
+// the patient exists via an empty result set.
+async function clinicianCanAccessPatient(
+  supabase: SupabaseClient,
+  clinicianId: string,
+  patientId: string,
+): Promise<boolean> {
+  const { data: patient } = await supabase
+    .from('profiles')
+    .select('assigned_clinician_id')
+    .eq('id', patientId)
+    .maybeSingle()
+  if (patient?.assigned_clinician_id === clinicianId) return true
+
+  const { data: permitted } = await supabase.rpc('check_relationship_permission', {
+    p_clinician_id: clinicianId,
+    p_patient_id: patientId,
+    p_permission: 'view_assessment_history',
+  })
+  return permitted === true
+}
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -22,9 +49,18 @@ export async function GET(request: Request) {
     .order('assigned_at', { ascending: false })
 
   if (patientId) {
-    // Clinicians/admins may query any patient; patients may only query themselves
-    if (!isClinician && patientId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (patientId !== user.id) {
+      // Admins/superadmins may query any patient. Clinicians may only query a
+      // patient they have a treating relationship with — never an arbitrary one
+      // (IDOR). Patients may only query themselves.
+      if (role === 'admin' || role === 'superadmin') {
+        // full access
+      } else if (role === 'clinician') {
+        const allowed = await clinicianCanAccessPatient(supabase, user.id, patientId)
+        if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      } else {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
     query = query.eq('patient_id', patientId)
   } else if (isClinician) {

@@ -1,28 +1,18 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const ALLOWED_REVIEW_STATUSES = ['verified', 'rejected', 'suspended'] as const
 type ReviewStatus = (typeof ALLOWED_REVIEW_STATUSES)[number]
 
-async function requireAdminUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || !['admin', 'superadmin'].includes(profile.role)) return null
-  return user
-}
-
 export async function GET(request: Request) {
-  const user = await requireAdminUser()
-  if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  let user
+  try {
+    ;({ user } = await requireAdmin())
+  } catch (error) {
+    if (isAuthRedirectError(error)) return adminRouteError(error)
+    throw error
+  }
 
   const { searchParams } = new URL(request.url)
   const statusFilter = searchParams.get('status') || ''
@@ -57,8 +47,13 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const user = await requireAdminUser()
-  if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  let user
+  try {
+    ;({ user } = await requireAdmin())
+  } catch (error) {
+    if (isAuthRedirectError(error)) return adminRouteError(error)
+    throw error
+  }
 
   let body: Record<string, unknown>
   try {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { verifyAdminSession } from '@/lib/admin-auth'
 
 const VALID_ACTIONS = ['approve', 'reject', 'revoke'] as const
 type Action = (typeof VALID_ACTIONS)[number]
@@ -69,15 +70,12 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
     return NextResponse.json({ error: 'Relationship not found' }, { status: 404 })
   }
 
-  // Determine if the user is the patient or an admin
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  const isAdmin = profile && ['admin', 'superadmin'].includes(profile.role)
+  // Determine if the user is the patient (self-service) or an admin acting on
+  // their behalf. Admin authority here is a privileged operation, so it requires
+  // a valid admin session (verifyAdminSession: authenticated + admin role + HMAC
+  // admin_session) rather than a bare profiles.role check.
   const isPatient = user.id === relationship.patient_id
+  const isAdmin = isPatient ? false : !!(await verifyAdminSession())
 
   if (!isPatient && !isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

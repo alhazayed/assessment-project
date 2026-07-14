@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { renderToBuffer, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { verifyAdminSession } from '@/lib/admin-auth'
 
 const BRAND = { primary: '#1D6296', accent: '#F3650A', dark: '#12273C' }
 
@@ -105,12 +106,14 @@ export async function GET(request: Request) {
   const patientId = searchParams.get('patient_id')
   if (!patientId) return NextResponse.json({ error: 'patient_id required' }, { status: 400 })
 
-  // Authorization: only the patient themselves OR admin/superadmin may access this report
+  // Authorization: only the patient themselves OR an admin with a valid admin
+  // session may access this report. Using verifyAdminSession() (authenticated +
+  // admin role + HMAC admin_session) instead of a bare profiles.role check so a
+  // user whose role is admin but who has no active admin session cannot pull
+  // another patient's clinical PDF.
   if (user.id !== patientId) {
-    const { data: profile } = await supabase
-      .from('profiles').select('role').eq('id', user.id).single()
-    const privileged = profile && ['admin', 'superadmin'].includes(profile.role)
-    if (!privileged) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const admin = await verifyAdminSession()
+    if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const [profileRes, submissionsRes, moodRes] = await Promise.all([
