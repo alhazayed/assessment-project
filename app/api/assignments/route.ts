@@ -1,6 +1,45 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { verifyAdminSession } from '@/lib/admin-auth'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+// A clinician may only reach another user's assignments when they have an
+// actual treating relationship with that patient: a legacy direct assignment
+// (profiles.assigned_clinician_id) OR an active consent relationship granting
+// `view_assessment_history` (check_relationship_permission). This mirrors the
+// assign_read RLS policy so the API returns a clean 403 instead of leaking that
+// the patient exists via an empty result set.
+async function clinicianCanAccessPatient(
+  supabase: SupabaseClient,
+  clinicianId: string,
+  patientId: string,
+): Promise<boolean> {
+  const { data: patient } = await supabase
+    .from('profiles')
+    .select('assigned_clinician_id')
+    .eq('id', patientId)
+    .maybeSingle()
+  if (patient?.assigned_clinician_id === clinicianId) return true
+
+  const { data: permitted } = await supabase.rpc('check_relationship_permission', {
+    p_clinician_id: clinicianId,
+    p_patient_id: patientId,
+    p_permission: 'view_assessment_history',
+  })
+  if (permitted === true) return true
+
+  // Mirror the `clinician_id = auth.uid()` arm of the assign_read RLS policy:
+  // a clinician may read assignments they authored for this patient (e.g. ones
+  // created before a re-assignment changed profiles.assigned_clinician_id).
+  // Without this the API gate would 403 a request that RLS would permit.
+  const { count } = await supabase
+    .from('assessment_assignments')
+    .select('id', { count: 'exact', head: true })
+    .eq('patient_id', patientId)
+    .eq('clinician_id', clinicianId)
+  return (count ?? 0) > 0
+}
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -22,9 +61,21 @@ export async function GET(request: Request) {
     .order('assigned_at', { ascending: false })
 
   if (patientId) {
-    // Clinicians/admins may query any patient; patients may only query themselves
-    if (!isClinician && patientId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (patientId !== user.id) {
+      // Admins/superadmins may query any patient, but that privileged read must
+      // be backed by a valid HMAC admin_session — an admin role on the Supabase
+      // session alone is not sufficient. Clinicians may only query a patient
+      // they have a treating relationship with — never an arbitrary one (IDOR).
+      // Patients may only query themselves.
+      if (role === 'admin' || role === 'superadmin') {
+        const admin = await verifyAdminSession()
+        if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      } else if (role === 'clinician') {
+        const allowed = await clinicianCanAccessPatient(supabase, user.id, patientId)
+        if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      } else {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
     query = query.eq('patient_id', patientId)
   } else if (isClinician) {
@@ -53,6 +104,15 @@ export async function POST(request: Request) {
   const callerRole = callerProfile?.role ?? ''
   if (!['clinician', 'admin', 'superadmin'].includes(callerRole)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  // Admin/superadmin create operations are a privileged path and must be backed
+  // by a valid HMAC admin_session, not merely an admin role on the Supabase
+  // session. The clinician path (below) is unchanged and keeps its own
+  // assigned-patient relationship validation.
+  if (callerRole === 'admin' || callerRole === 'superadmin') {
+    const admin = await verifyAdminSession()
+    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   // Rate limit: 20 assignments/hour per clinician

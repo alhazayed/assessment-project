@@ -47,3 +47,25 @@ export async function requireAdmin() {
 
   return { user, role: profile.role as 'admin' | 'superadmin' }
 }
+
+// Non-throwing admin gate for mixed-role routes (e.g. patient-OR-admin
+// endpoints) that cannot call requireAdmin() because a legitimate non-admin
+// caller must not be redirected. Applies the SAME requirements as
+// requireAdmin() — authenticated user + admin/superadmin role + valid HMAC
+// admin_session cookie — and returns the admin identity, or null when the
+// caller is not an authenticated admin with a valid admin session.
+export async function verifyAdminSession() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (!profile || !['admin', 'superadmin'].includes(profile.role)) return null
+
+  const store = await cookies()
+  const cookie = store.get('admin_session')?.value
+  const expected = await computeHmac(user.id, profile.role)
+  if (cookie !== expected) return null
+
+  return { user, role: profile.role as 'admin' | 'superadmin' }
+}

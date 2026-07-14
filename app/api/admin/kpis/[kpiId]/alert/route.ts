@@ -1,28 +1,12 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function PATCH(request: NextRequest, props: { params: Promise<{ kpiId: string }> }) {
   const params = await props.params;
   try {
-    const supabase = await createClient()
+    const { user } = await requireAdmin()
     const db = createAdminClient()
-
-    // Verify admin access
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: profile } = await db
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     // Parse request body
     const body = await request.json()
@@ -79,6 +63,7 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ kpi
       config: alertConfig,
     })
   } catch (error) {
+    if (isAuthRedirectError(error)) return adminRouteError(error)
     console.error('KPI alert configuration error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -87,24 +72,7 @@ export async function PATCH(request: NextRequest, props: { params: Promise<{ kpi
 export async function GET(request: NextRequest, props: { params: Promise<{ kpiId: string }> }) {
   const params = await props.params;
   try {
-    const supabase = await createClient()
-    const db = createAdminClient()
-
-    // Verify admin access
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: profile } = await db
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    await requireAdmin()
 
     // TODO: Fetch from kpi_alerts table
     // For now, return default config
@@ -117,6 +85,7 @@ export async function GET(request: NextRequest, props: { params: Promise<{ kpiId
 
     return NextResponse.json(defaultConfig)
   } catch (error) {
+    if (isAuthRedirectError(error)) return adminRouteError(error)
     console.error('KPI alert fetch error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

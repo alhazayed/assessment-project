@@ -89,6 +89,36 @@ describe('IDOR — Assessment Submissions', () => {
   })
 })
 
+describe('IDOR — Assessment Assignments', () => {
+  test('attacker cannot read another patient assignments', async () => {
+    // A clinician/user with no treating relationship to VICTIM_PATIENT_ID must
+    // not be able to enumerate that patient's assignments (IDOR on
+    // GET /api/assignments?patient_id=...). Unauthenticated → 401; an
+    // authenticated non-related caller → 403 (or 200 with an empty set once RLS
+    // also filters, but never the victim's rows).
+    const res = await GET(`/api/assignments?patient_id=${VICTIM_PATIENT_ID}`)
+    if (res.status === 200) {
+      const body = await res.json().catch(() => ({}))
+      const rows = Array.isArray(body?.assignments) ? body.assignments : []
+      assert.equal(
+        rows.length,
+        0,
+        `Leak: /api/assignments returned ${rows.length} row(s) for an unrelated patient — IDOR`,
+      )
+    } else {
+      assert.ok(
+        res.status === 401 || res.status === 403,
+        `Expected 401/403/empty-200 but got ${res.status} — IDOR on /api/assignments`,
+      )
+    }
+  })
+
+  test('unauthenticated request to assignments returns 401', async () => {
+    const res = await fetch(`${BASE}/api/assignments?patient_id=${VICTIM_PATIENT_ID}`)
+    assert.equal(res.status, 401, `Expected 401 but got ${res.status}`)
+  })
+})
+
 describe('IDOR — Notifications', () => {
   test('PATCH /api/notifications cannot mark another user notifications as read', async () => {
     // Send a fake ID — should either 401, 403, or silently ignore (not 200 with side effects)
