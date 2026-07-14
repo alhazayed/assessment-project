@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { Users, Search, CheckCircle, XCircle, ChevronDown, Trash2, AlertTriangle, X, Loader2 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
@@ -191,7 +192,18 @@ export default function AdminUsersPage() {
             ) : users.map(u => (
               <tr key={u.id} className={updating === u.id ? 'opacity-50' : ''} style={{ borderBottom: '1px solid var(--divider)' }}>
                 <td className="px-4 py-3">
-                  <p className="text-[13.5px] font-medium" style={{ color: 'var(--text-primary)' }}>{u.full_name_en}</p>
+                  {callerRole === 'superadmin' ? (
+                    <Link
+                      href={`/x/control/users/${u.id}`}
+                      className="text-[13.5px] font-medium hover:underline focus:underline focus:outline-none"
+                      style={{ color: 'var(--vw-blue)' }}
+                      title={lang === 'ar' ? 'عرض تقييمات المستخدم' : "View this user's assessments"}
+                    >
+                      {u.full_name_en}
+                    </Link>
+                  ) : (
+                    <p className="text-[13.5px] font-medium" style={{ color: 'var(--text-primary)' }}>{u.full_name_en}</p>
+                  )}
                   {u.email && <p className="text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>{u.email}</p>}
                   {u.full_name_ar && <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{u.full_name_ar}</p>}
                 </td>
