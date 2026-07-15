@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { clinicianHasPatientAccess } from '@/lib/authz/clinician-access'
 
 async function requireClinician() {
   const supabase = await createClient()
@@ -20,13 +21,14 @@ export async function GET(request: Request) {
   const patientId = searchParams.get('patient_id')
   if (!patientId) return NextResponse.json({ error: 'patient_id required' }, { status: 400 })
 
-  // Clinicians may only fetch notes for their own assigned patients
+  // Clinicians may only fetch notes for patients they have a treating
+  // relationship with. Centralized authorization: active consent granting
+  // 'generate_clinical_notes' OR the legacy assigned_clinician_id link.
   const { data: callerProfile } = await supabase
     .from('profiles').select('role').eq('id', user.id).single()
   if (callerProfile?.role === 'clinician') {
-    const { data: patientProfile } = await supabase
-      .from('profiles').select('assigned_clinician_id').eq('id', patientId).single()
-    if (patientProfile?.assigned_clinician_id !== user.id) {
+    const allowed = await clinicianHasPatientAccess(supabase, user.id, patientId, 'generate_clinical_notes')
+    if (!allowed) {
       return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
     }
   }
@@ -64,9 +66,8 @@ export async function POST(request: Request) {
   const { data: callerProfile } = await supabase
     .from('profiles').select('role').eq('id', user.id).single()
   if (callerProfile?.role === 'clinician') {
-    const { data: patientProfile } = await supabase
-      .from('profiles').select('assigned_clinician_id').eq('id', patient_id).single()
-    if (patientProfile?.assigned_clinician_id !== user.id) {
+    const allowed = await clinicianHasPatientAccess(supabase, user.id, patient_id, 'generate_clinical_notes')
+    if (!allowed) {
       return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
     }
   }
@@ -100,9 +101,8 @@ export async function PUT(request: Request) {
   const { data: callerProfile } = await supabase
     .from('profiles').select('role').eq('id', user.id).single()
   if (callerProfile?.role === 'clinician') {
-    const { data: patientProfile } = await supabase
-      .from('profiles').select('assigned_clinician_id').eq('id', patient_id).single()
-    if (patientProfile?.assigned_clinician_id !== user.id) {
+    const allowed = await clinicianHasPatientAccess(supabase, user.id, patient_id, 'generate_clinical_notes')
+    if (!allowed) {
       return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
     }
   }
