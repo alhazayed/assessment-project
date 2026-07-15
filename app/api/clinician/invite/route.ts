@@ -2,13 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
-
-const DEFAULT_REQUESTED_PERMISSIONS = [
-  'view_profile',
-  'view_assessment_results',
-  'view_assessment_history',
-  'message_patient',
-]
+import { DEFAULT_REQUESTED_PERMISSIONS, validatePermissionKeys } from '@/lib/permissions'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -66,10 +60,17 @@ export async function POST(request: Request) {
   const message =
     typeof body.message === 'string' ? body.message.trim() || null : null
 
-  const requested_permissions =
-    Array.isArray(body.requested_permissions) && body.requested_permissions.length > 0
-      ? (body.requested_permissions as string[])
-      : DEFAULT_REQUESTED_PERMISSIONS
+  // Permissions are optional: an omitted field falls back to the canonical
+  // default set (backward compatible). When provided, it must validate against
+  // the canonical model — unknown/duplicate/empty/null payloads are rejected.
+  let requested_permissions: string[]
+  if (body.requested_permissions === undefined) {
+    requested_permissions = DEFAULT_REQUESTED_PERMISSIONS
+  } else {
+    const parsed = validatePermissionKeys(body.requested_permissions)
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
+    requested_permissions = parsed.keys
+  }
 
   const admin = createAdminClient()
 

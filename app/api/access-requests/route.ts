@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { DEFAULT_REQUESTED_PERMISSIONS, validatePermissionKeys } from '@/lib/permissions'
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -185,17 +186,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 409 })
   }
 
-  const defaultPermissions = [
-    'view_profile',
-    'view_assessment_results',
-    'view_assessment_history',
-    'message_patient',
-  ]
-
-  const permissionsToUse =
-    Array.isArray(requested_permissions) && requested_permissions.length > 0
-      ? requested_permissions
-      : defaultPermissions
+  // Permissions are optional: an omitted field falls back to the canonical
+  // default set (backward compatible). When provided, it must validate against
+  // the canonical model — unknown/duplicate/empty/null payloads are rejected.
+  let permissionsToUse: string[]
+  if (requested_permissions === undefined) {
+    permissionsToUse = DEFAULT_REQUESTED_PERMISSIONS
+  } else {
+    const parsed = validatePermissionKeys(requested_permissions)
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
+    permissionsToUse = parsed.keys
+  }
 
   // Insert the relationship
   const { data: newRelationship, error: insertError } = await admin

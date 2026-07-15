@@ -1,20 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-
-const VALID_PERMISSION_KEYS = [
-  'view_profile',
-  'view_assessment_results',
-  'view_assessment_history',
-  'view_clinical_notes',
-  'view_mood_tracking',
-  'view_crisis_history',
-  'message_patient',
-  'export_patient_data',
-  'assign_assessments',
-  'view_demographics',
-] as const
-type PermissionKey = (typeof VALID_PERMISSION_KEYS)[number]
+import { ALL_PERMISSION_KEYS } from '@/lib/types'
+import { isPermissionKey } from '@/lib/permissions'
 
 export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -110,13 +98,10 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
     granted?: unknown
   }
 
-  if (
-    typeof permission_key !== 'string' ||
-    !(VALID_PERMISSION_KEYS as readonly string[]).includes(permission_key)
-  ) {
+  if (!isPermissionKey(permission_key)) {
     return NextResponse.json(
       {
-        error: `permission_key must be one of: ${VALID_PERMISSION_KEYS.join(', ')}`,
+        error: `permission_key must be one of: ${ALL_PERMISSION_KEYS.join(', ')}`,
       },
       { status: 400 }
     )
@@ -126,7 +111,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
     return NextResponse.json({ error: 'granted must be a boolean' }, { status: 400 })
   }
 
-  const typedKey = permission_key as PermissionKey
+  const typedKey = permission_key
   const now = new Date().toISOString()
 
   const admin = createAdminClient()
