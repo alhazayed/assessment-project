@@ -20,33 +20,13 @@ import {
   ShieldCheck,
   Loader2,
 } from 'lucide-react'
+import { ALL_PERMISSION_KEYS, type PermissionKey } from '@/lib/types'
+import { PERMISSION_LABELS, isPermissionKey } from '@/lib/permissions'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-
-type PermissionKey =
-  | 'view_profile'
-  | 'view_assessment_results'
-  | 'view_assessment_history'
-  | 'view_clinical_notes'
-  | 'view_mood_tracking'
-  | 'view_crisis_history'
-  | 'message_patient'
-  | 'export_patient_data'
-  | 'assign_assessments'
-  | 'view_demographics'
-
-const ALL_PERMISSIONS: PermissionKey[] = [
-  'view_profile',
-  'view_assessment_results',
-  'view_assessment_history',
-  'view_clinical_notes',
-  'view_mood_tracking',
-  'view_crisis_history',
-  'message_patient',
-  'export_patient_data',
-  'assign_assessments',
-  'view_demographics',
-]
+// Permission keys, labels, and the canonical list all come from the shared
+// permission model (lib/types + lib/permissions) — the same source the backend
+// validates against — so this page can never drift to keys the API rejects.
 
 type PermissionRow = {
   permission_key: PermissionKey
@@ -142,18 +122,6 @@ const labels = {
     revokedOn: 'سُحب في',
     respondedOn: 'استجيب في',
     lastAccess: 'آخر وصول',
-    permLabels: {
-      view_profile: 'عرض الملف الشخصي',
-      view_assessment_results: 'عرض نتائج التقييم',
-      view_assessment_history: 'عرض سجل التقييمات',
-      view_clinical_notes: 'عرض الملاحظات السريرية',
-      view_mood_tracking: 'عرض تتبع المزاج',
-      view_crisis_history: 'عرض سجل الأزمات',
-      message_patient: 'مراسلة المريض',
-      export_patient_data: 'تصدير بيانات المريض',
-      assign_assessments: 'تعيين التقييمات',
-      view_demographics: 'عرض المعلومات الديموغرافية',
-    },
     requestedPerms: 'الصلاحيات المطلوبة',
     grantedPerms: 'الصلاحيات الممنوحة',
     status: {
@@ -210,18 +178,6 @@ const labels = {
     revokedOn: 'Revoked on',
     respondedOn: 'Responded on',
     lastAccess: 'Last access',
-    permLabels: {
-      view_profile: 'View Profile',
-      view_assessment_results: 'View Assessment Results',
-      view_assessment_history: 'View Assessment History',
-      view_clinical_notes: 'View Clinical Notes',
-      view_mood_tracking: 'View Mood Tracking',
-      view_crisis_history: 'View Crisis History',
-      message_patient: 'Message Patient',
-      export_patient_data: 'Export Patient Data',
-      assign_assessments: 'Assign Assessments',
-      view_demographics: 'View Demographics',
-    },
     requestedPerms: 'Requested Permissions',
     grantedPerms: 'Granted Permissions',
     status: {
@@ -309,7 +265,7 @@ interface PermissionBadgeProps {
 }
 
 function PermissionBadge({ permKey, granted, lang }: PermissionBadgeProps) {
-  const label = labels[lang].permLabels[permKey]
+  const label = PERMISSION_LABELS[permKey][lang]
   return (
     <span
       className="inline-flex items-center gap-1 text-[11.5px] font-semibold px-2.5 py-1 rounded-full"
@@ -479,9 +435,7 @@ export default function PatientCliniciansPage() {
   function openApproveModal(rel: Relationship) {
     // Pre-check the permissions the clinician originally requested
     const preChecked = new Set<PermissionKey>(
-      (rel.requested_permissions ?? []).filter((k): k is PermissionKey =>
-        ALL_PERMISSIONS.includes(k as PermissionKey)
-      )
+      (rel.requested_permissions ?? []).filter(isPermissionKey)
     )
     // For modify flow (active), pre-check all currently granted ones
     if (rel.status === 'active') {
@@ -886,7 +840,7 @@ export default function PatientCliniciansPage() {
             {/* Grant all / none shortcuts */}
             <div className="flex gap-2 mb-3">
               <button
-                onClick={() => setApprovePerms(new Set(ALL_PERMISSIONS))}
+                onClick={() => setApprovePerms(new Set(ALL_PERMISSION_KEYS))}
                 className="text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
                 style={{ backgroundColor: '#E6F4EC', color: '#1B8A5A', border: '1px solid #C9E6D6' }}
               >
@@ -903,7 +857,7 @@ export default function PatientCliniciansPage() {
 
             {/* Permission checkboxes */}
             <div className="space-y-2 mb-5">
-              {ALL_PERMISSIONS.map((key) => {
+              {ALL_PERMISSION_KEYS.map((key) => {
                 const checked = approvePerms.has(key)
                 return (
                   <label
@@ -924,7 +878,7 @@ export default function PatientCliniciansPage() {
                       className="text-[13px] font-medium"
                       style={{ color: checked ? '#1D6296' : 'var(--text-secondary)' }}
                     >
-                      {L.permLabels[key]}
+                      {PERMISSION_LABELS[key][lang]}
                     </span>
                   </label>
                 )
@@ -1099,7 +1053,6 @@ interface CardLabels {
   respondedOn: string
   lastAccess: string
   status: { rejected: string; revoked: string }
-  permLabels: Record<PermissionKey, string>
 }
 
 function PendingCard({
@@ -1118,7 +1071,7 @@ function PendingCard({
   rejectingId: string | null
 }) {
   const name = clinicianName(rel.clinician, lang)
-  const requestedPerms = ALL_PERMISSIONS.filter((k) =>
+  const requestedPerms = ALL_PERMISSION_KEYS.filter((k) =>
     rel.permissions.some((p) => p.permission_key === k && p.granted)
   )
 
@@ -1171,7 +1124,7 @@ function PendingCard({
                 className="text-[11px] font-medium px-2.5 py-1 rounded-full"
                 style={{ backgroundColor: '#FEF2EC', color: '#C2560A', border: '1px solid #F8D8C2' }}
               >
-                {L.permLabels[k]}
+                {PERMISSION_LABELS[k][lang]}
               </span>
             ))}
           </div>
@@ -1224,7 +1177,7 @@ function ActiveCard({
   const name = clinicianName(rel.clinician, lang)
   const [expanded, setExpanded] = useState(false)
   const grantedPerms = rel.permissions.filter((p) => p.granted).map((p) => p.permission_key)
-  const deniedPerms = ALL_PERMISSIONS.filter(
+  const deniedPerms = ALL_PERMISSION_KEYS.filter(
     (k) => !rel.permissions.some((p) => p.permission_key === k && p.granted)
   )
 
@@ -1280,12 +1233,12 @@ function ActiveCard({
           className="flex items-center gap-1.5 text-[12px] font-semibold mb-2 hover:opacity-80 transition-opacity"
           style={{ color: 'var(--text-label)' }}
         >
-          {L.grantedPerms} ({grantedPerms.length}/{ALL_PERMISSIONS.length})
+          {L.grantedPerms} ({grantedPerms.length}/{ALL_PERMISSION_KEYS.length})
           {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
         {expanded ? (
           <div className="flex flex-wrap gap-1.5">
-            {ALL_PERMISSIONS.map((k) => (
+            {ALL_PERMISSION_KEYS.map((k) => (
               <PermissionBadge
                 key={k}
                 permKey={k}
