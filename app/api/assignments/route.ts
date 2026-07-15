@@ -2,37 +2,29 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { verifyAdminSession } from '@/lib/admin-auth'
+import { clinicianHasPatientAccess } from '@/lib/authz/clinician-access'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-// A clinician may only reach another user's assignments when they have an
-// actual treating relationship with that patient: a legacy direct assignment
-// (profiles.assigned_clinician_id) OR an active consent relationship granting
-// `view_assessment_history` (check_relationship_permission). This mirrors the
-// assign_read RLS policy so the API returns a clean 403 instead of leaking that
-// the patient exists via an empty result set.
+// A clinician may only reach another user's assignments when they have a
+// treating relationship with that patient. Authorization goes through the
+// centralized has_clinician_access primitive (active consent granting
+// `view_assessment_history` OR the legacy assigned_clinician_id link), plus the
+// assignment-specific arm of assign_read: a clinician may also read assignments
+// they authored themselves. This mirrors the RLS policy so the API returns a
+// clean 403 instead of leaking that the patient exists via an empty result set.
 async function clinicianCanAccessPatient(
   supabase: SupabaseClient,
   clinicianId: string,
   patientId: string,
 ): Promise<boolean> {
-  const { data: patient } = await supabase
-    .from('profiles')
-    .select('assigned_clinician_id')
-    .eq('id', patientId)
-    .maybeSingle()
-  if (patient?.assigned_clinician_id === clinicianId) return true
-
-  const { data: permitted } = await supabase.rpc('check_relationship_permission', {
-    p_clinician_id: clinicianId,
-    p_patient_id: patientId,
-    p_permission: 'view_assessment_history',
-  })
-  if (permitted === true) return true
+  if (await clinicianHasPatientAccess(supabase, clinicianId, patientId, 'view_assessment_history')) {
+    return true
+  }
 
   // Mirror the `clinician_id = auth.uid()` arm of the assign_read RLS policy:
   // a clinician may read assignments they authored for this patient (e.g. ones
-  // created before a re-assignment changed profiles.assigned_clinician_id).
-  // Without this the API gate would 403 a request that RLS would permit.
+  // created before a re-assignment changed the treating relationship). Without
+  // this the API gate would 403 a request that RLS would permit.
   const { count } = await supabase
     .from('assessment_assignments')
     .select('id', { count: 'exact', head: true })
@@ -129,14 +121,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'patient_id and definition_id are required' }, { status: 400 })
   }
 
-  // Clinicians may only assign to their own patients; admins/superadmins may assign to anyone
+  // Clinicians may only assign to patients they have a treating relationship
+  // with; admins/superadmins may assign to anyone. Authorization goes through
+  // the centralized primitive (active consent granting 'view_assessment_history'
+  // OR the legacy assigned_clinician_id link) so legacy patients keep working.
   if (callerRole === 'clinician') {
-    const { data: patientProfile } = await supabase
-      .from('profiles')
-      .select('assigned_clinician_id')
-      .eq('id', patient_id)
-      .single()
-    if (patientProfile?.assigned_clinician_id !== user.id) {
+    const allowed = await clinicianHasPatientAccess(supabase, user.id, patient_id, 'view_assessment_history')
+    if (!allowed) {
       return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
     }
   }

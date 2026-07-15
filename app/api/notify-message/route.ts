@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { clinicianHasPatientAccess } from '@/lib/authz/clinician-access'
 
 const MAX_TITLE_LEN = 200
 const MAX_BODY_LEN  = 1000
@@ -40,27 +41,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `body_ar must be a string ≤${MAX_BODY_LEN} chars` }, { status: 400 })
     }
 
-    // Verify the caller is either the patient or the clinician in the relevant conversation
+    // Verify the caller is either the patient or the clinician in the relevant
+    // conversation. Authorization goes through the centralized primitive keyed
+    // on 'message_patient' (active consent OR legacy assigned_clinician_id), so
+    // both consent-based and legacy patient↔clinician pairs are honoured.
     const { data: callerProfile } = await supabase
       .from('profiles')
-      .select('id, role, assigned_clinician_id')
+      .select('id, role')
       .eq('id', user.id)
       .single()
 
     if (!callerProfile) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    // Patient can notify their assigned clinician; clinician can notify any of their patients
     let allowed = false
-    if (callerProfile.role === 'patient' && callerProfile.assigned_clinician_id === recipient_id) {
-      allowed = true
+    if (callerProfile.role === 'patient') {
+      // Patient notifies a clinician who has a message_patient relationship with them.
+      allowed = await clinicianHasPatientAccess(supabase, recipient_id, user.id, 'message_patient')
     } else if (callerProfile.role === 'clinician') {
-      const { data: patientProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', recipient_id)
-        .eq('assigned_clinician_id', user.id)
-        .single()
-      if (patientProfile) allowed = true
+      // Clinician notifies a patient they have a message_patient relationship with.
+      allowed = await clinicianHasPatientAccess(supabase, user.id, recipient_id, 'message_patient')
     }
 
     if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
