@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isPermissionKey, validatePermissionKeys } from '@/lib/permissions'
 
 interface RouteContext {
   params: Promise<{ token: string }>
@@ -158,15 +159,23 @@ export async function POST(request: Request, props: RouteContext) {
     return NextResponse.json({ error: message }, { status: 409 })
   }
 
-  // Determine granted permissions — patient can grant a subset of requested_permissions
-  const requestedPermissions: string[] = Array.isArray(invitation.requested_permissions)
-    ? invitation.requested_permissions
-    : []
+  // The invitation's requested permissions may predate validation, so keep only
+  // canonical keys — a stale/unknown key can never be granted.
+  const requestedPermissions: string[] = (
+    Array.isArray(invitation.requested_permissions) ? invitation.requested_permissions : []
+  ).filter(isPermissionKey)
 
-  const grantedPermissions: string[] =
-    Array.isArray(body.granted_permissions) && body.granted_permissions.length > 0
-      ? (body.granted_permissions as string[]).filter((p) => requestedPermissions.includes(p))
-      : requestedPermissions
+  // Determine granted permissions. Omitted → grant everything requested. When
+  // provided, the payload must validate against the canonical model, and the
+  // patient may only grant a SUBSET of what was requested (never escalate).
+  let grantedPermissions: string[]
+  if (body.granted_permissions === undefined) {
+    grantedPermissions = requestedPermissions
+  } else {
+    const parsed = validatePermissionKeys(body.granted_permissions)
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
+    grantedPermissions = parsed.keys.filter((p) => requestedPermissions.includes(p))
+  }
 
   const now = new Date().toISOString()
 

@@ -2,23 +2,11 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyAdminSession } from '@/lib/admin-auth'
+import { ALL_PERMISSION_KEYS } from '@/lib/types'
+import { validatePermissionKeys } from '@/lib/permissions'
 
 const VALID_ACTIONS = ['approve', 'reject', 'revoke'] as const
 type Action = (typeof VALID_ACTIONS)[number]
-
-const VALID_PERMISSION_KEYS = [
-  'view_profile',
-  'view_assessment_results',
-  'view_assessment_history',
-  'view_clinical_notes',
-  'view_mood_tracking',
-  'view_crisis_history',
-  'message_patient',
-  'export_patient_data',
-  'assign_assessments',
-  'view_demographics',
-] as const
-type PermissionKey = (typeof VALID_PERMISSION_KEYS)[number]
 
 export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -85,27 +73,12 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
   const now = new Date().toISOString()
 
   if (typedAction === 'approve') {
-    // Validate granted_permissions
-    if (!Array.isArray(granted_permissions)) {
-      return NextResponse.json(
-        { error: 'granted_permissions must be an array of permission keys' },
-        { status: 400 }
-      )
-    }
+    // Validate granted_permissions against the canonical permission model —
+    // rejects non-arrays, null, empty, unknown keys, and duplicates.
+    const parsed = validatePermissionKeys(granted_permissions)
+    if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
 
-    const invalidKeys = (granted_permissions as unknown[]).filter(
-      (k) => typeof k !== 'string' || !(VALID_PERMISSION_KEYS as readonly string[]).includes(k as string)
-    )
-    if (invalidKeys.length > 0) {
-      return NextResponse.json(
-        {
-          error: `Invalid permission keys: ${invalidKeys.join(', ')}. Valid values: ${VALID_PERMISSION_KEYS.join(', ')}`,
-        },
-        { status: 400 }
-      )
-    }
-
-    const grantedSet = new Set(granted_permissions as string[])
+    const grantedSet = new Set<string>(parsed.keys)
 
     // Update relationship status
     const { data: updatedRelationship, error: updateError } = await admin
@@ -123,10 +96,10 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
       return NextResponse.json({ error: 'Failed to update relationship' }, { status: 500 })
     }
 
-    // Upsert permissions for all valid keys
-    const permissionUpserts = VALID_PERMISSION_KEYS.map((key) => ({
+    // Upsert one row per canonical permission key, granted per the patient's set.
+    const permissionUpserts = ALL_PERMISSION_KEYS.map((key) => ({
       relationship_id: id,
-      permission_key: key as PermissionKey,
+      permission_key: key,
       granted: grantedSet.has(key),
       granted_at: grantedSet.has(key) ? now : null,
       modified_by: user.id,
