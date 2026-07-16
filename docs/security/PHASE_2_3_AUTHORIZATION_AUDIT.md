@@ -6,6 +6,19 @@
 
 ---
 
+## Remediation Status (updated 2026-07-16)
+
+Both P0 production blockers have since been remediated and verified live in production:
+
+| Finding | Status | Remediation | Verification |
+|---|---|---|---|
+| **F-1** — broad clinician RLS on 9 PHI tables | ✅ **RESOLVED** | migration `20260716120000_scope_clinician_phi_rls_to_relationship.sql` (PR #64) re-points all 9 clinician SELECT policies onto `has_clinician_access()`; test `__tests__/rls/phi_clinician_scope.test.sql` (12 assertions) | live: 9/9 policies scoped, **0** broad remaining |
+| **F-0** — signup metadata trusted for role | ✅ **RESOLVED** | migration `20260716130000_harden_signup_role_assignment.sql` (PR #65) clamps every signup to `role='patient'`; test `__tests__/rls/signup_role_clamp.test.sql` (7 assertions) | live: `handle_new_user()` clamp confirmed present |
+
+The verdict below reflects the **original** audit state (pre-remediation) and is retained for the record. With F-0 and F-1 closed, the two blocking findings no longer apply; remaining items are the Medium/Low findings (F-2 legacy arm, F-3 PHI-read audit logging, F-4 view_reports, F-5–F-7).
+
+---
+
 ## Executive Summary
 
 **Overall authorization health: MIXED — strong at the API/validation layer, incomplete at the RLS (data) layer.**
