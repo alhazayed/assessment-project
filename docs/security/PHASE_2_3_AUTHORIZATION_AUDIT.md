@@ -15,7 +15,15 @@ Both P0 production blockers have since been remediated and verified live in prod
 | **F-1** — broad clinician RLS on 9 PHI tables | ✅ **RESOLVED** | migration `20260716120000_scope_clinician_phi_rls_to_relationship.sql` (PR #64) re-points all 9 clinician SELECT policies onto `has_clinician_access()`; test `__tests__/rls/phi_clinician_scope.test.sql` (12 assertions) | live: 9/9 policies scoped, **0** broad remaining |
 | **F-0** — signup metadata trusted for role | ✅ **RESOLVED** | migration `20260716130000_harden_signup_role_assignment.sql` (PR #65) clamps every signup to `role='patient'`; test `__tests__/rls/signup_role_clamp.test.sql` (7 assertions) | live: `handle_new_user()` clamp confirmed present |
 
-The verdict below reflects the **original** audit state (pre-remediation) and is retained for the record. With F-0 and F-1 closed, the two blocking findings no longer apply; remaining items are the Medium/Low findings (F-2 legacy arm, F-3 PHI-read audit logging, F-4 view_reports, F-5–F-7).
+### Medium findings
+
+| Finding | Status | Notes |
+|---|---|---|
+| **F-4** — `view_reports` unenforced | ✅ **RESOLVED (by F-1)** | `pdf_reports_clinician` now gates on `has_clinician_access(..., 'view_reports')`. Live-verified: policy enforces `view_reports = true`. No further change. |
+| **F-3** — no audit log of clinician PHI reads | ⚙️ **PARTIALLY ADDRESSED** | Server-mediated clinician PHI reads now emit an `audit_log` row (`action='clinician_view_phi'`) via `lib/audit/phi-access.ts`, wired into `GET /api/clinical-notes` and `GET /api/assignments` (per-patient). **Residual:** PHI read directly through the browser Supabase client (RLS-governed) is not captured; full coverage needs DB-level logging — tracked as Phase 3. |
+| **F-2** — `has_clinician_access()` legacy arm is permission-agnostic | ⏳ **DEFERRED (Phase 3, evidence-based)** | The legacy `assigned_clinician_id` arm is provably inert: **no code writes** `assigned_clinician_id` (all usages are reads/types) and prod has **0** such rows. Retiring the arm reverses the deliberate, test-encoded backward-compatibility design and is coupled to dropping the `assigned_clinician_id` column; it belongs to the coordinated column-retirement (Phase 3), not a standalone change. No live risk today. |
+
+The verdict below reflects the **original** audit state (pre-remediation) and is retained for the record. Blocking findings F-0/F-1 are closed; F-4 resolved; F-3 partially addressed; F-2 deferred with rationale. Remaining Low items: F-5–F-7.
 
 ---
 

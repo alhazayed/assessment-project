@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { verifyAdminSession } from '@/lib/admin-auth'
 import { clinicianHasPatientAccess } from '@/lib/authz/clinician-access'
+import { logClinicianPhiAccess } from '@/lib/audit/phi-access'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 // A clinician may only reach another user's assignments when they have a
@@ -65,6 +67,9 @@ export async function GET(request: Request) {
       } else if (role === 'clinician') {
         const allowed = await clinicianCanAccessPatient(supabase, user.id, patientId)
         if (!allowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        // Access accountability (F-3): a clinician read another patient's
+        // assignments. Fire-and-forget; never blocks the response.
+        logClinicianPhiAccess(createAdminClient(), { actorId: user.id, patientId, resource: 'assessment_assignments' })
       } else {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }

@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { clinicianHasPatientAccess } from '@/lib/authz/clinician-access'
+import { logClinicianPhiAccess } from '@/lib/audit/phi-access'
 
 async function requireClinician() {
   const supabase = await createClient()
@@ -44,6 +46,13 @@ export async function GET(request: Request) {
     console.error('clinical-notes GET error:', error)
     return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 })
   }
+
+  // Access accountability (F-3): record that a clinician read this patient's
+  // clinical notes. Fire-and-forget; never blocks the response.
+  if (callerProfile?.role === 'clinician') {
+    logClinicianPhiAccess(createAdminClient(), { actorId: user.id, patientId, resource: 'clinical_notes' })
+  }
+
   return NextResponse.json({ notes: data })
 }
 
