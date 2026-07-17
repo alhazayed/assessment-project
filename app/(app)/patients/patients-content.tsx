@@ -99,7 +99,18 @@ export default function PatientsContent() {
       .eq('is_active', true)
       .order('full_name_en')
 
-    if (p?.role === 'clinician') q = q.eq('assigned_clinician_id', user.id)
+    if (p?.role === 'clinician') {
+      // Restrict to patients this clinician has an active relationship with
+      // (the legacy assigned_clinician_id link is retired — Phase 3 R-2).
+      const { data: rels } = await supabase
+        .from('clinician_patient_relationships')
+        .select('patient_id')
+        .eq('clinician_id', user.id)
+        .eq('status', 'active')
+      const relIds = (rels ?? []).map((r) => r.patient_id as string)
+      if (relIds.length === 0) { setPatients([]); setLoading(false); return }
+      q = q.in('id', relIds)
+    }
 
     const { data: pts } = await q
     if (!pts?.length) { setPatients([]); setLoading(false); return }
