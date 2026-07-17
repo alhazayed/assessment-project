@@ -38,6 +38,17 @@ DROP TRIGGER IF EXISTS enforce_governance_on_activation   ON public.assessment_d
 DROP TRIGGER IF EXISTS enforce_article_review_before_publish ON public.content_articles;
 DROP TRIGGER IF EXISTS set_patient_profiles_updated_at    ON public.patient_profiles;
 
+-- ── Section C: remove dead/redundant authorization functions ─────────────────
+-- Both are provably unused — 0 references in pg_policies, in other functions'
+-- bodies, and in application code (verified by full-repo search):
+--   * current_user_role(): an unused, non-SECURITY-DEFINER duplicate of
+--     get_my_role() (identical body). get_my_role() is the one 47 policies use.
+--   * clinician_can_access_patient_notes(uuid): a dead predecessor of
+--     has_clinician_access(..., 'generate_clinical_notes') (same logic, plus the
+--     legacy assigned_clinician_id arm). Superseded; no consumers.
+DROP FUNCTION IF EXISTS public.current_user_role();
+DROP FUNCTION IF EXISTS public.clinician_can_access_patient_notes(uuid);
+
 -- ── Post-apply verification (expect the counts in parentheses) ───────────────
 -- select count(*) from pg_trigger t join pg_proc p on p.oid=t.tgfoid
 --   where t.tgrelid='public.profiles'::regclass and p.proname='prevent_role_self_escalation'
@@ -62,3 +73,5 @@ DROP TRIGGER IF EXISTS set_patient_profiles_updated_at    ON public.patient_prof
 -- -- Section A: recreate from their original definitions in
 -- --   20260619120000_schema_baseline.sql (is_admin, profiles triggers) and
 -- --   20260624190200_clinical_notes_and_messages_rls.sql (msg_participant_read).
+-- -- Section C: recreate current_user_role() and
+-- --   clinician_can_access_patient_notes(uuid) from 20260619120000_schema_baseline.sql.
