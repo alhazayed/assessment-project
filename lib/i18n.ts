@@ -479,7 +479,9 @@ const dict = {
     'messages.no_patients': 'No patients assigned',
     'messages.no_patients.sub': "You don't have any patients assigned yet.",
     'messages.patients': 'Patients',
+    'messages.clinicians': 'Your Clinicians',
     'messages.select_patient': 'Select a patient to start messaging',
+    'messages.select_clinician': 'Select a clinician to start messaging',
 
     // Dashboard extras
     'dashboard.high_risk_badge': 'High Risk',
@@ -1333,7 +1335,9 @@ const dict = {
     'messages.no_patients': 'لا يوجد مرضى مُعيَّنون',
     'messages.no_patients.sub': 'لم يتم تعيين أي مرضى لك حتى الآن.',
     'messages.patients': 'المرضى',
+    'messages.clinicians': 'اختصاصيوك',
     'messages.select_patient': 'اختر مريضاً للبدء في المراسلة',
+    'messages.select_clinician': 'اختر اختصاصياً للبدء في المراسلة',
 
     // Dashboard extras
     'dashboard.high_risk_badge': 'خطورة عالية',

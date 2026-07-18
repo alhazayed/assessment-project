@@ -7,11 +7,28 @@ import type { Message, Profile } from '@/lib/types'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
+// A patient can have several clinicians and vice-versa (clinician_patient_
+// relationships). Messaging is available for a pair only when the relationship
+// is active and the `message_patient` permission is granted — mirroring the
+// messages RLS policy, so the picker never lists a contact the user can't message.
+type RelPerm = { permission_key: string; granted: boolean }
+function canMessage(perms: unknown): boolean {
+  return Array.isArray(perms) && perms.some(
+    (p) => (p as RelPerm)?.permission_key === 'message_patient' && (p as RelPerm)?.granted,
+  )
+}
+// Supabase types a to-one embed as an array; normalize to a single Profile.
+function firstProfile(embed: unknown): Profile | null {
+  const v = Array.isArray(embed) ? embed[0] : embed
+  return (v ?? null) as Profile | null
+}
+
 export default function MessagesPage() {
   const supabase = useMemo(() => createClient(), [])
   const lang = useLang()
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [clinician, setClinician] = useState<Profile | null>(null)
+  const [clinicians, setClinicians] = useState<Profile[]>([])
+  const [selectedClinician, setSelectedClinician] = useState<Profile | null>(null)
   const [patients, setPatients] = useState<Profile[]>([])
   const [selectedPatient, setSelectedPatient] = useState<Profile | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -52,19 +69,33 @@ export default function MessagesPage() {
     const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     setProfile(p as Profile)
 
-    if (p?.role === 'patient' && p.assigned_clinician_id) {
-      const { data: clin } = await supabase.from('profiles').select('*').eq('id', p.assigned_clinician_id).single()
-      setClinician(clin as Profile)
-      await loadMessages(user.id, p.assigned_clinician_id)
+    if (p?.role === 'patient') {
+      // Every clinician the patient has an active, message-permitted relationship with.
+      const { data: rels } = await supabase
+        .from('clinician_patient_relationships')
+        .select('clinician:profiles!clinician_patient_relationships_clinician_id_fkey(*), relationship_permissions(permission_key, granted)')
+        .eq('patient_id', user.id)
+        .eq('status', 'active')
+      const list = (rels ?? [])
+        .filter((r) => canMessage(r.relationship_permissions))
+        .map((r) => firstProfile(r.clinician))
+        .filter((c): c is Profile => !!c)
+        .sort((a, b) => (a.full_name_en || '').localeCompare(b.full_name_en || ''))
+      setClinicians(list)
+      if (list.length === 1) setSelectedClinician(list[0])
     } else if (p?.role === 'clinician') {
-      const { data: pts } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('assigned_clinician_id', user.id)
-        .eq('role', 'patient')
-        .eq('is_active', true)
-        .order('full_name_en')
-      setPatients(pts as Profile[] || [])
+      // Every patient the clinician has an active, message-permitted relationship with.
+      const { data: rels } = await supabase
+        .from('clinician_patient_relationships')
+        .select('patient:profiles!clinician_patient_relationships_patient_id_fkey(*), relationship_permissions(permission_key, granted)')
+        .eq('clinician_id', user.id)
+        .eq('status', 'active')
+      const list = (rels ?? [])
+        .filter((r) => canMessage(r.relationship_permissions))
+        .map((r) => firstProfile(r.patient))
+        .filter((pt): pt is Profile => !!pt)
+        .sort((a, b) => (a.full_name_en || '').localeCompare(b.full_name_en || ''))
+      setPatients(list)
     }
     setLoading(false)
   }, [supabase, loadMessages])
@@ -78,14 +109,20 @@ export default function MessagesPage() {
   }, [selectedPatient, profile, loadMessages])
 
   useEffect(() => {
+    if (profile?.role === 'patient' && selectedClinician) {
+      loadMessages(profile.id, selectedClinician.id)
+    }
+  }, [selectedClinician, profile, loadMessages])
+
+  useEffect(() => {
     if (!profile) return
 
     let patientId: string | null = null
     let clinicianId: string | null = null
 
-    if (profile.role === 'patient' && clinician) {
+    if (profile.role === 'patient' && selectedClinician) {
       patientId = profile.id
-      clinicianId = clinician.id
+      clinicianId = selectedClinician.id
     } else if (profile.role === 'clinician' && selectedPatient) {
       patientId = selectedPatient.id
       clinicianId = profile.id
@@ -103,7 +140,7 @@ export default function MessagesPage() {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [profile, clinician, selectedPatient, supabase, loadMessages])
+  }, [profile, selectedClinician, selectedPatient, supabase, loadMessages])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -114,7 +151,7 @@ export default function MessagesPage() {
     if (!newMessage.trim() || !profile) return
 
     const patientId = profile.role === 'patient' ? profile.id : selectedPatient?.id
-    const clinicianId = profile.role === 'clinician' ? profile.id : clinician?.id
+    const clinicianId = profile.role === 'clinician' ? profile.id : selectedClinician?.id
     if (!patientId || !clinicianId) return
 
     setSending(true)
@@ -152,7 +189,7 @@ export default function MessagesPage() {
 
   if (loading) return <div className="p-7" style={{ color: 'var(--text-muted)' }}>{t('messages.loading', lang)}</div>
 
-  if (profile?.role === 'patient' && !profile.assigned_clinician_id) {
+  if (profile?.role === 'patient' && clinicians.length === 0) {
     return (
       <div className="p-7 flex items-center justify-center min-h-64">
         <div className="card p-10 text-center max-w-sm">
@@ -181,43 +218,38 @@ export default function MessagesPage() {
   }
 
   const isClinician = profile?.role === 'clinician'
-  const otherParty = isClinician ? selectedPatient : clinician
+  const otherParty = isClinician ? selectedPatient : selectedClinician
   const otherName = otherParty
     ? (lang === 'ar' && otherParty.full_name_ar ? otherParty.full_name_ar : otherParty.full_name_en)
     : t('messages.clinician', lang)
 
   return (
     <div className="flex h-screen max-h-screen overflow-hidden">
-      {isClinician && (
-        <div className="w-64 flex-shrink-0 flex flex-col" style={{ backgroundColor: 'var(--surface)', borderRight: '1px solid var(--border)' }}>
-          <div className="px-4 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-            <p className="section-label">{t('messages.patients', lang)}</p>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {patients.map(p => {
-              const name = lang === 'ar' && p.full_name_ar ? p.full_name_ar : p.full_name_en
-              const isSelected = selectedPatient?.id === p.id
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedPatient(p)}
-                  className="w-full text-start px-4 py-3 flex items-center gap-3 transition-colors"
-                  style={isSelected
-                    ? { background: '#EAF2F9' }
-                    : undefined
-                  }
-                >
-                  <div className="avatar-sm" style={{ background: '#1D6296' }}>{name.charAt(0).toUpperCase()}</div>
-                  <span className="text-[13.5px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{name}</span>
-                </button>
-              )
-            })}
-          </div>
+      <div className="w-64 flex-shrink-0 flex flex-col" style={{ backgroundColor: 'var(--surface)', borderRight: '1px solid var(--border)' }}>
+        <div className="px-4 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+          <p className="section-label">{isClinician ? t('messages.patients', lang) : t('messages.clinicians', lang)}</p>
         </div>
-      )}
+        <div className="flex-1 overflow-y-auto">
+          {(isClinician ? patients : clinicians).map(item => {
+            const name = (lang === 'ar' && item.full_name_ar ? item.full_name_ar : item.full_name_en) || '—'
+            const isSelected = isClinician ? selectedPatient?.id === item.id : selectedClinician?.id === item.id
+            return (
+              <button
+                key={item.id}
+                onClick={() => isClinician ? setSelectedPatient(item) : setSelectedClinician(item)}
+                className="w-full text-start px-4 py-3 flex items-center gap-3 transition-colors"
+                style={isSelected ? { background: '#EAF2F9' } : undefined}
+              >
+                <div className="avatar-sm" style={{ background: '#1D6296' }}>{name.charAt(0).toUpperCase()}</div>
+                <span className="text-[13.5px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{name}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       <div className="flex flex-col flex-1 min-w-0">
-        {(!isClinician || selectedPatient) ? (
+        {(isClinician ? selectedPatient : selectedClinician) ? (
           <>
             {/* Chat header */}
             <div className="px-6 py-4 flex-shrink-0 flex items-center gap-3" style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
@@ -311,7 +343,7 @@ export default function MessagesPage() {
               <div className="w-14 h-14 rounded-[16px] flex items-center justify-center mx-auto mb-3" style={{ background: 'var(--surface-alt)' }}>
                 <MessageSquare className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />
               </div>
-              <p className="text-[13.5px]" style={{ color: 'var(--text-muted)' }}>{t('messages.select_patient', lang)}</p>
+              <p className="text-[13.5px]" style={{ color: 'var(--text-muted)' }}>{isClinician ? t('messages.select_patient', lang) : t('messages.select_clinician', lang)}</p>
             </div>
           </div>
         )}
