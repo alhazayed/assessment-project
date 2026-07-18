@@ -23,9 +23,17 @@ export default function ResetPasswordScreen() {
   const [hasSession, setHasSession] = useState(false)
 
   useEffect(() => {
+    // The recovery deep link is exchanged for a session asynchronously
+    // (see lib/useDeepLinkAuth.ts), so react to auth-state changes rather than
+    // reading the session only once — otherwise a valid link can momentarily
+    // appear "invalid" before the exchange completes.
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setHasSession(!!session)
+      setHasSession((prev) => prev || !!session)
     })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) setHasSession(true)
+    })
+    return () => subscription.unsubscribe()
   }, [])
 
   async function handleReset() {
