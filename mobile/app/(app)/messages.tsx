@@ -28,8 +28,17 @@ export default function MessagesScreen() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       setUserId(user.id)
-      // Get assigned clinician
-      const cid = profile?.assigned_clinician_id ?? null
+      // Resolve the patient's first active clinician who is permitted to message them,
+      // via the consent-based relationship model (replaces legacy assigned_clinician_id).
+      const { data: rels } = await supabase
+        .from('clinician_patient_relationships')
+        .select('clinician_id, relationship_permissions(permission_key, granted)')
+        .eq('patient_id', user.id)
+        .eq('status', 'active')
+      const cid = (rels ?? []).find((r: { relationship_permissions?: { permission_key: string; granted: boolean }[] }) =>
+        Array.isArray(r.relationship_permissions) &&
+        r.relationship_permissions.some((p) => p.permission_key === 'message_patient' && p.granted)
+      )?.clinician_id ?? null
       setClinicianId(cid)
 
       const { data } = await supabase
