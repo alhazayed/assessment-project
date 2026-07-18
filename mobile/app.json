@@ -19,7 +19,20 @@
         "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#12273C"
       },
-      "package": "com.vwelfare.app"
+      "package": "com.vwelfare.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "vwelfare",
+              "host": "*"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "ios": {
       "bundleIdentifier": "com.vwelfare.app"
@@ -31,8 +44,6 @@
       "expo-font"
     ],
     "extra": {
-      "supabaseUrl": "https://wyzezyctpvlohuuhzyof.supabase.co",
-      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5emV6eWN0cHZsb2h1dWh6eW9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NDgxNjcsImV4cCI6MjA5NTIyNDE2N30.PwW6A4LsuGOvQvl1m6EsOSwtHvB7yvfvR1GXIaS7KKQ",
       "eas": { "projectId": "vwelfare-mobile" }
     }
   }

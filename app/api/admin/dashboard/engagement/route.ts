@@ -1,30 +1,31 @@
-import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/admin-auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { NextResponse } from 'next/server'
 
 export const maxDuration = 60
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     await requireAdmin()
-    const supabase = await createClient()
+    const db = createAdminClient()
 
-    // Get user engagement metrics
-    const { data: metrics, error } = await supabase.rpc('get_user_engagement_metrics')
+    const { data: metrics, error } = await db.rpc('get_user_engagement_metrics')
 
     if (error) {
       console.error('Engagement metrics error:', error)
-      return Response.json({ error: 'Failed to fetch engagement data' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to fetch engagement data' }, { status: 500 })
     }
 
-    return Response.json({
+    return NextResponse.json({
       success: true,
       metrics: metrics?.[0] || null,
     })
-  } catch (error) {
+  } catch (error: unknown) {
+    const digest = (error as { digest?: string })?.digest
+    if (typeof digest === 'string' && digest.startsWith('NEXT_REDIRECT')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Engagement API error:', error)
-    return Response.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

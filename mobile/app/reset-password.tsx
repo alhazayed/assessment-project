@@ -23,9 +23,18 @@ export default function ResetPasswordScreen() {
   const [hasSession, setHasSession] = useState(false)
 
   useEffect(() => {
+    let mounted = true
+    // Session may arrive asynchronously from the deep-link handler in _layout
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setHasSession(!!session)
+      if (mounted) setHasSession(!!session)
     })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) setHasSession(!!session)
+    })
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function handleReset() {

@@ -1,31 +1,27 @@
-import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/admin-auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { NextResponse } from 'next/server'
 
 export const maxDuration = 60
 
 export async function GET(request: Request) {
   try {
     await requireAdmin()
-    const supabase = await createClient()
+    const db = createAdminClient()
 
     const url = new URL(request.url)
     const type = url.searchParams.get('type') || null
 
-    // Get demographics breakdown
-    const { data: demographics, error } = await supabase.rpc(
-      'get_demographics_breakdown',
-      {
-        p_demographic_type: type,
-      }
-    )
+    const { data: demographics, error } = await db.rpc('get_demographics_breakdown', {
+      p_demographic_type: type,
+    })
 
     if (error) {
       console.error('Demographics error:', error)
-      return Response.json({ error: 'Failed to fetch demographics' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to fetch demographics' }, { status: 500 })
     }
 
-    // Group by type
-    const grouped = (demographics || []).reduce((acc: any, item: any) => {
+    const grouped = (demographics || []).reduce((acc: Record<string, unknown[]>, item: { demographic_type: string }) => {
       if (!acc[item.demographic_type]) {
         acc[item.demographic_type] = []
       }
@@ -33,16 +29,17 @@ export async function GET(request: Request) {
       return acc
     }, {})
 
-    return Response.json({
+    return NextResponse.json({
       success: true,
       demographics: grouped,
       count: demographics?.length || 0,
     })
-  } catch (error) {
+  } catch (error: unknown) {
+    const digest = (error as { digest?: string })?.digest
+    if (typeof digest === 'string' && digest.startsWith('NEXT_REDIRECT')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Demographics API error:', error)
-    return Response.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -22,17 +22,34 @@ export async function GET(request: Request) {
     .order('assigned_at', { ascending: false })
 
   if (patientId) {
-    // Clinicians/admins may query any patient; patients may only query themselves
-    if (!isClinician && patientId !== user.id) {
+    // Patients may only query themselves
+    if (role === 'patient' && patientId !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+
+    // Clinicians may only query patients they have access to (relationship or legacy assignment)
+    if (role === 'clinician') {
+      const { data: allowed } = await supabase.rpc('has_clinician_access', {
+        p_clinician_id: user.id,
+        p_patient_id: patientId,
+        p_permission: 'view_assessment_history',
+      })
+      if (!allowed) {
+        return NextResponse.json({ error: 'Forbidden — patient is not assigned to you' }, { status: 403 })
+      }
+    } else if (!isClinician && patientId !== user.id) {
+      // Non-clinician/non-admin roles cannot query other patients
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     query = query.eq('patient_id', patientId)
-  } else if (isClinician) {
+  } else if (isClinician && role === 'clinician') {
     query = query.eq('clinician_id', user.id)
-  } else {
+  } else if (!isClinician) {
     // Patients with no patient_id param → return their own assignments
     query = query.eq('patient_id', user.id)
   }
+  // admin/superadmin with no patient_id: return all (RLS still applies)
 
   const { data, error } = await query
   if (error) {
