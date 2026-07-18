@@ -1,4 +1,16 @@
 import type { PermissionKey } from './types'
+import { ALL_PERMISSION_KEYS } from './types'
+
+/**
+ * Canonical permission-key validator. Single source of truth for API routes so
+ * that request validation always matches the DB CHECK constraint on
+ * relationship_permissions.permission_key (and lib/types ALL_PERMISSION_KEYS).
+ */
+export function isValidPermissionKey(key: unknown): key is PermissionKey {
+  return typeof key === 'string' && (ALL_PERMISSION_KEYS as string[]).includes(key)
+}
+
+export { ALL_PERMISSION_KEYS }
 
 export const PERMISSION_LABELS: Record<PermissionKey, { en: string; ar: string }> = {
   view_profile:            { en: 'Your profile information',         ar: 'معلومات ملفك الشخصي' },

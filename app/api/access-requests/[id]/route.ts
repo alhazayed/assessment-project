@@ -2,22 +2,11 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+import type { PermissionKey } from '@/lib/types'
+import { ALL_PERMISSION_KEYS, isValidPermissionKey } from '@/lib/permissions'
+
 const VALID_ACTIONS = ['approve', 'reject', 'revoke'] as const
 type Action = (typeof VALID_ACTIONS)[number]
-
-const VALID_PERMISSION_KEYS = [
-  'view_profile',
-  'view_assessment_results',
-  'view_assessment_history',
-  'view_clinical_notes',
-  'view_mood_tracking',
-  'view_crisis_history',
-  'message_patient',
-  'export_patient_data',
-  'assign_assessments',
-  'view_demographics',
-] as const
-type PermissionKey = (typeof VALID_PERMISSION_KEYS)[number]
 
 export async function PATCH(
   request: Request,
@@ -97,13 +86,11 @@ export async function PATCH(
       )
     }
 
-    const invalidKeys = (granted_permissions as unknown[]).filter(
-      (k) => typeof k !== 'string' || !(VALID_PERMISSION_KEYS as readonly string[]).includes(k as string)
-    )
+    const invalidKeys = (granted_permissions as unknown[]).filter((k) => !isValidPermissionKey(k))
     if (invalidKeys.length > 0) {
       return NextResponse.json(
         {
-          error: `Invalid permission keys: ${invalidKeys.join(', ')}. Valid values: ${VALID_PERMISSION_KEYS.join(', ')}`,
+          error: `Invalid permission keys: ${invalidKeys.join(', ')}. Valid values: ${ALL_PERMISSION_KEYS.join(', ')}`,
         },
         { status: 400 }
       )
@@ -128,9 +115,9 @@ export async function PATCH(
     }
 
     // Upsert permissions for all valid keys
-    const permissionUpserts = VALID_PERMISSION_KEYS.map((key) => ({
+    const permissionUpserts = ALL_PERMISSION_KEYS.map((key: PermissionKey) => ({
       relationship_id: id,
-      permission_key: key as PermissionKey,
+      permission_key: key,
       granted: grantedSet.has(key),
       granted_at: grantedSet.has(key) ? now : null,
       modified_by: user.id,

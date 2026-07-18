@@ -1,30 +1,22 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/admin-auth'
 import { NextRequest, NextResponse } from 'next/server'
+
+/** Map requireAdmin()'s redirect (thrown on failure) to a JSON 401. */
+function isAuthRedirect(err: unknown): boolean {
+  return typeof (err as { digest?: unknown })?.digest === 'string'
+    && ((err as { digest: string }).digest).startsWith('NEXT_REDIRECT')
+}
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { kpiId: string } }
 ) {
   try {
-    const supabase = createClient()
+    // Enforce admin role AND the HMAC admin-session second factor (allows
+    // admin + superadmin; the previous manual check missed HMAC and excluded superadmin).
+    const { user } = await requireAdmin()
     const db = createAdminClient()
-
-    // Verify admin access
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: profile } = await db
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
 
     // Parse request body
     const body = await request.json()
@@ -81,34 +73,18 @@ export async function PATCH(
       config: alertConfig,
     })
   } catch (error) {
+    if (isAuthRedirect(error)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     console.error('KPI alert configuration error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { kpiId: string } }
 ) {
   try {
-    const supabase = createClient()
-    const db = createAdminClient()
-
-    // Verify admin access
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: profile } = await db
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    await requireAdmin()
 
     // TODO: Fetch from kpi_alerts table
     // For now, return default config
@@ -121,6 +97,7 @@ export async function GET(
 
     return NextResponse.json(defaultConfig)
   } catch (error) {
+    if (isAuthRedirect(error)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     console.error('KPI alert fetch error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
