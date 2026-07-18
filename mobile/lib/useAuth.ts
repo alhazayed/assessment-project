@@ -30,7 +30,7 @@ export function useAuth() {
   async function fetchProfile(userId: string) {
     const { data } = await supabase
       .from('profiles')
-      .select('id, role, full_name_en, full_name_ar, language_preference, is_active, date_of_birth, gender, country_of_residence, avatar_url, assigned_clinician_id, created_at, updated_at')
+      .select('id, role, full_name_en, full_name_ar, language_preference, is_active, date_of_birth, gender, country_of_residence, avatar_url, created_at, updated_at')
       .eq('id', userId)
       .single()
     setProfile(data as Profile | null)
