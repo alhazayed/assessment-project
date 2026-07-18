@@ -7,7 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "build:android": "eas build --platform android",
-    "build:ios": "eas build --platform ios"
+    "build:ios": "eas build --platform ios",
+    "test:auth": "node --test __tests__/auth/*.test.ts"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",

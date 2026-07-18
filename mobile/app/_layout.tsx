@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAuth } from '@/lib/useAuth'
+import { useDeepLinkAuth } from '@/lib/useDeepLinkAuth'
 import { LocaleProvider } from '@/lib/LocaleContext'
 
 export default function RootLayout() {
@@ -11,6 +12,9 @@ export default function RootLayout() {
   const router = useRouter()
   const segments = useSegments()
   const [onboarded, setOnboarded] = useState<boolean | null>(null)
+
+  // Handle Supabase auth deep links (password recovery / magic links).
+  useDeepLinkAuth()
 
   useEffect(() => {
     AsyncStorage.getItem('@vwelfare_onboarded').then(val => {
