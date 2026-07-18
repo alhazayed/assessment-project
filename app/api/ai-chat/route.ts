@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
 import { callGemini } from '@/lib/gemini'
+import { scrubPHI } from '@/lib/security/anonymizePHI'
 
 const MAX_MESSAGE_LEN = 1000
 
@@ -114,7 +115,8 @@ export async function POST(request: Request) {
     // Validate role to prevent prompt injection via history
     if (turn.role !== 'user' && turn.role !== 'model') continue
     const role = turn.role === 'user' ? 'user' : 'model'
-    contents.push({ role, parts: [{ text: turn.text.slice(0, MAX_MESSAGE_LEN) }] })
+    // Scrub PHI before any text leaves for the third-party AI provider.
+    contents.push({ role, parts: [{ text: scrubPHI(turn.text.slice(0, MAX_MESSAGE_LEN)) }] })
   }
 
   const langInstruction = lang === 'ar'
@@ -123,7 +125,9 @@ export async function POST(request: Request) {
 
   contents.push({
     role: 'user',
-    parts: [{ text: `${langInstruction}\n\nUser message: ${message}` }],
+    // Emergency detection ran on the raw message above; the copy sent to the
+    // third-party AI provider is PHI-scrubbed (defence in depth).
+    parts: [{ text: `${langInstruction}\n\nUser message: ${scrubPHI(message)}` }],
   })
 
   const res = await callGemini(apiKey, {

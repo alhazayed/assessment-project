@@ -136,6 +136,27 @@ describe('IDOR — Profile Read', () => {
   })
 })
 
+describe('IDOR — Per-submission PDF export', () => {
+  test('unauthenticated request to /api/export/pdf/:id returns 401', async () => {
+    const res = await GET(`/api/export/pdf/${VICTIM_SUBMISSION_ID}`)
+    assert.equal(res.status, 401, `Expected 401 but got ${res.status} — export/pdf must require auth`)
+  })
+
+  test('authenticated non-owner cannot export another patient submission', async () => {
+    // With an attacker session set (ATTACKER_COOKIE), a submission that is not
+    // theirs and where they hold no consented clinician relationship must not
+    // return a PDF. Authorization mirrors production RLS (owner/admin/clinician).
+    const attacker = process.env.ATTACKER_COOKIE
+    if (!attacker) { console.log('  SKIP: ATTACKER_COOKIE not set'); return }
+    const res = await GET(`/api/export/pdf/${VICTIM_SUBMISSION_ID}`, { Cookie: attacker })
+    assert.ok(
+      res.status === 403 || res.status === 404,
+      `Expected 403/404 but got ${res.status} — IDOR on /api/export/pdf`
+    )
+    assert.notEqual(res.headers.get('content-type'), 'application/pdf', 'leaked a PDF to a non-owner')
+  })
+})
+
 describe('Privilege Escalation', () => {
   test('patient cannot access admin export endpoint', async () => {
     const res = await GET('/api/admin/export')

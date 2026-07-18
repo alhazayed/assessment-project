@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { clinicianHasPatientAccess } from '@/lib/authz/clinician-access'
 import { logClinicianPhiAccess } from '@/lib/audit/phi-access'
+import { scrubPHI } from '@/lib/security/anonymizePHI'
 
 async function requireClinician() {
   const supabase = await createClient()
@@ -150,7 +151,10 @@ export async function PUT(request: Request) {
     if (!apiKey) return NextResponse.json({ error: 'AI service not configured' }, { status: 503 })
 
     const { callGemini } = await import('@/lib/gemini')
-    const prompt = `You are a mental health clinician. Based on the following patient data, write a brief clinical progress note template (under 200 words). Write in the first-person clinician voice. Use only the data provided — do not invent clinical observations.\n\nPatient data: ${context || 'No recent data available.'}\n\nNote:`
+    // Scrub PHI (names, contacts, IDs — e.g. embedded in prior free-text notes)
+    // before the patient context is sent to the third-party AI provider.
+    const safeContext = scrubPHI(context)
+    const prompt = `You are a mental health clinician. Based on the following patient data, write a brief clinical progress note template (under 200 words). Write in the first-person clinician voice. Use only the data provided — do not invent clinical observations.\n\nPatient data: ${safeContext || 'No recent data available.'}\n\nNote:`
     const geminiBody = {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: { maxOutputTokens: 300, temperature: 0.4 },

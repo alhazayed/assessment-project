@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { sanitizeResetRedirect } from '@/lib/security/redirect'
 
 export async function POST(request: Request) {
   try {
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
     const supabase = await createClient()
     // Always return success to prevent user enumeration (whether email exists or not)
     await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      redirectTo: typeof redirectTo === 'string' ? redirectTo : undefined,
+      redirectTo: sanitizeResetRedirect(redirectTo),
     })
 
     return NextResponse.json({ ok: true })
