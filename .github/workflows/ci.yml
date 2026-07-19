@@ -1,0 +1,57 @@
+name: CI
+
+# Web CI gate for `main`. Runs on every PR into main and on pushes to main so
+# lint, type, offline security-unit tests, and a production build must pass
+# before code lands. (Enforcement — making this a *required* status check — is
+# configured in the repo's branch-protection settings for `main`.)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: lint · typecheck · security-unit · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Security unit tests (offline)
+        run: npm run test:security:unit
+
+      - name: Build
+        run: npm run build
+        env:
+          # Compile-time placeholders only — no real secrets. These are public
+          # (NEXT_PUBLIC_*) publishable values; the build reads them at module
+          # load. Runtime uses the real values configured in Vercel.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          NEXT_PUBLIC_SITE_URL: https://example.com
