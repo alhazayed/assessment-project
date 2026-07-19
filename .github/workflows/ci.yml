@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'claude/**', 'cursor/**']
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Typecheck · Lint · Unit security · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      # Placeholder values so Next.js can compile server modules that read env at import time.
+      # These are not production secrets — CI never talks to a real Supabase project.
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-placeholder.ci
+      SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-service-role.ci
+      ADMIN_PIN: '123456'
+      ADMIN_SESSION_SECRET: ci-admin-session-secret-min-32-chars-long
+      NEXT_PUBLIC_SITE_URL: https://app.vwelfare.com
+      NODE_ENV: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit security tests
+        # Integration suites (rls/idor) need a live BASE_URL + seeded cookies — run those
+        # separately against a preview deployment. CI gates on pure unit suites only.
+        run: npm run test:security:unit
+
+      - name: Build
+        run: npm run build
+
+  # Optional live gate — only runs when BASE_URL is configured as a repo secret/var.
+  integration-security:
+    name: Integration security (preview)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ vars.BASE_URL != '' }}
+    needs: verify
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Live HTTP security suite
+        env:
+          BASE_URL: ${{ vars.BASE_URL }}
+          ATTACKER_COOKIE: ${{ secrets.ATTACKER_COOKIE }}
+          VICTIM_PATIENT_ID: ${{ secrets.VICTIM_PATIENT_ID }}
+          VICTIM_SUBMISSION_ID: ${{ secrets.VICTIM_SUBMISSION_ID }}
+        run: npm run test:security:integration
