@@ -2,7 +2,6 @@
 -- Date: 2026-06-30
 -- Purpose: Allow superadmin users to delete user profiles and assessment results
 --          via explicitly controlled API endpoints with audit logging
--- Status: Applied to production
 
 -- =============================================================================
 -- PATIENT PROFILES: Superadmin Delete Policy
