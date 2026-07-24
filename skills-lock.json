@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "ai-prompt-engineering": {
+      "source": "vasilyu1983/AI-Agents-public",
+      "sourceType": "github",
+      "skillPath": "frameworks/shared-skills/skills/ai-prompt-engineering/SKILL.md",
+      "computedHash": "1f2ce74051125ba841b20271cbc2ce437315f7ec6c09e7d0038f884cd78861cd"
+    },
     "supabase": {
       "source": "supabase/agent-skills",
       "sourceType": "github",
