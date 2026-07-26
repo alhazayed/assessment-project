@@ -1,5 +1,9 @@
 # V Welfare — Disaster Recovery Plan
 
+> **DOCUMENT STATUS: SUPERSEDED (2026-07-26)**  
+> This document has been superseded by [`BACKUP_AND_DISASTER_RECOVERY.md`](../BACKUP_AND_DISASTER_RECOVERY.md) for binding RTO/RPO (canonical: **RTO 4 hours · RPO \< 1 hour**) and by [`docs/release/README.md`](./release/README.md) for release authority.  
+> Historical content below is retained for audit trail only. Do not use conflicting RTO/RPO figures for go-live or drills.
+
 **Version:** 1.0  
 **Last Updated:** 2026-06-13  
 **Owner:** Platform Engineering  
@@ -11,8 +15,8 @@
 
 | Metric | Target | Rationale |
 |---|---|---|
-| **RPO** (Recovery Point Objective) | **4 hours** | Maximum acceptable data loss for psychiatric/clinical records |
-| **RTO** (Recovery Time Objective) | **8 hours** | Maximum acceptable downtime before clinical impact is significant |
+| **RPO** (Recovery Point Objective) | **4 hours** | ~~Historical~~ — **SUPERSEDED**; use RPO \< 1 hour in `BACKUP_AND_DISASTER_RECOVERY.md` |
+| **RTO** (Recovery Time Objective) | **8 hours** | ~~Historical~~ — **SUPERSEDED**; use RTO 4 hours in `BACKUP_AND_DISASTER_RECOVERY.md` |
 
 ---
 

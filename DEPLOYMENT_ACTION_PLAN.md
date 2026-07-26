@@ -1,3 +1,8 @@
+> **DOCUMENT STATUS: SUPERSEDED (2026-07-26)**  
+> This document has been superseded by [`docs/release/README.md`](docs/release/README.md) (authority index) and [`docs/release/CANONICAL_RELEASE_STATE.md`](docs/release/CANONICAL_RELEASE_STATE.md) (current release status).  
+> Operator procedures: [`docs/release/OPERATOR_RUNBOOK_v1.0.0.md`](docs/release/OPERATOR_RUNBOOK_v1.0.0.md).  
+> Historical content below is retained for audit trail only. **Do not use for go-live decisions.**
+
 # Deployment Action Plan — Phase 1 Ready
 
 **Status:** Code complete and tested locally; Supabase environment sync blocking deployment  

@@ -2,38 +2,37 @@
 
 All notable changes to the V Welfare Platform are documented in this file.
 
-## [1.0.0] - 2026-06-30
+> **DOCUMENT STATUS: REFERENCE ONLY for release authority (2026-07-26)**  
+> Current release status is governed by [`docs/release/CANONICAL_RELEASE_STATE.md`](./docs/release/CANONICAL_RELEASE_STATE.md).  
+> Tag `v1.0.0` is **NOT CUT**. Decision: **CONDITIONAL GO**. Freeze SHA: `6e219e62e9f74273595ef10e31220bb24d0945f7`.
 
-### 🚀 Initial Production Release
+## [1.0.0] - *pending Production GA (Timeline T10)*
+
+### Initial Production Release (draft — publish when Canonical Release State = GO)
 
 #### Features
-- **42 Gold-Standard Clinical Instruments**: PHQ-9, GAD-7, DASS-21, PCL-5, OCD-US, OCIR, ASRS, ISI, PSQI, and 33 additional validated assessment tools
-- **DSM-5 Aligned Scoring**: All instruments implement DSM-5 diagnostic criteria
-- **High-Risk Detection**: 3 active triggers for immediate clinical intervention alerts
-- **Bilingual Support**: Full Arabic (RTL) and English support with professional translations
-- **PDF Export**: Clinical-grade PDF reports with scoring, interpretation, and patient information
-- **Real-Time Analytics**: Admin dashboard with live metrics on assessments, users, and high-risk cases
-- **Messaging System**: Secure patient-clinician communication with encryption
-- **Appointment Management**: Scheduling and reminders for clinical sessions
-- **Patient Profiles**: Comprehensive mental health history and demographics
+- Validated clinical assessment instruments with server-side scoring
+- High-risk detection workflows
+- Bilingual English / Arabic (RTL) support
+- PDF export with authorization checks
+- Admin analytics surfaces
+- Secure patient–clinician messaging with consent-scoped access
+- Patient profiles and assessment history
 
-#### Security
-- **OWASP Top 10 Compliance**: All 10 categories verified and implemented (98/100 score)
-- **Row-Level Security**: 103 RLS policies enforcing data isolation across 50+ tables
-- **JWT Authentication**: Secure token-based auth with 1-hour expiry + refresh tokens
-- **Parameterized Queries**: No raw SQL in codebase - all queries use prepared statements
-- **Security Headers**: CSP, HSTS (2-year), X-Frame-Options, Permissions-Policy
-- **No Hardcoded Secrets**: All sensitive data in environment variables only
-- **Rate Limiting**: API endpoint protection against abuse
-- **Supabase Auth**: MFA support + password reset security
+#### Security (aligned to Canonical Release State)
+- RLS-enforced PHI isolation (see Release Checklist §1)
+- JWT authentication with refresh tokens (MFA **not** implemented at GA — post-GA)
+- Security headers (CSP nonce, HSTS, X-Frame-Options, Permissions-Policy)
+- No server secrets in client bundles
+- Rate limiting
+- AI PHI scrubbing before Gemini
+- Email confirmation **disabled** at GA (post-GA)
+- Centralized immutable admin audit trail **not complete** at GA (post-GA)
 
-#### Architecture
-- **Enterprise Widget System**: Independent error boundaries, React Query caching
-- **Materialized Views**: 5 optimized views with hourly pg_cron refresh
-- **24 RPC Functions**: Optimized database procedures for complex queries
-- **75 Indexes**: Comprehensive indexing on all frequently queried tables
-- **84 Foreign Key Constraints**: Referential integrity enforcement
-- **Disaster Recovery**: RTO 4 hours, RPO <1 hour with PITR enabled
+#### Architecture / DR
+- Next.js app on Vercel · Supabase Postgres
+- Disaster Recovery targets: **RTO 4 hours · RPO \< 1 hour** (`BACKUP_AND_DISASTER_RECOVERY.md`)
+- PITR: confirm before GA (admin action) — do not claim enabled until confirmed
 
 #### Accessibility
 - **WCAG 2.2 AA Compliant**: All interactive elements keyboard-accessible
@@ -118,7 +117,7 @@ For issues, questions, or clinical feedback: support@vwelfare.com
 
 ---
 
-**Release Date**: June 30, 2026  
-**Build**: v1.0.0 (674c3d9)  
-**Status**: Production Ready ✅  
-**Verification**: June 30, 2026 2:46pm UTC
+**Release Date**: *pending Timeline T10 (Production GA)*  
+**Build / freeze SHA**: `6e219e62e9f74273595ef10e31220bb24d0945f7`  
+**Status**: ⚠️ CONDITIONAL GO — tag `v1.0.0` not cut  
+**Authority**: `docs/release/CANONICAL_RELEASE_STATE.md`

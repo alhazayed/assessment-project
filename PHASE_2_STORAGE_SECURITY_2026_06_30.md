@@ -1,3 +1,7 @@
+> **DOCUMENT STATUS: REFERENCE ONLY (2026-07-26)**  
+> Phase evidence retained for audit. **Not** launch authority.  
+> Release authority: [`docs/release/README.md`](docs/release/README.md).
+
 # PHASE 2 – STORAGE SECURITY VERIFICATION
 **Generated:** June 30, 2026 10:50 UTC  
 **Scope:** Supabase Storage buckets, file handling, security policies  

@@ -1,3 +1,7 @@
+> **DOCUMENT STATUS: REFERENCE ONLY (2026-07-26)**  
+> Phase evidence retained for audit. **Not** launch authority.  
+> Release authority: [`docs/release/README.md`](docs/release/README.md).
+
 # PHASE 4 – PDF REPORT VERIFICATION & GENERATION
 **Generated:** June 30, 2026 11:15 UTC  
 **Scope:** PDF generation, rendering, bilingual support, report accuracy, security  

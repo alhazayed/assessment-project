@@ -1,3 +1,7 @@
+> **DOCUMENT STATUS: REFERENCE ONLY (2026-07-26)**  
+> REFERENCE ONLY — post-GA hardening plan. Not launch authority. Break-glass Option B yields to Adopted Governance Policy §5.  
+> Release authority: [`./release/README.md`](./release/README.md) · State: [`./release/CANONICAL_RELEASE_STATE.md`](./release/CANONICAL_RELEASE_STATE.md).
+
 # V Welfare — Security Hardening v1.1 — Implementation Plan (NO CODE)
 
 **Date:** 2026-07-18

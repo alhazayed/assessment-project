@@ -1,3 +1,7 @@
+> **DOCUMENT STATUS: REFERENCE ONLY (2026-07-26)**  
+> REFERENCE ONLY — load procedures; not a v1.0.0 tag gate. Schedule separately.  
+> Release authority: [`docs/release/README.md`](docs/release/README.md) · State: [`docs/release/CANONICAL_RELEASE_STATE.md`](docs/release/CANONICAL_RELEASE_STATE.md).
+
 # PHASE 6 – Load Testing & Performance Verification
 **Generated:** June 30, 2026  
 **Scope:** Concurrent user testing at 100/250/500 levels  

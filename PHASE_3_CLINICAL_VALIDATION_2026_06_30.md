@@ -1,3 +1,7 @@
+> **DOCUMENT STATUS: REFERENCE ONLY (2026-07-26)**  
+> Phase evidence retained for audit. **Not** launch authority.  
+> Release authority: [`docs/release/README.md`](docs/release/README.md).
+
 # PHASE 3 – CLINICAL VALIDATION VERIFICATION
 **Generated:** June 30, 2026 11:00 UTC  
 **Scope:** 42 psychometric assessments, item counts, scoring, severity bands, translations  
