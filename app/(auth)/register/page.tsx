@@ -123,7 +123,15 @@ function RegisterForm() {
 
       // Step 2: Verify CAPTCHA if enabled — only hard-block when the widget is
       // actually usable (don't lock sign-up out on a Turnstile outage).
-      const turnstileToken = window.turnstile?.getResponse()
+      // getResponse() throws ("Could not find widget") when the Turnstile
+      // script has loaded but no widget is mounted (e.g. no site key
+      // configured); treat that as simply "no token" instead of failing signup.
+      let turnstileToken: string | undefined
+      try {
+        turnstileToken = window.turnstile?.getResponse()
+      } catch {
+        turnstileToken = undefined
+      }
       if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken && !captchaUnavailable) {
         setError(isRtl ? 'يرجى التحقق من أنك لست روبوتاً' : 'Please complete the CAPTCHA verification')
         setLoading(false)
@@ -178,7 +186,7 @@ function RegisterForm() {
       console.error('Signup error:', err)
       setError(isRtl ? 'حدث خطأ أثناء التسجيل' : 'An error occurred during signup')
       setLoading(false)
-      if (window.turnstile?.getResponse()) window.turnstile?.reset()
+      try { if (window.turnstile?.getResponse()) window.turnstile?.reset() } catch {}
     }
   }
 

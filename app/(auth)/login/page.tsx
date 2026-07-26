@@ -101,7 +101,15 @@ function LoginForm() {
       // Step 2: Verify CAPTCHA if enabled. Only hard-block when the widget is
       // actually usable — if it failed to load/connect, don't lock the user
       // out (rate limiting above is the brute-force defense).
-      const turnstileToken = window.turnstile?.getResponse()
+      // getResponse() throws ("Could not find widget") when the Turnstile
+      // script has loaded but no widget is mounted (e.g. no site key
+      // configured); treat that as simply "no token" instead of failing login.
+      let turnstileToken: string | undefined
+      try {
+        turnstileToken = window.turnstile?.getResponse()
+      } catch {
+        turnstileToken = undefined
+      }
       if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken && !captchaUnavailable) {
         setError(isRtl ? 'يرجى التحقق من أنك لست روبوتاً' : 'Please complete the CAPTCHA verification')
         setLoading(false)
@@ -153,7 +161,7 @@ function LoginForm() {
       console.error('Login error:', err)
       setError(isRtl ? 'حدث خطأ أثناء تسجيل الدخول' : 'An error occurred during login')
       setLoading(false)
-      if (window.turnstile?.getResponse()) window.turnstile?.reset()
+      try { if (window.turnstile?.getResponse()) window.turnstile?.reset() } catch {}
     }
   }
 
