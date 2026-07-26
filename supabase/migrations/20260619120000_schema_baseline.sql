@@ -143,6 +143,25 @@ CREATE TABLE IF NOT EXISTS public.assessment_interpretation_templates (
   UNIQUE (definition_id, band_key)
 );
 
+-- NOTE: assessment_assignments must be created BEFORE assessment_submissions,
+-- because assessment_submissions.assignment_id has a foreign key to it. On a
+-- pre-existing (already-migrated) database the CREATE ... IF NOT EXISTS calls
+-- were no-ops so the original ordering was harmless, but on a fresh rebuild the
+-- forward reference failed with: relation "public.assessment_assignments" does
+-- not exist. Ordering them correctly makes a from-scratch rebuild deterministic.
+CREATE TABLE IF NOT EXISTS public.assessment_assignments (
+  id                      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  patient_id              uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  clinician_id            uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  definition_id           uuid NOT NULL REFERENCES public.assessment_definitions(id),
+  assigned_at             timestamptz NOT NULL DEFAULT now(),
+  due_date                timestamptz,
+  status                  text NOT NULL DEFAULT 'pending',
+  completed_submission_id uuid,
+  note_to_patient_en      text,
+  note_to_patient_ar      text
+);
+
 CREATE TABLE IF NOT EXISTS public.assessment_submissions (
   id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   assignment_id    uuid REFERENCES public.assessment_assignments(id),
@@ -159,19 +178,6 @@ CREATE TABLE IF NOT EXISTS public.assessment_submissions (
   guest_marital    text,
   guest_education  text,
   guest_country    text
-);
-
-CREATE TABLE IF NOT EXISTS public.assessment_assignments (
-  id                      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  patient_id              uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  clinician_id            uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  definition_id           uuid NOT NULL REFERENCES public.assessment_definitions(id),
-  assigned_at             timestamptz NOT NULL DEFAULT now(),
-  due_date                timestamptz,
-  status                  text NOT NULL DEFAULT 'pending',
-  completed_submission_id uuid,
-  note_to_patient_en      text,
-  note_to_patient_ar      text
 );
 
 CREATE TABLE IF NOT EXISTS public.assessment_responses (

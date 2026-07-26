@@ -217,10 +217,10 @@ BEGIN
   RETURN QUERY
   SELECT
     aues.user_id,
-    (SELECT COUNT(*) FROM admin_high_risk_alerts WHERE patient_id = p_patient_id)::bigint,
+    (SELECT COUNT(*) FROM admin_high_risk_alerts WHERE admin_high_risk_alerts.patient_id = p_patient_id)::bigint,
     aues.total_submissions,
     CASE WHEN aues.total_submissions > 0 THEN
-      ROUND(((SELECT COUNT(*) FROM admin_high_risk_alerts WHERE patient_id = p_patient_id)::numeric / aues.total_submissions * 100), 1)
+      ROUND(((SELECT COUNT(*) FROM admin_high_risk_alerts WHERE admin_high_risk_alerts.patient_id = p_patient_id)::numeric / aues.total_submissions * 100), 1)
     ELSE 0::numeric END,
     aues.last_assessment_date,
     STRING_AGG(DISTINCT ad.code, ', ')
