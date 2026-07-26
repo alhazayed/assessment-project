@@ -113,6 +113,7 @@ Confirm in **Vercel → Project → Settings → Environment Variables → Produ
 - [ ] Maintenance notice prepared (internal + optional status page).
 - [ ] Rollback owner named and reachable for the full window.
 - [ ] Incident channel open (Slack/Teams) with Release Manager, DBA, Security, DevOps.
+- [ ] **Release Freeze Certificate** signed: `docs/release/RELEASE_FREEZE_CERTIFICATE_v1.0.0.md` (all six attestations checked).
 
 ---
 
@@ -209,7 +210,7 @@ Times are relative to **T0** (start of change window). Adjust absolute clock wit
 
 | Phase | Clock | Owner | Activity |
 |---|---|---|---|
-| **T−60m** | Pre-window | All | Preconditions §2 complete; backup §3 complete; freeze non-release merges to `main` |
+| **T−60m** | Pre-window | All | Preconditions §2 complete; backup §3 complete; sign Release Freeze Certificate; freeze non-release merges to `main` |
 | **T−30m** | Pre-window | Release Manager | Announce maintenance; confirm on-call present |
 | **T−15m** | Gate A | DBA | Migration dry-run + migration list (§5.1–5.2) |
 | **T−10m** | Gate B | DBA | Pre-change SQL fingerprint baseline (§6.1) |
@@ -876,6 +877,7 @@ All must be **TRUE** before tag:
 
 ### 14.1 Operator completion checklist
 
+- [ ] Release Freeze Certificate signed (`docs/release/RELEASE_FREEZE_CERTIFICATE_v1.0.0.md`)
 - [ ] §2 Preconditions complete
 - [ ] §3 Backups + LKG recorded
 - [ ] §5 Commands executed with outputs archived
