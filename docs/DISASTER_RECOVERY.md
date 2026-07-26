@@ -1,18 +1,29 @@
 # V Welfare — Disaster Recovery Plan
 
-**Version:** 1.0  
-**Last Updated:** 2026-06-13  
-**Owner:** Platform Engineering  
-**Contact:** info@vwelfare.com
+| Field | Value |
+|---|---|
+| **Document ID** | `DR-LEGACY-001` |
+| **Document version** | `1.0.0` |
+| **Document status** | `SUPERSEDED` |
+| **Effective date (UTC)** | `2026-06-13` |
+| **Superseded date (UTC)** | `2026-07-26` |
+| **Owner** | Platform Engineering |
+| **Contact** | info@vwelfare.com |
+
+> **SUPERSEDED FOR EXECUTION.** Do not use this file’s RTO/RPO or Postgres version for v1.0.0 operations or audit evidence.  
+> **Authoritative DR / backup procedure:** `BACKUP_AND_DISASTER_RECOVERY.md` (`DR-BAK-100`)  
+> **Authoritative window restore order:** `docs/release/PRODUCTION_RELEASE_PACKAGE_v1.0.0.md` §9  
+> **Authoritative objectives:** **RTO = 4 hours**, **RPO &lt; 1 hour**  
+> Retained for historical reference only (`docs/release/00_DOCUMENT_CONTROL_INDEX.md`).
 
 ---
 
-## Recovery Objectives
+## Recovery Objectives (HISTORICAL — DO NOT USE)
 
-| Metric | Target | Rationale |
+| Metric | Target (historical) | Rationale |
 |---|---|---|
-| **RPO** (Recovery Point Objective) | **4 hours** | Maximum acceptable data loss for psychiatric/clinical records |
-| **RTO** (Recovery Time Objective) | **8 hours** | Maximum acceptable downtime before clinical impact is significant |
+| **RPO** (Recovery Point Objective) | **4 hours** *(superseded — use &lt; 1 hour)* | Maximum acceptable data loss for psychiatric/clinical records |
+| **RTO** (Recovery Time Objective) | **8 hours** *(superseded — use 4 hours)* | Maximum acceptable downtime before clinical impact is significant |
 
 ---
 

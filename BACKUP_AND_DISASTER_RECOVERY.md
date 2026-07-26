@@ -1,9 +1,22 @@
 # V Welfare Platform – Backup & Disaster Recovery Procedures
-**Version:** 1.0  
-**Last Updated:** June 30, 2026  
-**Scope:** Supabase PostgreSQL, patient data, assessment results, clinical notes  
+
+| Field | Value |
+|---|---|
+| **Document ID** | `DR-BAK-100` |
+| **Document version** | `1.0.0` |
+| **Document status** | `AUTHORITATIVE` |
+| **Effective date (UTC)** | `2026-06-30` |
+| **Last governance normalize (UTC)** | `2026-07-26` |
+| **Owner** | DevOps Lead |
+| **Approver** | Release Manager |
+| **Scope** | Supabase PostgreSQL, patient data, assessment results, clinical notes |
+| **Hierarchy** | Rank 5 — authoritative DR (`docs/release/00_DOCUMENT_CONTROL_INDEX.md`) |
+| **Objectives** | **RTO = 4 hours** · **RPO &lt; 1 hour** |
+
+> Supersedes RTO/RPO values previously stated in `docs/DISASTER_RECOVERY.md` (now `SUPERSEDED`).
 
 ---
+
 
 ## 1. BACKUP STRATEGY
 

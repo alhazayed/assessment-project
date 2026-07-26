@@ -1,10 +1,21 @@
 # V Welfare — Production Governance Policy
 
-**Status:** Proposed (v1.0) · **Owner:** Release Manager / DevSecOps Lead · **Applies to:** `alhazayed/assessment-project` (web + mobile + Supabase `wyzezyctpvlohuuhzyof`)
+| Field | Value |
+|---|---|
+| **Document ID** | `POL-GOV-100` |
+| **Document version** | `1.0.0` |
+| **Document status** | `ACTIVE` |
+| **Effective date (UTC)** | `2026-07-26` |
+| **Owner** | DevSecOps Lead |
+| **Approver** | Release Manager + Security Lead |
+| **Applies to** | `alhazayed/assessment-project` (web + mobile + Supabase `wyzezyctpvlohuuhzyof`) |
+| **Hierarchy** | Rank 1 — standing policy (`docs/release/00_DOCUMENT_CONTROL_INDEX.md`) |
 
 This policy exists because production DDL has twice reached the database without a corresponding merged repo migration, causing repo↔production drift (repaired in the reconciliation PR). Its goal is simple and non-negotiable for a platform handling mental-health PHI: **production must always be reproducible from `main`, and every production change must be traceable to a reviewed commit.**
 
 This is a process document. It makes **no** code, schema, RLS, or authorization change.
+
+**Release execution:** For the v1.0.0 maintenance window, operational steps are defined solely in `docs/release/PRODUCTION_RELEASE_PACKAGE_v1.0.0.md` (`REL-PKG-100`). This policy does not redefine window commands.
 
 ---
 
@@ -70,6 +81,7 @@ Run and record results weekly (and after any production change):
 
 ## 8. Disaster-recovery validation
 
+- **Authoritative DR objectives for production operations:** RTO **4 hours**, RPO **&lt; 1 hour** — see `BACKUP_AND_DISASTER_RECOVERY.md` (`DR-BAK-100`). (`docs/DISASTER_RECOVERY.md` is superseded for RTO/RPO.)
 - Quarterly: provision a scratch database from `main` migrations only, then `supabase db diff` against production → expect empty. This proves the source-of-truth rule holds and DR is real.
 - Verify backup/restore of the Supabase project on the same cadence.
 
@@ -78,5 +90,13 @@ Run and record results weekly (and after any production change):
 - Edge-function source lives in the repo (`supabase/functions/`) and deploys from `main`. (Current gap: three live JWT-protected functions — `create-invitation`, `submit-assessment`, `add-medication` — have no repo source; commit them so they are reproducible.)
 
 ---
+
+## 10. Approval
+
+| Role | Name | Decision | Date (UTC) | Signature |
+|---|---|---|---|---|
+| Owner — DevSecOps Lead | | | | |
+| Approver — Release Manager | | | | |
+| Approver — Security Lead | | | | |
 
 *Adopting this policy closes the change-control finding from the production certification. It is documentation only and changes no running system.*

@@ -1,9 +1,23 @@
 # V Welfare — Release Checklist v1.0.0
 
-**Target release:** v1.0.0 (first production GA) · **Platform:** V Welfare Mental Health Platform (web + mobile + Supabase `wyzezyctpvlohuuhzyof`)
-**Prepared:** 2026-07-19 · **Status:** ⚠️ CONDITIONAL GO — tag `v1.0.0` is cut only after the release gate (§6) is fully green.
+| Field | Value |
+|---|---|
+| **Document ID** | `REL-CHK-100` |
+| **Document version** | `1.0.0` |
+| **Document status** | `ACTIVE` |
+| **Effective date (UTC)** | `2026-07-19` |
+| **Last governance normalize (UTC)** | `2026-07-26` |
+| **Owner** | Security Lead |
+| **Approver** | Release Manager |
+| **Release** | `v1.0.0` (first production GA) |
+| **Platform** | V Welfare Mental Health Platform (web + mobile + Supabase `wyzezyctpvlohuuhzyof`) |
+| **Hierarchy** | Rank 4 — pre-window certification evidence (`docs/release/00_DOCUMENT_CONTROL_INDEX.md`) |
 
-This checklist is the authoritative release record. Every ✅ was verified directly (live DB / code / deployment) this cycle; every ☐ is an open gate that must be closed before sign-off. "Signed" = the sign-off block in §8 completed by the named release owner.
+**Authority clarification (normalized 2026-07-26):** This checklist is the **pre-window certification evidence record**. It is **not** the maintenance-window execution procedure. Execution, abort, rollback order, and tag authority are defined solely in `docs/release/PRODUCTION_RELEASE_PACKAGE_v1.0.0.md` (`REL-PKG-100`). Decision labels: `GO LIVE` · `GO LIVE WITH CONDITIONS` · `NO GO`.
+
+**Prepared status:** CONDITIONAL — tag `v1.0.0` is cut only after Package gates **G0–G11** are green and Package §14 is signed.
+
+Every ✅ below was verified directly (live DB / code / deployment) in closed investigations; every ☐ is an open gate that must be closed in the window. Do not re-investigate closed technical conclusions.
 
 ---
 
@@ -27,68 +41,90 @@ This checklist is the authoritative release record. Every ✅ was verified direc
 | Supabase advisors | 0 ERROR |
 | Runtime health | 0 organic runtime errors (24h) |
 
+---
+
 ## 2. Test evidence
 
 - Offline security suites: **60/60** (`phi`, `permission-validation`, `redirect-allowlist`, `ai-phi-scrub`, `permission-key-db-contract`, `payments`).
 - `tsc --noEmit`: clean. `eslint .`: 0 errors (35 pre-existing `no-console` warnings). `next build`: exit 0.
 - Live DB isolation battery (read-only / rolled back): all pass (see §1).
 - Migration reconciliation acceptance: resulting repo version set vs prod `schema_migrations` → **0 prod-only remaining**; only local-only is idempotent `ipip120`.
-- ☐ **Live HTTP `test:security`** (PDF non-owner 403, AI runtime, cross-user IDOR) — *not yet run*; requires a network-permitted runner + seeded accounts. Command: `BASE_URL=https://app.vwelfare.com ATTACKER_COOKIE=<patient-B> npm run test:security`.
+- ☐ **Live HTTP `test:security`** (PDF non-owner 403, AI runtime, cross-user IDOR) — *must pass Package G8 before open to patients*. Command: `BASE_URL=https://app.vwelfare.com ATTACKER_COOKIE=<patient-B> npm run test:security`.
 
-## 3. Remaining accepted operational risks
+---
+
+## 3. Remaining operational risks
+
+Tracked for acceptance / window action in `docs/release/RISK_REGISTER_AND_RESIDUAL_ACCEPTANCE_v1.0.0.md` (`REL-RSK-100`).
 
 | Risk | Severity | Disposition |
 |---|---|---|
-| `npm audit`: 5 moderate (transitive `postcss` in Next, build-time CSS-stringify XSS) | Moderate | **Accepted** — not runtime-exploitable; only fix is a breaking `next@9` downgrade. Re-evaluate when Next ships a patched `postcss`. |
-| Leaked-password protection disabled | Medium | ☐ **To enable** before GA (§6) — Supabase Auth dashboard toggle. |
-| MFA for admin/clinician not implemented | Medium | Deferred post-GA (plan in `docs/SECURITY_HARDENING_V1.1_PLAN.md`). |
+| `npm audit`: 5 moderate (transitive `postcss` in Next, build-time CSS-stringify XSS) | Medium | **Accepted** — not runtime-exploitable; only fix is a breaking Next downgrade. Re-evaluate when Next ships a patched `postcss`. |
+| Leaked-password protection disabled | Medium | ☐ **Enable in window (Package G3)** — Supabase Auth dashboard toggle. |
+| MFA for admin/clinician not implemented | Medium | Deferred post-GA (`docs/SECURITY_HARDENING_V1.1_PLAN.md`). |
 | Email confirmation disabled | Low/Med | Deferred — gated on SMTP + templates readiness. |
 | Mobile: AsyncStorage token storage + committed anon key | Low (anon key is RLS-bounded, repo public) | Deferred to mobile release; rotate key after SecureStore port. |
 | `get_my_role()` anon-revoke → `42501` on anon PHI-table access | Info | **Accepted** — fail-closed; PHI tables never anon-reachable. |
 | No centralized immutable admin audit trail | Medium | Deferred — required before regulated/enterprise onboarding. |
 
-## 4. Rollback procedure
+---
 
-**Application (Vercel):**
-1. `Vercel → assessment-project → Deployments →` select the last-known-good production deployment → **Promote to Production** (instant rollback), or `vercel rollback`.
-2. Confirm `app.vwelfare.com` serves the rolled-back build (check commit SHA in deployment meta).
+## 4. Rollback procedure (pointer)
 
-**Database (migrations):**
-- v1.0.0 ships **no** new production DDL beyond what is already live (the reconciliation PR is repo-side only). Therefore **no DB rollback is required** for a v1.0.0 app rollback.
-- If a future migration must be reverted: apply the migration's inverse/`.down` as a new forward migration (never edit history); verify via `supabase migration list` + the §1 fingerprint checks.
+**Do not maintain a second rollback procedure here.** Authoritative rollback order is `REL-PKG-100` §9 and `REL-ABT-100` Abort Matrix.
 
-**Config (Supabase Auth / leaked-password):** toggling leaked-password protection off in the dashboard reverts it instantly (no data impact).
+Summary (non-normative):
 
-## 5. Recovery procedure (disaster recovery)
+- **Application:** Promote LKG / `vercel rollback` to recorded LKG deployment; confirm `app.vwelfare.com` SHA.
+- **Database:** v1.0.0 expects no required destructive DDL; app rollback does not require DB restore. If optional accepted `ipip120` was applied and fails, use forward inverse migration or PITR per Package §9.3–§9.4 (never edit migration history).
+- **Auth:** Leaked-password toggle off reverts instantly.
 
-1. **Source of truth:** production is reproducible from `main` migrations (guaranteed by the reconciliation PR + governance policy). Verify quarterly: provision a scratch DB from `main` migrations → `supabase db diff` against prod = empty.
-2. **Restore:** restore the Supabase project from its most recent automated backup (`Supabase → Database → Backups`), or point-in-time recovery if enabled.
-3. **Re-verify after restore:** run the §1 checks — admin RPC grants `service_role`-only, `has_clinician_access` md5 unchanged, RLS policy fingerprint (clinical_notes 4 / messages 5 / assessment_assignments 3 / patient_profiles 4 / clinician_patient_relationships 3), advisors 0 ERROR, and the live isolation battery.
-4. **Redeploy app:** trigger a Vercel deploy of `main`; confirm the production alias serves it; run the offline + (network-permitted) live security suites.
-5. **Incident record:** log the event, cause, actions, and verification results per the governance policy.
+---
 
-## 6. Release gate — all must be ✅ before cutting the `v1.0.0` tag
+## 5. Recovery procedure (disaster recovery pointer)
 
-1. ☐ **Migration reconciliation merged** (PR #80) after an operator's `supabase db push --dry-run` shows only the idempotent `ipip120` pending — repo == prod.
-2. ☐ **Web CI gate merged** (PR #83) and made a required status check on `main`.
-3. ☐ **Governance policy merged** (PR #81).
-4. ☐ **Live HTTP `test:security` green** (§2) — patient/clinician isolation + PDF non-owner 403 + AI checks.
-5. ☐ **Leaked-password protection enabled** (Supabase Auth).
-6. ☐ Production alias confirmed serving the intended `main` build.
-7. ☐ Sign-off (§8) completed.
+**Authoritative DR:** `BACKUP_AND_DISASTER_RECOVERY.md` — **RTO 4 hours**, **RPO &lt; 1 hour**.
 
-When 1–7 are ✅: tag the certified `main` commit `v1.0.0` (annotated) and publish the GitHub release referencing this checklist.
+After restore: re-run Package §6 fingerprints + advisors 0 ERROR + isolation battery; redeploy certified `main`; record incident via `docs/release/INCIDENT_REPORT_TEMPLATE.md`.
+
+---
+
+## 6. Pre-window certification gates → Package mapping
+
+Close these before or during the window as mapped. Tag only after Package **G11**.
+
+| Checklist gate | Package gate | Status |
+|---|---|---|
+| Migration reconciliation / dry-run only accepted `ipip120` | G1 | ☐ |
+| Web CI gate required on `main` | G4 | ☐ |
+| Governance policy ACTIVE | Policy `POL-GOV-100` | ☐ |
+| Live HTTP `test:security` green | G8 | ☐ |
+| Leaked-password protection enabled | G3 | ☐ |
+| Production alias serves intended `main` build | G5 | ☐ |
+| Sign-off completed | G11 / Package §14 | ☐ |
+
+When Package G0–G11 are ✅: tag certified `main` as `v1.0.0` (annotated) and publish GitHub Release per Package §5.7.
+
+---
 
 ## 7. Deferred to post-GA (tracked, non-blocking)
 
-MFA rollout · email confirmation · mobile SecureStore + anon-key rotation · centralized admin audit trail · BAAs/DPAs (Gemini, Supabase, Vercel) · data-retention automation · incident-response runbook. See `docs/SECURITY_HARDENING_V1.1_PLAN.md` and `docs/PRODUCTION_GOVERNANCE_POLICY.md`.
+MFA rollout · email confirmation · mobile SecureStore + anon-key rotation · centralized admin audit trail · BAAs/DPAs (Gemini, Supabase, Vercel) · data-retention automation.
+
+**Note (inconsistency corrected):** An incident-response runbook **exists** (`INCIDENT_RESPONSE_RUNBOOK.md` + `FRM-INC-100`). It is **not** deferred; continue to exercise and improve it post-GA.
+
+See `docs/SECURITY_HARDENING_V1.1_PLAN.md` and `docs/PRODUCTION_GOVERNANCE_POLICY.md`.
+
+---
 
 ## 8. Sign-off
 
-| Role | Name | Decision (GO / CONDITIONAL / NO GO) | Date | Signature |
+Use Package §14 as the binding sign-off for tag authority. This block may mirror it for checklist archival:
+
+| Role | Name | Decision (`GO LIVE` / `GO LIVE WITH CONDITIONS` / `NO GO`) | Date (UTC) | Signature |
 |---|---|---|---|---|
 | Release Manager | | | | |
 | Security Lead | | | | |
-| Clinical/Compliance | | | | |
+| Clinical / Compliance | | | | |
 
-*Cut `v1.0.0` only with all §6 gates ✅ and this block signed.*
+*Cut `v1.0.0` only with Package G0–G11 ✅ and Package §14 signed.*

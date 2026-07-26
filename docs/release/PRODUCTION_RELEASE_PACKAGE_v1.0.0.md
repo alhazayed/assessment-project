@@ -2,8 +2,15 @@
 
 | Field | Value |
 |---|---|
+| **Document ID** | `REL-PKG-100` |
+| **Document version** | `1.0.0` |
+| **Document status** | `AUTHORITATIVE` |
+| **Effective date (UTC)** | `2026-07-26` |
+| **Owner** | Release Manager |
+| **Custodian** | Senior DBA |
+| **Approver** | Release Manager + Security Lead + Clinical / Compliance |
 | **Document type** | Operator-grade maintenance-window runbook |
-| **Release** | v1.0.0 (first production GA) |
+| **Release** | `v1.0.0` (first production GA) |
 | **Platform** | V Welfare Mental Health Assessment Platform |
 | **Production alias** | `https://app.vwelfare.com` |
 | **Alternate host** | `https://vwelfare.vercel.app` |
@@ -12,12 +19,33 @@
 | **Production branch** | `main` |
 | **Postgres** | Supabase-managed PostgreSQL 17 |
 | **App runtime** | Vercel (Next.js) |
-| **Document status** | AUTHORITATIVE for the maintenance window |
+| **DR objectives** | RTO **4 hours** · RPO **&lt; 1 hour** (`BACKUP_AND_DISASTER_RECOVERY.md`) |
+| **Hierarchy** | Rank 2 — authoritative execution (`docs/release/00_DOCUMENT_CONTROL_INDEX.md`) |
 | **Prerequisite reviews** | Architecture, ownership, dependency, and migration reviews are **CLOSED**. All findings below are **VERIFIED**. Do not re-investigate. |
 
 **Audience:** Senior DBA + Release Manager + Security Lead executing the maintenance window.  
 **Assumption:** Operator has CLI access to GitHub, Vercel, and Supabase (linked project), plus SQL Editor access on production.  
-**Rule:** Execute steps in order. Stop at any failed Decision Gate. Do not skip verification queries.
+**Rule:** Execute steps in order. Stop at any failed Decision Gate. Do not skip verification queries.  
+**Decision labels (only):** `GO LIVE` · `GO LIVE WITH CONDITIONS` · `NO GO`.
+
+**Companion controlled documents (mandatory for GA evidence):**
+
+| Doc ID | Path |
+|---|---|
+| `REL-DOC-INDEX` | `docs/release/00_DOCUMENT_CONTROL_INDEX.md` |
+| `REL-RACI-100` | `docs/release/RACI_AND_APPROVAL_CHAIN_v1.0.0.md` |
+| `REL-CAB-100` | `docs/release/CHANGE_ADVISORY_RECORD_v1.0.0.md` |
+| `REL-FRZ-100` | `docs/release/RELEASE_FREEZE_CERTIFICATE_v1.0.0.md` |
+| `REL-CFG-100` | `docs/release/CONFIGURATION_FREEZE_RECORD_v1.0.0.md` |
+| `REL-ABT-100` | `docs/release/ABORT_MATRIX_v1.0.0.md` |
+| `REL-EVD-100` | `docs/release/EVIDENCE_REGISTER_v1.0.0.md` |
+| `REL-MWL-100` | `docs/release/MAINTENANCE_WINDOW_LOG_v1.0.0.md` |
+| `REL-OPL-100` | `docs/release/OPERATOR_LOG_v1.0.0.md` |
+| `REL-VAL-100` | `docs/release/PRODUCTION_VALIDATION_RECORD_v1.0.0.md` |
+| `REL-RSK-100` | `docs/release/RISK_REGISTER_AND_RESIDUAL_ACCEPTANCE_v1.0.0.md` |
+| `REL-EXC-100` | `docs/release/SECURITY_EXCEPTION_REGISTER_v1.0.0.md` |
+| `REL-MON-100` | `docs/release/POST_RELEASE_MONITORING_v1.0.0.md` |
+| `REL-CLS-100` | `docs/release/RELEASE_CLOSURE_REPORT_v1.0.0.md` |
 
 ---
 
@@ -108,12 +136,15 @@ Confirm in **Vercel → Project → Settings → Environment Variables → Produ
 - [ ] Supabase status page: no active incident affecting Auth/DB (`https://status.supabase.com`).
 - [ ] Vercel status page: no active incident (`https://www.vercel-status.com`).
 
-### 2.4 Communication preconditions
+### 2.4 Communication & governance preconditions
 
 - [ ] Maintenance notice prepared (internal + optional status page).
-- [ ] Rollback owner named and reachable for the full window.
+- [ ] Rollback owner named and reachable for the full window (**rollback authority:** Release Manager accountable; DevOps executes — `REL-RACI-100`).
 - [ ] Incident channel open (Slack/Teams) with Release Manager, DBA, Security, DevOps.
-- [ ] **Release Freeze Certificate** signed: `docs/release/RELEASE_FREEZE_CERTIFICATE_v1.0.0.md` (all six attestations checked).
+- [ ] **Change Advisory Record** approved: `docs/release/CHANGE_ADVISORY_RECORD_v1.0.0.md` (`REL-CAB-100`).
+- [ ] **Configuration Freeze Record** started: `docs/release/CONFIGURATION_FREEZE_RECORD_v1.0.0.md` (`REL-CFG-100`).
+- [ ] **Release Freeze Certificate** signed: `docs/release/RELEASE_FREEZE_CERTIFICATE_v1.0.0.md` (`REL-FRZ-100`) — all six attestations checked.
+- [ ] **Evidence Register** / **Maintenance Window Log** / **Operator Log** opened for append-only use (`REL-EVD-100`, `REL-MWL-100`, `REL-OPL-100`).
 
 ---
 
@@ -210,7 +241,8 @@ Times are relative to **T0** (start of change window). Adjust absolute clock wit
 
 | Phase | Clock | Owner | Activity |
 |---|---|---|---|
-| **T−60m** | Pre-window | All | Preconditions §2 complete; backup §3 complete; sign Release Freeze Certificate; freeze non-release merges to `main` |
+| **T−90m** | Pre-window | RM | CAB approved (`REL-CAB-100`) |
+| **T−60m** | Pre-window | All | Preconditions §2 complete; backup §3 complete; sign Freeze Certificate + Configuration Freeze; open evidence/operator/window logs; freeze non-release merges to `main` |
 | **T−30m** | Pre-window | Release Manager | Announce maintenance; confirm on-call present |
 | **T−15m** | Gate A | DBA | Migration dry-run + migration list (§5.1–5.2) |
 | **T−10m** | Gate B | DBA | Pre-change SQL fingerprint baseline (§6.1) |
@@ -221,10 +253,12 @@ Times are relative to **T0** (start of change window). Adjust absolute clock wit
 | **T+40–T+55m** | Advisors | Security | Security advisor validation (§11) |
 | **T+55–T+85m** | Security suite | Security | Live `test:security` (§5.6) |
 | **T+85–T+115m** | Smoke | QA/DevOps | Smoke checklist (§12) |
-| **T+115–T+130m** | Accept | Release Manager | Acceptance criteria (§13) + Decision Gates (§8) |
-| **T+130–T+145m** | Tag | Release Manager | Annotated tag `v1.0.0` + GitHub Release (§5.7) |
-| **T+145m** | Close | All | Sign-off (§14); end freeze; monitoring watch begins |
-| **T+24h** | Watch | On-call | 24h validation (§10.2) |
+| **T+115–T+130m** | Accept | Release Manager | Acceptance criteria (§13) + Decision Gates (§8) + Validation Record (`REL-VAL-100`) |
+| **T+130–T+145m** | Tag | Release Manager | Annotated tag `v1.0.0` + GitHub Release (§5.7) **only after §14** |
+| **T+145m** | Close | All | Sign-off (§14); start Closure Report (`REL-CLS-100`); monitoring watch begins (`REL-MON-100`) |
+| **T+24h / T+48h** | Watch | On-call | Post-release monitoring (§10.2 + `REL-MON-100`) |
+| **≤48h** | Closure | RM | Release Closure Report signed; freeze ends |
+| **≤10 business days** | Improve | RM | Lessons Learned (`FRM-LL-100`) |
 
 **Planned downtime:** Prefer **zero** (Vercel promote is blue/green). If a DB restore is required, expect **20–45 minutes** unavailability — communicate explicitly.
 
@@ -628,28 +662,30 @@ ORDER BY c.relname;
 
 ## 8. Decision Gates
 
-Execute in order. **Any FAIL = stop and follow the action.**
+Execute in order. **Any FAIL = stop and follow the action.**  
+**Normative abort/rollback detail:** `docs/release/ABORT_MATRIX_v1.0.0.md` (`REL-ABT-100`) — this table and the Abort Matrix must not disagree; if they ever do, **Abort Matrix wins** for action selection, then amend this package.
 
 | Gate | Question | Pass | Fail action |
 |---|---|---|---|
-| **G0** | Backups + LKG deployment recorded (§3)? | Yes | ABORT window |
-| **G1** | Migration dry-run acceptable (§5.2)? | Yes | ABORT; drift incident |
-| **G2** | Pre-change SQL fingerprint matches baseline (§6.1)? | Yes | ABORT; re-certify |
-| **G3** | Leaked-password protection enabled (§5.3)? | Yes | NO-GO or signed CONDITIONAL |
-| **G4** | CI green on `RELEASE_COMMIT` (§5.4)? | Yes | ABORT promote |
-| **G5** | Production alias serves `RELEASE_COMMIT` (§5.5)? | Yes | Fix alias / rollback |
-| **G6** | Post-change SQL grants + RLS (§6.2–6.6) pass? | Yes | Rollback app; DB incident if grants wrong |
-| **G7** | Security advisors 0 ERROR (§11)? | Yes | Block GA until cleared |
-| **G8** | Live `test:security` exit 0 (§5.6)? | Yes | **Immediate app rollback**; do not open to patients |
-| **G9** | Smoke P0 checklist complete (§12)? | Yes | Rollback or hotfix per severity |
-| **G10** | Acceptance criteria (§13) all true? | Yes | Do not tag |
-| **G11** | Sign-off block (§14) signed GO? | Yes | Do not publish `v1.0.0` |
+| **G0** | Backups + LKG deployment recorded (§3)? CAB + Freeze signed? | Yes | **ABORT** window |
+| **G1** | Migration dry-run acceptable (§5.2)? | Yes | **ABORT**; drift incident |
+| **G2** | Pre-change SQL fingerprint matches baseline (§6.1)? | Yes | **ABORT**; re-certify |
+| **G3** | Leaked-password protection enabled (§5.3)? | Yes | **NO GO** or `GO LIVE WITH CONDITIONS` only with signed `REL-EXC-100` |
+| **G4** | CI green on `RELEASE_COMMIT` (§5.4)? | Yes | **ABORT** promote |
+| **G5** | Production alias serves `RELEASE_COMMIT` (§5.5)? | Yes | Fix alias / **ROLLBACK** |
+| **G6** | Post-change SQL grants + RLS (§6.2–6.6) pass? | Yes | **ROLLBACK** app; DB incident if grants wrong |
+| **G7** | Security advisors 0 ERROR (§11)? | Yes | **HOLD** then **ABORT/ROLLBACK** |
+| **G8** | Live `test:security` exit 0 (§5.6)? | Yes | **Immediate app ROLLBACK**; do not open to patients |
+| **G9** | Smoke P0 checklist complete (§12)? | Yes | **ROLLBACK** or **HOLD** per Abort Matrix (no undocumented hotfix) |
+| **G10** | Acceptance criteria (§13) all true? Validation Record signed? | Yes | Do not tag |
+| **G11** | Sign-off block (§14) signed `GO LIVE` or `GO LIVE WITH CONDITIONS`? | Yes | Do not publish `v1.0.0` |
 
 **Release Manager GO phrase (only if G0–G11 pass):**  
-`GO LIVE — promote complete; tag v1.0.0 authorized.`
+`GO LIVE — promote complete; tag v1.0.0 authorized.`  
+(or `GO LIVE WITH CONDITIONS — …` with `REL-RSK-100` / `REL-EXC-100` attached)
 
 **NO-GO phrase:**  
-`NO-GO — execute Section 9 Rollback; do not tag.`
+`NO GO — execute Section 9 Rollback / Abort Matrix; do not tag.`
 
 ---
 
@@ -877,23 +913,30 @@ All must be **TRUE** before tag:
 
 ### 14.1 Operator completion checklist
 
-- [ ] Release Freeze Certificate signed (`docs/release/RELEASE_FREEZE_CERTIFICATE_v1.0.0.md`)
+- [ ] CAB approved (`REL-CAB-100`)
+- [ ] Release Freeze Certificate signed (`REL-FRZ-100`)
+- [ ] Configuration Freeze Record completed (`REL-CFG-100`)
 - [ ] §2 Preconditions complete
 - [ ] §3 Backups + LKG recorded
-- [ ] §5 Commands executed with outputs archived
+- [ ] §5 Commands executed with outputs archived in Operator Log (`REL-OPL-100`)
 - [ ] §6 SQL verification outputs archived
-- [ ] §8 All gates Pass
+- [ ] §8 All gates Pass (Abort Matrix consulted on any fail)
 - [ ] §9 Rollback path dry-reviewed (commands ready)
 - [ ] §10 Immediate validation Pass
 - [ ] §11 Advisors Pass
 - [ ] §12 Smoke P0 Pass
 - [ ] §13 Acceptance criteria true
+- [ ] Production Validation Record signed (`REL-VAL-100`)
+- [ ] Evidence Register complete (`REL-EVD-100`)
+- [ ] Residual risks / exceptions filed if needed (`REL-RSK-100`, `REL-EXC-100`)
 - [ ] Tag `v1.0.0` pushed (only after signatures below)
-- [ ] Stakeholders notified: **Production LIVE**
+- [ ] Stakeholders notified of final decision
+- [ ] Post-release monitoring started (`REL-MON-100`)
+- [ ] Release Closure Report scheduled (`REL-CLS-100`, ≤48h)
 
 ### 14.2 Formal signatures
 
-| Role | Name | Decision (`GO` / `GO WITH CONDITIONS` / `NO GO`) | Conditions (if any) | Date (UTC) | Signature |
+| Role | Name | Decision (`GO LIVE` / `GO LIVE WITH CONDITIONS` / `NO GO`) | Conditions (if any) | Date (UTC) | Signature |
 |---|---|---|---|---|---|
 | Release Manager | | | | | |
 | Senior DBA | | | | | |
@@ -905,18 +948,14 @@ All must be **TRUE** before tag:
 Record the window outcome:
 
 - ☐ **GO LIVE** — all gates green; tag published; users may use production.
-- ☐ **GO LIVE WITH CONDITIONS** — list conditions and owners/dates below; Security Lead must countersign.
-- ☐ **DO NOT GO LIVE** — rollback executed or never promoted; tag **not** published.
+- ☐ **GO LIVE WITH CONDITIONS** — list conditions in `REL-RSK-100` / `REL-EXC-100`; Security Lead + Clinical/Compliance must countersign.
+- ☐ **NO GO** — abort/rollback executed or never promoted; tag **not** published. *(Equivalent phrase: DO NOT GO LIVE.)*
 
-**Conditions (only if CONDITIONAL):**
-
-| Condition | Owner | Due | Residual risk |
-|---|---|---|---|
-| | | | |
+**Conditions (only if CONDITIONAL):** record in `REL-RSK-100` / `REL-EXC-100` (do not invent a third list).
 
 ### 14.4 Evidence archive
 
-Store in the release evidence folder (secure drive):
+Complete `REL-EVD-100`. Store binaries in the secure evidence vault (no raw PHI):
 
 - [ ] Pre/post SQL query outputs
 - [ ] `supabase migration list` + dry-run transcripts
@@ -925,6 +964,14 @@ Store in the release evidence folder (secure drive):
 - [ ] `test:security` console log
 - [ ] Smoke checklist marked copy
 - [ ] This document signed (PDF or scanned §14.2)
+- [ ] Maintenance Window Log + Operator Log
+- [ ] Freeze + Configuration Freeze + CAB records
+
+### 14.5 Release closure
+
+Within 48 hours: complete and sign `docs/release/RELEASE_CLOSURE_REPORT_v1.0.0.md`.  
+Within 10 business days: complete `docs/release/LESSONS_LEARNED_TEMPLATE.md`.  
+Freeze ends when Closure Report is **CLOSED** unless RM extends for an open incident.
 
 ---
 
@@ -934,10 +981,12 @@ Store in the release evidence folder (secure drive):
 |---|---|
 | Supabase project ref | `wyzezyctpvlohuuhzyof` |
 | Production URL | `https://app.vwelfare.com` |
+| Document control index | `docs/release/00_DOCUMENT_CONTROL_INDEX.md` |
 | Governance policy | `docs/PRODUCTION_GOVERNANCE_POLICY.md` |
 | Release checklist | `docs/RELEASE_CHECKLIST_v1.0.0.md` |
+| Abort Matrix | `docs/release/ABORT_MATRIX_v1.0.0.md` |
 | Incident runbook | `INCIDENT_RESPONSE_RUNBOOK.md` |
-| DR / backups | `BACKUP_AND_DISASTER_RECOVERY.md` |
+| DR / backups (authoritative) | `BACKUP_AND_DISASTER_RECOVERY.md` |
 | `has_clinician_access` md5 | `06aedade9e809c61a3da2ee5a4764efc` |
 | Anon revoke migration | `supabase/migrations/20260719081042_security_revoke_anon_rpc_execute.sql` |
 
