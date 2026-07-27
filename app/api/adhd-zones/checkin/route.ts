@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('ADHD check-in error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
@@ -82,7 +82,7 @@ export async function GET() {
   } catch (error) {
     console.error('ADHD check-in fetch error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

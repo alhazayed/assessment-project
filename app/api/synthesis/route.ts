@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
 import { callGemini } from '@/lib/gemini'
+import { scrubPHI } from '@/lib/security/anonymizePHI'
 
 export async function POST(_request: Request) {
   try {
@@ -104,7 +105,8 @@ Rules:
 
     const res = await callGemini(apiKey, {
       systemInstruction: { parts: [{ text: systemInstruction }] },
-      contents: [{ role: 'user', parts: [{ text: `Assessment Results:\n${resultsSummary}` }] }],
+      // Scrub PHI before any text leaves for the third-party AI provider (defence in depth).
+      contents: [{ role: 'user', parts: [{ text: scrubPHI(`Assessment Results:\n${resultsSummary}`) }] }],
       generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
     })
 

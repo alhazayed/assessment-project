@@ -1,7 +1,19 @@
 import { cookies } from 'next/headers'
+import crypto from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { NextResponse } from 'next/server'
+
+// Constant-time comparison of the admin_session cookie against the expected
+// HMAC. Both sides are re-HMAC'd with a per-call random key so the comparison
+// is fixed-length and leaks neither timing nor length information (and tolerates
+// a missing/undefined cookie without throwing).
+function timingSafeStrEqual(a: string | undefined | null, b: string | undefined | null): boolean {
+  const key = crypto.randomBytes(32)
+  const ah = crypto.createHmac('sha256', key).update(String(a ?? '')).digest()
+  const bh = crypto.createHmac('sha256', key).update(String(b ?? '')).digest()
+  return crypto.timingSafeEqual(ah, bh)
+}
 
 // requireAdmin() denies access via Next.js redirect(), which throws a
 // NEXT_REDIRECT control error. Inside an API route handler that surfaces as a
@@ -43,7 +55,7 @@ export async function requireAdmin() {
   const cookie = store.get('admin_session')?.value
   // HMAC includes current role — if role was revoked, stored cookie will not match
   const expected = await computeHmac(user.id, profile.role)
-  if (cookie !== expected) redirect('/x/control/login')
+  if (!timingSafeStrEqual(cookie, expected)) redirect('/x/control/login')
 
   return { user, role: profile.role as 'admin' | 'superadmin' }
 }
@@ -65,7 +77,7 @@ export async function verifyAdminSession() {
   const store = await cookies()
   const cookie = store.get('admin_session')?.value
   const expected = await computeHmac(user.id, profile.role)
-  if (cookie !== expected) return null
+  if (!timingSafeStrEqual(cookie, expected)) return null
 
   return { user, role: profile.role as 'admin' | 'superadmin' }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit } from '@/lib/rate-limit'
 import { VALID_TIERS, TIER_PRICES_USD, isValidTier, applyDiscount } from '@/lib/billing/pricing'
 
 /**
@@ -23,6 +24,16 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'User must be authenticated' },
         { status: 401 }
+      )
+    }
+
+    // Rate limit: this endpoint writes a payment row and reads promo codes with
+    // the service-role client, so cap per-user creation to prevent DB spam/abuse.
+    const rl = await checkRateLimit(`checkout:${user.id}`, { limit: 15, windowMs: 60 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Too many checkout attempts. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': '3600' } }
       )
     }
 
@@ -155,7 +166,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Checkout session error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
