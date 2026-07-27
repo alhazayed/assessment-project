@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { TrendingUp, TrendingDown, Minus, ArrowRight, History } from 'lucide-react'
+import { Minus, ArrowRight, History } from 'lucide-react'
 import { compareAttempts, type Attempt, type CompareItem, type AttemptComparison } from '@/lib/assessment-compare'
 
 /**
@@ -35,12 +35,12 @@ export default function AttemptCompareCard({ definitionId, lang }: { definitionI
   const cmp: AttemptComparison = compareAttempts(previous, current, data.items)
   const prevDate = new Date(previous.submitted_at).toLocaleDateString(isAr ? 'ar' : 'en', { year: 'numeric', month: 'short', day: 'numeric' })
 
-  const Icon = cmp.scoreDelta > 0 ? TrendingUp : cmp.scoreDelta < 0 ? TrendingDown : Minus
+  const Icon = cmp.scoreDelta === 0 ? Minus : ArrowRight
   const deltaText = cmp.scoreDelta === 0
     ? (isAr ? 'لا تغيّر في الدرجة' : 'No change in score')
     : (isAr
-        ? `${Math.abs(cmp.scoreDelta)} نقطة ${cmp.scoreDelta > 0 ? 'أعلى' : 'أقل'} من محاولتك السابقة`
-        : `${Math.abs(cmp.scoreDelta)} points ${cmp.scoreDelta > 0 ? 'higher' : 'lower'} than your previous attempt`)
+        ? `تغيّرت الدرجة بـ ${Math.abs(cmp.scoreDelta)} نقطة (${cmp.scoreDelta > 0 ? 'ارتفاع' : 'انخفاض'})`
+        : `Score changed by ${Math.abs(cmp.scoreDelta)} points (${cmp.scoreDelta > 0 ? 'increase' : 'decrease'})`)
 
   const shown = expanded ? cmp.changed : cmp.changed.slice(0, 3)
 

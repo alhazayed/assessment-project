@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import { Flame, TrendingUp, Calendar, BarChart2 } from 'lucide-react'
+import Link from 'next/link'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
@@ -172,7 +173,10 @@ export default function InsightsPage() {
             </div>
 
             {moodLogs.length === 0 ? (
-              <p className="text-[13.5px] py-4 text-center" style={{ color: 'var(--text-muted)' }}>{t('insights.no_mood', lang)}</p>
+              <div className="text-center py-6">
+                <p className="text-[13.5px] mb-4" style={{ color: 'var(--text-muted)' }}>{t('insights.no_mood', lang)}</p>
+                <Link href="/mood" className="btn-accent text-sm">{t('insights.no_mood_cta', lang)}</Link>
+              </div>
             ) : (
               <div className="overflow-x-auto">
               <div className="grid grid-cols-10 gap-1.5 min-w-[320px]">
@@ -230,7 +234,10 @@ export default function InsightsPage() {
             </div>
 
             {scoreHistory.length === 0 ? (
-              <p className="text-[13.5px] py-4 text-center" style={{ color: 'var(--text-muted)' }}>{t('insights.no_scores', lang)}</p>
+              <div className="text-center py-6">
+                <p className="text-[13.5px] mb-4" style={{ color: 'var(--text-muted)' }}>{t('insights.no_scores', lang)}</p>
+                <Link href="/assessments" className="btn-accent text-sm">{t('insights.no_scores_cta', lang)}</Link>
+              </div>
             ) : trendData.length < 2 ? (
               <p className="text-[13.5px] py-4 text-center" style={{ color: 'var(--text-muted)' }}>
                 {t('insights.trend_min_needed', lang)}

@@ -86,7 +86,7 @@ export default function AcceptInvitationPage() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      router.replace(`/auth/login?redirect=/connect/${token}/accept`)
+      router.replace(`/login?next=${encodeURIComponent(`/connect/${token}/accept`)}`)
       return
     }
 
@@ -183,7 +183,7 @@ export default function AcceptInvitationPage() {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <p className="text-gray-700 dark:text-gray-300 mb-6">{error}</p>
           {!authed && (
-            <a href={`/auth/login?redirect=/connect/${token}/accept`}
+            <a href={`/login?next=${encodeURIComponent(`/connect/${token}/accept`)}`}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-teal-600 text-white font-medium hover:bg-teal-700 transition-colors">
               {t.signIn} <ArrowRight className="w-4 h-4" />
             </a>

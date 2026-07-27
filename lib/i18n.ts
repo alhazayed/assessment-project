@@ -308,6 +308,14 @@ const dict = {
     'dashboard.log_mood': 'Log mood',
     'dashboard.track_mood': 'Start tracking your mood daily',
     'dashboard.track_cta': 'Track mood',
+    'dashboard.profile_incomplete': 'Complete your profile to unlock assessments',
+
+    // Profile completion banner
+    'profile.banner.title': 'Complete your profile to unlock assessments',
+    'profile.banner.body': 'Biographical data — date of birth, gender, marital status, education, country, employment, and medication status — must be filled before starting any assessment.',
+    'profile.banner.progress': 'Profile completion',
+    'profile.banner.cta': 'Go to my profile',
+    'profile.banner.onboarding': 'Continue setup wizard',
 
     // Dashboard — clinician
     'dashboard.clinician.title': 'Clinician Dashboard',
@@ -351,6 +359,9 @@ const dict = {
     'assessment.submitting': 'Submitting...',
     'assessment.back': '← Back to assessments',
     'assessment.result.score': 'Your Score',
+    'assessment.result.title': 'Your Results',
+    'assessment.result.pdf_name_required': 'Add your name in Profile to download a PDF report.',
+    'assessment.result.add_name': 'Add your name',
     'assessment.result.severity': 'Severity Level',
     'assessment.result.high_risk': 'High risk flag raised — please consider reaching out to a mental health professional.',
     'assessment.result.save.title': 'Save your results',
@@ -433,6 +444,7 @@ const dict = {
     // Mood tracker
     'mood.title': 'Mood Tracker',
     'mood.subtitle': 'Track how you feel each day',
+    'mood.empty_cta': 'Log today\'s mood',
     'mood.logged': 'Mood logged successfully!',
     'mood.update': 'Update Today',
     'mood.log': 'Log Today',
@@ -747,6 +759,8 @@ const dict = {
     'insights.streak.none': 'Start your streak — log your mood today',
     'insights.no_mood': 'No mood data yet. Start checking in daily.',
     'insights.no_scores': 'No completed assessments yet.',
+    'insights.no_scores_cta': 'Take an assessment',
+    'insights.no_mood_cta': 'Log your mood',
 
     // Clinical notes
     'notes.title': 'Clinical Notes',
@@ -1164,6 +1178,14 @@ const dict = {
     'dashboard.log_mood': 'تسجيل المزاج',
     'dashboard.track_mood': 'ابدأ بتتبع مزاجك يومياً',
     'dashboard.track_cta': 'تتبع المزاج',
+    'dashboard.profile_incomplete': 'أكمل ملفك الشخصي لفتح التقييمات',
+
+    // Profile completion banner
+    'profile.banner.title': 'يرجى إكمال ملفك الشخصي لبدء التقييم',
+    'profile.banner.body': 'يجب تعبئة البيانات الشخصية (تاريخ الميلاد، الجنس، الحالة الاجتماعية، التعليم، الدولة، الوظيفة، وحالة الأدوية) قبل بدء أي تقييم.',
+    'profile.banner.progress': 'اكتمال الملف',
+    'profile.banner.cta': 'اذهب إلى ملفي الشخصي',
+    'profile.banner.onboarding': 'متابعة معالج الإعداد',
 
     // Dashboard — clinician
     'dashboard.clinician.title': 'لوحة تحكم الاختصاصي',
@@ -1207,6 +1229,9 @@ const dict = {
     'assessment.submitting': 'جارٍ التقديم...',
     'assessment.back': '← العودة إلى التقييمات',
     'assessment.result.score': 'درجتك',
+    'assessment.result.title': 'نتائجك',
+    'assessment.result.pdf_name_required': 'أضف اسمك في الملف الشخصي لتنزيل تقرير PDF.',
+    'assessment.result.add_name': 'أضف اسمك',
     'assessment.result.severity': 'مستوى الخطورة',
     'assessment.result.high_risk': 'تمت الإشارة إلى خطورة عالية — يُرجى التفكير في التواصل مع مختص بالصحة النفسية.',
     'assessment.result.save.title': 'احفظ نتائجك',
@@ -1289,6 +1314,7 @@ const dict = {
     // Mood tracker
     'mood.title': 'متتبع المزاج',
     'mood.subtitle': 'تتبع شعورك كل يوم',
+    'mood.empty_cta': 'سجّل مزاج اليوم',
     'mood.logged': 'تم تسجيل المزاج بنجاح!',
     'mood.update': 'تحديث اليوم',
     'mood.log': 'تسجيل اليوم',
@@ -1603,6 +1629,8 @@ const dict = {
     'insights.streak.none': 'ابدأ سلسلتك — سجّل مزاجك اليوم',
     'insights.no_mood': 'لا توجد بيانات مزاج بعد. ابدأ بتسجيل مزاجك يومياً.',
     'insights.no_scores': 'لا توجد تقييمات مكتملة بعد.',
+    'insights.no_scores_cta': 'أجرِ تقييماً',
+    'insights.no_mood_cta': 'سجّل مزاجك',
 
     // Clinical notes
     'notes.title': 'الملاحظات السريرية',
