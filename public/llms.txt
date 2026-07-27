@@ -12,11 +12,18 @@
 - https://app.vwelfare.com/learn/who-5
 - https://app.vwelfare.com/learn/dass-21
 - https://app.vwelfare.com/learn/pcl-5
-- https://app.vwelfare.com/learn/asrs-adhd
 - https://app.vwelfare.com/learn/adhd-screening
 - https://app.vwelfare.com/learn/insomnia-isi
 - https://app.vwelfare.com/learn/alcohol-audit-c
 - https://app.vwelfare.com/learn/ace-questionnaire
+- https://app.vwelfare.com/learn/k-10
+- https://app.vwelfare.com/learn/pss-10
+- https://app.vwelfare.com/learn/oci-r
+- https://app.vwelfare.com/learn/ess
+- https://app.vwelfare.com/learn/phq-15
+- https://app.vwelfare.com/learn/cage
+- https://app.vwelfare.com/learn/rses
+- https://app.vwelfare.com/learn/mdq
 - https://app.vwelfare.com/faq
 - https://app.vwelfare.com/clinicians
 - https://app.vwelfare.com/contact
@@ -30,7 +37,9 @@
 - /assessments/* (taking assessments, live results)
 - /dashboard, /mood, /journal, /insights, /messages, /profile
 - /patients, /patient/*, /clinician/* (portal routes)
+- /adhd-zones, /packages/* (authenticated package instances)
 - /api/*, /x/control/*
+- /login, /register (account surfaces — not educational content)
 - Any user-specific scores, submissions, or PHI
 
 ## Contact

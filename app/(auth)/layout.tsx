@@ -1,8 +1,13 @@
+import type { Metadata } from 'next'
 import { getLanguage } from '@/lib/get-language'
-import { t } from '@/lib/i18n'
 import LanguageToggle from '@/components/language-toggle'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import Link from 'next/link'
+
+/** Auth surfaces should not compete in search indexes. */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const lang = await getLanguage()

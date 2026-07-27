@@ -31,8 +31,8 @@ export default async function LearnIndexPage() {
       })),
     ),
     breadcrumbSchema([
-      { name: 'Home', path: '/' },
-      { name: 'Learn', path: '/learn' },
+      { name: isRtl ? 'الرئيسية' : 'Home', path: '/' },
+      { name: isRtl ? 'التعلم' : 'Learn', path: '/learn' },
     ]),
   ]
 
