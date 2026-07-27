@@ -1,37 +1,69 @@
 import { MetadataRoute } from 'next'
+import { SITE_URL } from '@/lib/site-url'
+import { LEARN_PAGES } from '@/lib/public-learn'
 
-// Keep in sync with app/sitemap.ts — advertise the canonical production host,
-// never the Vercel preview URL.
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://app.vwelfare.com'
+const PHI_DISALLOW = [
+  '/dashboard',
+  '/assessments',
+  '/packages/',
+  '/adhd-zones',
+  '/mood',
+  '/insights',
+  '/journal',
+  '/messages',
+  '/notifications',
+  '/profile',
+  '/patients',
+  '/patient/',
+  '/clinician/',
+  '/onboarding',
+  '/forgot-password',
+  '/reset-password',
+  '/checkout',
+  '/connect/',
+  '/api/',
+  '/x/control',
+  '/billing',
+]
+
+const PUBLIC_ALLOW = [
+  '/',
+  '/learn',
+  '/learn/',
+  '/faq',
+  '/login',
+  '/register',
+  '/privacy',
+  '/terms',
+  '/sample-result',
+  '/clinicians',
+  '/contact',
+  '/packages',
+]
+
+/** Opt-out known model-training crawlers; search/answer bots use the default rule. */
+const TRAINING_BOTS = [
+  'GPTBot',
+  'Google-Extended',
+  'CCBot',
+  'anthropic-ai',
+  'Bytespider',
+  'FacebookBot',
+]
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: '*',
-      // Public marketing/auth-entry pages are crawlable; everything behind
-      // auth (PHI) and all internal/admin/API surfaces are disallowed.
-      allow: ['/', '/login', '/register', '/privacy', '/terms', '/sample-result', '/clinicians'],
-      disallow: [
-        '/dashboard',
-        '/assessments',
-        '/packages',
-        '/adhd-zones',
-        '/mood',
-        '/insights',
-        '/journal',
-        '/messages',
-        '/notifications',
-        '/profile',
-        '/patients',
-        '/patient/',
-        '/clinician/',
-        '/onboarding',
-        '/forgot-password',
-        '/reset-password',
-        '/api/',
-        '/x/control',
-      ],
-    },
-    sitemap: `${BASE}/sitemap.xml`,
+    rules: [
+      {
+        userAgent: TRAINING_BOTS,
+        disallow: ['/'],
+      },
+      {
+        userAgent: '*',
+        allow: PUBLIC_ALLOW,
+        disallow: PHI_DISALLOW,
+      },
+    ],
+    sitemap: `${SITE_URL}/sitemap.xml`,
   }
 }

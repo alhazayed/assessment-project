@@ -1,9 +1,17 @@
 import Link from 'next/link'
+import { publicPageMetadata } from '@/lib/public-metadata'
 import { getLanguage } from '@/lib/get-language'
 import { Mail, ArrowLeft } from 'lucide-react'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import LanguageToggle from '@/components/language-toggle'
+
+export const metadata = publicPageMetadata({
+  title: 'Contact Us',
+  description:
+    'Contact V Welfare for support, clinician onboarding, or partnership inquiries. Bilingual mental health screening platform in Arabic and English.',
+  path: '/contact',
+})
 
 export default async function ContactPage() {
   const lang = await getLanguage()

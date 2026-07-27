@@ -38,6 +38,16 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
+  // Honor ?lang=ar|en for crawlers and shared links (sets cookie on response).
+  const langParam = request.nextUrl.searchParams.get('lang')
+  if (langParam === 'ar' || langParam === 'en') {
+    supabaseResponse.cookies.set('lang', langParam, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: 'lax',
+    })
+  }
+
   // Keep every admin surface out of the Capacitor native app (defense in depth:
   // admin also requires an admin PIN that mobile patients/clinicians never
   // have). The native shell tags its WebView User-Agent; any admin deep link
@@ -84,7 +94,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/onboarding') ||
     pathname.startsWith('/notifications') ||
     pathname.startsWith('/assessments') ||
-    pathname.startsWith('/packages') ||
+    (pathname.startsWith('/packages/') && pathname.length > '/packages/'.length) ||
     pathname.startsWith('/adhd-zones') ||
     // Match the private /clinician/* area WITHOUT catching the public
     // /clinicians marketing page (startsWith('/clinician') matched both,

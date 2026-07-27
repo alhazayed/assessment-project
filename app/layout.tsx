@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from 'next'
+import type { Viewport } from 'next'
 import { headers } from 'next/headers'
 import { Inter, Tajawal } from 'next/font/google'
 import './globals.css'
@@ -34,48 +34,9 @@ export const viewport: Viewport = {
   themeColor: '#12273C',
 }
 
-export const metadata: Metadata = {
-  title: {
-    default: 'V Welfare — Mental Health Assessment Platform',
-    template: '%s | V Welfare',
-  },
-  description: 'Compassionate, science-backed mental health assessments and wellbeing tools. Take validated psychometric assessments in Arabic and English.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app'),
-  alternates: {
-    canonical: '/',
-    languages: {
-      'en': process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
-      'ar': `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app'}/?lang=ar`,
-      'x-default': process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
-    },
-  },
-  openGraph: {
-    type: 'website',
-    siteName: 'V Welfare',
-    title: 'V Welfare — Mental Health Assessment Platform',
-    description: 'Science-backed mental health assessments and wellbeing tools in Arabic and English.',
-    url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'V Welfare Mental Health Platform',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'V Welfare — Mental Health Assessment Platform',
-    description: 'Science-backed mental health assessments and wellbeing tools.',
-    images: ['/og-image.png'],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true },
-  },
-}
+import { rootSiteMetadata } from '@/lib/public-metadata'
+
+export const metadata = rootSiteMetadata()
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const lang = await getLanguage()

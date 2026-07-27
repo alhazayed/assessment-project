@@ -61,7 +61,7 @@ export default function LandingMobileMenu({ lang, isLoggedIn = false }: { lang: 
                 { href: '#services', labelKey: 'nav.services' as const },
                 { href: '#assessments', labelKey: 'nav.assessments' as const },
                 { href: '/packages', labelKey: 'nav.packages_menu' as const, badge: 'coming soon' as const },
-                { href: '/adhd-check-in', labelKey: 'nav.adhd_checkin' as const },
+                { href: '/learn/adhd-screening', labelKey: 'nav.adhd_checkin' as const },
                 { href: '#about', labelKey: 'nav.about' as const },
               ].map(item => (
                 <a

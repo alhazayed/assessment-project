@@ -820,6 +820,11 @@ const dict = {
 
     // Footer contact
     'footer.contact': 'Contact',
+    'footer.learn': 'Learn',
+    'footer.faq': 'FAQ',
+    'footer.privacy': 'Privacy',
+    'footer.terms': 'Terms',
+    'footer.clinicians': 'Clinicians',
 
     // In-progress assessments
     'assessments.in_progress': 'In Progress',
@@ -1690,6 +1695,11 @@ const dict = {
 
     // Footer contact
     'footer.contact': 'تواصل معنا',
+    'footer.learn': 'مكتبة التعلم',
+    'footer.faq': 'الأسئلة الشائعة',
+    'footer.privacy': 'الخصوصية',
+    'footer.terms': 'الشروط',
+    'footer.clinicians': 'للأطباء',
 
     // In-progress assessments
     'assessments.in_progress': 'قيد التنفيذ',
