@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getProfileCompletion } from '@/lib/profile-completion'
 import AssessmentContent from './assessment-content'
 
 interface Props {
@@ -35,15 +36,7 @@ export default async function TakeAssessmentPage(props: Props) {
       .single(),
   ])
 
-  const isProfileComplete =
-    profile?.date_of_birth &&
-    profile?.gender &&
-    profile?.marital_status &&
-    profile?.educational_status &&
-    profile?.country_of_residence &&
-    pp?.employment_status &&
-    pp?.has_psychiatric_medications !== null &&
-    pp?.has_psychiatric_medications !== undefined
+  const { isComplete: isProfileComplete } = getProfileCompletion(profile, pp)
 
   if (!isProfileComplete) {
     redirect(`/profile?complete=true&next=${encodeURIComponent(nextPath)}`)

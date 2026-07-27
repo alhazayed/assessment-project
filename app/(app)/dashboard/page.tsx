@@ -2,14 +2,16 @@ import { createClient } from '@/lib/supabase/server'
 import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
 import { localizeSeverity } from '@/lib/severity-labels'
+import { getProfileCompletion } from '@/lib/profile-completion'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ClipboardList, Heart, TrendingUp, AlertTriangle, CheckCircle2, ArrowRight, Activity, ChevronRight } from 'lucide-react'
 import type { Profile, AssessmentSubmission, MoodLog, AssessmentAssignment } from '@/lib/types'
 import CrisisBanner from '@/components/crisis-banner'
+import ProfileCompletionBanner from '@/components/profile-completion-banner'
 
 async function getPatientDashboard(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  const [submissions, moods, assignments] = await Promise.all([
+  const [submissions, moods, assignments, totalCountRes] = await Promise.all([
     supabase
       .from('assessment_submissions')
       .select('*, assessment_definitions(name_en, name_ar, code)')
@@ -28,12 +30,17 @@ async function getPatientDashboard(supabase: Awaited<ReturnType<typeof createCli
       .eq('patient_id', userId)
       .eq('status', 'pending')
       .limit(3),
+    supabase
+      .from('assessment_submissions')
+      .select('*', { count: 'exact', head: true })
+      .eq('patient_id', userId),
   ])
 
   return {
     submissions: submissions.data || [],
     moods: moods.data || [],
     pendingAssignments: assignments.data || [],
+    totalCompleted: totalCountRes.count ?? 0,
   }
 }
 
@@ -51,17 +58,17 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  const [{ data: profile }, { data: patientProfile }] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('patient_profiles').select('employment_status, has_psychiatric_medications, onboarding_completed_at').eq('id', user.id).single(),
+  ])
 
   const p = profile as Profile | null
 
   if (p?.role === 'admin' || p?.role === 'superadmin') redirect('/x/control')
 
-  const { submissions, moods, pendingAssignments } = await getPatientDashboard(supabase, user.id)
+  const profileCompletion = getProfileCompletion(profile, patientProfile)
+  const { submissions, moods, pendingAssignments, totalCompleted } = await getPatientDashboard(supabase, user.id)
   const latestMood = moods[0] as MoodLog | undefined
   const avgMood = moods.length > 0 ? Math.round(moods.reduce((sum, m) => sum + m.mood_score, 0) / moods.length) : null
   const rawName = p ? (lang === 'ar' && p.full_name_ar ? p.full_name_ar : p.full_name_en) : ''
@@ -78,6 +85,15 @@ export default async function DashboardPage() {
         </h1>
         <p style={{ color: 'var(--text-secondary)' }}>{t('dashboard.subtitle', lang)}</p>
       </div>
+
+      {!profileCompletion.isComplete && (
+        <ProfileCompletionBanner
+          lang={lang}
+          completed={profileCompletion.completed}
+          total={profileCompletion.total}
+          showOnboardingLink={!patientProfile?.onboarding_completed_at}
+        />
+      )}
 
       {/* Pending assignments banner */}
       {pendingAssignments.length > 0 && (
@@ -161,7 +177,7 @@ export default async function DashboardPage() {
               <CheckCircle2 className="w-5 h-5" style={{ color: '#1B8A5A' }} />
             </div>
           </div>
-          <p className="stat-value">{submissions.length}</p>
+          <p className="stat-value">{totalCompleted}</p>
           <p className="stat-sub">{lang === 'ar' ? 'تقييم مكتمل' : 'assessments completed'}</p>
         </div>
       </div>
@@ -192,15 +208,23 @@ export default async function DashboardPage() {
                 const def = (s as any).assessment_definitions
                 const sName = lang === 'ar' && def?.name_ar ? def.name_ar : def?.name_en
                 return (
-                  <div key={s.id} className="flex items-center justify-between py-3" style={{ borderBottom: '1px solid var(--divider)' }}>
+                  <Link
+                    key={s.id}
+                    href={`/assessments/${s.definition_id}/results/${s.id}`}
+                    className="flex items-center justify-between py-3 hover:opacity-80 transition-opacity"
+                    style={{ borderBottom: '1px solid var(--divider)' }}
+                  >
                     <div>
                       <p className="text-[13.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>{sName}</p>
                       <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
                         {new Date(s.submitted_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <span className={severityBadge(s.severity_band)}>{localizeSeverity(s.severity_band, lang)}</span>
-                  </div>
+                    <div className="flex items-center gap-2">
+                      <span className={severityBadge(s.severity_band)}>{localizeSeverity(s.severity_band, lang)}</span>
+                      <ChevronRight className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                    </div>
+                  </Link>
                 )
               })}
             </div>

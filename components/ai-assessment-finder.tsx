@@ -75,7 +75,7 @@ const STRINGS = {
   },
 }
 
-export default function AIAssessmentFinder({ lang: propLang }: { lang?: 'en' | 'ar' }) {
+export default function AIAssessmentFinder({ lang: propLang, profileComplete = true }: { lang?: 'en' | 'ar'; profileComplete?: boolean }) {
   const hookLang = useLang()
   const lang = propLang ?? hookLang
   const s = STRINGS[lang]
@@ -225,7 +225,10 @@ export default function AIAssessmentFinder({ lang: propLang }: { lang?: 'en' | '
                         {isAr ? rec.reason_ar : rec.reason_en}
                       </p>
                     </div>
-                    <Link href={`/assessments/${rec.id}`} className="flex-shrink-0 btn-primary text-xs px-3 py-1.5 gap-1.5">
+                    <Link
+                      href={profileComplete ? `/assessments/${rec.id}` : `/profile?complete=true&next=${encodeURIComponent(`/assessments/${rec.id}`)}`}
+                      className="flex-shrink-0 btn-primary text-xs px-3 py-1.5 gap-1.5"
+                    >
                       {s.start}
                       <ArrowRight className="w-3 h-3" />
                     </Link>
