@@ -4,10 +4,11 @@ import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
 import { localizeSeverity } from '@/lib/severity-labels'
 import Link from 'next/link'
-import { ClipboardList, CheckCircle2, Clock, AlertCircle, ChevronRight } from 'lucide-react'
+import { ClipboardList, CheckCircle2, Clock, AlertCircle, ChevronRight, Sparkles } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentAssignment, AssessmentSubmission } from '@/lib/types'
 import InProgressAssessments from '@/components/in-progress-assessments'
 import RescreeningTrigger from '@/components/rescreening-trigger'
+import AIAssessmentFinder from '@/components/ai-assessment-finder'
 
 function severityBadge(band: string) {
   const b = band.toLowerCase()
@@ -94,6 +95,26 @@ export default async function AssessmentsPage() {
           </div>
         </div>
       )}
+
+      {/* AI assessment recommender */}
+      <section className="mb-8">
+        <div className="max-w-2xl mx-auto mb-6 text-center">
+          <div
+            className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full mb-4"
+            style={{ background: '#FEF2EC', color: '#F3650A', border: '1px solid #FBC29D' }}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {t('landing.ai.badge', lang)}
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+            {t('landing.ai.title', lang)}
+          </h2>
+          <p style={{ color: 'var(--text-secondary)' }}>{t('landing.ai.sub', lang)}</p>
+        </div>
+        <div className="max-w-2xl mx-auto">
+          <AIAssessmentFinder lang={lang} />
+        </div>
+      </section>
 
       {/* Assigned assessments */}
       {assignments.length > 0 && (
