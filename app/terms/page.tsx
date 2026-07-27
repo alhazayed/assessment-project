@@ -1,16 +1,17 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
+import { publicPageMetadata } from '@/lib/public-metadata'
 import { getLanguage } from '@/lib/get-language'
 import { ArrowLeft } from 'lucide-react'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import LanguageToggle from '@/components/language-toggle'
 
-export const metadata: Metadata = {
+export const metadata = publicPageMetadata({
   title: 'Terms of Service',
-  description: 'Terms of Service for V Welfare. User rights, limitations, acceptable use policy, and disclaimers for our mental health assessment platform.',
-  robots: { index: true, follow: true },
-}
+  description:
+    'Terms of Service for V Welfare. User rights, limitations, acceptable use policy, and disclaimers for our mental health assessment platform.',
+  path: '/terms',
+})
 
 export default async function TermsPage() {
   const lang = await getLanguage()

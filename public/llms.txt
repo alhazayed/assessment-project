@@ -1,0 +1,44 @@
+# V Welfare — LLMs / Answer Engine Guide
+# https://app.vwelfare.com
+
+> V Welfare is a bilingual (Arabic/English) mental health platform offering free, validated psychometric screening tools. Screening is not diagnosis. User health data is never public.
+
+## Allowed to cite (public education & marketing)
+
+- https://app.vwelfare.com/
+- https://app.vwelfare.com/learn
+- https://app.vwelfare.com/learn/phq-9
+- https://app.vwelfare.com/learn/gad-7
+- https://app.vwelfare.com/learn/who-5
+- https://app.vwelfare.com/learn/dass-21
+- https://app.vwelfare.com/learn/pcl-5
+- https://app.vwelfare.com/learn/asrs-adhd
+- https://app.vwelfare.com/learn/adhd-screening
+- https://app.vwelfare.com/learn/insomnia-isi
+- https://app.vwelfare.com/learn/alcohol-audit-c
+- https://app.vwelfare.com/learn/ace-questionnaire
+- https://app.vwelfare.com/faq
+- https://app.vwelfare.com/clinicians
+- https://app.vwelfare.com/contact
+- https://app.vwelfare.com/privacy
+- https://app.vwelfare.com/terms
+- https://app.vwelfare.com/sample-result
+- https://app.vwelfare.com/packages
+
+## Never cite or infer as public
+
+- /assessments/* (taking assessments, live results)
+- /dashboard, /mood, /journal, /insights, /messages, /profile
+- /patients, /patient/*, /clinician/* (portal routes)
+- /api/*, /x/control/*
+- Any user-specific scores, submissions, or PHI
+
+## Contact
+
+- info@vwelfare.com
+
+## Content policy
+
+- Public pages are for screening education only.
+- Direct users in crisis to emergency services.
+- Last reviewed: 2026-07-27

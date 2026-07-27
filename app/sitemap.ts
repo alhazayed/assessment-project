@@ -1,39 +1,54 @@
 import { MetadataRoute } from 'next'
+import { SITE_URL } from '@/lib/site-url'
+import { LEARN_PAGES } from '@/lib/public-learn'
 
-// Canonical production domain. Falls back to it (not the Vercel preview URL)
-// so the sitemap/robots always advertise the real host even if the env var
-// is unset on a given deployment.
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://app.vwelfare.com'
-
-const publicRoutes = [
-  { path: '',        freq: 'weekly'  as const, priority: 1.0 },
-  { path: '/login',  freq: 'monthly' as const, priority: 0.5 },
-  { path: '/register', freq: 'monthly' as const, priority: 0.7 },
-  { path: '/privacy', freq: 'monthly' as const, priority: 0.4 },
-  { path: '/terms',   freq: 'monthly' as const, priority: 0.4 },
-  { path: '/sample-result', freq: 'monthly' as const, priority: 0.6 },
+const staticRoutes: { path: string; freq: 'weekly' | 'monthly'; priority: number }[] = [
+  { path: '', freq: 'weekly', priority: 1.0 },
+  { path: '/learn', freq: 'weekly', priority: 0.9 },
+  { path: '/faq', freq: 'monthly', priority: 0.85 },
+  { path: '/clinicians', freq: 'monthly', priority: 0.8 },
+  { path: '/contact', freq: 'monthly', priority: 0.7 },
+  { path: '/sample-result', freq: 'monthly', priority: 0.75 },
+  { path: '/packages', freq: 'monthly', priority: 0.6 },
+  { path: '/register', freq: 'monthly', priority: 0.7 },
+  { path: '/login', freq: 'monthly', priority: 0.5 },
+  { path: '/privacy', freq: 'monthly', priority: 0.4 },
+  { path: '/terms', freq: 'monthly', priority: 0.4 },
 ]
+
+function withAlternates(path: string) {
+  const url = `${SITE_URL}${path}`
+  return {
+    url,
+    alternates: {
+      languages: {
+        en: url,
+        ar: `${url}?lang=ar`,
+      },
+    },
+  }
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
   const entries: MetadataRoute.Sitemap = []
 
-  for (const route of publicRoutes) {
-    const url = `${BASE}${route.path}`
+  for (const route of staticRoutes) {
     entries.push({
-      url,
+      ...withAlternates(route.path),
       lastModified: now,
       changeFrequency: route.freq,
       priority: route.priority,
-      alternates: {
-        languages: {
-          en: url,
-          // None of these routes carry an existing query string, so the lang
-          // param is always introduced with '?'. The previous '&' for non-root
-          // paths produced malformed URLs and an unescaped-'&' XML parse error.
-          ar: `${url}?lang=ar`,
-        },
-      },
+    })
+  }
+
+  const learnSlugs = [...new Set(LEARN_PAGES.map(p => p.slug))]
+  for (const slug of learnSlugs) {
+    entries.push({
+      ...withAlternates(`/learn/${slug}`),
+      lastModified: now,
+      changeFrequency: 'monthly',
+      priority: 0.7,
     })
   }
 
