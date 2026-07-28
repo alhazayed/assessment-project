@@ -128,7 +128,7 @@ export default async function PackageDetailPage(props: { params: Promise<{ id: s
 
       {/* Back link */}
       <Link
-        href="/packages"
+        href="/my-packages"
         className="inline-flex items-center gap-1.5 text-[13px] mb-5 transition-colors hover:underline"
         style={{ color: 'var(--text-muted)' }}
       >
