@@ -275,12 +275,24 @@ export default function ProfilePage() {
   }
 
   async function handleDeleteAccount() {
-    if (!confirm('Are you sure? This will schedule your account for deletion within 30 days. This action cannot be undone.')) return
-    await fetch('/api/user/delete-request', { method: 'POST' })
-    // Sign out after requesting deletion
-    const supabaseClient = createClient()
-    await supabaseClient.auth.signOut()
-    router.push('/')
+    const confirmMsg = lang === 'ar'
+      ? 'هل أنت متأكد؟ سيتم جدولة حذف حسابك خلال 30 يوماً. لا يمكن التراجع عن هذا الإجراء.'
+      : 'Are you sure? This will schedule your account for deletion within 30 days. This action cannot be undone.'
+    if (!confirm(confirmMsg)) return
+    try {
+      const res = await fetch('/api/user/delete-request', { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert(data.error || (lang === 'ar' ? 'تعذّر إرسال الطلب. حاول مرة أخرى.' : 'Could not submit your request. Please try again.'))
+        return
+      }
+      // Sign out after a successfully recorded deletion request.
+      const supabaseClient = createClient()
+      await supabaseClient.auth.signOut()
+      router.push('/')
+    } catch {
+      alert(lang === 'ar' ? 'خطأ في الشبكة. حاول مرة أخرى.' : 'Network error. Please try again.')
+    }
   }
 
   const isAr = lang === 'ar'

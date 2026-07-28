@@ -11,6 +11,7 @@ type User = {
   is_active: boolean; created_at: string; language_preference: string
   email?: string | null
   submission_count?: number
+  deletion_requested_at?: string | null
 }
 
 type DeletePreview = {
@@ -206,6 +207,12 @@ export default function AdminUsersPage() {
                   )}
                   {u.email && <p className="text-[11.5px]" style={{ color: 'var(--text-secondary)' }}>{u.email}</p>}
                   {u.full_name_ar && <p className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{u.full_name_ar}</p>}
+                  {u.deletion_requested_at && (
+                    <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-red-50 text-red-600">
+                      <Trash2 className="w-3 h-3" />
+                      {lang === 'ar' ? `طلب حذف · ${new Date(u.deletion_requested_at).toLocaleDateString()}` : `Deletion requested · ${new Date(u.deletion_requested_at).toLocaleDateString()}`}
+                    </span>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <div className="relative inline-block">

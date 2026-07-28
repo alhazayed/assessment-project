@@ -14,7 +14,7 @@ export async function GET(request: Request) {
 
     const db = createAdminClient()
 
-    let query = db.from('profiles').select('id, full_name_en, full_name_ar, role, is_active, created_at, language_preference')
+    let query = db.from('profiles').select('id, full_name_en, full_name_ar, role, is_active, created_at, language_preference, deletion_requested_at')
 
     if (role && (ALLOWED_ROLES as readonly string[]).includes(role)) query = query.eq('role', role)
     if (search && typeof search === 'string' && search.length <= 100) {
