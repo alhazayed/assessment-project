@@ -183,7 +183,7 @@ export default function AssessmentsByCategory({ assessments, lang }: Props) {
                 </p>
               )}
               <Link
-                href={`/assessments/${a.id}`}
+                href={`/take/${a.id}`}
                 className="mt-4 btn-primary text-xs px-4 py-2 self-start gap-1.5"
               >
                 {t('assessments.start', lang)}

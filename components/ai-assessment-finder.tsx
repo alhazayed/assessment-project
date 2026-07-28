@@ -226,7 +226,7 @@ export default function AIAssessmentFinder({ lang: propLang, profileComplete = t
                       </p>
                     </div>
                     <Link
-                      href={profileComplete ? `/assessments/${rec.id}` : `/profile?complete=true&next=${encodeURIComponent(`/assessments/${rec.id}`)}`}
+                      href={`/take/${rec.id}`}
                       className="flex-shrink-0 btn-primary text-xs px-3 py-1.5 gap-1.5"
                     >
                       {s.start}
