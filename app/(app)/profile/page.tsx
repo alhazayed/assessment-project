@@ -600,7 +600,7 @@ export default function ProfilePage() {
 
       {/* Consent — patient only, outside the form */}
       {profile?.role === 'patient' && (
-        <div className="card p-6 mt-6">
+        <div id="consent" className="card p-6 mt-6 scroll-mt-24">
           <div className="flex items-center gap-2 mb-4">
             <Shield className="w-4 h-4" style={{ color: '#1D6296' }} />
             <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('profile.consent.title', lang)}</h2>

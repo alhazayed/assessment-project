@@ -1,3 +1,5 @@
+import { getArabicBandFallback } from './assessment-content-ar-fallback'
+
 export interface BandContent {
   explanation: string
   whatThisMeans: string[]
@@ -2282,11 +2284,21 @@ export function getLocalizedBandContent(code: string, band: string, lang: string
   if (!bc || lang !== 'ar' || !arContent) return bc
   const arAssessment = arContent[code]
   const arBand = arAssessment?.bands[band] ?? arAssessment?.bands[Object.keys(content.bands).at(-1) ?? ''] ?? null
+  if (arBand?.explanation) {
+    return {
+      explanation: arBand.explanation,
+      whatThisMeans: arBand.whatThisMeans ?? bc.whatThisMeans,
+      recommendations: arBand.recommendations ?? bc.recommendations,
+      relatedDisorders: arBand.relatedDisorders ?? bc.relatedDisorders,
+    }
+  }
+  // Scale-specific AR missing — use structured Arabic fallback (not raw English)
+  const fb = getArabicBandFallback(band)
   return {
-    explanation: arBand?.explanation ?? bc.explanation,
-    whatThisMeans: arBand?.whatThisMeans ?? bc.whatThisMeans,
-    recommendations: arBand?.recommendations ?? bc.recommendations,
-    relatedDisorders: arBand?.relatedDisorders ?? bc.relatedDisorders,
+    explanation: fb.explanation,
+    whatThisMeans: fb.whatThisMeans,
+    recommendations: fb.recommendations,
+    relatedDisorders: bc.relatedDisorders,
   }
 }
 
@@ -2295,8 +2307,14 @@ export function getLocalizedAssessmentMeta(code: string, lang: string, arContent
   if (!content) return null
   if (lang !== 'ar' || !arContent) return { overview: content.overview, measuresDomain: content.measuresDomain }
   const ar = arContent[code]
+  if (ar?.overview) {
+    return {
+      overview: ar.overview,
+      measuresDomain: ar.measuresDomain ?? content.measuresDomain,
+    }
+  }
   return {
-    overview: ar?.overview ?? content.overview,
+    overview: 'هذا مقياس نفسي مُعتمد يُستخدم كأداة فحص للتوعية الذاتية. النتائج ليست تشخيصاً طبياً.',
     measuresDomain: ar?.measuresDomain ?? content.measuresDomain,
   }
 }

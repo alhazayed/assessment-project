@@ -1,14 +1,18 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
-  ChevronLeft, ChevronRight, CheckCircle2, Loader2, CloudOff, Cloud,
+  ChevronLeft, ChevronRight, CheckCircle2, Loader2, CloudOff, Cloud, LogOut,
 } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentItem, ResponseOption } from '@/lib/types'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 import AssessmentResultView from '@/components/assessment-result-view'
+import ScreeningDisclaimer from '@/components/screening-disclaimer'
+import SafetyInterrupt from '@/components/safety-interrupt'
+import LanguageToggle from '@/components/language-toggle'
 
 interface Props {
   id: string
@@ -20,6 +24,7 @@ interface Props {
 export default function AssessmentContent({ id, userId, assignmentId }: Props) {
   const supabase = useMemo(() => createClient(), [])
   const lang = useLang()
+  const router = useRouter()
 
   const [definition, setDefinition] = useState<AssessmentDefinition | null>(null)
   const [items, setItems] = useState<AssessmentItem[]>([])
@@ -36,6 +41,9 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
   const [pendingResume, setPendingResume] = useState<{ answers: Record<string, { value: number; label_en: string; label_ar: string }>; currentIndex: number } | null>(null)
   const [syncState, setSyncState] = useState<'idle' | 'saving' | 'saved' | 'offline' | 'error'>('idle')
   const [isOnline, setIsOnline] = useState(true)
+  const [needsConsent, setNeedsConsent] = useState(false)
+  const [safetyInterrupt, setSafetyInterrupt] = useState(false)
+  const dismissedSafetyItems = useRef<Set<string>>(new Set())
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isFirstAnswerEffect = useRef(true)
 
@@ -94,11 +102,12 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
 
   useEffect(() => {
     async function load() {
-      const [defRes, itemsRes, draftRes, profileRes] = await Promise.all([
+      const [defRes, itemsRes, draftRes, profileRes, consentRes] = await Promise.all([
         supabase.from('assessment_definitions').select('*').eq('id', id).single(),
         supabase.from('assessment_items').select('*').eq('definition_id', id).order('item_number'),
         supabase.from('assessment_drafts').select('answers, current_index, updated_at').eq('patient_id', userId).eq('definition_id', id).maybeSingle(),
         supabase.from('profiles').select('full_name_en, full_name_ar').eq('id', userId).single(),
+        supabase.from('patient_profiles').select('consent_given_at').eq('id', userId).maybeSingle(),
       ])
       if (defRes.error || !defRes.data) { setLoadError(true); return }
       if (defRes.data) setDefinition(defRes.data as AssessmentDefinition)
@@ -106,6 +115,7 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
       if (profileRes.data) {
         setPatientNames({ en: profileRes.data.full_name_en, ar: profileRes.data.full_name_ar })
       }
+      setNeedsConsent(!consentRes.data?.consent_given_at)
 
       // Prefer the server draft (survives cleared storage / other devices);
       // fall back to localStorage if the server has nothing or is unreachable.
@@ -147,8 +157,41 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
     setPendingResume(null)
   }
 
+  function selectAnswer(item: AssessmentItem, opt: ResponseOption) {
+    setAnswers(prev => ({
+      ...prev,
+      [item.id]: { value: opt.value, label_en: opt.label_en, label_ar: opt.label_ar },
+    }))
+    // Soft safety interrupt for endorsed safety items (e.g. PHQ-9 Q9)
+    if (item.is_safety_item && opt.value > 0 && !dismissedSafetyItems.current.has(item.id)) {
+      setSafetyInterrupt(true)
+    }
+  }
+
+  async function giveConsentAndContinue() {
+    const { error: consentErr } = await supabase
+      .from('patient_profiles')
+      .upsert({ id: userId, consent_given_at: new Date().toISOString() })
+    if (consentErr) {
+      setError(lang === 'ar' ? 'تعذّر حفظ الموافقة. حاول مرة أخرى.' : 'Could not save consent. Please try again.')
+      return
+    }
+    await supabase.from('audit_log').insert({
+      actor_id: userId,
+      action: 'consent_given',
+      target_type: 'patient_profile',
+      target_id: userId,
+      reason: 'Informed consent before first saved assessment',
+    })
+    setNeedsConsent(false)
+  }
+
   async function handleSubmit() {
     if (!definition) return
+    if (needsConsent) {
+      setError(lang === 'ar' ? 'يرجى الموافقة على شروط الاستخدام قبل الحفظ.' : 'Please give informed consent before saving results.')
+      return
+    }
     setSubmitting(true)
     setError(null)
 
@@ -163,7 +206,13 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
     })
 
     if (!res.ok) {
-      setError(t('assessment.save_error', lang))
+      const payload = await res.json().catch(() => null)
+      if (res.status === 403 && payload?.code === 'consent_required') {
+        setNeedsConsent(true)
+        setError(lang === 'ar' ? 'الموافقة مطلوبة قبل حفظ النتائج.' : 'Consent is required before saving results.')
+      } else {
+        setError(t('assessment.save_error', lang))
+      }
       setSubmitting(false)
       return
     }
@@ -236,10 +285,44 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
 
   return (
     <div className="p-4 sm:p-6 lg:p-7 max-w-2xl mx-auto">
+      {safetyInterrupt && (
+        <SafetyInterrupt
+          lang={lang}
+          onContinue={() => {
+            const item = items[currentIndex]
+            if (item) dismissedSafetyItems.current.add(item.id)
+            setSafetyInterrupt(false)
+          }}
+          onPause={() => {
+            const item = items[currentIndex]
+            if (item) dismissedSafetyItems.current.add(item.id)
+            setSafetyInterrupt(false)
+            router.push('/dashboard')
+          }}
+        />
+      )}
+
+      {needsConsent && (
+        <div className="mb-4 card p-4 space-y-3" style={{ borderInlineStart: '4px solid #F3650A' }}>
+          <p className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>
+            {lang === 'ar' ? 'الموافقة المستنيرة مطلوبة' : 'Informed consent required'}
+          </p>
+          <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            {t('profile.consent.text', lang)}
+          </p>
+          <button type="button" onClick={giveConsentAndContinue} className="btn-primary">
+            {lang === 'ar' ? 'أوافق وأكمل' : 'I agree & continue'}
+          </button>
+        </div>
+      )}
+
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2 gap-2">
           <h1 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{defName}</h1>
-          <span className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{currentIndex + 1} {t('assessment.of', lang)} {items.length}</span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <LanguageToggle lang={lang} />
+            <span className="text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{currentIndex + 1} {t('assessment.of', lang)} {items.length}</span>
+          </div>
         </div>
         <div className="progress-track">
           <div className="progress-fill transition-all duration-300" style={{ width: `${progress}%`, backgroundColor: 'var(--vw-blue)' }} />
@@ -250,9 +333,20 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
             {syncState === 'saved' && (<><Cloud className="w-3 h-3 text-green-600" /> {lang === 'ar' ? 'تم الحفظ' : 'Saved'}</>)}
             {syncState === 'offline' && (<><CloudOff className="w-3 h-3 text-orange-500" /> {lang === 'ar' ? 'غير متصل — تم الحفظ محلياً' : 'Offline — saved locally'}</>)}
             {syncState === 'error' && (<><CloudOff className="w-3 h-3 text-red-500" /> {lang === 'ar' ? 'تعذّر الحفظ عبر الإنترنت — محفوظ محلياً' : 'Couldn’t sync online — saved locally'}</>)}
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard')}
+              className="ms-auto inline-flex items-center gap-1 text-[11.5px] font-semibold"
+              style={{ color: 'var(--vw-blue)' }}
+            >
+              <LogOut className="w-3 h-3" />
+              {lang === 'ar' ? 'حفظ والخروج' : 'Save & exit'}
+            </button>
           </p>
         )}
       </div>
+
+      <ScreeningDisclaimer lang={lang} className="mb-4" />
 
       {hasSavedProgress && (
         <div className="mb-4 p-3 rounded-xl border flex items-center justify-between gap-3" style={{ backgroundColor: '#EEF5FB', borderColor: '#1D6296' }}>
@@ -285,10 +379,7 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
             return (
               <button
                 key={opt.value}
-                onClick={() => setAnswers(prev => ({
-                  ...prev,
-                  [currentItem.id]: { value: opt.value, label_en: opt.label_en, label_ar: opt.label_ar }
-                }))}
+                onClick={() => selectAnswer(currentItem, opt)}
                 className={`w-full p-4 rounded-[12px] border-2 transition-all text-[13.5px] ${lang === 'ar' ? 'text-right' : 'text-left'}`}
                 style={currentAnswer?.value === opt.value
                   ? { borderColor: 'var(--vw-blue)', backgroundColor: '#EAF2F9', color: '#12273C' }
@@ -328,7 +419,7 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
         ) : (
           <button
             onClick={handleSubmit}
-            disabled={!allAnswered || submitting}
+            disabled={!allAnswered || submitting || needsConsent}
             className="btn-primary gap-2 disabled:opacity-40"
           >
             {submitting ? t('assessment.submitting', lang) : t('assessment.submit', lang)} <CheckCircle2 className="w-4 h-4" />

@@ -11,6 +11,7 @@ import InProgressAssessments from '@/components/in-progress-assessments'
 import RescreeningTrigger from '@/components/rescreening-trigger'
 import AIAssessmentFinder from '@/components/ai-assessment-finder'
 import ProfileCompletionBanner from '@/components/profile-completion-banner'
+import AssessmentsCatalog from '@/components/assessments-catalog'
 
 function severityBadge(band: string) {
   const b = band.toLowerCase()
@@ -146,75 +147,19 @@ export default async function AssessmentsPage() {
         </div>
       </section>
 
-      {/* Available assessments */}
-      <div className="mb-7">
-        <div className="flex items-center gap-2 mb-4">
-          <ClipboardList className="w-4 h-4" style={{ color: 'var(--text-icon)' }} />
-          <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
-            {t('assessments.available.title', lang)}
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          {allDefinitions.map((d) => {
-            const lastSubmission = submissions.find(s => s.definition_id === d.id)
-            const dName = lang === 'ar' && d.name_ar ? d.name_ar : d.name_en
-            const dDesc = lang === 'ar' && d.description_ar ? d.description_ar : d.description_en
-            const assessmentHref = `/assessments/${d.id}`
-            const profileHref = `/profile?complete=true&next=${encodeURIComponent(assessmentHref)}`
-            return (
-              <div key={d.id} className="card-hover p-5">
-                <div className="flex items-start justify-between mb-3 gap-2">
-                  <div className="min-w-0">
-                    <h3 className="text-[14.5px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{dName}</h3>
-                    <p className="section-label mt-0.5">{d.code}</p>
-                  </div>
-                  <span className="badge-neutral flex-shrink-0">
-                    {d.total_questions}{t('assessments.questions', lang)}
-                  </span>
-                </div>
-                {dDesc && (
-                  <p className="text-[13px] mb-4 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{dDesc}</p>
-                )}
-                {lastSubmission && (
-                  <div className="flex items-center gap-2 mb-3">
-                    <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#1B8A5A' }} />
-                    <span className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                      {t('assessments.last', lang)} {new Date(lastSubmission.submitted_at).toLocaleDateString()}
-                    </span>
-                    <span className={severityBadge(lastSubmission.severity_band)}>
-                      {localizeSeverity(lastSubmission.severity_band, lang)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  {isProfileComplete ? (
-                    <Link href={assessmentHref} className="btn-accent">
-                      {lastSubmission ? t('assessments.btn.retake', lang) : t('assessments.start', lang)}
-                    </Link>
-                  ) : (
-                    <Link href={profileHref} className="btn-accent">
-                      {lastSubmission ? t('assessments.btn.retake', lang) : t('assessments.start', lang)}
-                    </Link>
-                  )}
-                  {lastSubmission && (
-                    <>
-                      <Link
-                        href={`/assessments/${d.id}/results/${lastSubmission.id}`}
-                        className="btn-ghost flex items-center"
-                      >
-                        {t('assessments.score', lang)} {lastSubmission.total_score}
-                      </Link>
-                      <Link href={`/assessments/${d.id}/history`} className="btn-ghost flex items-center">
-                        {lang === 'ar' ? 'السجل والمقارنة' : 'History & compare'}
-                      </Link>
-                    </>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+      <div className="mb-4 flex items-center gap-2">
+        <ClipboardList className="w-4 h-4" style={{ color: 'var(--text-icon)' }} />
+        <h2 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
+          {t('assessments.available.title', lang)}
+        </h2>
       </div>
+
+      <AssessmentsCatalog
+        lang={lang}
+        definitions={allDefinitions}
+        submissions={submissions}
+        isProfileComplete={isProfileComplete}
+      />
 
       {/* History */}
       {submissions.length > 0 && (

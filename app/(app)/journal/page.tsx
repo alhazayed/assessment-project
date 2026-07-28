@@ -1,11 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { BookOpen, Plus, Save, X, AlertCircle } from 'lucide-react'
 import type { JournalEntry } from '@/lib/types'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import JournalResultPrompt from '@/components/journal-result-prompt'
 
 export default function JournalPage() {
   const supabase = useMemo(() => createClient(), [])
@@ -32,6 +33,17 @@ export default function JournalPage() {
   }, [supabase])
 
   useEffect(() => { loadEntries() }, [loadEntries])
+
+  useEffect(() => {
+    function onPrefill(e: Event) {
+      const detail = (e as CustomEvent<{ prompt: string }>).detail
+      if (!detail?.prompt) return
+      setNewEntry(detail.prompt + '\n\n')
+      setShowEditor(true)
+    }
+    window.addEventListener('vw-journal-prefill', onPrefill)
+    return () => window.removeEventListener('vw-journal-prefill', onPrefill)
+  }, [])
 
   async function handleSave() {
     if (!newEntry.trim()) return
@@ -65,7 +77,6 @@ export default function JournalPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-7 max-w-3xl">
-      {/* Header */}
       <div className="flex items-center justify-between mb-7">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
@@ -78,6 +89,10 @@ export default function JournalPage() {
           {t('journal.new', lang)}
         </button>
       </div>
+
+      <Suspense fallback={null}>
+        <JournalResultPrompt />
+      </Suspense>
 
       {/* Editor */}
       {showEditor && (

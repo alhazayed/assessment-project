@@ -11,10 +11,18 @@ import LanguageToggle from '@/components/language-toggle'
 import AssessmentResultView from '@/components/assessment-result-view'
 import type { Lang } from '@/lib/i18n'
 import type { AssessmentDefinition, AssessmentItem } from '@/lib/types'
+import { GUEST_CLAIM_STORAGE_KEY } from '@/lib/guest-claim'
 import { ChevronLeft, ChevronRight, Loader2, ShieldCheck, ArrowRight } from 'lucide-react'
 
 type Answer = { value: number; label_en: string; label_ar: string }
-type ResultShape = { submission_id: string; score: number; band_en: string | null; band_ar: string | null; high_risk: boolean }
+type ResultShape = {
+  submission_id: string
+  score: number
+  band_en: string | null
+  band_ar: string | null
+  high_risk: boolean
+  claim_token?: string
+}
 
 // Enum values mirror app/api/submit-assessment-guest/route.ts exactly.
 const GENDERS = ['male', 'female', 'non_binary', 'prefer_not_to_say'] as const
@@ -140,6 +148,13 @@ export default function GuestAssessment({ definitionId, lang }: { definitionId: 
       }
       try { localStorage.removeItem(storageKey) } catch {}
       setResult(data as ResultShape)
+      if (typeof data.claim_token === 'string') {
+        try {
+          const existing: string[] = JSON.parse(localStorage.getItem(GUEST_CLAIM_STORAGE_KEY) || '[]')
+          const next = Array.from(new Set([...existing, data.claim_token])).slice(-10)
+          localStorage.setItem(GUEST_CLAIM_STORAGE_KEY, JSON.stringify(next))
+        } catch {}
+      }
       setPhase('result')
     } catch {
       setError(tr('Network error. Please try again.', 'خطأ في الشبكة. حاول مرة أخرى.'))
@@ -194,9 +209,12 @@ export default function GuestAssessment({ definitionId, lang }: { definitionId: 
         <div className="max-w-3xl mx-auto">
           <div className="mx-4 mt-6 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3" style={{ background: '#EAF2F9', border: '1px solid #C7DFF0' }}>
             <p className="text-[13.5px]" style={{ color: '#12273C' }}>
-              {tr('Create a free account to save this result, track progress over time, and unlock more tools.', 'أنشئ حساباً مجانياً لحفظ هذه النتيجة وتتبّع تقدّمك مع الوقت والوصول إلى المزيد من الأدوات.')}
+              {tr(
+                'Create a free account to claim this result into your timeline and keep exploring yourself over time.',
+                'أنشئ حساباً مجانياً لنقل هذه النتيجة إلى خطّك الزمني ومواصلة اكتشاف نفسك مع الوقت.'
+              )}
             </p>
-            <Link href="/register" className="btn-accent whitespace-nowrap gap-2">{tr('Create account', 'إنشاء حساب')}<ArrowRight className="w-4 h-4" /></Link>
+            <Link href="/register?next=/dashboard" className="btn-accent whitespace-nowrap gap-2">{tr('Create account', 'إنشاء حساب')}<ArrowRight className="w-4 h-4" /></Link>
           </div>
           <AssessmentResultView
             lang={lang}

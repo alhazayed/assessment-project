@@ -273,17 +273,24 @@ export default function PackagesPage() {
             }}
           >
             {lang === 'ar'
-              ? 'اختر خطتك المثالية'
-              : 'Choose Your Perfect Plan'}
+              ? 'اختر خطتك (Plans)'
+              : 'Choose Your Plan'}
           </h1>
           <p
-            className="text-lg max-w-2xl mx-auto"
+            className="text-lg max-w-2xl mx-auto mb-4"
             style={{ color: 'var(--text-secondary)' }}
           >
             {lang === 'ar'
-              ? 'احصل على الوصول إلى تقييمات شاملة وأدوات تتبع الأعراض المتقدمة'
-              : 'Get access to comprehensive assessments and advanced symptom tracking'}
+              ? 'الخطط (Plans) للوصول والاشتراك. الملفات الشخصية (Profiles) مسارات اكتشاف الذات متعددة التقييمات.'
+              : 'Plans cover subscription access. Profiles are multi-assessment self-knowledge pathways.'}
           </p>
+          <Link
+            href="/my-packages"
+            className="inline-flex items-center gap-2 text-[14px] font-semibold"
+            style={{ color: '#1D6296' }}
+          >
+            {lang === 'ar' ? 'استكشف الملفات الشخصية →' : 'Explore Profiles →'}
+          </Link>
         </div>
 
         {/* Pricing Cards */}

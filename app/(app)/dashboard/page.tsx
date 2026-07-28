@@ -3,21 +3,26 @@ import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
 import { localizeSeverity } from '@/lib/severity-labels'
 import { getProfileCompletion } from '@/lib/profile-completion'
+import { PULSE_CODES } from '@/lib/self-knowledge'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ClipboardList, Heart, TrendingUp, AlertTriangle, CheckCircle2, ArrowRight, Activity, ChevronRight } from 'lucide-react'
+import { ClipboardList, Heart, TrendingUp, AlertTriangle, CheckCircle2, ArrowRight, Activity, ChevronRight, Sparkles } from 'lucide-react'
 import type { Profile, AssessmentSubmission, MoodLog, AssessmentAssignment } from '@/lib/types'
 import CrisisBanner from '@/components/crisis-banner'
 import ProfileCompletionBanner from '@/components/profile-completion-banner'
+import PulseCheckinCard, { type PulseItem } from '@/components/pulse-checkin-card'
+import SelfMapLink from '@/components/self-map-link'
+import LearnedTimeline, { type TimelineEntry } from '@/components/learned-timeline'
+import GuestClaimOnAuth from '@/components/guest-claim-on-auth'
 
 async function getPatientDashboard(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
-  const [submissions, moods, assignments, totalCountRes] = await Promise.all([
+  const [submissions, moods, assignments, totalCountRes, pulseDefs, latestByCode] = await Promise.all([
     supabase
       .from('assessment_submissions')
       .select('*, assessment_definitions(name_en, name_ar, code)')
       .eq('patient_id', userId)
       .order('submitted_at', { ascending: false })
-      .limit(5),
+      .limit(8),
     supabase
       .from('mood_logs')
       .select('*')
@@ -34,6 +39,17 @@ async function getPatientDashboard(supabase: Awaited<ReturnType<typeof createCli
       .from('assessment_submissions')
       .select('*', { count: 'exact', head: true })
       .eq('patient_id', userId),
+    supabase
+      .from('assessment_definitions')
+      .select('id, code, name_en, name_ar, total_questions')
+      .eq('is_active', true)
+      .in('code', [...PULSE_CODES]),
+    supabase
+      .from('assessment_submissions')
+      .select('definition_id, submitted_at, assessment_definitions(code)')
+      .eq('patient_id', userId)
+      .order('submitted_at', { ascending: false })
+      .limit(50),
   ])
 
   return {
@@ -41,6 +57,8 @@ async function getPatientDashboard(supabase: Awaited<ReturnType<typeof createCli
     moods: moods.data || [],
     pendingAssignments: assignments.data || [],
     totalCompleted: totalCountRes.count ?? 0,
+    pulseDefs: pulseDefs.data || [],
+    latestByCode: latestByCode.data || [],
   }
 }
 
@@ -52,6 +70,57 @@ function severityBadge(band: string) {
   return 'badge-severe'
 }
 
+function buildPulseItems(
+  lang: 'en' | 'ar',
+  pulseDefs: Array<{ id: string; code: string; name_en: string; name_ar: string | null; total_questions: number }>,
+  latestByCode: Array<{ definition_id: string; submitted_at: string; assessment_definitions: { code: string } | null }>,
+  totalCompleted: number
+): PulseItem[] {
+  const lastByCode = new Map<string, Date>()
+  for (const row of latestByCode) {
+    const code = row.assessment_definitions?.code
+    if (!code || lastByCode.has(code)) continue
+    lastByCode.set(code, new Date(row.submitted_at))
+  }
+
+  const now = Date.now()
+  const items: PulseItem[] = []
+
+  for (const code of PULSE_CODES) {
+    const def = pulseDefs.find(d => d.code === code)
+    if (!def) continue
+    const last = lastByCode.get(code)
+    const daysSince = last ? (now - last.getTime()) / (1000 * 60 * 60 * 24) : Infinity
+    // Suggest if never taken, or due for a pulse (≥14 days for brief scales)
+    if (daysSince < 14 && totalCompleted > 0) continue
+
+    const reasonEn =
+      !last
+        ? totalCompleted === 0
+          ? 'Start with a short first insight'
+          : 'Not taken yet — a good pulse check'
+        : `Last taken ${Math.round(daysSince)} days ago`
+    const reasonAr =
+      !last
+        ? totalCompleted === 0
+          ? 'ابدأ برؤية قصيرة أولى'
+          : 'لم يُؤخذ بعد — نبضة مناسبة'
+        : `آخر مرة منذ ${Math.round(daysSince)} يوماً`
+
+    items.push({
+      id: def.id,
+      code: def.code,
+      name_en: def.name_en,
+      name_ar: def.name_ar,
+      total_questions: def.total_questions,
+      reasonEn,
+      reasonAr,
+    })
+  }
+
+  return items.slice(0, 3)
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const lang = await getLanguage()
@@ -60,7 +129,7 @@ export default async function DashboardPage() {
 
   const [{ data: profile }, { data: patientProfile }] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
-    supabase.from('patient_profiles').select('employment_status, has_psychiatric_medications, onboarding_completed_at').eq('id', user.id).single(),
+    supabase.from('patient_profiles').select('employment_status, has_psychiatric_medications, onboarding_completed_at, consent_given_at').eq('id', user.id).single(),
   ])
 
   const p = profile as Profile | null
@@ -68,23 +137,60 @@ export default async function DashboardPage() {
   if (p?.role === 'admin' || p?.role === 'superadmin') redirect('/x/control')
 
   const profileCompletion = getProfileCompletion(profile, patientProfile)
-  const { submissions, moods, pendingAssignments, totalCompleted } = await getPatientDashboard(supabase, user.id)
+  const { submissions, moods, pendingAssignments, totalCompleted, pulseDefs, latestByCode } = await getPatientDashboard(supabase, user.id)
   const latestMood = moods[0] as MoodLog | undefined
   const avgMood = moods.length > 0 ? Math.round(moods.reduce((sum, m) => sum + m.mood_score, 0) / moods.length) : null
   const rawName = p ? (lang === 'ar' && p.full_name_ar ? p.full_name_ar : p.full_name_en) : ''
   const firstName = (rawName || user.email?.split('@')[0] || '').split(' ')[0]
+  const pulseItems = buildPulseItems(
+    lang,
+    pulseDefs as Array<{ id: string; code: string; name_en: string; name_ar: string | null; total_questions: number }>,
+    (latestByCode as unknown as Array<{ definition_id: string; submitted_at: string; assessment_definitions: { code: string } | null }>),
+    totalCompleted
+  )
+
+  const timelineEntries: TimelineEntry[] = (submissions as AssessmentSubmission[]).map(s => {
+    const def = (s as AssessmentSubmission & { assessment_definitions?: { name_en: string; name_ar: string; code: string } }).assessment_definitions
+    return {
+      id: s.id,
+      definitionId: s.definition_id,
+      code: def?.code ?? '',
+      nameEn: def?.name_en ?? '',
+      nameAr: def?.name_ar ?? null,
+      score: s.total_score,
+      band: s.severity_band,
+      submittedAt: s.submitted_at,
+      highRisk: s.high_risk_flag,
+    }
+  })
 
   return (
     <div className="p-4 sm:p-6 lg:p-7 max-w-6xl">
+      <GuestClaimOnAuth />
       <CrisisBanner lang={lang} />
 
-      {/* Page header */}
       <div className="mb-8">
         <h1 className="text-3xl font-extrabold tracking-tight mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}>
           {t('dashboard.welcome', lang)}, {firstName}
         </h1>
         <p style={{ color: 'var(--text-secondary)' }}>{t('dashboard.subtitle', lang)}</p>
       </div>
+
+      {!patientProfile?.consent_given_at && (
+        <div className="mb-5 p-4 rounded-xl" style={{ background: '#FEF2EC', border: '1px solid #FBC29D' }}>
+          <p className="text-[13.5px] font-semibold mb-1" style={{ color: '#C2560A' }}>
+            {lang === 'ar' ? 'الموافقة المستنيرة مطلوبة' : 'Informed consent needed'}
+          </p>
+          <p className="text-[13px] mb-2" style={{ color: 'var(--text-secondary)' }}>
+            {lang === 'ar'
+              ? 'قبل حفظ نتائج التقييمات، يرجى تأكيد موافقتك في الملف الشخصي.'
+              : 'Before saving assessment results, please confirm consent in your profile.'}
+          </p>
+          <Link href="/profile#consent" className="text-[13px] font-semibold" style={{ color: '#F3650A' }}>
+            {lang === 'ar' ? 'فتح الملف الشخصي' : 'Open profile'} →
+          </Link>
+        </div>
+      )}
 
       {!profileCompletion.isComplete && (
         <ProfileCompletionBanner
@@ -95,7 +201,27 @@ export default async function DashboardPage() {
         />
       )}
 
-      {/* Pending assignments banner */}
+      {totalCompleted === 0 && (
+        <div className="mb-6 card p-5 flex flex-col sm:flex-row sm:items-center gap-4" style={{ borderInlineStart: '4px solid var(--vw-blue)' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#EAF2F9' }}>
+            <Sparkles className="w-5 h-5" style={{ color: 'var(--vw-blue)' }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
+              {lang === 'ar' ? 'ابدأ أول رؤية عن نفسك' : 'Start your first insight'}
+            </p>
+            <p className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
+              {lang === 'ar'
+                ? 'اختر ما تريد فهمه — مزاج، قلق، نوم، أو شخصية — وسنقترح تقييماً مناسباً.'
+                : 'Pick what you want to understand — mood, anxiety, sleep, or personality — and we’ll suggest a fitting assessment.'}
+            </p>
+          </div>
+          <Link href="/first-insight" className="btn-primary flex-shrink-0">
+            {lang === 'ar' ? 'ابدأ' : 'Begin'}
+          </Link>
+        </div>
+      )}
+
       {pendingAssignments.length > 0 && (
         <div className="safety-strip mb-6">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" style={{ color: '#F3650A' }} />
@@ -105,7 +231,7 @@ export default async function DashboardPage() {
             </p>
             <div className="flex flex-wrap gap-2">
               {pendingAssignments.map((a: AssessmentAssignment) => {
-                const def = (a as any).assessment_definitions
+                const def = (a as AssessmentAssignment & { assessment_definitions?: { name_en: string; name_ar: string } }).assessment_definitions
                 const aName = lang === 'ar' && def?.name_ar ? def.name_ar : def?.name_en
                 return (
                   <Link
@@ -124,9 +250,14 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Stat cards */}
+      <PulseCheckinCard lang={lang} items={pulseItems} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-7">
+        <SelfMapLink lang={lang} />
+        <LearnedTimeline lang={lang} entries={timelineEntries} />
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-7">
-        {/* Mood card */}
         <div className="stat-card">
           <div className="flex items-center justify-between mb-4">
             <span className="stat-label">{t('dashboard.mood.card', lang)}</span>
@@ -151,7 +282,6 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* Avg mood */}
         <div className="stat-card">
           <div className="flex items-center justify-between mb-4">
             <span className="stat-label">{t('dashboard.mood.avg', lang)}</span>
@@ -169,7 +299,6 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* Completions */}
         <div className="stat-card">
           <div className="flex items-center justify-between mb-4">
             <span className="stat-label">{t('dashboard.done', lang)}</span>
@@ -182,9 +311,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Recent assessments */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('dashboard.recent', lang)}</h2>
@@ -198,14 +325,14 @@ export default async function DashboardPage() {
                 <ClipboardList className="w-6 h-6" style={{ color: 'var(--text-muted)' }} />
               </div>
               <p className="text-[13.5px] mb-4" style={{ color: 'var(--text-secondary)' }}>{t('dashboard.no_assessments', lang)}</p>
-              <Link href="/assessments" className="btn-accent">
-                {t('dashboard.take_one', lang)}
+              <Link href="/first-insight" className="btn-accent">
+                {lang === 'ar' ? 'أول رؤية' : 'First insight'}
               </Link>
             </div>
           ) : (
             <div className="space-y-1">
-              {submissions.map((s: AssessmentSubmission) => {
-                const def = (s as any).assessment_definitions
+              {submissions.slice(0, 5).map((s: AssessmentSubmission) => {
+                const def = (s as AssessmentSubmission & { assessment_definitions?: { name_en: string; name_ar: string } }).assessment_definitions
                 const sName = lang === 'ar' && def?.name_ar ? def.name_ar : def?.name_en
                 return (
                   <Link
@@ -231,7 +358,6 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        {/* Mood chart */}
         <div className="card p-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('dashboard.mood_week', lang)}</h2>
@@ -267,12 +393,11 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Quick links */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
         {[
           { href: '/assessments', label: lang === 'ar' ? 'التقييمات' : 'Assessments', icon: ClipboardList, color: '#EAF2F9', iconColor: '#1D6296' },
           { href: '/mood', label: lang === 'ar' ? 'المزاج' : 'Mood Tracker', icon: Heart, color: '#FDE8E8', iconColor: '#C02A2A' },
-          { href: '/insights', label: lang === 'ar' ? 'الإحصائيات' : 'Insights', icon: TrendingUp, color: '#E6F4EC', iconColor: '#1B8A5A' },
+          { href: '/insights#self-map', label: lang === 'ar' ? 'خريطتي' : 'Self Map', icon: TrendingUp, color: '#E6F4EC', iconColor: '#1B8A5A' },
           { href: '/journal', label: lang === 'ar' ? 'اليوميات' : 'Journal', icon: Activity, color: '#FEF2EC', iconColor: '#F3650A' },
         ].map(item => (
           <Link
