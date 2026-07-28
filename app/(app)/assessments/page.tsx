@@ -3,11 +3,14 @@ import { redirect } from 'next/navigation'
 import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
 import { localizeSeverity } from '@/lib/severity-labels'
+import { getProfileCompletion } from '@/lib/profile-completion'
 import Link from 'next/link'
-import { ClipboardList, CheckCircle2, Clock, AlertCircle, ChevronRight } from 'lucide-react'
+import { ClipboardList, CheckCircle2, Clock, AlertCircle, ChevronRight, Sparkles } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentAssignment, AssessmentSubmission } from '@/lib/types'
 import InProgressAssessments from '@/components/in-progress-assessments'
 import RescreeningTrigger from '@/components/rescreening-trigger'
+import AIAssessmentFinder from '@/components/ai-assessment-finder'
+import ProfileCompletionBanner from '@/components/profile-completion-banner'
 
 function severityBadge(band: string) {
   const b = band.toLowerCase()
@@ -42,7 +45,7 @@ export default async function AssessmentsPage() {
       .single(),
     supabase
       .from('patient_profiles')
-      .select('employment_status, has_psychiatric_medications')
+      .select('employment_status, has_psychiatric_medications, onboarding_completed_at')
       .eq('id', user.id)
       .single(),
   ])
@@ -50,15 +53,8 @@ export default async function AssessmentsPage() {
   const allDefinitions = (defsRes.data || []) as AssessmentDefinition[]
   const assignments = (aRes.data || []) as (AssessmentAssignment & { assessment_definitions: any })[]
   const submissions = (sRes.data || []) as (AssessmentSubmission & { assessment_definitions: any })[]
-
-  const pd = profileRes.data
-  const ppd = ppRes.data
-  const isProfileComplete = !!(
-    pd?.date_of_birth && pd?.gender && pd?.marital_status &&
-    pd?.educational_status && pd?.country_of_residence &&
-    ppd?.employment_status &&
-    ppd?.has_psychiatric_medications !== null && ppd?.has_psychiatric_medications !== undefined
-  )
+  const profileCompletion = getProfileCompletion(profileRes.data, ppRes.data)
+  const { isComplete: isProfileComplete, completed, total } = profileCompletion
 
   return (
     <div className="p-4 sm:p-6 lg:p-7 max-w-6xl">
@@ -70,32 +66,16 @@ export default async function AssessmentsPage() {
         <p style={{ color: 'var(--text-secondary)' }}>{t('assessments.page.sub', lang)}</p>
       </div>
 
-      {/* Profile incomplete banner */}
       {!isProfileComplete && (
-        <div className="mb-6 rounded-xl p-4 flex items-start gap-3" style={{ background: '#FEF2EC', border: '1px solid #F3C5A0' }}>
-          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#F3650A' }} />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold" style={{ color: '#9B3D08' }}>
-              {lang === 'ar' ? 'يرجى إكمال ملفك الشخصي لبدء التقييم' : 'Complete your profile to unlock assessments'}
-            </p>
-            <p className="text-xs mt-1 leading-relaxed" style={{ color: '#C2560A' }}>
-              {lang === 'ar'
-                ? 'يجب تعبئة البيانات الشخصية (تاريخ الميلاد، الجنس، الحالة الاجتماعية، التعليم، الدولة، الوظيفة، وحالة الأدوية) قبل بدء أي تقييم.'
-                : 'Biographical data — date of birth, gender, marital status, education, country, employment, and medication status — must be filled before starting any assessment.'}
-            </p>
-            <Link
-              href="/profile?complete=true"
-              className="inline-flex items-center gap-1 text-xs font-semibold mt-2 hover:underline"
-              style={{ color: '#9B3D08' }}
-            >
-              {lang === 'ar' ? 'اذهب إلى ملفي الشخصي' : 'Go to my profile'}
-              <ChevronRight className="w-3 h-3" />
-            </Link>
-          </div>
-        </div>
+        <ProfileCompletionBanner
+          lang={lang}
+          completed={completed}
+          total={total}
+          showOnboardingLink={!ppRes.data?.onboarding_completed_at}
+        />
       )}
 
-      {/* Assigned assessments */}
+      {/* Assigned assessments — priority over AI recommender */}
       {assignments.length > 0 && (
         <div className="mb-7">
           <div className="flex items-center gap-2 mb-3">
@@ -128,7 +108,10 @@ export default async function AssessmentsPage() {
                         {t('assessments.btn.start', lang)}
                       </Link>
                     ) : (
-                      <Link href="/profile?complete=true" className="btn-ghost flex-shrink-0 text-xs" style={{ opacity: 0.7 }}>
+                      <Link
+                        href={`/profile?complete=true&next=${encodeURIComponent(`/assessments/${a.definition_id}?assignment=${a.id}`)}`}
+                        className="btn-ghost flex-shrink-0 text-xs"
+                      >
                         {lang === 'ar' ? 'أكمل ملفك' : 'Complete profile'}
                       </Link>
                     )}
@@ -143,6 +126,26 @@ export default async function AssessmentsPage() {
       <RescreeningTrigger />
       <InProgressAssessments definitions={allDefinitions} lang={lang} userId={user.id} />
 
+      {/* AI assessment recommender */}
+      <section className="mb-8">
+        <div className="max-w-2xl mx-auto mb-6 text-center">
+          <div
+            className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full mb-4"
+            style={{ background: '#FEF2EC', color: '#F3650A', border: '1px solid #FBC29D' }}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {t('landing.ai.badge', lang)}
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+            {t('landing.ai.title', lang)}
+          </h2>
+          <p style={{ color: 'var(--text-secondary)' }}>{t('landing.ai.sub', lang)}</p>
+        </div>
+        <div className="max-w-2xl mx-auto">
+          <AIAssessmentFinder lang={lang} profileComplete={isProfileComplete} />
+        </div>
+      </section>
+
       {/* Available assessments */}
       <div className="mb-7">
         <div className="flex items-center gap-2 mb-4">
@@ -156,6 +159,8 @@ export default async function AssessmentsPage() {
             const lastSubmission = submissions.find(s => s.definition_id === d.id)
             const dName = lang === 'ar' && d.name_ar ? d.name_ar : d.name_en
             const dDesc = lang === 'ar' && d.description_ar ? d.description_ar : d.description_en
+            const assessmentHref = `/assessments/${d.id}`
+            const profileHref = `/profile?complete=true&next=${encodeURIComponent(assessmentHref)}`
             return (
               <div key={d.id} className="card-hover p-5">
                 <div className="flex items-start justify-between mb-3 gap-2">
@@ -181,28 +186,28 @@ export default async function AssessmentsPage() {
                     </span>
                   </div>
                 )}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {isProfileComplete ? (
-                    <Link href={`/assessments/${d.id}`} className="btn-accent">
+                    <Link href={assessmentHref} className="btn-accent">
                       {lastSubmission ? t('assessments.btn.retake', lang) : t('assessments.start', lang)}
                     </Link>
                   ) : (
-                    <span
-                      className="btn-accent opacity-40 cursor-not-allowed select-none"
-                      title={lang === 'ar' ? 'أكمل ملفك الشخصي أولاً' : 'Complete your profile first'}
-                    >
+                    <Link href={profileHref} className="btn-accent">
                       {lastSubmission ? t('assessments.btn.retake', lang) : t('assessments.start', lang)}
-                    </span>
-                  )}
-                  {lastSubmission && (
-                    <span className="btn-ghost flex items-center">
-                      {t('assessments.score', lang)} {lastSubmission.total_score}
-                    </span>
-                  )}
-                  {lastSubmission && (
-                    <Link href={`/assessments/${d.id}/history`} className="btn-ghost flex items-center">
-                      {lang === 'ar' ? 'السجل والمقارنة' : 'History & compare'}
                     </Link>
+                  )}
+                  {lastSubmission && (
+                    <>
+                      <Link
+                        href={`/assessments/${d.id}/results/${lastSubmission.id}`}
+                        className="btn-ghost flex items-center"
+                      >
+                        {t('assessments.score', lang)} {lastSubmission.total_score}
+                      </Link>
+                      <Link href={`/assessments/${d.id}/history`} className="btn-ghost flex items-center">
+                        {lang === 'ar' ? 'السجل والمقارنة' : 'History & compare'}
+                      </Link>
+                    </>
                   )}
                 </div>
               </div>
@@ -226,9 +231,10 @@ export default async function AssessmentsPage() {
               const def = s.assessment_definitions
               const sName = lang === 'ar' && def?.name_ar ? def.name_ar : def?.name_en
               return (
-                <div
+                <Link
                   key={s.id}
-                  className="flex items-center justify-between p-4 min-w-0 gap-3"
+                  href={`/assessments/${s.definition_id}/results/${s.id}`}
+                  className="flex items-center justify-between p-4 min-w-0 gap-3 hover:opacity-80 transition-opacity"
                   style={{ borderBottom: i < submissions.length - 1 ? '1px solid var(--divider)' : 'none' }}
                 >
                   <div className="min-w-0 flex-1">
@@ -238,10 +244,10 @@ export default async function AssessmentsPage() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className="text-[13px] font-bold hidden sm:inline" style={{ color: 'var(--text-secondary)' }}>{t('assessments.score', lang)} {s.total_score}</span>
                     <span className={`${severityBadge(s.severity_band)} hidden sm:inline-flex`}>{localizeSeverity(s.severity_band, lang)}</span>
-                    {s.high_risk_flag && <AlertCircle className="w-4 h-4" style={{ color: '#C02A2A' }} aria-label="High risk" />}
+                    {s.high_risk_flag && <AlertCircle className="w-4 h-4" style={{ color: '#C02A2A' }} aria-label={lang === 'ar' ? 'خطر مرتفع' : 'High risk'} />}
                     <ChevronRight className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
                   </div>
-                </div>
+                </Link>
               )
             })}
             </div>

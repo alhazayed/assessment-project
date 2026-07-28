@@ -15,6 +15,11 @@ import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import LandingMobileMenu from '@/components/landing-mobile-menu'
 import AIAssessmentFinder from '@/components/ai-assessment-finder'
+import {
+  organizationSchema,
+  webApplicationSchema,
+  webSiteSchema,
+} from '@/lib/geo-schema'
 
 export default async function LandingPage() {
   const supabase = await createClient()
@@ -70,7 +75,7 @@ export default async function LandingPage() {
                 coming soon
               </span>
             </a>
-            <a href="/adhd-check-in" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.adhd_checkin', lang)}</a>
+            <a href="/learn/adhd-screening" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.adhd_checkin', lang)}</a>
             <a href="#about" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.about', lang)}</a>
           </nav>
 
@@ -345,10 +350,15 @@ export default async function LandingPage() {
             <span className="text-[12.5px] ms-1" style={{ color: '#4A7A9B' }}>{t('app.tagline', lang)}</span>
           </div>
           <div className="flex items-center flex-wrap justify-center gap-5 text-[13px]" style={{ color: '#4A7A9B' }}>
+            <Link href="/learn" className="hover:text-white transition-colors">{t('footer.learn', lang)}</Link>
+            <Link href="/faq" className="hover:text-white transition-colors">{t('footer.faq', lang)}</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">{t('footer.privacy', lang)}</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">{t('footer.terms', lang)}</Link>
+            <Link href="/contact" className="hover:text-white transition-colors">{t('footer.contact', lang)}</Link>
+            <Link href="/clinicians" className="hover:text-white transition-colors">{t('footer.clinicians', lang)}</Link>
             <a href="#assessments" className="hover:text-white transition-colors">{t('nav.assessments', lang)}</a>
             <Link href="/login" className="hover:text-white transition-colors">{t('nav.signin', lang)}</Link>
             <Link href="/register" className="hover:text-white transition-colors">{t('nav.create_account', lang)}</Link>
-            <a href="mailto:info@vwelfare.com" className="hover:text-white transition-colors">{t('footer.contact', lang)}</a>
           </div>
           <p className="text-[11.5px] text-center md:text-end" style={{ color: '#2E4A62' }}>
             {t('footer.disclaimer', lang)}
@@ -361,29 +371,9 @@ export default async function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify([
-            {
-              '@context': 'https://schema.org',
-              '@type': 'WebApplication',
-              name: 'V Welfare',
-              url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
-              description: 'Compassionate, science-backed mental health assessments and wellbeing tools in Arabic and English.',
-              applicationCategory: 'HealthApplication',
-              operatingSystem: 'Web',
-              inLanguage: ['ar', 'en'],
-              offers: {
-                '@type': 'Offer',
-                price: '0',
-                priceCurrency: 'SAR',
-                description: 'Free mental health assessments and wellbeing tools',
-              },
-            },
-            {
-              '@context': 'https://schema.org',
-              '@type': 'Organization',
-              name: 'V Welfare',
-              url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vwelfare.vercel.app',
-              description: 'Compassionate mental health assessment and wellbeing platform offering validated psychometric tools in Arabic and English.',
-            },
+            organizationSchema(),
+            webSiteSchema(),
+            webApplicationSchema(),
           ]),
         }}
       />

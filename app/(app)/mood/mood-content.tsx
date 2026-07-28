@@ -298,7 +298,10 @@ export default function MoodContent() {
             <Heart className="w-7 h-7" style={{ color: '#C02A2A' }} />
           </div>
           <h3 className="text-base font-bold mb-1.5" style={{ color: 'var(--text-primary)' }}>{t('mood.log', lang)}</h3>
-          <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>{t('mood.subtitle', lang)}</p>
+          <p className="text-[13.5px] mb-4" style={{ color: 'var(--text-secondary)' }}>{t('mood.subtitle', lang)}</p>
+          <button type="button" onClick={() => setShowForm(true)} className="btn-accent">
+            {t('mood.empty_cta', lang)}
+          </button>
         </div>
       ) : (
         <div className="space-y-4">

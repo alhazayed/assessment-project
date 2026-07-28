@@ -1,45 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
-import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import {
-  ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle,
-  BookOpen, FlaskConical, ArrowRight, Brain, Loader2, CloudOff, Cloud,
+  ChevronLeft, ChevronRight, CheckCircle2, Loader2, CloudOff, Cloud,
 } from 'lucide-react'
 import type { AssessmentDefinition, AssessmentItem, ResponseOption } from '@/lib/types'
-import { getAssessmentContent, getLocalizedBandContent, getLocalizedAssessmentMeta, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
-import { ASSESSMENT_CONTENT_AR } from '@/lib/assessment-content-ar'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
-import AttemptCompareCard from '@/components/attempt-compare-card'
-import CrisisBanner from '@/components/crisis-banner'
-
-// @react-pdf/renderer is a heavy dependency — only load it once the user has
-// an actual result to export, not on every visit to the assessment-taking flow.
-const AssessmentPdfDownloadButton = dynamic(
-  () => import('./pdf-download-button').then(m => m.AssessmentPdfDownloadButton),
-  { ssr: false, loading: () => <span className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px]" style={{ color: 'var(--text-muted)' }}><Loader2 className="w-4 h-4 animate-spin" /></span> }
-)
-
-function severityColor(band: string) {
-  const b = band.toLowerCase()
-  if (b.includes('minimal') || b.includes('none') || b.includes('normal') || b.includes('low') || b.includes('negative') || b.includes('below') || b.includes('no ')) return 'badge-minimal border'
-  if (b.includes('mild') || b.includes('subthreshold') || b.includes('moderate risk')) return 'badge-mild border'
-  if (b.includes('moderate') || b.includes('possible')) return 'badge-moderate border'
-  return 'badge-severe border'
-}
-
-interface RelatedAssessment {
-  id: string
-  code: string
-  name_en: string
-  name_ar: string
-  description_en: string | null
-  description_ar: string | null
-  total_questions: number
-}
+import AssessmentResultView from '@/components/assessment-result-view'
 
 interface Props {
   id: string
@@ -54,15 +23,13 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
 
   const [definition, setDefinition] = useState<AssessmentDefinition | null>(null)
   const [items, setItems] = useState<AssessmentItem[]>([])
-  const [relatedAssessments, setRelatedAssessments] = useState<RelatedAssessment[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, { value: number; label_en: string; label_ar: string }>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [result, setResult] = useState<{ score: number; band_en: string; band_ar: string; high_risk: boolean } | null>(null)
-  const [completedOn, setCompletedOn] = useState<string>('')
+  const [submissionId, setSubmissionId] = useState<string | null>(null)
   const [patientNames, setPatientNames] = useState<{ en: string; ar: string | null }>({ en: '', ar: null })
-  const [domainScores, setDomainScores] = useState<Record<string, number> | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [hasSavedProgress, setHasSavedProgress] = useState(false)
@@ -180,30 +147,10 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
     setPendingResume(null)
   }
 
-  async function loadRelated(code: string) {
-    const content = getAssessmentContent(code)
-    if (!content || content.relatedCodes.length === 0) return
-    const { data } = await supabase
-      .from('assessment_definitions')
-      .select('id, code, name_en, name_ar, description_en, description_ar, total_questions')
-      .in('code', content.relatedCodes)
-      .eq('is_active', true)
-    if (data) setRelatedAssessments(data as RelatedAssessment[])
-  }
-
   async function handleSubmit() {
     if (!definition) return
     setSubmitting(true)
     setError(null)
-
-    if (definition.code === 'IPIP120') {
-      const scores: Record<string, number> = { N: 0, E: 0, O: 0, A: 0, C: 0 }
-      items.forEach(item => {
-        const domain = item.subscale?.charAt(0)
-        if (domain && domain in scores) scores[domain] += answers[item.id]?.value ?? 0
-      })
-      setDomainScores(scores)
-    }
 
     const responsePayload = items
       .filter(item => answers[item.id] !== undefined)
@@ -225,10 +172,9 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
     try { localStorage.removeItem(storageKey) } catch {}
     await supabase.from('assessment_drafts').delete().eq('patient_id', userId).eq('definition_id', definition.id)
     setResult({ score: data.score, band_en: data.band_en, band_ar: data.band_ar, high_risk: data.high_risk })
-    setCompletedOn(new Date().toLocaleDateString(lang === 'ar' ? 'ar' : 'en', { year: 'numeric', month: 'long', day: 'numeric' }))
+    setSubmissionId(data.submission_id ?? null)
     setSubmitted(true)
     setSubmitting(false)
-    await loadRelated(definition.code)
   }
 
   if (loadError) {
@@ -261,221 +207,23 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
   }
 
   if (submitted && result) {
-    const isHighRisk = result.high_risk
-    const assessmentMeta = getLocalizedAssessmentMeta(definition.code, lang, ASSESSMENT_CONTENT_AR)
-    const bandContent = getLocalizedBandContent(definition.code, result.band_en, lang, ASSESSMENT_CONTENT_AR)
-    const displayBand = lang === 'ar' ? result.band_ar : result.band_en
-    const isPositive = result.band_en.toLowerCase().includes('minimal') || result.band_en.toLowerCase().includes('none') || result.band_en.toLowerCase().includes('normal') || result.band_en.toLowerCase().includes('low risk') || result.band_en.toLowerCase().includes('below') || result.band_en.toLowerCase().includes('no problem')
-    const defName = lang === 'ar' && definition.name_ar ? definition.name_ar : definition.name_en
-
     return (
-      <div className="py-8 px-4 max-w-3xl mx-auto space-y-6">
-
-        <div className="card p-8 text-center">
-          {isHighRisk ? (
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-8 h-8 text-red-600" />
-            </div>
-          ) : (
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isPositive ? 'bg-green-100' : 'bg-orange-100'}`}>
-              <CheckCircle2 className={`w-8 h-8 ${isPositive ? 'text-green-600' : 'text-orange-500'}`} />
-            </div>
-          )}
-          <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.score', lang)}</h2>
-          <p className="text-[13.5px] mb-6" style={{ color: 'var(--text-muted)' }}>{defName}</p>
-          <div className="rounded-xl p-6 mb-4 inline-block min-w-48" style={{ backgroundColor: 'var(--surface-alt)' }}>
-            <p className="text-5xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{result.score}</p>
-            <p className={`text-[11px] mb-3 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`} style={{ color: 'var(--text-muted)' }}>{t('assessment.result.score', lang)}</p>
-            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${severityColor(result.band_en)}`}>
-              {displayBand}
-            </span>
-          </div>
-
-          {isHighRisk && (
-            <div className={`mt-4 alert-error ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-              <p className="text-sm font-semibold mb-1">⚠ {t('assessment.high_risk_note', lang)}</p>
-              <p className="text-sm">{t('assessment.result.high_risk', lang)}</p>
-            </div>
-          )}
-
-          {/* Same crisis-resources banner shown on the dashboard — a patient
-              who just received a high-risk result should see hotline numbers
-              immediately, not only later if they happen to visit the dashboard. */}
-          {isHighRisk && <div className="mt-4"><CrisisBanner lang={lang} /></div>}
-
-          <p className="mt-4 text-[13.5px] text-green-600 flex items-center justify-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4" /> {t('assessment.result.saved', lang)}
-          </p>
-
-          {patientNames.en && (
-            <div className="mt-4 flex justify-center">
-              <AssessmentPdfDownloadButton
-                lang={lang as 'en' | 'ar'}
-                patientName={(lang === 'ar' && patientNames.ar) ? patientNames.ar : patientNames.en}
-                assessmentName={defName}
-                assessmentCode={definition.code}
-                completedOn={completedOn}
-                score={result.score}
-                band={displayBand}
-                highRisk={isHighRisk}
-                explanation={bandContent?.explanation ?? ''}
-                whatThisMeans={bandContent?.whatThisMeans ?? []}
-                recommendations={bandContent?.recommendations ?? []}
-                labelDownload={t('assessment.result.download_pdf', lang)}
-                labelGenerating={t('assessment.result.generating_pdf', lang)}
-              />
-            </div>
-          )}
-        </div>
-
-        <AttemptCompareCard definitionId={definition.id} lang={lang} />
-
-        {definition.code === 'IPIP120' && domainScores && (
-          <div className="card p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Brain className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
-              <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{lang === 'ar' ? 'ملفك الشخصي' : 'Your Personality Profile'}</h3>
-            </div>
-            <p className="text-[11.5px] mb-5" style={{ color: 'var(--text-muted)' }}>{lang === 'ar' ? 'النتائج تتراوح 24–120 لكل بُعد. منخفض <65 · متوسط 65–88 · مرتفع >88' : 'Scores range 24–120 per domain. Low <65 · Average 65–88 · High >88'}</p>
-            <div className="space-y-4">
-              {Object.entries(IPIP_DOMAINS).map(([key, info]) => {
-                const score = domainScores[key] ?? 0
-                const level = getIpipDomainLevel(score)
-                const pct = Math.round(((score - 24) / 96) * 100)
-                const desc = lang === 'ar' ? info[`${level}_ar`] : info[level]
-                return (
-                  <div key={key}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{lang === 'ar' ? info.label_ar : info.label}</span>
-                        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border capitalize ${info.color}`}>{level}</span>
-                      </div>
-                      <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{score}</span>
-                    </div>
-                    <div className="progress-track mb-1.5">
-                      <div className="progress-fill transition-all" style={{ width: `${pct}%`, backgroundColor: 'var(--vw-blue)' }} />
-                    </div>
-                    <p className="text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{desc}</p>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {assessmentMeta && (
-          <div className="card p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <BookOpen className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
-              <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.about', lang)}</h3>
-            </div>
-            <p className="text-[13.5px] leading-relaxed mb-2" style={{ color: 'var(--text-secondary)' }}>{assessmentMeta.overview}</p>
-            <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
-              <span className="font-medium">{t('assessment.result.measures', lang)}:</span> {assessmentMeta.measuresDomain}
-            </p>
-          </div>
-        )}
-
-        {bandContent && (
-          <div className="card p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <FlaskConical className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
-              <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
-                {t('assessment.result.what_means', lang)} —{' '}
-                <span className={`text-[12px] font-medium px-2 py-0.5 rounded-full ${severityColor(result.band_en)}`}>{displayBand}</span>
-              </h3>
-            </div>
-
-            <p className="text-[13.5px] leading-relaxed mb-5" style={{ color: 'var(--text-secondary)' }}>{bandContent.explanation}</p>
-
-            {bandContent.whatThisMeans.length > 0 && (
-              <div className="mb-5">
-                <p className={`text-[11px] font-semibold mb-2 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`} style={{ color: 'var(--text-muted)' }}>{t('assessment.result.key_points', lang)}</p>
-                <ul className="space-y-2">
-                  {bandContent.whatThisMeans.map((point, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>
-                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2" style={{ backgroundColor: 'var(--vw-blue)' }} />
-                      {point}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {bandContent.recommendations.length > 0 && (
-              <div className="p-4 rounded-xl" style={{ backgroundColor: '#EAF2F9', border: '1px solid #C7DFF0' }}>
-                <p className={`text-[11px] font-semibold mb-2 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`} style={{ color: 'var(--vw-blue)' }}>{t('assessment.result.recommendations', lang)}</p>
-                <ul className="space-y-2">
-                  {bandContent.recommendations.map((rec, i) => (
-                    <li key={i} className="flex items-start gap-2 text-[13.5px]" style={{ color: '#12273C' }}>
-                      <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: 'var(--vw-blue)' }} />
-                      {rec}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-        {bandContent && bandContent.relatedDisorders.length > 0 && (
-          <div className="card p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Brain className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
-              <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.related_conditions', lang)}</h3>
-            </div>
-            <p className="text-[11.5px] mb-4" style={{ color: 'var(--text-muted)' }}>{t('assessment.result.clinician_note', lang)}</p>
-            <div className="space-y-3">
-              {bandContent.relatedDisorders.map((disorder, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-[10px]" style={{ backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border-subtle)' }}>
-                  <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ backgroundColor: 'var(--vw-blue)' }} />
-                  <div>
-                    <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{disorder.name}</p>
-                    <p className="text-[11.5px] mt-0.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{disorder.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {relatedAssessments.length > 0 && (
-          <div className="card p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <ArrowRight className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
-              <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.related_assessments', lang)}</h3>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {relatedAssessments.map((ra) => {
-                const raName = lang === 'ar' && ra.name_ar ? ra.name_ar : ra.name_en
-                const raDesc = lang === 'ar' && ra.description_ar ? ra.description_ar : ra.description_en
-                return (
-                  <Link
-                    key={ra.id}
-                    href={`/assessments/${ra.id}`}
-                    className="card-hover p-4 group"
-                  >
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: 'var(--vw-blue)' }}>{ra.code}</span>
-                      <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>{ra.total_questions}{t('assessments.questions', lang)}</span>
-                    </div>
-                    <p className="text-[13.5px] font-medium leading-snug" style={{ color: 'var(--text-primary)' }}>{raName}</p>
-                    {raDesc && (
-                      <p className="text-[11.5px] mt-1 line-clamp-2" style={{ color: 'var(--text-muted)' }}>{raDesc}</p>
-                    )}
-                    <p className="text-[12px] mt-2 font-medium" style={{ color: 'var(--vw-blue)' }}>{t('assessment.result.take', lang)} →</p>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        <div className="flex gap-3 justify-center pb-8">
-          <Link href="/assessments" className="btn-secondary">{t('nav.assessments', lang)}</Link>
-          <Link href="/dashboard" className="btn-primary">{t('nav.dashboard', lang)}</Link>
-        </div>
-      </div>
+      <>
+        <p className="text-center text-[13.5px] text-green-600 flex items-center justify-center gap-1.5 pt-6">
+          <CheckCircle2 className="w-4 h-4" /> {t('assessment.result.saved', lang)}
+        </p>
+        <AssessmentResultView
+          lang={lang}
+          definition={definition}
+          score={result.score}
+          bandEn={result.band_en}
+          bandAr={result.band_ar}
+          highRisk={result.high_risk}
+          submittedAt={new Date().toISOString()}
+          patientNames={patientNames}
+          submissionId={submissionId ?? undefined}
+        />
+      </>
     )
   }
 

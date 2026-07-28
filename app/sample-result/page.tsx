@@ -1,9 +1,17 @@
 import Link from 'next/link'
+import { publicPageMetadata } from '@/lib/public-metadata'
 import { getLanguage } from '@/lib/get-language'
 import { ArrowLeft, AlertTriangle, CheckCircle2, ChevronRight, ClipboardList, Info } from 'lucide-react'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import LanguageToggle from '@/components/language-toggle'
+
+export const metadata = publicPageMetadata({
+  title: 'Sample Assessment Result',
+  description:
+    'See an example of V Welfare mental health screening results with clinical interpretations, recommendations, and related assessments. For illustration only.',
+  path: '/sample-result',
+})
 
 export default async function SampleResultPage() {
   const lang = await getLanguage()
@@ -22,11 +30,11 @@ export default async function SampleResultPage() {
   ]
 
   const followUps = isRtl ? [
-    { name: 'مقياس القلق العام - GAD-7', desc: 'لتقييم مستوى القلق المصاحب للاكتئاب', href: '/assessments' },
-    { name: 'مقياس الاكتئاب والقلق والضغط - DASS-21', desc: 'تقييم شامل لثلاثة أبعاد نفسية', href: '/assessments' },
+    { name: 'مقياس القلق العام - GAD-7', desc: 'لتقييم مستوى القلق المصاحب للاكتئاب', href: '/learn/gad-7' },
+    { name: 'مقياس الاكتئاب والقلق والضغط - DASS-21', desc: 'تقييم شامل لثلاثة أبعاد نفسية', href: '/learn/dass-21' },
   ] : [
-    { name: 'Generalized Anxiety Disorder Scale - GAD-7', desc: 'To assess anxiety levels accompanying depression', href: '/assessments' },
-    { name: 'Depression Anxiety Stress Scale - DASS-21', desc: 'Comprehensive assessment across three psychological dimensions', href: '/assessments' },
+    { name: 'Generalized Anxiety Disorder Scale - GAD-7', desc: 'To assess anxiety levels accompanying depression', href: '/learn/gad-7' },
+    { name: 'Depression Anxiety Stress Scale - DASS-21', desc: 'Comprehensive assessment across three psychological dimensions', href: '/learn/dass-21' },
   ]
 
   return (
