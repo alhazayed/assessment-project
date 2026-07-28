@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   Link2,
   CreditCard,
+  Sparkles,
 } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 import type { Lang } from '@/lib/i18n'
@@ -65,10 +66,11 @@ export default function Sidebar({ profile, lang, showPackages = false, isMobileA
   const patientNav = [
     { href: '/dashboard',          label: t('nav.dashboard', lang),   icon: LayoutDashboard, badge: undefined },
     { href: '/assessments',        label: t('nav.assessments', lang),  icon: ClipboardList,   badge: undefined },
-    ...(showPackages ? [{ href: '/packages', label: t('nav.packages', lang), icon: Layers, badge: t('nav.packages_badge', lang) }] : []),
+    ...(showPackages ? [{ href: '/my-packages', label: t('nav.packages', lang), icon: Layers, badge: undefined }] : []),
     { href: '/adhd-zones',         label: t('nav.adhd_zones', lang),   icon: Brain,           badge: undefined },
     { href: '/mood',               label: t('nav.mood', lang),         icon: Heart,           badge: undefined },
     { href: '/journal',            label: t('nav.journal', lang),      icon: BookOpen,        badge: undefined },
+    { href: '/ai',                 label: t('nav.ai', lang),           icon: Sparkles,        badge: undefined },
     { href: '/insights',           label: t('nav.insights', lang),     icon: LineChart,       badge: undefined },
     { href: '/messages',           label: t('nav.messages', lang),     icon: MessageSquare,   badge: undefined },
     { href: '/patient/clinicians', label: lang === 'ar' ? 'طاقمي الطبي' : 'My Clinicians',    icon: UserCheck,   badge: undefined },

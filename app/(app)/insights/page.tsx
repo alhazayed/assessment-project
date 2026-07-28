@@ -7,6 +7,7 @@ import { Flame, TrendingUp, Calendar, BarChart2 } from 'lucide-react'
 import Link from 'next/link'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import SynthesisCard from '@/components/synthesis-card'
 
 // recharts (used inside MentalHealthRadar) is a heavy dependency (~100KB+ with
 // its d3 internals) that was previously bundled into every visit to this page
@@ -146,6 +147,9 @@ export default function InsightsPage() {
           {scoreHistory.length > 0 && (
             <MentalHealthRadar scoreHistory={scoreHistory} isAr={isAr} />
           )}
+
+          {/* AI "Full Picture" synthesis across all assessment scales */}
+          <SynthesisCard isAr={isAr} />
 
           {/* Streak card */}
           <div className="card p-6 flex items-center gap-5">

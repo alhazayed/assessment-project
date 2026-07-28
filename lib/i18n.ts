@@ -778,6 +778,7 @@ const dict = {
     'report.download': 'Download Report',
     'report.generating': 'Generating…',
     'nav.insights': 'My Insights',
+    'nav.ai': 'Wafi AI',
 
     // Onboarding wizard
     'onboarding.title': 'Welcome to V Welfare',
@@ -1653,6 +1654,7 @@ const dict = {
     'report.download': 'تنزيل التقرير',
     'report.generating': 'جارٍ الإنشاء…',
     'nav.insights': 'رؤاي',
+    'nav.ai': 'وافي',
 
     // Onboarding wizard
     'onboarding.title': 'مرحباً بك في V Welfare',
