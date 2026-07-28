@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 
 /**
  * GET /api/health
@@ -12,10 +12,13 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function GET() {
   let databaseOk = false
 
-  // Check database connectivity.
+  // Check database connectivity using the anon client (RLS-restricted) rather
+  // than the service-role client — a public, unauthenticated probe must not run
+  // queries with the RLS-bypassing service role. assessment_definitions is
+  // publicly readable, so this still verifies DB reachability.
   try {
-    const admin = createAdminClient()
-    const { error } = await admin.from('assessment_definitions').select('id').limit(1)
+    const supabase = await createClient()
+    const { error } = await supabase.from('assessment_definitions').select('id').limit(1)
     databaseOk = !error
   } catch {
     databaseOk = false

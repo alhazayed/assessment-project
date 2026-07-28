@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 /**
  * GET /api/assessment-history?definition_id=<uuid>
@@ -18,6 +19,12 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // Returns full item-level answer history — cap per-user to prevent scraping.
+    const rl = await checkRateLimit(`assessment-history:${user.id}`, { limit: 60, windowMs: 5 * 60 * 1000 })
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests. Please try again shortly.' }, { status: 429 })
+    }
 
     const { searchParams } = new URL(request.url)
     const definitionId = searchParams.get('definition_id')

@@ -1,12 +1,22 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { checkRateLimit } from '@/lib/rate-limit'
 import { buildContentDisposition, getMimeTypeForFormat } from '@/lib/security/file-export'
 
 export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // This returns the caller's full PHI export — cap it to prevent scraping/abuse.
+  const rl = await checkRateLimit(`export-data:${user.id}`, { limit: 5, windowMs: 24 * 60 * 60 * 1000 })
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Export limit reached. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': '86400' } }
+    )
+  }
 
   const [{ data: profile }, { data: assessments }, { data: mood }, { data: journal }] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
