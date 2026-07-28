@@ -189,12 +189,14 @@ async function countUserData(db: ReturnType<typeof createAdminClient>, userId: s
  * Allows for recovery and preserves referential integrity
  */
 async function softDeleteUserData(db: ReturnType<typeof createAdminClient>, userId: string) {
-  // Soft delete profile (mark as inactive)
+  // Soft delete profile (mark as inactive). Clear any pending GDPR deletion
+  // request so the account no longer shows as "deletion requested" once actioned.
   await db
     .from('profiles')
     .update({
       is_active: false,
       deactivated_at: new Date().toISOString(),
+      deletion_requested_at: null,
     })
     .eq('id', userId)
 }

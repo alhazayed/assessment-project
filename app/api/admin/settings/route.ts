@@ -42,6 +42,10 @@ export async function PATCH(request: Request) {
       updated_at: new Date().toISOString(),
       updated_by: user.id,
     }).eq('key', key)
+    await db.from('audit_log').insert({
+      actor_id: user.id, action: 'platform_setting_update', target_type: 'platform_setting', target_id: key,
+      reason: `key=${key}`,
+    }).then(() => {}, () => {})
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

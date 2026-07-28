@@ -23,10 +23,14 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    await requireAdmin()
+    const { user } = await requireAdmin()
     const { id, is_active } = await request.json()
     const db = createAdminClient()
     await db.from('assessment_definitions').update({ is_active }).eq('id', id)
+    await db.from('audit_log').insert({
+      actor_id: user.id, action: 'assessment_definition_update', target_type: 'assessment_definition', target_id: id,
+      reason: `is_active=${is_active}`,
+    }).then(() => {}, () => {})
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -24,6 +24,10 @@ export async function PATCH(request: Request) {
     const { id, is_enabled } = await request.json()
     const db = createAdminClient()
     await db.from('feature_flags').update({ is_enabled, updated_at: new Date().toISOString(), updated_by: user.id }).eq('id', id)
+    await db.from('audit_log').insert({
+      actor_id: user.id, action: 'feature_flag_update', target_type: 'feature_flag', target_id: id,
+      reason: `is_enabled=${is_enabled}`,
+    }).then(() => {}, () => {})
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

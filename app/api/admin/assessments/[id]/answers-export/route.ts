@@ -100,6 +100,19 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
     }
     rows.sort((a, b) => String(a[2]).localeCompare(String(b[2])) || Number(a[14]) - Number(b[14]))
 
+    // Audit this PHI-level export (who exported which assessment's answers, and volume).
+    try {
+      await db.from('audit_log').insert({
+        actor_id: user.id,
+        action: 'data_export',
+        target_type: 'assessment_answers',
+        target_id: definitionId,
+        details: { format: 'csv', assessment_code: code, row_count: rows.length, filters },
+      })
+    } catch (auditErr) {
+      console.error('[answers-export] audit log failed (non-fatal):', auditErr instanceof Error ? auditErr.message : 'unknown')
+    }
+
     const dateStr = new Date().toISOString().slice(0, 10)
     const csv = rowsToCsv(headers, rows)
     return new NextResponse(csv, {
