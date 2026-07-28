@@ -5,6 +5,7 @@ import { checkRateLimit } from '@/lib/rate-limit'
 import { clinicianHasPatientAccess } from '@/lib/authz/clinician-access'
 import { logClinicianPhiAccess } from '@/lib/audit/phi-access'
 import { scrubPHI } from '@/lib/security/anonymizePHI'
+import { verifyAdminSession } from '@/lib/admin-auth'
 
 async function requireClinician() {
   const supabase = await createClient()
@@ -12,6 +13,13 @@ async function requireClinician() {
   if (!user) return null
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (!profile || !['clinician', 'admin', 'superadmin'].includes(profile.role)) return null
+  // Admins reach cross-patient clinical data on this route without the per-patient
+  // relationship checks that clinicians go through, so an admin caller must hold a
+  // valid admin PIN session (second factor) — the Supabase `admin` role alone is
+  // not sufficient. Clinicians are unaffected (gated by clinicianHasPatientAccess).
+  if (['admin', 'superadmin'].includes(profile.role) && !(await verifyAdminSession())) {
+    return null
+  }
   return { user, supabase }
 }
 

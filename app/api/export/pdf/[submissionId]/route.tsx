@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { clinicianHasPatientAccess } from '@/lib/authz/clinician-access'
+import { verifyAdminSession } from '@/lib/admin-auth'
 
 // Per-submission PDF export — the endpoint the mobile Results screen calls
 // (GET /api/export/pdf/<submissionId> with a Bearer token). Also accepts a web
@@ -89,10 +90,13 @@ export async function GET(request: Request, props: { params: Promise<{ submissio
     if (!sub) return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
 
     // Authorization — same model as production RLS (owner / admin / consented clinician).
+    // Admin access to another patient's PHI additionally requires a valid admin
+    // PIN session (verifyAdminSession), matching /api/reports — the Supabase
+    // `admin` role alone (without the PIN second factor) is not sufficient.
     let allowed = sub.patient_id === userId
     if (!allowed) {
       const { data: prof } = await db.from('profiles').select('role').eq('id', userId).single()
-      if (prof && ['admin', 'superadmin'].includes(prof.role)) {
+      if (prof && ['admin', 'superadmin'].includes(prof.role) && (await verifyAdminSession())) {
         allowed = true
       } else {
         allowed = await clinicianHasPatientAccess(db, userId, sub.patient_id, 'view_reports')
