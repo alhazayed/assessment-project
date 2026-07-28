@@ -19,9 +19,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function GET(request: Request) {
   try {
     const { role } = await requireAdmin()
-    if (!['admin', 'superadmin'].includes(role)) {
+    // Payments are superadmin-only at the RLS layer; match that here (this route
+    // uses the service-role client, which bypasses RLS).
+    if (role !== 'superadmin') {
       return NextResponse.json(
-        { error: 'Only admin+ can view payments' },
+        { error: 'Only a superadmin can view payments' },
         { status: 403 }
       )
     }

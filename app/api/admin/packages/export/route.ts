@@ -5,7 +5,12 @@ import { checkRateLimit } from '@/lib/rate-limit'
 import { buildContentDisposition, getMimeTypeForFormat } from '@/lib/security/file-export'
 
 export async function GET(req: Request) {
-  const { user: adminUser } = await requireAdmin()
+  const { user: adminUser, role } = await requireAdmin()
+  // This export includes user identifiers alongside clinical risk text, so it is
+  // superadmin-only (matching the platform's other PHI/identifier exports).
+  if (role !== 'superadmin') {
+    return NextResponse.json({ error: 'Only a superadmin can export package results' }, { status: 403 })
+  }
 
   const rl = await checkRateLimit(`admin-export-packages:${adminUser.id}`, { limit: 10, windowMs: 60 * 60 * 1000 })
   if (!rl.allowed) {
@@ -48,14 +53,28 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Failed to fetch results' }, { status: 500 })
   }
 
-  // Fetch user emails for the user_ids present
+  // Fetch user names (profiles.full_name/email don't exist — names are *_en/_ar
+  // and email lives in auth.users). Build id -> {name, email} maps.
   const userIds = Array.from(new Set((results ?? []).map(r => r.user_id)))
   const { data: profiles } = await db
     .from('profiles')
-    .select('id, full_name, email')
+    .select('id, full_name_en, full_name_ar')
     .in('id', userIds)
 
   const profileMap = new Map((profiles ?? []).map(p => [p.id, p]))
+
+  // Email lives in auth.users — resolve via the admin API (paginated).
+  const emailMap = new Map<string, string>()
+  try {
+    const perPage = 50
+    for (let pageNum = 1; pageNum <= 200; pageNum++) {
+      const { data: authData, error: authErr } = await db.auth.admin.listUsers({ page: pageNum, perPage })
+      const authUsers = authData?.users || []
+      if (authErr || authUsers.length === 0) break
+      for (const au of authUsers) if (au.email) emailMap.set(au.id, au.email)
+      if (authUsers.length < perPage) break
+    }
+  } catch { /* email is best-effort */ }
 
   // Build CSV
   const headers = [
@@ -101,8 +120,8 @@ export async function GET(req: Request) {
       pkg?.name_en ?? '',
       pkg?.category ?? '',
       r.user_id,
-      profile?.full_name ?? '',
-      profile?.email ?? '',
+      (profile as { full_name_en?: string } | undefined)?.full_name_en ?? '',
+      emailMap.get(r.user_id) ?? '',
       r.composite_score ?? '',
       r.band_en ?? '',
       r.status,

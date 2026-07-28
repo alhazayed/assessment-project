@@ -10,9 +10,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function GET(request: Request) {
   try {
     const { role } = await requireAdmin()
-    if (!['admin', 'superadmin'].includes(role)) {
+    if (role !== 'superadmin') {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Only a superadmin can view payment statistics' },
         { status: 403 }
       )
     }

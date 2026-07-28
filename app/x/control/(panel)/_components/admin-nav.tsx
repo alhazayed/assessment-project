@@ -27,7 +27,8 @@ export default function AdminNav({ role }: { role: string }) {
   const NAV = [
     { href: '/x/control/overview',      label: t('admin.nav.overview', lang),       icon: LayoutDashboard },
     { href: '/x/control/analytics',     label: t('admin.nav.analytics', lang),      icon: TrendingUp },
-    { href: '/x/control/revenue',       label: t('admin.nav.revenue', lang),        icon: DollarSign },
+    // Revenue/financial data is superadmin-only (payments RLS is superadmin-only).
+    ...(role === 'superadmin' ? [{ href: '/x/control/revenue', label: t('admin.nav.revenue', lang), icon: DollarSign }] : []),
     { href: '/x/control/users',         label: t('admin.nav.users', lang),          icon: Users },
     { href: '/x/control/verifications', label: t('admin.nav.verifications', lang),  icon: ShieldCheck },
     { href: '/x/control/assessments',   label: t('admin.nav.assessments', lang),    icon: ClipboardList },

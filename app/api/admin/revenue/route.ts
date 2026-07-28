@@ -13,8 +13,10 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const { role } = await requireAdmin()
-    if (!['admin', 'superadmin'].includes(role)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    // Financial data: the payments table is superadmin-only at the RLS layer, so
+    // gate this service-role revenue API to superadmin to match that boundary.
+    if (role !== 'superadmin') {
+      return NextResponse.json({ error: 'Only a superadmin can view revenue' }, { status: 403 })
     }
 
     const db = createAdminClient()
