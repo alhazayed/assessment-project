@@ -82,6 +82,19 @@ export async function PATCH(request: Request) {
     }
 
     const db = createAdminClient()
+
+    // Target-role guard: only a superadmin may modify a privileged (admin or
+    // superadmin) account — otherwise a regular admin could demote or deactivate
+    // a superadmin (or fight other admins) via the service-role client, which
+    // bypasses the DB trigger. Fetch the target's current role first.
+    const { data: target } = await db.from('profiles').select('role').eq('id', id).single()
+    if (!target) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+    if (['admin', 'superadmin'].includes(target.role) && callerRole !== 'superadmin') {
+      return NextResponse.json({ error: 'Only a superadmin can modify an admin or superadmin account' }, { status: 403 })
+    }
+
     const update: Record<string, unknown> = {}
 
     if (is_active !== undefined) {

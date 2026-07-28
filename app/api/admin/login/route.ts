@@ -60,8 +60,14 @@ export async function POST(request: Request) {
 
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single()
     if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
+      // Sign out and return the SAME generic 401 as a bad PIN/password so a valid
+      // non-admin credential pair cannot be distinguished (no factor enumeration).
       await supabase.auth.signOut()
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
+      try {
+        const logDb = createAdminClient()
+        await logDb.from('audit_log').insert({ action: 'admin_login_failed', target_type: 'admin_session', details: { ip, reason: 'non_admin' } })
+      } catch { /* non-fatal */ }
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
     const token = await computeHmac(data.user.id, profile.role)
