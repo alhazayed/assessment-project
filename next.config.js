@@ -18,6 +18,16 @@ const nextConfig = {
     contentDispositionType: 'attachment',
     minimumCacheTTL: 60,
   },
+  async redirects() {
+    return [
+      // Canonical ADHD learn page (avoid duplicate ASRS content)
+      {
+        source: '/learn/asrs-adhd',
+        destination: '/learn/adhd-screening',
+        permanent: true,
+      },
+    ]
+  },
   async headers() {
     return [
       {

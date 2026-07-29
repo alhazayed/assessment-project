@@ -1,10 +1,11 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { publicPageMetadata } from '@/lib/public-metadata'
 import PublicMarketingShell from '@/components/public-marketing-shell'
 import { getLanguage } from '@/lib/get-language'
 import {
   LEARN_PAGES,
+  LEARN_LEGACY_REDIRECTS,
   getLearnPageBySlug,
   getLearnContent,
   getRelatedLearnPages,
@@ -24,6 +25,9 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params
+  if (LEARN_LEGACY_REDIRECTS[slug]) {
+    return {}
+  }
   const page = getLearnPageBySlug(slug)
   if (!page) return {}
   return publicPageMetadata({
@@ -35,27 +39,31 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function LearnDetailPage({ params }: Props) {
   const { slug } = await params
+
+  const legacyTarget = LEARN_LEGACY_REDIRECTS[slug]
+  if (legacyTarget) {
+    redirect(`/learn/${legacyTarget}`)
+  }
+
   const page = getLearnPageBySlug(slug)
   if (!page) notFound()
 
   const lang = await getLanguage()
   const isRtl = lang === 'ar'
-  const content = getLearnContent(page.code)
-  const related = content ? getRelatedLearnPages(content.relatedCodes, slug) : []
-
-  const bandEntries = content ? Object.entries(content.bands) : []
+  const clinical = getLearnContent(page.code)
+  const relatedFinal = getRelatedLearnPages(clinical?.relatedCodes ?? [], slug)
 
   const schemas = [
     medicalWebPageSchema({
-      name: page.nameEn,
-      description: page.shortEn,
+      name: isRtl ? page.nameAr : page.nameEn,
+      description: isRtl ? page.shortAr : page.shortEn,
       path: `/learn/${slug}`,
       citation: page.citation,
     }),
     breadcrumbSchema([
-      { name: 'Home', path: '/' },
-      { name: 'Learn', path: '/learn' },
-      { name: page.nameEn, path: `/learn/${slug}` },
+      { name: isRtl ? 'الرئيسية' : 'Home', path: '/' },
+      { name: isRtl ? 'التعلم' : 'Learn', path: '/learn' },
+      { name: isRtl ? page.nameAr : page.nameEn, path: `/learn/${slug}` },
     ]),
   ]
 
@@ -85,47 +93,36 @@ export default async function LearnDetailPage({ params }: Props) {
           {isRtl ? `آخر مراجعة: ${PUBLIC_MEDICAL_CONTENT_REVIEWED}` : `Last reviewed: ${PUBLIC_MEDICAL_CONTENT_REVIEWED}`}
         </p>
 
-        {content && (
-          <>
-            <section className="card p-6 mb-6">
-              <h2 className="text-[15px] font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-                {isRtl ? 'نظرة عامة' : 'Overview'}
-              </h2>
-              <p className="text-[14px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                {content.overview}
-              </p>
-              <p className="text-[13px] mt-4" style={{ color: 'var(--text-muted)' }}>
-                <strong>{isRtl ? 'يقيس:' : 'Measures:'}</strong> {content.measuresDomain}
-              </p>
-            </section>
+        <section className="card p-6 mb-6">
+          <h2 className="text-[15px] font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+            {isRtl ? 'نظرة عامة' : 'Overview'}
+          </h2>
+          <p className="text-[14px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            {isRtl ? page.overviewAr : page.overviewEn}
+          </p>
+          <p className="text-[13px] mt-4" style={{ color: 'var(--text-muted)' }}>
+            <strong>{isRtl ? 'يقيس:' : 'Measures:'}</strong>{' '}
+            {isRtl ? page.measuresDomainAr : page.measuresDomainEn}
+          </p>
+        </section>
 
-            {bandEntries.length > 0 && (
-              <section className="mb-6">
-                <h2 className="text-[15px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-                  {isRtl ? 'تفسير النطاقات (ملخص)' : 'Score ranges (summary)'}
-                </h2>
-                <div className="space-y-3">
-                  {bandEntries.map(([band, bandContent]) => (
-                    <div key={band} className="card p-4">
-                      <h3 className="text-[14px] font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>
-                        {band}
-                      </h3>
-                      <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                        {bandContent.explanation.split('. ')[0]}.
-                      </p>
-                    </div>
-                  ))}
+        {page.bands.length > 0 && (
+          <section className="mb-6">
+            <h2 className="text-[15px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+              {isRtl ? 'تفسير النطاقات (ملخص)' : 'Score ranges (summary)'}
+            </h2>
+            <div className="space-y-3">
+              {page.bands.map(band => (
+                <div key={band.labelEn} className="card p-4">
+                  <h3 className="text-[14px] font-semibold mb-1.5" style={{ color: 'var(--text-primary)' }}>
+                    {isRtl ? band.labelAr : band.labelEn}
+                  </h3>
+                  <p className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                    {isRtl ? band.textAr : band.textEn}
+                  </p>
                 </div>
-              </section>
-            )}
-          </>
-        )}
-
-        {!content && (
-          <section className="card p-6 mb-6">
-            <p className="text-[14px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              {isRtl ? page.shortAr : page.shortEn}
-            </p>
+              ))}
+            </div>
           </section>
         )}
 
@@ -155,13 +152,13 @@ export default async function LearnDetailPage({ params }: Props) {
           </div>
         </div>
 
-        {related.length > 0 && (
+        {relatedFinal.length > 0 && (
           <section className="mb-8">
             <h2 className="text-[15px] font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
               {isRtl ? 'أدلة ذات صلة' : 'Related guides'}
             </h2>
             <div className="flex flex-wrap gap-2">
-              {related.map(r => (
+              {relatedFinal.map(r => (
                 <Link
                   key={r.slug}
                   href={`/learn/${r.slug}`}

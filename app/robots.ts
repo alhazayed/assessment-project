@@ -1,6 +1,5 @@
 import { MetadataRoute } from 'next'
 import { SITE_URL } from '@/lib/site-url'
-import { LEARN_PAGES } from '@/lib/public-learn'
 
 const PHI_DISALLOW = [
   '/dashboard',

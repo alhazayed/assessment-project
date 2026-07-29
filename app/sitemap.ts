@@ -10,8 +10,6 @@ const staticRoutes: { path: string; freq: 'weekly' | 'monthly'; priority: number
   { path: '/contact', freq: 'monthly', priority: 0.7 },
   { path: '/sample-result', freq: 'monthly', priority: 0.75 },
   { path: '/packages', freq: 'monthly', priority: 0.6 },
-  { path: '/register', freq: 'monthly', priority: 0.7 },
-  { path: '/login', freq: 'monthly', priority: 0.5 },
   { path: '/privacy', freq: 'monthly', priority: 0.4 },
   { path: '/terms', freq: 'monthly', priority: 0.4 },
 ]

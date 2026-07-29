@@ -20,6 +20,14 @@ import {
   webApplicationSchema,
   webSiteSchema,
 } from '@/lib/geo-schema'
+import { publicPageMetadata } from '@/lib/public-metadata'
+
+export const metadata = publicPageMetadata({
+  title: 'Mental Health Assessment Platform',
+  description:
+    'Compassionate, science-backed mental health assessments and wellbeing tools. Take validated psychometric assessments in Arabic and English.',
+  path: '/',
+})
 
 export default async function LandingPage() {
   const supabase = await createClient()
@@ -232,7 +240,16 @@ export default async function LandingPage() {
             </p>
           </div>
 
-          <AssessmentsByCategory assessments={assessments} lang={lang} />
+          <AssessmentsByCategory assessments={assessments} lang={lang} isLoggedIn={isLoggedIn} />
+
+          <div className="mt-6 text-center flex flex-wrap items-center justify-center gap-4 text-[13px]">
+            <Link href="/learn" className="font-semibold hover:opacity-80" style={{ color: '#1D6296' }}>
+              {isRtl ? 'مكتبة التعلم ←' : 'Learn library →'}
+            </Link>
+            <Link href="/faq" className="font-semibold hover:opacity-80" style={{ color: '#1D6296' }}>
+              {isRtl ? 'الأسئلة الشائعة ←' : 'FAQ →'}
+            </Link>
+          </div>
 
           <div className="mt-10 text-center">
             <div className="inline-flex items-center gap-3 rounded-[14px] px-6 py-4 text-[13.5px]" style={{ background: '#EAF2F9', border: '1px solid #A9CFE7', color: '#1D6296' }}>
@@ -276,7 +293,7 @@ export default async function LandingPage() {
                 </div>
               </div>
               <Link
-                href="/adhd-zones"
+                href="/learn/adhd-screening"
                 className="inline-flex items-center gap-2 px-5 py-3 font-semibold rounded-[11px] transition-opacity hover:opacity-90 text-sm whitespace-nowrap flex-shrink-0"
                 style={{ background: '#F59E0B', color: '#12273C' }}
               >

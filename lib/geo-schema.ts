@@ -54,16 +54,18 @@ export function webApplicationSchema() {
   }
 }
 
-export function faqPageSchema(items: FaqItem[]) {
+export function faqPageSchema(items: FaqItem[], lang: 'en' | 'ar' = 'en') {
+  const isAr = lang === 'ar'
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
+    inLanguage: isAr ? 'ar' : 'en',
     mainEntity: items.map(item => ({
       '@type': 'Question',
-      name: item.questionEn,
+      name: isAr ? item.questionAr : item.questionEn,
       acceptedAnswer: {
         '@type': 'Answer',
-        text: item.answerEn,
+        text: isAr ? item.answerAr : item.answerEn,
       },
     })),
   }

@@ -17,10 +17,10 @@ export default async function FaqPage() {
   const isRtl = lang === 'ar'
 
   const schemas = [
-    faqPageSchema(PLATFORM_FAQ),
+    faqPageSchema(PLATFORM_FAQ, lang),
     breadcrumbSchema([
-      { name: 'Home', path: '/' },
-      { name: 'FAQ', path: '/faq' },
+      { name: isRtl ? 'الرئيسية' : 'Home', path: '/' },
+      { name: isRtl ? 'الأسئلة الشائعة' : 'FAQ', path: '/faq' },
     ]),
   ]
 
