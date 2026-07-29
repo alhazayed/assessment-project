@@ -164,7 +164,8 @@ export default function AssessmentsByCategory({ assessments, lang, isLoggedIn = 
           const name = isAr && a.name_ar ? a.name_ar : a.name_en
           const description = isAr && a.description_ar ? a.description_ar : a.description_en
           const learnSlug = getLearnSlugByCode(a.code)
-          const startHref = isLoggedIn ? `/assessments/${a.id}` : '/register'
+          // Guests can try via /take (public); signed-in users go to the auth assessment flow.
+          const startHref = isLoggedIn ? `/assessments/${a.id}` : `/take/${a.id}`
           return (
             <div
               key={a.id}
@@ -184,15 +185,6 @@ export default function AssessmentsByCategory({ assessments, lang, isLoggedIn = 
                   {description}
                 </p>
               )}
-<<<<<<< HEAD
-              <Link
-                href={`/take/${a.id}`}
-                className="mt-4 btn-primary text-xs px-4 py-2 self-start gap-1.5"
-              >
-                {t('assessments.start', lang)}
-                <ChevronRight className="w-3 h-3" />
-              </Link>
-=======
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {learnSlug && (
                   <Link
@@ -210,7 +202,6 @@ export default function AssessmentsByCategory({ assessments, lang, isLoggedIn = 
                   <ChevronRight className="w-3 h-3" />
                 </Link>
               </div>
->>>>>>> 9e7947a (feat(seo): visibility fixes for search and answer engines)
             </div>
           )
         })}
