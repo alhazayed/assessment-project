@@ -63,7 +63,7 @@ const dict = {
     'admin.settings.profile_link': 'My Profile Settings',
 
     // Packages nav
-    'nav.packages': 'Packages',
+    'nav.packages': 'Profiles',
     'nav.packages_badge': 'Coming Soon',
     'admin.nav.packages': 'Packages',
 
@@ -100,8 +100,8 @@ const dict = {
     'billing.secure_note': 'Payments are processed securely via Stripe. We never store your card details.',
 
     // Packages page
-    'packages.title': 'Assessment Packages',
-    'packages.subtitle': 'Comprehensive assessment batteries for integrated psychological insight',
+    'packages.title': 'Self-Knowledge Profiles',
+    'packages.subtitle': 'Guided multi-assessment pathways to understand yourself more deeply',
     'packages.under_dev': 'Packages Module Under Development',
     'packages.under_dev_sub': 'These package templates are prototypes. Assessment components not yet available in the platform are marked with an asterisk (*). This feature will be available soon.',
     'packages.prototype_badge': 'Prototype',
@@ -777,7 +777,7 @@ const dict = {
     // PDF report
     'report.download': 'Download Report',
     'report.generating': 'Generating…',
-    'nav.insights': 'My Insights',
+    'nav.insights': 'My Self Map',
     'nav.ai': 'Wafi AI',
 
     // Onboarding wizard
@@ -939,7 +939,7 @@ const dict = {
     'admin.settings.profile_link': 'إعدادات ملفي الشخصي',
 
     // Packages nav
-    'nav.packages': 'الباقات',
+    'nav.packages': 'الملفات الشخصية',
     'nav.packages_badge': 'قريباً',
     'admin.nav.packages': 'الباقات',
 
@@ -976,8 +976,8 @@ const dict = {
     'billing.secure_note': 'تتم معالجة المدفوعات بأمان عبر Stripe. لا نخزن تفاصيل بطاقتك أبداً.',
 
     // Packages page
-    'packages.title': 'باقات التقييم',
-    'packages.subtitle': 'بطاريات تقييم شاملة لرؤية نفسية متكاملة',
+    'packages.title': 'ملفات اكتشاف الذات',
+    'packages.subtitle': 'مسارات تقييم متعددة لفهم نفسك بعمق أكبر',
     'packages.under_dev': 'وحدة الباقات قيد التطوير',
     'packages.under_dev_sub': 'هذه القوالب نماذج أولية. مكونات التقييم غير المتوفرة في المنصة حالياً مُشار إليها بعلامة نجمة (*). ستتوفر هذه الميزة قريباً.',
     'packages.prototype_badge': 'نموذج أولي',
@@ -1653,7 +1653,7 @@ const dict = {
     // PDF report
     'report.download': 'تنزيل التقرير',
     'report.generating': 'جارٍ الإنشاء…',
-    'nav.insights': 'رؤاي',
+    'nav.insights': 'خريطتي الذاتية',
     'nav.ai': 'وافي',
 
     // Onboarding wizard

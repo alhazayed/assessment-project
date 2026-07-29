@@ -92,8 +92,13 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/mood') ||
     pathname.startsWith('/patients') ||
     pathname.startsWith('/onboarding') ||
+    pathname.startsWith('/first-insight') ||
     pathname.startsWith('/notifications') ||
     pathname.startsWith('/assessments') ||
+    pathname.startsWith('/my-packages') ||
+    pathname.startsWith('/paths') ||
+    pathname.startsWith('/billing') ||
+    pathname.startsWith('/ai') ||
     (pathname.startsWith('/packages/') && pathname.length > '/packages/'.length) ||
     pathname.startsWith('/adhd-zones') ||
     // Match the private /clinician/* area WITHOUT catching the public

@@ -143,10 +143,31 @@ export default function InsightsPage() {
       ) : (
         <div className="space-y-6">
 
-          {/* Mental Health Radar */}
-          {scoreHistory.length > 0 && (
-            <MentalHealthRadar scoreHistory={scoreHistory} isAr={isAr} />
-          )}
+          {/* Mental Health Radar — Self Map */}
+          <div id="self-map" className="scroll-mt-24">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                {isAr ? 'خريطتي الذاتية' : 'My Self Map'}
+              </h2>
+              <Link href="/first-insight" className="text-[12.5px] font-semibold" style={{ color: 'var(--vw-blue)' }}>
+                {isAr ? 'رؤية جديدة' : 'New insight'}
+              </Link>
+            </div>
+            {scoreHistory.length > 0 ? (
+              <MentalHealthRadar scoreHistory={scoreHistory} isAr={isAr} />
+            ) : (
+              <div className="card p-6 text-center">
+                <p className="text-[13.5px] mb-3" style={{ color: 'var(--text-secondary)' }}>
+                  {isAr
+                    ? 'أكمل بضعة تقييمات في مجالات مختلفة لبناء خريطتك الذاتية.'
+                    : 'Complete a few assessments across domains to build your Self Map.'}
+                </p>
+                <Link href="/first-insight" className="btn-primary">
+                  {isAr ? 'ابدأ' : 'Get started'}
+                </Link>
+              </div>
+            )}
+          </div>
 
           {/* AI "Full Picture" synthesis across all assessment scales */}
           <SynthesisCard isAr={isAr} />

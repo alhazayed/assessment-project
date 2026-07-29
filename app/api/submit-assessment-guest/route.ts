@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { verifyTurnstileToken } from '@/lib/security/verifyTurnstile'
+import { createGuestClaimToken } from '@/lib/guest-claim'
 import type { ScoringBand } from '@/lib/types'
 
 async function notifyAdminsHighRiskGuest(submissionId: string, definitionId: string) {
@@ -341,6 +342,7 @@ export async function POST(request: Request) {
       band_en: band?.severity_en ?? null,
       band_ar: band?.severity_ar ?? null,
       high_risk: highRisk,
+      claim_token: createGuestClaimToken(submission.id),
     })
   } catch (err) {
     console.error('submit-assessment-guest error:', err)

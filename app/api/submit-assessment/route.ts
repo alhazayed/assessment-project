@@ -88,6 +88,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
     }
 
+    // Informed consent required before first saved assessment (healthcare trust)
+    const { data: patientProfile } = await db
+      .from('patient_profiles')
+      .select('consent_given_at')
+      .eq('id', user.id)
+      .maybeSingle()
+    if (!patientProfile?.consent_given_at) {
+      return NextResponse.json(
+        { error: 'Informed consent required', code: 'consent_required' },
+        { status: 403 }
+      )
+    }
+
     const body: SubmitBody = await request.json()
     const { definition_id, responses, assignment_id } = body
 

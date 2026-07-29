@@ -5,7 +5,7 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import {
-  CheckCircle2, AlertTriangle, BookOpen, FlaskConical, Brain, ArrowRight, Loader2,
+  CheckCircle2, AlertTriangle, BookOpen, FlaskConical, Brain, Loader2, Sparkles,
 } from 'lucide-react'
 import type { AssessmentDefinition } from '@/lib/types'
 import { getAssessmentContent, getLocalizedBandContent, getLocalizedAssessmentMeta, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
@@ -14,6 +14,10 @@ import type { Lang } from '@/lib/i18n'
 import { t } from '@/lib/i18n'
 import AttemptCompareCard from '@/components/attempt-compare-card'
 import CrisisBanner from '@/components/crisis-banner'
+import ScreeningDisclaimer from '@/components/screening-disclaimer'
+import SelfMapLink from '@/components/self-map-link'
+import NextStepAndPath from '@/components/next-step-and-path'
+import { deriveStrengths } from '@/lib/self-knowledge'
 
 const AssessmentPdfDownloadButton = dynamic(
   () => import('@/app/(app)/assessments/[id]/pdf-download-button').then(m => m.AssessmentPdfDownloadButton),
@@ -73,6 +77,25 @@ export default function AssessmentResultView({
   const completedOn = new Date(submittedAt).toLocaleDateString(lang === 'ar' ? 'ar' : 'en', { year: 'numeric', month: 'long', day: 'numeric' })
   const assessmentMeta = getLocalizedAssessmentMeta(definition.code, lang, ASSESSMENT_CONTENT_AR)
   const bandContent = getLocalizedBandContent(definition.code, bandEn, lang, ASSESSMENT_CONTENT_AR)
+  const strengths = deriveStrengths(
+    definition.code,
+    bandEn,
+    bandContent?.whatThisMeans ?? [],
+    lang === 'ar' ? 'ar' : 'en'
+  )
+
+  // Life-domain hints for self-knowledge framing
+  const lifeDomains = lang === 'ar'
+    ? [
+        { label: 'النوم والطاقة', hint: 'كيف يؤثر هذا على راحتك ونومك؟' },
+        { label: 'العمل والدراسة', hint: 'هل يظهر هذا في تركيزك أو إنتاجيتك؟' },
+        { label: 'العلاقات', hint: 'كيف ينعكس ذلك على تواصلك مع الآخرين؟' },
+      ]
+    : [
+        { label: 'Sleep & energy', hint: 'How might this show up in rest and energy?' },
+        { label: 'Work & study', hint: 'Does this affect focus or productivity?' },
+        { label: 'Relationships', hint: 'How does this show up with people you care about?' },
+      ]
 
   useEffect(() => {
     async function loadRelated() {
@@ -170,6 +193,53 @@ export default function AssessmentResultView({
 
       <AttemptCompareCard definitionId={definition.id} lang={lang} />
 
+      <ScreeningDisclaimer lang={lang} />
+
+      {strengths.length > 0 && (
+        <div className="card p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
+            <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
+              {lang === 'ar' ? 'نقاط قوة لتلاحظها' : 'Strengths to notice'}
+            </h3>
+          </div>
+          <ul className="space-y-2">
+            {strengths.map((s, i) => (
+              <li key={i} className="flex items-start gap-2 text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>
+                <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: '#1B8A5A' }} />
+                {s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="card p-6">
+        <h3 className="text-[14.5px] font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+          {lang === 'ar' ? 'في حياتك اليومية' : 'In your daily life'}
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {lifeDomains.map(d => (
+            <div key={d.label} className="p-3 rounded-xl" style={{ backgroundColor: 'var(--surface-alt)' }}>
+              <p className="text-[13px] font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{d.label}</p>
+              <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>{d.hint}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-3 items-center">
+          <SelfMapLink lang={lang} compact />
+          {submissionId && (
+            <Link
+              href={`/journal?from=${submissionId}`}
+              className="text-[13px] font-semibold"
+              style={{ color: 'var(--vw-blue)' }}
+            >
+              {lang === 'ar' ? 'اكتب تأملاً قصيراً' : 'Write a short reflection'} →
+            </Link>
+          )}
+        </div>
+      </div>
+
       {definition.code === 'IPIP120' && domainScores && (
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -245,27 +315,20 @@ export default function AssessmentResultView({
       )}
 
       {relatedAssessments.length > 0 && (
-        <div className="card p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <ArrowRight className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
-            <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.related_assessments', lang)}</h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {relatedAssessments.map(ra => (
-              <Link key={ra.id} href={`/assessments/${ra.id}`} className="card-hover p-4">
-                <p className="text-[13.5px] font-medium" style={{ color: 'var(--text-primary)' }}>
-                  {lang === 'ar' && ra.name_ar ? ra.name_ar : ra.name_en}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
+        <NextStepAndPath
+          lang={lang}
+          currentCode={definition.code}
+          relatedAssessments={relatedAssessments}
+        />
       )}
 
       {showNavLinks && (
         <div className="flex flex-wrap gap-3 justify-center pb-8">
           <Link href={`/assessments/${definition.id}/history`} className="btn-secondary">
             {lang === 'ar' ? 'السجل والمقارنة' : 'History & compare'}
+          </Link>
+          <Link href="/insights#self-map" className="btn-secondary">
+            {lang === 'ar' ? 'خريطتي الذاتية' : 'My Self Map'}
           </Link>
           <Link href="/assessments" className="btn-secondary">{t('nav.assessments', lang)}</Link>
           <Link href="/dashboard" className="btn-primary">{t('nav.dashboard', lang)}</Link>

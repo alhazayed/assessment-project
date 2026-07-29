@@ -76,6 +76,12 @@ export default function OnboardingPage() {
           'يرجى الإجابة على سؤال الأدوية لإكمال التسجيل.'
         )
       }
+      if (!consent) {
+        return msg(
+          'Please confirm informed consent to continue.',
+          'يرجى تأكيد الموافقة المستنيرة للمتابعة.'
+        )
+      }
     }
     return null
   }
@@ -134,7 +140,7 @@ export default function OnboardingPage() {
 
       if (profileRes.error) throw profileRes.error
       if (patientRes.error) throw patientRes.error
-      router.push('/dashboard')
+      router.push('/first-insight')
     } catch {
       setError(t('onboarding.error', lang))
       setSaving(false)
@@ -395,9 +401,9 @@ export default function OnboardingPage() {
                 )}
               </div>
 
-              {/* Consent */}
+              {/* Consent — required */}
               <label className="flex items-start gap-3 cursor-pointer p-4 rounded-[12px] transition-colors"
-                style={{ border: '1px solid var(--border)' }}>
+                style={{ border: consent ? '1px solid var(--vw-blue)' : '1px solid var(--border)' }}>
                 <div
                   className="mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors"
                   style={consent
@@ -408,6 +414,7 @@ export default function OnboardingPage() {
                   {consent && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
                 </div>
                 <span className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  <span className="text-red-500 font-semibold">* </span>
                   {t('profile.consent.text', lang)}
                 </span>
               </label>
