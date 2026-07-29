@@ -1,16 +1,12 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { AlertTriangle, X, Phone, ExternalLink } from 'lucide-react'
 import type { Lang } from '@/lib/i18n'
 import { t } from '@/lib/i18n'
-
-const CRISIS_LINES = [
-  { country_en: 'Saudi Arabia', country_ar: 'المملكة العربية السعودية', number: '920033360' },
-  { country_en: 'UAE',          country_ar: 'الإمارات',                  number: '800HOPE (4673)' },
-  { country_en: 'International', country_ar: 'دولي',                    number: '+1-800-273-8255' },
-]
+import { CRISIS_LINES, CRISIS_HELPLINE_URL } from '@/lib/crisis-resources'
 
 export default function CrisisBanner({ lang }: { lang: Lang }) {
   const supabase = useMemo(() => createClient(), [])
@@ -52,24 +48,32 @@ export default function CrisisBanner({ lang }: { lang: Lang }) {
             {CRISIS_LINES.map(line => (
               <a
                 key={line.number}
-                href={`tel:${line.number.replace(/\D/g, '')}`}
+                href={`tel:${line.tel ?? line.number.replace(/\D/g, '')}`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-opacity hover:opacity-90"
                 style={{ backgroundColor: '#F3650A' }}
               >
-                <Phone className="w-3 h-3" />
-                {isAr ? line.country_ar : line.country_en} · {line.number}
+                <Phone className="w-3 h-3" aria-hidden="true" />
+                <span>{isAr ? line.country_ar : line.country_en}</span>
+                <span dir="ltr">· {line.number}</span>
               </a>
             ))}
             <a
-              href="https://findahelpline.com"
+              href={CRISIS_HELPLINE_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
               style={{ backgroundColor: '#1D6296', color: 'white' }}
             >
-              <ExternalLink className="w-3 h-3" />
+              <ExternalLink className="w-3 h-3" aria-hidden="true" />
               {t('crisis.more', lang)}
             </a>
+            <Link
+              href="/emergency"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
+              style={{ borderColor: '#F3650A', color: '#C2560A', backgroundColor: 'white' }}
+            >
+              {isAr ? 'المزيد من الموارد' : 'More resources'}
+            </Link>
           </div>
         </div>
         <button
