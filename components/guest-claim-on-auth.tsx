@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { GUEST_CLAIM_STORAGE_KEY } from '@/lib/guest-claim'
+import { GUEST_CLAIM_STORAGE_KEY } from '@/lib/guest-claim-storage'
 import { useLang } from '@/lib/use-lang'
 
 /**

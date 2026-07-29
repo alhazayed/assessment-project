@@ -11,7 +11,7 @@ import LanguageToggle from '@/components/language-toggle'
 import AssessmentResultView from '@/components/assessment-result-view'
 import type { Lang } from '@/lib/i18n'
 import type { AssessmentDefinition, AssessmentItem } from '@/lib/types'
-import { GUEST_CLAIM_STORAGE_KEY } from '@/lib/guest-claim'
+import { GUEST_CLAIM_STORAGE_KEY } from '@/lib/guest-claim-storage'
 import { ChevronLeft, ChevronRight, Loader2, ShieldCheck, ArrowRight } from 'lucide-react'
 
 type Answer = { value: number; label_en: string; label_ar: string }
