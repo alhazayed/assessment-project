@@ -1,7 +1,11 @@
 # V Welfare Platform – Incident Response Runbook
-**Version:** 1.0  
-**Last Updated:** June 30, 2026  
+
+**Document status:** ACTIVE  
+**Version:** 1.0 · **Reconciled:** 2026-07-26  
 **Maintainer:** DevOps Lead, Security Lead  
+**Release authority:** [`docs/release/CANONICAL_RELEASE_STATE.md`](./docs/release/CANONICAL_RELEASE_STATE.md)  
+**Open admin item:** Emergency contacts below still contain placeholders — complete before GA (Remaining Administrative Actions A7–A8).  
+**Deploy/rollback procedures for v1.0.0:** use [`docs/release/OPERATOR_RUNBOOK_v1.0.0.md`](./docs/release/OPERATOR_RUNBOOK_v1.0.0.md) only.
 
 ---
 

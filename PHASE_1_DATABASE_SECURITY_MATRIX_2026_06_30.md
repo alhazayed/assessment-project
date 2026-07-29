@@ -1,3 +1,7 @@
+> **DOCUMENT STATUS: REFERENCE ONLY (2026-07-26)**  
+> Phase evidence retained for audit. **Not** launch authority.  
+> Release authority: [`docs/release/README.md`](docs/release/README.md).
+
 # PHASE 1 – COMPLETE DATABASE SECURITY MATRIX
 **Generated:** June 30, 2026 10:45 UTC  
 **Database:** V Welfare Platform (Supabase eu-central-1)  

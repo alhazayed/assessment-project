@@ -1,3 +1,7 @@
+> **DOCUMENT STATUS: REFERENCE ONLY (2026-07-26)**  
+> REFERENCE ONLY — email confirmation remains **disabled** per Canonical Release State; do not treat historical “confirmation verified” claims as current GA truth.  
+> Release authority: [`docs/release/README.md`](docs/release/README.md) · State: [`docs/release/CANONICAL_RELEASE_STATE.md`](docs/release/CANONICAL_RELEASE_STATE.md).
+
 # V Welfare Platform – Email Infrastructure Verification
 **Version:** 1.0  
 **Last Updated:** June 30, 2026  

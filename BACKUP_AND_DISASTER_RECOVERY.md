@@ -1,7 +1,11 @@
 # V Welfare Platform – Backup & Disaster Recovery Procedures
-**Version:** 1.0  
-**Last Updated:** June 30, 2026  
+
+**Document status:** ACTIVE — binding DR targets for v1.0.0  
+**Version:** 1.0 · **Reconciled:** 2026-07-26  
 **Scope:** Supabase PostgreSQL, patient data, assessment results, clinical notes  
+**Authority:** RTO/RPO values below are canonical. `docs/DISASTER_RECOVERY.md` is SUPERSEDED.  
+**Release state:** [`docs/release/CANONICAL_RELEASE_STATE.md`](./docs/release/CANONICAL_RELEASE_STATE.md)  
+**PITR:** Must be **confirmed** before GA (Remaining Administrative Action A6). Do not assume enabled until confirmed.
 
 ---
 
@@ -14,7 +18,7 @@
 **Backup Schedule:**
 - **Full Backups:** Daily at 00:00 UTC
 - **Incremental Backups:** Continuous binary replication
-- **Point-in-Time Recovery (PITR):** 7 days (configurable)
+- **Point-in-Time Recovery (PITR):** 7 days (configurable) — **confirm before GA**
 - **Long-term Archive:** 30-day retention (configurable)
 
 **Backup Location:** Encrypted AWS S3 (managed by Supabase)
