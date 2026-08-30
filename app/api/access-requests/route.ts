@@ -144,8 +144,16 @@ export async function POST(request: Request) {
     )
   }
 
-  // Look up the patient by code
-  const { data: accessCode } = await supabase
+  // Look up the patient by code.
+  // The access code is a shared secret the patient hands to the clinician —
+  // possession of the exact code is the authorization, mirroring how the
+  // invitation-token flow resolves invitations. RLS on patient_access_codes
+  // only exposes a row to its owning patient (or an admin), so this lookup
+  // must run through the service-role client; using the clinician's own
+  // client returns zero rows and the redemption always fails with a spurious
+  // "invalid code". We match on the exact code (never a broad scan), and the
+  // resulting request still requires explicit patient approval.
+  const { data: accessCode } = await admin
     .from('patient_access_codes')
     .select('id, patient_id, code')
     .eq('code', patient_code.trim())
