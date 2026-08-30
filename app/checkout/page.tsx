@@ -56,6 +56,7 @@ function CheckoutForm() {
   const [promoError, setPromoError] = useState<string | null>(null)
   const [promoLoading, setPromoLoading] = useState(false)
   const [promoApplied, setPromoApplied] = useState(false)
+  const [appliedFinalPrice, setAppliedFinalPrice] = useState<number | null>(null)
   const [paymentLoading, setPaymentLoading] = useState(false)
   const [paymentError, setPaymentError] = useState<string | null>(null)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
@@ -76,12 +77,11 @@ function CheckoutForm() {
   }
 
   const basePrice = selectedPackage.priceUSD
+  // The final price is authoritative from the server when a promo is applied
+  // (validated by /api/checkout/validate-promo, the same helper create-session
+  // charges from), so the preview total always matches the actual charge.
   const finalPrice =
-    discountType === 'percentage'
-      ? basePrice * (1 - discount / 100)
-      : discountType === 'fixed'
-        ? Math.max(0, basePrice - discount)
-        : basePrice
+    promoApplied && appliedFinalPrice != null ? appliedFinalPrice : basePrice
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) {
@@ -93,47 +93,36 @@ function CheckoutForm() {
     setPromoError(null)
 
     try {
-      const response = await fetch('/api/admin/promo-codes', {
-        method: 'GET',
+      const response = await fetch('/api/checkout/validate-promo', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          promoCode: promoCode.trim(),
+          packageId: selectedPackage.id,
+        }),
       })
 
-      if (!response.ok) throw new Error('Failed to fetch promo codes')
+      const data = await response.json().catch(() => ({}))
 
-      const { codes } = await response.json()
-      const appliedCode = codes.find(
-        (c: any) =>
-          c.code.toUpperCase() === promoCode.toUpperCase() && c.active
-      )
-
-      if (!appliedCode) {
-        setPromoError(
-          lang === 'ar'
-            ? 'رمز الخصم غير صحيح أو منتهي الصلاحية'
-            : 'Invalid or expired promo code'
-        )
+      if (!response.ok || !data.valid) {
+        const err: string = typeof data.error === 'string' ? data.error : ''
+        let msg: string
+        if (response.status === 429) {
+          msg = lang === 'ar' ? 'محاولات كثيرة جدًا. حاول لاحقًا.' : 'Too many attempts. Please try again later.'
+        } else if (/limit/i.test(err)) {
+          msg = lang === 'ar' ? 'انتهت الحد الأقصى للاستخدام' : 'Promo code usage limit reached'
+        } else if (/expired/i.test(err)) {
+          msg = lang === 'ar' ? 'انتهت صلاحية رمز الخصم' : 'Promo code has expired'
+        } else {
+          msg = lang === 'ar' ? 'رمز الخصم غير صحيح أو منتهي الصلاحية' : 'Invalid or expired promo code'
+        }
+        setPromoError(msg)
         return
       }
 
-      // Check max uses
-      if (
-        appliedCode.max_uses &&
-        appliedCode.times_used >= appliedCode.max_uses
-      ) {
-        setPromoError(
-          lang === 'ar'
-            ? 'انتهت الحد الأقصى للاستخدام'
-            : 'Promo code usage limit reached'
-        )
-        return
-      }
-
-      setDiscount(
-        appliedCode.type === 'percentage'
-          ? appliedCode.discount_value
-          : appliedCode.discount_value
-      )
-      setDiscountType(appliedCode.type)
+      setDiscount(data.discount)
+      setDiscountType(data.discountType)
+      setAppliedFinalPrice(data.finalPrice)
       setPromoApplied(true)
     } catch (error) {
       setPromoError(
