@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { VALID_TIERS, TIER_PRICES_USD, isValidTier, applyDiscount } from '@/lib/billing/pricing'
+import { isPackagesEnabled } from '@/lib/feature-flags'
 
 /**
  * POST /api/checkout/create-session
@@ -24,6 +25,17 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'User must be authenticated' },
         { status: 401 }
+      )
+    }
+
+    // Hard gate: the paid Packages feature is disabled (show_packages=false) and
+    // the Stripe integration is still mocked. Refuse to create a checkout session
+    // — even on a direct API call — so no one can complete a no-op "purchase"
+    // until real Stripe is wired and the flag is enabled.
+    if (!(await isPackagesEnabled())) {
+      return NextResponse.json(
+        { error: 'Packages are not currently available' },
+        { status: 403 }
       )
     }
 
