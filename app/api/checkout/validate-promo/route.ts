@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { VALID_TIERS, TIER_PRICES_USD, isValidTier, applyDiscount } from '@/lib/billing/pricing'
+import { isPackagesEnabled } from '@/lib/feature-flags'
 
 /**
  * POST /api/checkout/validate-promo
@@ -25,6 +26,15 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'User must be authenticated' }, { status: 401 })
+    }
+
+    // Hard gate: no promo validation while the paid Packages feature is disabled
+    // (mirrors create-session, which refuses to create a session).
+    if (!(await isPackagesEnabled())) {
+      return NextResponse.json(
+        { error: 'Packages are not currently available' },
+        { status: 403 }
+      )
     }
 
     // Rate limit so the endpoint can't be used as a promo-code enumeration oracle.
