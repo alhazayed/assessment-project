@@ -146,10 +146,16 @@ function LoginForm() {
       })
 
       if (error) {
+        // GoTrue only reports email_not_confirmed after the password matched,
+        // so surfacing it doesn't reveal whether an account exists.
         setError(
-          isRtl
-            ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
-            : 'Invalid email or password.'
+          error.code === 'email_not_confirmed'
+            ? (isRtl
+                ? 'يرجى تأكيد بريدك الإلكتروني أولاً. تحقق من صندوق الوارد بحثاً عن رابط التحقق.'
+                : 'Please confirm your email first. Check your inbox for the verification link.')
+            : (isRtl
+                ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
+                : 'Invalid email or password.')
         )
         setLoading(false)
         if (turnstileToken) window.turnstile?.reset()
