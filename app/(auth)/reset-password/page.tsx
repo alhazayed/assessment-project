@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { KeyRound, Eye, EyeOff } from 'lucide-react'
@@ -15,12 +16,28 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  // null = still checking. The recovery link must leave a session behind
+  // (via /auth/confirm, or the browser client exchanging ?code= on load);
+  // without one updateUser fails with a cryptic "Auth session missing!".
+  const [hasSession, setHasSession] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    // getSession() waits for the client's URL detection, so a ?code= in the
+    // link is exchanged before we decide.
+    supabase.auth.getSession().then(({ data }) => setHasSession(!!data.session))
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
     setError(null)
 
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      setError(lang === 'ar' ? 'كلمة المرور يجب أن تحتوي على حروف وأرقام' : 'Password must contain both letters and numbers')
+      return
+    }
+
+    setLoading(true)
     const supabase = createClient()
     const { error } = await supabase.auth.updateUser({ password })
 
@@ -29,8 +46,31 @@ export default function ResetPasswordPage() {
       setLoading(false)
     } else {
       setDone(true)
-      setTimeout(() => router.push('/login'), 1500)
+      // The recovery session is a normal signed-in session, so go straight in
+      // (/login would just bounce a signed-in user to /dashboard anyway).
+      setTimeout(() => {
+        router.push('/dashboard')
+        router.refresh()
+      }, 1500)
     }
+  }
+
+  if (hasSession === false) {
+    return (
+      <div className="card p-8 text-center">
+        <h2 className="text-[18px] font-bold mb-1.5" style={{ color: 'var(--text-primary)' }}>
+          {lang === 'ar' ? 'انتهت صلاحية رابط إعادة التعيين' : 'This reset link has expired'}
+        </h2>
+        <p className="text-[13.5px] mb-6" style={{ color: 'var(--text-secondary)' }}>
+          {lang === 'ar'
+            ? 'الرابط غير صالح أو تم استخدامه أو فُتح في متصفح مختلف. اطلب رابطاً جديداً.'
+            : 'The link is invalid, was already used, or was opened in a different browser. Request a new one.'}
+        </p>
+        <Link href="/forgot-password" className="btn-accent w-full">
+          {t('auth.forgot.submit', lang)}
+        </Link>
+      </div>
+    )
   }
 
   if (done) {
@@ -91,7 +131,7 @@ export default function ResetPasswordPage() {
         <button
           type="submit"
           className="btn-accent w-full gap-2"
-          disabled={loading || password.length < 8}
+          disabled={loading || hasSession !== true || password.length < 8}
         >
           <KeyRound className="w-4 h-4" />
           {loading ? t('auth.reset.submitting', lang) : t('auth.reset.submit', lang)}

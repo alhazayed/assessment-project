@@ -23,6 +23,7 @@ function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const next = safeRedirectUrl(searchParams.get('next'))
+  const confirmRedirect = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vwelfare.vercel.app'}/auth/confirm?next=${encodeURIComponent(next || '/onboarding')}`
   const lang = useLang()
   const isRtl = lang === 'ar'
   const turnstileRef = useRef<HTMLDivElement>(null)
@@ -166,7 +167,7 @@ function RegisterForm() {
         password,
         options: {
           data: { full_name_en: fullName },
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vwelfare.vercel.app'}/auth/confirm?next=${encodeURIComponent(next || '/onboarding')}`,
+          emailRedirectTo: confirmRedirect,
           ...(turnstileToken ? { captchaToken: turnstileToken } : {}),
         },
       })
@@ -194,7 +195,9 @@ function RegisterForm() {
     if (resendCooldown > 0 || resending) return
     setResending(true)
     const supabase = createClient()
-    await supabase.auth.resend({ type: 'signup', email })
+    // Same redirect as signUp, otherwise the resent link lands on the Site URL
+    // root, which never completes verification or signs the user in.
+    await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: confirmRedirect } })
     setResending(false)
     setResendCooldown(60)
   }

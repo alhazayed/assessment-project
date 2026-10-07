@@ -69,11 +69,13 @@ export async function middleware(request: NextRequest) {
 
   const isAdminLogin = pathname === '/x/control/login'
   const isAdminArea = pathname.startsWith('/x/control') && !isAdminLogin
+  // /reset-password is deliberately NOT here: the recovery link signs the user
+  // in (a recovery session) before landing on it, so bouncing signed-in users
+  // to /dashboard made it impossible to ever set a new password.
   const isAuthPage =
     pathname.startsWith('/login') ||
     pathname.startsWith('/register') ||
-    pathname.startsWith('/forgot-password') ||
-    pathname.startsWith('/reset-password')
+    pathname.startsWith('/forgot-password')
 
   // Admin area requires Supabase auth (admin PIN verified per-page via requireAdmin)
   if (isAdminArea && !user) {
