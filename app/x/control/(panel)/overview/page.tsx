@@ -5,6 +5,7 @@ import { t } from '@/lib/i18n'
 import { Users, ClipboardCheck, AlertTriangle, Activity, TrendingUp, TrendingDown, ShieldAlert, Brain } from 'lucide-react'
 import Link from 'next/link'
 import DashboardOverview from '@/components/admin/dashboard-overview'
+import { severityBadgeClass } from '@/lib/severity'
 
 export default async function AdminOverviewPage() {
   await requireAdmin()
@@ -79,13 +80,7 @@ export default async function AdminOverviewPage() {
   const severityDist = Object.entries(severityMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
   const highRiskAll = (allSubsStats || []).filter((s: any) => s.high_risk_flag).length
 
-  function severityBadge(band: string) {
-    const b = (band || '').toLowerCase()
-    if (b.includes('none') || b.includes('minimal') || b.includes('normal') || b.includes('negative') || b.includes('low')) return 'badge-minimal'
-    if (b.includes('mild')) return 'badge-mild'
-    if (b.includes('moderate')) return 'badge-moderate'
-    return 'badge-severe'
-  }
+  const severityBadge = severityBadgeClass
 
   const ChangeBadge = ({ change }: { change: number | null }) => {
     if (change === null) return null

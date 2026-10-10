@@ -46,6 +46,9 @@ jobs:
       - name: Security unit tests (offline)
         run: npm run test:security:unit
 
+      - name: Severity mapping tests
+        run: npm run test:severity
+
       - name: Build
         run: npm run build
         env:

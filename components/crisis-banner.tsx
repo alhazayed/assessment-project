@@ -49,10 +49,10 @@ export default function CrisisBanner({ lang }: { lang: Lang }) {
               <a
                 key={line.number}
                 href={`tel:${line.tel ?? line.number.replace(/\D/g, '')}`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-opacity hover:opacity-90"
-                style={{ backgroundColor: '#F3650A' }}
+                className="inline-flex items-center gap-2 min-h-11 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: 'var(--crisis-call-bg)' }}
               >
-                <Phone className="w-3 h-3" aria-hidden="true" />
+                <Phone className="w-4 h-4" aria-hidden="true" />
                 <span>{isAr ? line.country_ar : line.country_en}</span>
                 <span dir="ltr">· {line.number}</span>
               </a>
@@ -61,16 +61,16 @@ export default function CrisisBanner({ lang }: { lang: Lang }) {
               href={CRISIS_HELPLINE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              className="inline-flex items-center gap-2 min-h-11 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
               style={{ backgroundColor: '#1D6296', color: 'white' }}
             >
-              <ExternalLink className="w-3 h-3" aria-hidden="true" />
+              <ExternalLink className="w-4 h-4" aria-hidden="true" />
               {t('crisis.more', lang)}
             </a>
             <Link
               href="/emergency"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
-              style={{ borderColor: '#F3650A', color: '#C2560A', backgroundColor: 'white' }}
+              className="inline-flex items-center gap-2 min-h-11 px-4 py-2 rounded-lg text-sm font-semibold border-2 transition-colors"
+              style={{ borderColor: 'var(--crisis-link-border)', color: 'var(--crisis-link-text)' }}
             >
               {isAr ? 'المزيد من الموارد' : 'More resources'}
             </Link>

@@ -12,14 +12,9 @@ import RescreeningTrigger from '@/components/rescreening-trigger'
 import AIAssessmentFinder from '@/components/ai-assessment-finder'
 import ProfileCompletionBanner from '@/components/profile-completion-banner'
 import AssessmentsCatalog from '@/components/assessments-catalog'
+import { severityBadgeClass } from '@/lib/severity'
 
-function severityBadge(band: string) {
-  const b = band.toLowerCase()
-  if (b.includes('minimal') || b.includes('none') || b.includes('normal')) return 'badge-minimal'
-  if (b.includes('mild')) return 'badge-mild'
-  if (b.includes('moderate')) return 'badge-moderate'
-  return 'badge-severe'
-}
+const severityBadge = severityBadgeClass
 
 export default async function AssessmentsPage() {
   const supabase = await createClient()

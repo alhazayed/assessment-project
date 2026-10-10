@@ -5,7 +5,7 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import {
-  CheckCircle2, AlertTriangle, BookOpen, FlaskConical, Brain, Loader2, Sparkles,
+  CheckCircle2, AlertTriangle, AlertCircle, BookOpen, FlaskConical, Brain, Loader2, Sparkles,
 } from 'lucide-react'
 import type { AssessmentDefinition } from '@/lib/types'
 import { getAssessmentContent, getLocalizedBandContent, getLocalizedAssessmentMeta, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
@@ -13,7 +13,8 @@ import { ASSESSMENT_CONTENT_AR } from '@/lib/assessment-content-ar'
 import type { Lang } from '@/lib/i18n'
 import { t } from '@/lib/i18n'
 import AttemptCompareCard from '@/components/attempt-compare-card'
-import CrisisBanner from '@/components/crisis-banner'
+import CrisisResources from '@/components/crisis-resources'
+import { bandToSeverity, isConcerningBand, severityBadgeClass } from '@/lib/severity'
 import ScreeningDisclaimer from '@/components/screening-disclaimer'
 import SelfMapLink from '@/components/self-map-link'
 import NextStepAndPath from '@/components/next-step-and-path'
@@ -25,11 +26,7 @@ const AssessmentPdfDownloadButton = dynamic(
 )
 
 function severityColor(band: string) {
-  const b = band.toLowerCase()
-  if (b.includes('minimal') || b.includes('none') || b.includes('normal') || b.includes('low') || b.includes('negative') || b.includes('below') || b.includes('no ')) return 'badge-minimal border'
-  if (b.includes('mild') || b.includes('subthreshold') || b.includes('moderate risk')) return 'badge-mild border'
-  if (b.includes('moderate') || b.includes('possible')) return 'badge-moderate border'
-  return 'badge-severe border'
+  return `${severityBadgeClass(band)} border`
 }
 
 interface RelatedAssessment {
@@ -72,7 +69,9 @@ export default function AssessmentResultView({
   const [domainScores, setDomainScores] = useState<Record<string, number> | null>(null)
 
   const displayBand = lang === 'ar' ? bandAr : bandEn
-  const isPositive = bandEn.toLowerCase().includes('minimal') || bandEn.toLowerCase().includes('none') || bandEn.toLowerCase().includes('normal') || bandEn.toLowerCase().includes('low risk') || bandEn.toLowerCase().includes('below') || bandEn.toLowerCase().includes('no problem')
+  const severityLevel = bandToSeverity(bandEn)
+  const isPositive = severityLevel === 'minimal'
+  const isConcerning = isConcerningBand(bandEn)
   const defName = lang === 'ar' && definition.name_ar ? definition.name_ar : definition.name_en
   const completedOn = new Date(submittedAt).toLocaleDateString(lang === 'ar' ? 'ar' : 'en', { year: 'numeric', month: 'long', day: 'numeric' })
   const assessmentMeta = getLocalizedAssessmentMeta(definition.code, lang, ASSESSMENT_CONTENT_AR)
@@ -137,9 +136,13 @@ export default function AssessmentResultView({
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="w-8 h-8 text-red-600" />
           </div>
+        ) : isConcerning ? (
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${severityLevel === 'severe' ? 'bg-red-100' : 'bg-orange-100'}`}>
+            <AlertCircle className={`w-8 h-8 ${severityLevel === 'severe' ? 'text-red-600' : 'text-orange-500'}`} aria-hidden="true" />
+          </div>
         ) : (
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isPositive ? 'bg-green-100' : 'bg-orange-100'}`}>
-            <CheckCircle2 className={`w-8 h-8 ${isPositive ? 'text-green-600' : 'text-orange-500'}`} />
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isPositive ? 'bg-green-100' : 'bg-brand-50'}`}>
+            <CheckCircle2 className={`w-8 h-8 ${isPositive ? 'text-green-600' : 'text-brand-500'}`} aria-hidden="true" />
           </div>
         )}
         <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.title', lang)}</h2>
@@ -161,7 +164,11 @@ export default function AssessmentResultView({
           </div>
         )}
 
-        {highRisk && <div className="mt-4"><CrisisBanner lang={lang} /></div>}
+        {highRisk && (
+          <div className="mt-4 text-start">
+            <CrisisResources lang={lang} />
+          </div>
+        )}
 
         {patientNames.en ? (
           <div className="mt-4 flex justify-center">

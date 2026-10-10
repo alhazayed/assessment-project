@@ -15,7 +15,25 @@ export const metadata: Metadata = {
  * Public emergency/crisis-support page. Server component: reads language via the
  * Next 16 async getLanguage() and renders fully bilingual, RTL-aware content.
  * This is informational only — not an emergency service.
+ *
+ * Colours are pinned to a light palette with inline styles on purpose: the
+ * global `.dark .bg-white` / `.dark .text-gray-*` remaps (globals.css) turned
+ * the cards navy while the phone numbers stayed dark blue (~1.5:1), making the
+ * numbers unreadable for anyone whose OS is in dark mode. Inline styles are not
+ * touched by those class remaps, so this page always reads the same.
  */
+const C = {
+  page: '#FFF5F5',
+  card: '#FFFFFF',
+  heading: '#7F1D1D',
+  body: '#374151',
+  muted: '#4B5563',
+  phone: '#1E3A8A',
+  phoneBorder: '#1E40AF',
+  danger: '#DC2626',
+  calm: '#EFF6FF',
+  border: '#E5E7EB',
+}
 export default async function EmergencyPage() {
   const lang = await getLanguage()
   const isAr = lang === 'ar'
@@ -44,29 +62,30 @@ export default async function EmergencyPage() {
   }
 
   return (
-    <main dir={isAr ? 'rtl' : 'ltr'} className="min-h-screen" style={{ backgroundColor: '#FFF5F5' }}>
+    <main dir={isAr ? 'rtl' : 'ltr'} className="min-h-screen" style={{ backgroundColor: C.page, colorScheme: 'light' }}>
       <div className="max-w-2xl mx-auto px-4 py-10">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-8 transition-colors"
+          className="inline-flex items-center gap-2 min-h-11 text-sm hover:underline mb-6"
+          style={{ color: C.muted }}
         >
           <ArrowLeft className={`w-4 h-4 ${isAr ? 'rotate-180' : ''}`} aria-hidden="true" />
           {copy.back}
         </Link>
 
         <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-full bg-red-500 flex items-center justify-center mx-auto mb-4">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: C.danger }}>
             <AlertTriangle className="w-10 h-10 text-white" aria-hidden="true" />
           </div>
-          <h1 className="text-2xl font-bold text-red-900 mb-2">{copy.heading}</h1>
-          <p className="text-gray-600 text-sm">{copy.intro}</p>
+          <h1 className="text-2xl font-bold mb-2" style={{ color: C.heading }}>{copy.heading}</h1>
+          <p className="text-sm" style={{ color: C.muted }}>{copy.intro}</p>
         </div>
 
         <div
-          className="bg-white rounded-2xl p-5 mb-6 shadow-sm"
-          style={{ borderInlineStartWidth: 4, borderInlineStartStyle: 'solid', borderInlineStartColor: '#EF4444' }}
+          className="rounded-2xl p-5 mb-6"
+          style={{ backgroundColor: C.card, boxShadow: '0 1px 2px rgba(0,0,0,0.05)', borderInlineStartWidth: 4, borderInlineStartStyle: 'solid', borderInlineStartColor: '#EF4444' }}
         >
-          <p className="text-gray-700 leading-relaxed">{copy.reassure}</p>
+          <p className="leading-relaxed" style={{ color: C.body }}>{copy.reassure}</p>
         </div>
 
         <div className="space-y-3 mb-8">
@@ -74,14 +93,15 @@ export default async function EmergencyPage() {
             <a
               key={line.number}
               href={`tel:${line.tel ?? line.number.replace(/\D/g, '')}`}
-              className="flex items-center gap-4 bg-white rounded-2xl p-4 border-2 border-blue-800 hover:bg-blue-50 transition-colors shadow-sm"
+              className="flex items-center gap-4 rounded-2xl p-4 border-2 hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: C.card, borderColor: C.phoneBorder, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
             >
-              <div className="w-10 h-10 rounded-xl bg-blue-800 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: C.phoneBorder }}>
                 <Phone className="w-5 h-5 text-white" aria-hidden="true" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">{isAr ? line.country_ar : line.country_en}</p>
-                <p className="text-lg font-bold text-blue-900" dir="ltr">{line.number}</p>
+                <p className="text-sm" style={{ color: C.muted }}>{isAr ? line.country_ar : line.country_en}</p>
+                <p className="text-lg font-bold" style={{ color: C.phone }} dir="ltr">{line.number}</p>
               </div>
             </a>
           ))}
@@ -98,26 +118,27 @@ export default async function EmergencyPage() {
           {copy.findHelpline}
         </a>
 
-        <div className="bg-blue-50 rounded-2xl p-6 text-center mb-6">
+        <div className="rounded-2xl p-6 text-center mb-6" style={{ backgroundColor: C.calm }}>
           <p className="text-3xl mb-2" aria-hidden="true">💙</p>
-          <p className="text-blue-900 font-medium leading-relaxed">{copy.wellbeing}</p>
+          <p className="font-medium leading-relaxed" style={{ color: C.phone }}>{copy.wellbeing}</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-gray-200 text-sm text-gray-600 space-y-2">
-          <p className="font-semibold text-gray-800">{copy.additional}</p>
+        <div className="rounded-2xl p-5 border text-sm space-y-2" style={{ backgroundColor: C.card, borderColor: C.border, color: C.muted }}>
+          <p className="font-semibold" style={{ color: C.body }}>{copy.additional}</p>
           <p>{copy.textLine}</p>
           <p>
             {copy.iasp}{' '}
             <a
               href="https://www.iasp.info/resources/Crisis_Centres/"
-              className="text-blue-700 underline"
+              className="underline"
+              style={{ color: C.phoneBorder }}
               target="_blank"
               rel="noopener noreferrer"
             >
               iasp.info
             </a>
           </p>
-          <p className="pt-2 text-xs text-gray-400 border-t border-gray-100">{copy.disclaimer}</p>
+          <p className="pt-2 text-sm border-t" style={{ color: C.muted, borderColor: C.border }}>{copy.disclaimer}</p>
         </div>
       </div>
     </main>

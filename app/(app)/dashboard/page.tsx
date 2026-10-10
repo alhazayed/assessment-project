@@ -14,6 +14,7 @@ import PulseCheckinCard, { type PulseItem } from '@/components/pulse-checkin-car
 import SelfMapLink from '@/components/self-map-link'
 import LearnedTimeline, { type TimelineEntry } from '@/components/learned-timeline'
 import GuestClaimOnAuth from '@/components/guest-claim-on-auth'
+import { severityBadgeClass } from '@/lib/severity'
 
 async function getPatientDashboard(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const [submissions, moods, assignments, totalCountRes, pulseDefs, latestByCode] = await Promise.all([
@@ -62,13 +63,7 @@ async function getPatientDashboard(supabase: Awaited<ReturnType<typeof createCli
   }
 }
 
-function severityBadge(band: string) {
-  const b = band.toLowerCase()
-  if (b.includes('minimal') || b.includes('none') || b.includes('normal')) return 'badge-minimal'
-  if (b.includes('mild')) return 'badge-mild'
-  if (b.includes('moderate')) return 'badge-moderate'
-  return 'badge-severe'
-}
+const severityBadge = severityBadgeClass
 
 function buildPulseItems(
   lang: 'en' | 'ar',
