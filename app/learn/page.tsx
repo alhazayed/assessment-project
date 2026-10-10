@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { publicPageMetadata } from '@/lib/public-metadata'
+import { localizedPublicMetadata } from '@/lib/public-metadata'
 import { absoluteUrl } from '@/lib/site-url'
 import PublicMarketingShell from '@/components/public-marketing-shell'
 import { getLanguage } from '@/lib/get-language'
@@ -7,12 +7,20 @@ import { LEARN_PAGES } from '@/lib/public-learn'
 import { itemListSchema, breadcrumbSchema } from '@/lib/geo-schema'
 import { BookOpen, ChevronRight } from 'lucide-react'
 
-export const metadata = publicPageMetadata({
-  title: 'Mental Health Screening Library',
-  description:
-    'Evidence-based guides to PHQ-9, GAD-7, WHO-5, DASS-21, PCL-5, ADHD, insomnia, and more. Bilingual screening education from V Welfare.',
-  path: '/learn',
-})
+export async function generateMetadata() {
+  return localizedPublicMetadata({
+    en: {
+      title: 'Mental Health Screening Library',
+      description:
+        'Evidence-based guides to PHQ-9, GAD-7, WHO-5, DASS-21, PCL-5, ADHD, insomnia, and more. Bilingual screening education from V Welfare.',
+    },
+    ar: {
+      title: 'مكتبة الفحص النفسي',
+      description: 'أدلة علمية لمقاييس PHQ-9 وGAD-7 وWHO-5 وDASS-21 وPCL-5 وفرط الحركة والأرق وغيرها. تثقيف نفسي ثنائي اللغة من V Welfare.',
+    },
+    path: '/learn',
+  })
+}
 
 export default async function LearnIndexPage() {
   const lang = await getLanguage()
