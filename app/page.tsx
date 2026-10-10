@@ -21,6 +21,7 @@ import {
   webSiteSchema,
 } from '@/lib/geo-schema'
 import { publicPageMetadata } from '@/lib/public-metadata'
+import CrisisHelpLink from '@/components/crisis-help-link'
 
 export const metadata = publicPageMetadata({
   title: 'Mental Health Assessment Platform',
@@ -74,21 +75,22 @@ export default async function LandingPage() {
           </Link>
 
           {/* Desktop nav links */}
-          <nav className="hidden lg:flex items-center gap-6 text-[13.5px] font-medium ms-6" style={{ color: 'var(--text-secondary)' }}>
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-6 text-[13.5px] font-medium ms-3 xl:ms-6" style={{ color: 'var(--text-secondary)' }}>
             <a href="#services" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.services', lang)}</a>
             <a href="#assessments" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.assessments', lang)}</a>
             <a href="/packages" className="hover:text-[var(--text-primary)] transition-colors flex items-center gap-2">
               {t('nav.packages_menu', lang)}
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide" style={{ backgroundColor: 'var(--accent-50)', color: 'var(--accent-600)' }}>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide whitespace-nowrap" style={{ backgroundColor: 'var(--accent-50)', color: 'var(--accent-600)' }}>
                 coming soon
               </span>
             </a>
-            <a href="/learn/adhd-screening" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.adhd_checkin', lang)}</a>
-            <a href="#about" className="hover:text-[var(--text-primary)] transition-colors">{t('nav.about', lang)}</a>
+            <a href="/learn/adhd-screening" className="hover:text-[var(--text-primary)] transition-colors xl:whitespace-nowrap">{t('nav.adhd_checkin', lang)}</a>
+            <a href="#about" className="hidden xl:inline hover:text-[var(--text-primary)] transition-colors">{t('nav.about', lang)}</a>
           </nav>
 
           {/* Right controls */}
-          <div className="flex items-center gap-1.5 ms-auto">
+          <div className="flex items-center gap-1.5 ms-auto flex-shrink-0 whitespace-nowrap">
+            <CrisisHelpLink lang={lang} iconOnly />
             <DarkModeToggle />
             <LanguageToggle lang={lang} />
             {isLoggedIn ? (
@@ -364,9 +366,10 @@ export default async function LandingPage() {
           <div className="flex items-center gap-2.5">
             <BrandLogo variant="icon" size={30} />
             <span className="text-base font-bold text-white" style={{ letterSpacing: '-0.01em' }}>V Welfare</span>
-            <span className="text-[12.5px] ms-1" style={{ color: '#4A7A9B' }}>{t('app.tagline', lang)}</span>
+            <span className="text-[12.5px] ms-1" style={{ color: 'var(--footer-link)' }}>{t('app.tagline', lang)}</span>
           </div>
-          <div className="flex items-center flex-wrap justify-center gap-5 text-[13px]" style={{ color: '#4A7A9B' }}>
+          <div className="flex items-center flex-wrap justify-center gap-5 text-[13px]" style={{ color: 'var(--footer-link)' }}>
+            <CrisisHelpLink lang={lang} variant="inline" onDark />
             <Link href="/learn" className="hover:text-white transition-colors">{t('footer.learn', lang)}</Link>
             <Link href="/faq" className="hover:text-white transition-colors">{t('footer.faq', lang)}</Link>
             <Link href="/privacy" className="hover:text-white transition-colors">{t('footer.privacy', lang)}</Link>
@@ -377,7 +380,7 @@ export default async function LandingPage() {
             <Link href="/login" className="hover:text-white transition-colors">{t('nav.signin', lang)}</Link>
             <Link href="/register" className="hover:text-white transition-colors">{t('nav.create_account', lang)}</Link>
           </div>
-          <p className="text-[11.5px] text-center md:text-end" style={{ color: '#2E4A62' }}>
+          <p className="text-[11.5px] text-center md:text-end" style={{ color: 'var(--footer-note)' }}>
             {t('footer.disclaimer', lang)}
           </p>
         </div>

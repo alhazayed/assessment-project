@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import { bandToSeverity, severityBadgeClass, type SeverityLevel } from '@/lib/severity'
 
 const chartLoading = (h: number) => () => <div className="rounded-xl animate-pulse" style={{ backgroundColor: 'var(--surface-alt)', height: h }} />
 const DailySubmissionsChart = dynamic(() => import('./analytics-charts').then(m => m.DailySubmissionsChart), { ssr: false, loading: chartLoading(200) })
@@ -74,22 +75,17 @@ type SortKey = 'count' | 'avg' | 'median' | 'stddev' | 'min' | 'max' | 'highRisk
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const SEVERITY_FILL: Record<SeverityLevel, string> = {
+  minimal: '#22c55e',
+  mild: '#f59e0b',
+  moderate: '#f97316',
+  severe: '#ef4444',
+  neutral: '#9ca3af',
+}
 function severityFill(band: string): string {
-  const b = (band || '').toLowerCase()
-  if (b.includes('none') || b.includes('minimal') || b.includes('normal') || b.includes('low') || b.includes('negative')) return '#22c55e'
-  if (b.includes('mild')) return '#f59e0b'
-  if (b.includes('moderate')) return '#f97316'
-  if (b.includes('severe') || b.includes('high') || b.includes('crisis')) return '#ef4444'
-  return '#9ca3af'
+  return SEVERITY_FILL[bandToSeverity(band)]
 }
-function severityBadge(band: string): string {
-  const b = (band || '').toLowerCase()
-  if (b.includes('none') || b.includes('minimal') || b.includes('normal') || b.includes('low') || b.includes('negative')) return 'badge-minimal'
-  if (b.includes('mild')) return 'badge-mild'
-  if (b.includes('moderate')) return 'badge-moderate'
-  if (b.includes('severe') || b.includes('high') || b.includes('crisis')) return 'badge-severe'
-  return 'badge-neutral'
-}
+const severityBadge = severityBadgeClass
 function fmt(n: number | null | undefined) { return n == null ? '—' : n.toLocaleString() }
 
 function LoadingSkeleton() {

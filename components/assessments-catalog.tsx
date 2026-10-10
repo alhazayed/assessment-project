@@ -8,14 +8,9 @@ import { localizeSeverity } from '@/lib/severity-labels'
 import type { Lang } from '@/lib/i18n'
 import { t } from '@/lib/i18n'
 import type { AssessmentDefinition, AssessmentSubmission } from '@/lib/types'
+import { severityBadgeClass } from '@/lib/severity'
 
-function severityBadge(band: string) {
-  const b = band.toLowerCase()
-  if (b.includes('minimal') || b.includes('none') || b.includes('normal')) return 'badge-minimal'
-  if (b.includes('mild')) return 'badge-mild'
-  if (b.includes('moderate')) return 'badge-moderate'
-  return 'badge-severe'
-}
+const severityBadge = severityBadgeClass
 
 interface Props {
   lang: Lang

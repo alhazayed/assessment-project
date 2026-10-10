@@ -4,6 +4,7 @@ import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import LanguageToggle from '@/components/language-toggle'
 import { t } from '@/lib/i18n'
+import CrisisHelpLink from '@/components/crisis-help-link'
 
 export default async function PublicMarketingShell({
   children,
@@ -36,6 +37,7 @@ export default async function PublicMarketingShell({
             <Link href="/contact" className="hover:opacity-80">{isRtl ? 'تواصل' : 'Contact'}</Link>
           </nav>
           <div className="flex items-center gap-2 flex-shrink-0">
+            <CrisisHelpLink lang={lang} />
             <DarkModeToggle />
             <LanguageToggle lang={lang} />
             <Link href="/register" className="hidden sm:inline-flex btn-accent text-sm">
@@ -55,7 +57,8 @@ export default async function PublicMarketingShell({
             <BrandLogo variant="icon" size={30} />
             <span className="text-base font-bold text-white">V Welfare</span>
           </div>
-          <div className="flex items-center flex-wrap justify-center gap-5 text-[13px]" style={{ color: '#4A7A9B' }}>
+          <div className="flex items-center flex-wrap justify-center gap-5 text-[13px]" style={{ color: 'var(--footer-link)' }}>
+            <CrisisHelpLink lang={lang} variant="inline" onDark />
             <Link href="/learn" className="hover:text-white transition-colors">{isRtl ? 'مكتبة التعلم' : 'Learn'}</Link>
             <Link href="/faq" className="hover:text-white transition-colors">{isRtl ? 'الأسئلة الشائعة' : 'FAQ'}</Link>
             <Link href="/privacy" className="hover:text-white transition-colors">{isRtl ? 'الخصوصية' : 'Privacy'}</Link>
@@ -64,7 +67,7 @@ export default async function PublicMarketingShell({
             <Link href="/contact" className="hover:text-white transition-colors">{isRtl ? 'تواصل' : 'Contact'}</Link>
             <Link href="/sample-result" className="hover:text-white transition-colors">{isRtl ? 'عينة نتيجة' : 'Sample result'}</Link>
           </div>
-          <p className="text-[11.5px] text-center md:text-end" style={{ color: '#2E4A62' }}>
+          <p className="text-[11.5px] text-center md:text-end" style={{ color: 'var(--footer-note)' }}>
             {t('footer.disclaimer', lang)}
           </p>
         </div>
