@@ -46,6 +46,9 @@ const TRAINING_BOTS = [
   'Google-Extended',
   'CCBot',
   'anthropic-ai',
+  'ClaudeBot',
+  'Applebot-Extended',
+  'meta-externalagent',
   'Bytespider',
   'FacebookBot',
 ]

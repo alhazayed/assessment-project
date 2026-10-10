@@ -1,17 +1,25 @@
 import Link from 'next/link'
-import { publicPageMetadata } from '@/lib/public-metadata'
+import { localizedPublicMetadata } from '@/lib/public-metadata'
 import { getLanguage } from '@/lib/get-language'
 import { ArrowLeft, ClipboardList, Users, BarChart3, MessageSquare, Shield, Bell, ChevronRight } from 'lucide-react'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import LanguageToggle from '@/components/language-toggle'
 
-export const metadata = publicPageMetadata({
-  title: 'For Clinicians',
-  description:
-    'V Welfare clinician portal: assign validated psychometric assessments, review patient results, secure messaging, and risk alerts. Bilingual Arabic/English platform.',
-  path: '/clinicians',
-})
+export async function generateMetadata() {
+  return localizedPublicMetadata({
+    en: {
+      title: 'For Clinicians',
+      description:
+        'V Welfare clinician portal: assign validated psychometric assessments, review patient results, secure messaging, and risk alerts. Bilingual Arabic/English platform.',
+    },
+    ar: {
+      title: 'للمختصين',
+      description: 'بوابة المختصين في V Welfare: أسند مقاييس نفسية معتمدة، وراجع نتائج المرضى، وتواصل بأمان، واستقبل تنبيهات الخطورة. منصة بالعربية والإنجليزية.',
+    },
+    path: '/clinicians',
+  })
+}
 
 export default async function CliniciansPage() {
   const lang = await getLanguage()

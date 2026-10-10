@@ -1,17 +1,25 @@
 import Link from 'next/link'
-import { publicPageMetadata } from '@/lib/public-metadata'
+import { localizedPublicMetadata } from '@/lib/public-metadata'
 import { getLanguage } from '@/lib/get-language'
 import { ArrowLeft, AlertTriangle, CheckCircle2, ChevronRight, ClipboardList, Info } from 'lucide-react'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import LanguageToggle from '@/components/language-toggle'
 
-export const metadata = publicPageMetadata({
-  title: 'Sample Assessment Result',
-  description:
-    'See an example of V Welfare mental health screening results with clinical interpretations, recommendations, and related assessments. For illustration only.',
-  path: '/sample-result',
-})
+export async function generateMetadata() {
+  return localizedPublicMetadata({
+    en: {
+      title: 'Sample Assessment Result',
+      description:
+        'See an example of V Welfare mental health screening results with clinical interpretations, recommendations, and related assessments. For illustration only.',
+    },
+    ar: {
+      title: 'نموذج نتيجة تقييم',
+      description: 'مثال على نتائج الفحص النفسي في V Welfare مع التفسير السريري والتوصيات والتقييمات ذات الصلة. للتوضيح فقط.',
+    },
+    path: '/sample-result',
+  })
+}
 
 export default async function SampleResultPage() {
   const lang = await getLanguage()
