@@ -25,9 +25,22 @@
     /* Text tokens (light) */
     --text-primary:   #12273C;
     --text-secondary: #5A6B7B;
-    --text-muted:     #6B7A87;
+    --text-muted:     #5F6F7E; /* 4.8:1 on --page-bg (was #6B7A87, 4.2:1) */
     --text-icon:      #8A99A8;
     --text-label:     #3F4F5E;
+
+    /* Accent shades referenced as CSS vars by inline styles */
+    --accent-50:      #FEF2EC;
+    --accent-600:     #B54A08;
+
+    /* Crisis-line actions — white text needs >= 4.5:1 */
+    --crisis-call-bg:      #B54A08;
+    --crisis-link-border:  #EF4444;
+    --crisis-link-text:    #991B1B;
+
+    /* Marketing footer (on dark navy #0E1A26) */
+    --footer-link:    #7FA6C2;
+    --footer-note:    #8FA3B3;
 
     /* Sidebar */
     --sidebar-bg:     #FFFFFF;
@@ -52,6 +65,11 @@
     --text-primary:   #F4F8FB;
     --text-secondary: #9DB0C2;
     --text-muted:     #8FA3B3;
+
+    --accent-50:      rgba(243,101,10,0.12);
+    --accent-600:     #FF8A4D;
+    --crisis-link-border:  #F87171;
+    --crisis-link-text:    #FCA5A5;
     --text-icon:      #5B6E80;
     --text-label:     #C8D8E8;
 
@@ -149,14 +167,16 @@
   .btn-xl  { @apply btn text-[16px] px-7 py-4 rounded-[11px]; }
 
   /* Accent (orange) — primary CTA */
+  /* White on accent-500 (#F3650A) is only 3.15:1, so the fill is accent-700
+     (#B54A08, 5.3:1) to meet WCAG AA for body-size button text. */
   .btn-accent {
-    @apply btn-md bg-accent-500 text-white hover:bg-accent-600 active:bg-accent-700;
+    @apply btn-md bg-accent-700 text-white hover:bg-accent-800 active:bg-accent-900;
     @apply focus-visible:ring-accent-500;
     box-shadow: 0 10px 24px -10px rgba(243,101,10,0.55);
   }
   .btn-accent:hover { box-shadow: 0 14px 28px -10px rgba(243,101,10,0.50); }
   .btn-accent-lg {
-    @apply btn-lg bg-accent-500 text-white hover:bg-accent-600 active:bg-accent-700;
+    @apply btn-lg bg-accent-700 text-white hover:bg-accent-800 active:bg-accent-900;
     @apply focus-visible:ring-accent-500;
     box-shadow: 0 12px 26px -10px rgba(243,101,10,0.60);
   }

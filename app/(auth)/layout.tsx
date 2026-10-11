@@ -3,6 +3,7 @@ import { getLanguage } from '@/lib/get-language'
 import LanguageToggle from '@/components/language-toggle'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import Link from 'next/link'
+import CrisisHelpLink from '@/components/crisis-help-link'
 
 /** Auth surfaces should not compete in search indexes. */
 export const metadata: Metadata = {
@@ -69,7 +70,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
 
         {/* Footer quote */}
         <div className="relative z-10">
-          <p className="text-xs leading-relaxed" style={{ color: '#4A7A9B' }}>
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--footer-link)' }}>
             {isRtl
               ? '"رعاية صحتك النفسية هي أشجع شيء يمكنك فعله."'
               : '"Taking care of your mental health is one of the bravest things you can do."'}
@@ -90,7 +91,8 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
             </div>
             <span className="font-bold text-base" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>V Welfare</span>
           </Link>
-          <div className={`flex items-center gap-2 ${isRtl ? 'mr-auto' : 'ml-auto'}`}>
+          <div className="flex items-center gap-2 ms-auto">
+            <CrisisHelpLink lang={lang} />
             <DarkModeToggle />
             <LanguageToggle lang={lang} />
           </div>

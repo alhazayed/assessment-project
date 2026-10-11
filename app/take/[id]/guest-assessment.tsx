@@ -13,6 +13,7 @@ import type { Lang } from '@/lib/i18n'
 import type { AssessmentDefinition, AssessmentItem } from '@/lib/types'
 import { GUEST_CLAIM_STORAGE_KEY } from '@/lib/guest-claim-storage'
 import { ChevronLeft, ChevronRight, Loader2, ShieldCheck, ArrowRight } from 'lucide-react'
+import CrisisHelpLink from '@/components/crisis-help-link'
 
 type Answer = { value: number; label_en: string; label_ar: string }
 type ResultShape = {
@@ -170,6 +171,7 @@ export default function GuestAssessment({ definitionId, lang }: { definitionId: 
           <span className="text-base font-extrabold tracking-tight" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>V Welfare</span>
         </Link>
         <div className="flex items-center gap-1.5 ms-auto">
+          <CrisisHelpLink lang={lang} />
           <DarkModeToggle />
           <LanguageToggle lang={lang} />
           <Link href="/register" className="hidden sm:inline-flex btn-accent">{tr('Create account', 'إنشاء حساب')}</Link>

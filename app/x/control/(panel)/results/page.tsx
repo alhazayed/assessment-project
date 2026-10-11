@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { BarChart3, Download, AlertTriangle, Filter, TrendingUp, Hash, Sigma, Trash2, Loader2 } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import { severityBadgeClass } from '@/lib/severity'
 
 type Submission = {
   id: string; patient_name: string; assessment_name: string; code: string
@@ -27,13 +28,7 @@ function computeStats(scores: number[]) {
   }
 }
 
-function severityBadge(band: string) {
-  const b = (band || '').toLowerCase()
-  if (b.includes('none') || b.includes('minimal') || b.includes('normal') || b.includes('negative') || b.includes('low')) return 'badge-minimal'
-  if (b.includes('mild')) return 'badge-mild'
-  if (b.includes('moderate')) return 'badge-moderate'
-  return 'badge-severe'
-}
+const severityBadge = severityBadgeClass
 
 type Pagination = { page: number; pageSize: number; total: number; totalPages: number }
 

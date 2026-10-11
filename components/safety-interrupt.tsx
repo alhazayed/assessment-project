@@ -1,6 +1,6 @@
 'use client'
 
-import CrisisBanner from '@/components/crisis-banner'
+import CrisisResources from '@/components/crisis-resources'
 import type { Lang } from '@/lib/i18n'
 import { AlertTriangle } from 'lucide-react'
 
@@ -41,7 +41,9 @@ export default function SafetyInterrupt({ lang, onContinue, onPause }: Props) {
           </div>
         </div>
 
-        <CrisisBanner lang={lang} />
+        {/* Unconditional: at this moment nothing high-risk has been saved yet,
+            so CrisisBanner (which looks up saved submissions) would render nothing. */}
+        <CrisisResources lang={lang} compact />
 
         <div className="flex flex-col sm:flex-row gap-2 pt-1">
           <button type="button" onClick={onContinue} className="btn-primary flex-1">

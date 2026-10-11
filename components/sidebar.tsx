@@ -35,6 +35,7 @@ import NotificationBell from '@/components/notification-bell'
 import UnreadMessagesBadge from '@/components/unread-messages-badge'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
+import CrisisHelpLink from '@/components/crisis-help-link'
 
 interface SidebarProps {
   profile: Profile | null
@@ -198,6 +199,11 @@ export default function Sidebar({ profile, lang, showPackages = false, isMobileA
         })}
       </nav>
 
+      {/* Crisis help — always reachable from the app */}
+      <div className="px-3 pb-2">
+        <CrisisHelpLink lang={lang} variant="inline" className="w-full min-h-11 px-3 rounded-[10px] text-sm" />
+      </div>
+
       {/* Language toggle */}
       <div className="px-3 pb-1">
         <LanguageToggle lang={lang} className="w-full justify-center" />
@@ -256,6 +262,7 @@ export default function Sidebar({ profile, lang, showPackages = false, isMobileA
           </span>
         </Link>
         <div className="flex items-center gap-1">
+          <CrisisHelpLink lang={lang} />
           <DarkModeToggle />
           <NotificationBell lang={lang} />
         </div>

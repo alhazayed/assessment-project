@@ -11,6 +11,7 @@ import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 import { localizeSeverity } from '@/lib/severity-labels'
 import type { Profile } from '@/lib/types'
+import { bandToSeverity, type SeverityLevel } from '@/lib/severity'
 
 type ClinicalNote = {
   id: string
@@ -42,12 +43,15 @@ type Submission = {
 
 type AssessmentDef = { id: string; code: string; name_en: string; name_ar: string | null }
 
+const SEVERITY_COLOR: Record<SeverityLevel, string> = {
+  minimal: 'text-green-700 bg-green-50 border-green-200',
+  mild: 'text-yellow-700 bg-yellow-50 border-yellow-200',
+  moderate: 'text-orange-700 bg-orange-50 border-orange-200',
+  severe: 'text-red-700 bg-red-50 border-red-200',
+  neutral: 'text-gray-700 bg-gray-50 border-gray-200',
+}
 function severityColor(band: string) {
-  const b = band.toLowerCase()
-  if (b.includes('minimal') || b.includes('none') || b.includes('normal') || b.includes('low') || b.includes('negative')) return 'text-green-700 bg-green-50 border-green-200'
-  if (b.includes('mild') || b.includes('subthreshold')) return 'text-yellow-700 bg-yellow-50 border-yellow-200'
-  if (b.includes('moderate')) return 'text-orange-700 bg-orange-50 border-orange-200'
-  return 'text-red-700 bg-red-50 border-red-200'
+  return SEVERITY_COLOR[bandToSeverity(band)]
 }
 
 export default function PatientsContent() {
