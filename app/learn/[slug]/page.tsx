@@ -11,6 +11,7 @@ import {
   getRelatedLearnPages,
 } from '@/lib/public-learn'
 import { medicalWebPageSchema, breadcrumbSchema } from '@/lib/geo-schema'
+import { getLearnScoring, formatRange, scoringSummary } from '@/lib/learn-scoring'
 import { PUBLIC_MEDICAL_CONTENT_REVIEWED } from '@/lib/site-url'
 import { AlertTriangle, ChevronRight } from 'lucide-react'
 
@@ -30,10 +31,12 @@ export async function generateMetadata({ params }: Props) {
   }
   const page = getLearnPageBySlug(slug)
   if (!page) return {}
+  const lang = await getLanguage()
   return publicPageMetadata({
-    title: page.nameEn,
-    description: page.shortEn,
+    title: lang === 'ar' ? page.nameAr : page.nameEn,
+    description: lang === 'ar' ? page.shortAr : page.shortEn,
     path: `/learn/${slug}`,
+    lang,
   })
 }
 
@@ -52,6 +55,7 @@ export default async function LearnDetailPage({ params }: Props) {
   const isRtl = lang === 'ar'
   const clinical = getLearnContent(page.code)
   const relatedFinal = getRelatedLearnPages(clinical?.relatedCodes ?? [], slug)
+  const scoring = getLearnScoring(page.code)
 
   const schemas = [
     medicalWebPageSchema({
@@ -59,6 +63,7 @@ export default async function LearnDetailPage({ params }: Props) {
       description: isRtl ? page.shortAr : page.shortEn,
       path: `/learn/${slug}`,
       citation: page.citation,
+      lang,
     }),
     breadcrumbSchema([
       { name: isRtl ? 'الرئيسية' : 'Home', path: '/' },
@@ -106,10 +111,50 @@ export default async function LearnDetailPage({ params }: Props) {
           </p>
         </section>
 
+        {scoring && (
+          <section className="card p-6 mb-6">
+            <h2 className="text-[15px] font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+              {isRtl ? `كيف يُحتسب ${scoring.shortName}؟` : `How is the ${scoring.shortName} scored?`}
+            </h2>
+            <p className="text-[14px] leading-relaxed mb-4" style={{ color: 'var(--text-secondary)' }}>
+              {scoringSummary(scoring, lang)}
+            </p>
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr style={{ color: 'var(--text-muted)' }}>
+                  <th scope="col" className="text-start font-semibold pb-2">{isRtl ? 'الدرجة' : 'Score'}</th>
+                  <th scope="col" className="text-start font-semibold pb-2">{isRtl ? 'النتيجة' : 'Result'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scoring.ranges.map(r => (
+                  <tr key={r.min} style={{ borderTop: '1px solid var(--border)' }}>
+                    <td className="py-2 font-semibold tabular-nums" style={{ color: 'var(--text-primary)' }} dir="ltr">
+                      {formatRange(r)}
+                    </td>
+                    <td className="py-2" style={{ color: 'var(--text-secondary)' }}>
+                      {isRtl ? r.labelAr : r.labelEn}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="text-[12px] mt-3" style={{ color: 'var(--text-muted)' }}>
+              {scoring.source === 'app'
+                ? isRtl
+                  ? 'هذه النطاقات مطابقة لطريقة احتساب النتيجة في V Welfare.'
+                  : 'These ranges match how V Welfare scores this assessment.'
+                : isRtl
+                  ? 'هذه هي العتبات المنشورة للمقياس.'
+                  : 'These are the published cutoffs for this instrument.'}
+            </p>
+          </section>
+        )}
+
         {page.bands.length > 0 && (
           <section className="mb-6">
             <h2 className="text-[15px] font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-              {isRtl ? 'تفسير النطاقات (ملخص)' : 'Score ranges (summary)'}
+              {isRtl ? 'ماذا تعني النتائج؟' : 'What do the results mean?'}
             </h2>
             <div className="space-y-3">
               {page.bands.map(band => (
