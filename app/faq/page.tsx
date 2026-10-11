@@ -1,16 +1,24 @@
-import { publicPageMetadata } from '@/lib/public-metadata'
+import { localizedPublicMetadata } from '@/lib/public-metadata'
 import PublicMarketingShell from '@/components/public-marketing-shell'
 import { getLanguage } from '@/lib/get-language'
 import { PLATFORM_FAQ } from '@/lib/faq-content'
 import { faqPageSchema, breadcrumbSchema } from '@/lib/geo-schema'
 import Link from 'next/link'
 
-export const metadata = publicPageMetadata({
-  title: 'Frequently Asked Questions',
-  description:
-    'Answers about V Welfare mental health screening: Is it a diagnosis? Privacy, Arabic/English support, free assessments, crisis resources, and clinician access.',
-  path: '/faq',
-})
+export async function generateMetadata() {
+  return localizedPublicMetadata({
+    en: {
+      title: 'Frequently Asked Questions',
+      description:
+        'Answers about V Welfare mental health screening: Is it a diagnosis? Privacy, Arabic/English support, free assessments, crisis resources, and clinician access.',
+    },
+    ar: {
+      title: 'الأسئلة الشائعة',
+      description: 'إجابات عن الفحص النفسي في V Welfare: هل هو تشخيص؟ الخصوصية، ودعم العربية والإنجليزية، والتقييمات المجانية، وموارد الأزمات، والوصول إلى المختصين.',
+    },
+    path: '/faq',
+  })
+}
 
 export default async function FaqPage() {
   const lang = await getLanguage()

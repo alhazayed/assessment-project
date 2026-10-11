@@ -1,17 +1,25 @@
 import Link from 'next/link'
-import { publicPageMetadata } from '@/lib/public-metadata'
+import { localizedPublicMetadata } from '@/lib/public-metadata'
 import { getLanguage } from '@/lib/get-language'
 import { ArrowLeft } from 'lucide-react'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import LanguageToggle from '@/components/language-toggle'
 
-export const metadata = publicPageMetadata({
-  title: 'Privacy Policy',
-  description:
-    'GDPR-compliant privacy policy for V Welfare. Learn how we collect, use, store, and protect your personal and mental health data.',
-  path: '/privacy',
-})
+export async function generateMetadata() {
+  return localizedPublicMetadata({
+    en: {
+      title: 'Privacy Policy',
+      description:
+        'GDPR-compliant privacy policy for V Welfare. Learn how we collect, use, store, and protect your personal and mental health data.',
+    },
+    ar: {
+      title: 'سياسة الخصوصية',
+      description: 'سياسة خصوصية V Welfare المتوافقة مع GDPR: كيف نجمع بياناتك الشخصية وبيانات صحتك النفسية ونستخدمها ونخزنها ونحميها.',
+    },
+    path: '/privacy',
+  })
+}
 
 export default async function PrivacyPage() {
   const lang = await getLanguage()

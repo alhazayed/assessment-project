@@ -20,15 +20,23 @@ import {
   webApplicationSchema,
   webSiteSchema,
 } from '@/lib/geo-schema'
-import { publicPageMetadata } from '@/lib/public-metadata'
+import { localizedPublicMetadata } from '@/lib/public-metadata'
 import CrisisHelpLink from '@/components/crisis-help-link'
 
-export const metadata = publicPageMetadata({
-  title: 'Mental Health Assessment Platform',
-  description:
-    'Compassionate, science-backed mental health assessments and wellbeing tools. Take validated psychometric assessments in Arabic and English.',
-  path: '/',
-})
+export async function generateMetadata() {
+  return localizedPublicMetadata({
+    en: {
+      title: 'V Welfare — Mental Health Assessment Platform',
+      description:
+        'Compassionate, science-backed mental health assessments and wellbeing tools. Take validated psychometric assessments in Arabic and English.',
+    },
+    ar: {
+      title: 'V Welfare — منصة تقييم الصحة النفسية',
+      description: 'تقييمات نفسية علمية معتمدة وأدوات للرفاهية بالعربية والإنجليزية. ابدأ مقاييس نفسية موثوقة مجاناً.',
+    },
+    path: '/',
+  })
+}
 
 export default async function LandingPage() {
   const supabase = await createClient()

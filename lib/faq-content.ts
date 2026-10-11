@@ -57,9 +57,9 @@ export const PLATFORM_FAQ: FaqItem[] = [
     questionEn: 'What if I am in crisis or thinking about self-harm?',
     questionAr: 'ماذا إذا كنت في أزمة أو أفكر بإيذاء نفسي؟',
     answerEn:
-      'V Welfare is not an emergency service. If you are in immediate danger, contact local emergency services. For mental health crisis lines: Saudi Arabia 920033360, UAE 800HOPE (4673), international +1-800-273-8255.',
+      'V Welfare is not an emergency service. If you are in immediate danger, contact local emergency services. For mental health crisis lines: Saudi Arabia 920033360, UAE 800HOPE (4673), US and Canada 988.',
     answerAr:
-      'V Welfare ليست خدمة طوارئ. إذا كنت في خطر فوري، اتصل بخدمات الطوارئ المحلية. خطوط الأزمات: السعودية 920033360، الإمارات 800HOPE (4673)، دولياً +1-800-273-8255.',
+      'V Welfare ليست خدمة طوارئ. إذا كنت في خطر فوري، اتصل بخدمات الطوارئ المحلية. خطوط الأزمات: السعودية 920033360، الإمارات 800HOPE (4673)، الولايات المتحدة وكندا 988.',
   },
   {
     id: 'clinicians',

@@ -76,15 +76,18 @@ export function medicalWebPageSchema(opts: {
   description: string
   path: string
   citation?: string
+  lang?: 'en' | 'ar'
 }) {
+  const lang = opts.lang ?? 'en'
   return {
     '@context': 'https://schema.org',
     '@type': 'MedicalWebPage',
     name: opts.name,
     description: opts.description,
-    url: `${SITE_URL}${opts.path}`,
-    inLanguage: ['en', 'ar'],
+    url: `${SITE_URL}${opts.path}${lang === 'ar' ? '?lang=ar' : ''}`,
+    inLanguage: lang,
     lastReviewed: PUBLIC_MEDICAL_CONTENT_REVIEWED,
+    dateModified: PUBLIC_MEDICAL_CONTENT_REVIEWED,
     medicalAudience: {
       '@type': 'MedicalAudience',
       audienceType: 'Patient',
