@@ -305,7 +305,18 @@ export default function PatientsContent() {
                           <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
                             <span className="text-xs font-semibold text-brand-700">{name.charAt(0).toUpperCase()}</span>
                           </div>
-                          <span className="font-medium text-gray-900">{name}</span>
+                          {/* The row click is a mouse shortcut; this button is the keyboard and screen-reader control. */}
+                          <button
+                            type="button"
+                            className="font-medium text-gray-900 text-start hover:underline"
+                            aria-current={selected?.id === p.id ? 'true' : undefined}
+                            onClick={e => {
+                              e.stopPropagation()
+                              openPatient(p)
+                            }}
+                          >
+                            {name}
+                          </button>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-500">{new Date(p.created_at).toLocaleDateString()}</td>

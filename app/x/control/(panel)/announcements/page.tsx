@@ -195,13 +195,26 @@ export default function AdminAnnouncementsPage() {
                 <p className="text-[11.5px] mt-2" style={{ color: 'var(--text-muted)' }}>Created {new Date(a.created_at).toLocaleDateString()}</p>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <button onClick={() => toggleActive(a.id, a.is_active)}>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={a.is_active}
+                  aria-label={a.title_en}
+                  onClick={() => toggleActive(a.id, a.is_active)}
+                  className="p-1.5 rounded-lg"
+                >
                   {a.is_active
-                    ? <ToggleRight className="w-7 h-7" style={{ color: 'var(--vw-blue)' }} />
-                    : <ToggleLeft className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />}
+                    ? <ToggleRight className="w-7 h-7" style={{ color: 'var(--vw-blue)' }} aria-hidden="true" />
+                    : <ToggleLeft className="w-7 h-7" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />}
                 </button>
-                <button onClick={() => remove(a.id)} className="transition-colors hover:text-red-500" style={{ color: 'var(--text-muted)' }}>
-                  <Trash2 className="w-4 h-4" />
+                <button
+                  type="button"
+                  onClick={() => remove(a.id)}
+                  className="p-2 rounded-lg transition-colors hover:text-red-500"
+                  style={{ color: 'var(--text-muted)' }}
+                  aria-label={`${lang === 'ar' ? 'حذف' : 'Delete'}: ${a.title_en}`}
+                >
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
                 </button>
               </div>
             </div>

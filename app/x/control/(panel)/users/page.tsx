@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { Users, Search, CheckCircle, XCircle, ChevronDown, Trash2, AlertTriangle, X, Loader2 } from 'lucide-react'
+import { Users, Search, CheckCircle, XCircle, ChevronDown, Trash2, AlertTriangle, X, Loader2, Check } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 
@@ -42,6 +42,10 @@ export default function AdminUsersPage() {
   const [msg, setMsg] = useState('')
   const [msgError, setMsgError] = useState(false)
   const [callerRole, setCallerRole] = useState('')
+  // Role picked in a row's <select> but not yet applied. Changing the select
+  // no longer saves: arrowing through a closed select fires change for every
+  // option, which used to PATCH each role in turn (ending at superadmin).
+  const [pendingRoles, setPendingRoles] = useState<Record<string, string>>({})
 
   // Delete modal state
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
@@ -62,7 +66,13 @@ export default function AdminUsersPage() {
 
   useEffect(() => { load() }, [load])
 
-  async function toggleActive(id: string, current: boolean) {
+  async function toggleActive(id: string, current: boolean, name: string) {
+    if (current) {
+      const ok = window.confirm(lang === 'ar'
+        ? `إيقاف حساب ${name}؟ لن يتمكن من تسجيل الدخول.`
+        : `Deactivate ${name}? They will no longer be able to sign in.`)
+      if (!ok) return
+    }
     setUpdating(id)
     const res = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_active: !current }) })
     setMsgError(!res.ok)
@@ -70,6 +80,23 @@ export default function AdminUsersPage() {
     setTimeout(() => setMsg(''), 4000)
     load()
     setUpdating(null)
+  }
+
+  function clearPendingRole(id: string) {
+    setPendingRoles(prev => {
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+  }
+
+  async function applyRole(u: User, role: string) {
+    const ok = window.confirm(lang === 'ar'
+      ? `تغيير دور ${u.full_name_en} من ${u.role} إلى ${role}؟`
+      : `Change ${u.full_name_en}'s role from ${u.role} to ${role}?`)
+    if (!ok) return
+    clearPendingRole(u.id)
+    await changeRole(u.id, role)
   }
 
   async function changeRole(id: string, role: string) {
@@ -215,16 +242,46 @@ export default function AdminUsersPage() {
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="relative inline-block">
-                    <select
-                      value={u.role}
-                      onChange={e => changeRole(u.id, e.target.value)}
-                      className={`text-xs font-medium px-2 py-1 rounded-full border-0 appearance-none pr-5 cursor-pointer ${roleBadgeClass(u.role)}`}
-                    >
-                      {ROLES.map(r => <option key={r} value={r} className="text-gray-900 bg-white">{r}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" />
-                  </div>
+                  {(() => {
+                    const pending = pendingRoles[u.id]
+                    const shown = pending ?? u.role
+                    const changed = pending !== undefined && pending !== u.role
+                    return (
+                      <div className="flex items-center gap-1.5">
+                        <div className="relative inline-block">
+                          <select
+                            value={shown}
+                            onChange={e => setPendingRoles(prev => ({ ...prev, [u.id]: e.target.value }))}
+                            aria-label={lang === 'ar' ? `دور ${u.full_name_en}` : `Role for ${u.full_name_en}`}
+                            className={`text-xs font-medium px-2 py-1 rounded-full border-0 appearance-none pe-5 cursor-pointer ${roleBadgeClass(shown)}`}
+                          >
+                            {ROLES.map(r => <option key={r} value={r} className="text-gray-900 bg-white">{r}</option>)}
+                          </select>
+                          <ChevronDown className="absolute end-1 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" aria-hidden="true" />
+                        </div>
+                        {changed && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => applyRole(u, pending)}
+                              className="text-xs px-2 py-1 rounded-lg font-medium btn-accent"
+                            >
+                              <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                              {lang === 'ar' ? 'تطبيق' : 'Apply'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => clearPendingRole(u.id)}
+                              className="text-xs px-2 py-1 rounded-lg font-medium"
+                              style={{ color: 'var(--text-secondary)' }}
+                            >
+                              {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </td>
                 <td className="px-4 py-3">
                   <span className={`flex items-center gap-1.5 w-fit text-[12px] font-medium ${u.is_active ? 'text-green-600' : 'text-red-500'}`}>
@@ -237,7 +294,7 @@ export default function AdminUsersPage() {
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button
-                      onClick={() => toggleActive(u.id, u.is_active)}
+                      onClick={() => toggleActive(u.id, u.is_active, u.full_name_en)}
                       className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${u.is_active ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-600 hover:bg-green-100'}`}
                     >
                       {u.is_active ? t('admin.users.deactivate', lang) : t('admin.users.activate', lang)}

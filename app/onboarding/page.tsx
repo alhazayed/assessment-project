@@ -404,15 +404,23 @@ export default function OnboardingPage() {
               {/* Consent — required */}
               <label className="flex items-start gap-3 cursor-pointer p-4 rounded-[12px] transition-colors"
                 style={{ border: consent ? '1px solid var(--vw-blue)' : '1px solid var(--border)' }}>
-                <div
-                  className="mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors"
+                {/* Native checkbox so keyboard and screen-reader users can consent; the span is the visual box. */}
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={consent}
+                  onChange={e => setConsent(e.target.checked)}
+                  aria-required="true"
+                />
+                <span
+                  aria-hidden="true"
+                  className="mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-brand-500"
                   style={consent
                     ? { backgroundColor: 'var(--vw-blue)', borderColor: 'var(--vw-blue)' }
-                    : { borderColor: 'var(--border)' }
-                  }
-                  onClick={() => setConsent(!consent)}>
+                    : { borderColor: 'var(--text-muted)' }
+                  }>
                   {consent && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
-                </div>
+                </span>
                 <span className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   <span className="text-red-500 font-semibold">* </span>
                   {t('profile.consent.text', lang)}

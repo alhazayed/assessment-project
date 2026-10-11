@@ -238,23 +238,26 @@ export default function AcceptInvitationPage() {
 
             {/* Permissions */}
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t.selectPerms}</p>
-              <div className="space-y-2">
+              <p id="permissions-label" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t.selectPerms}</p>
+              <div className="space-y-2" role="group" aria-labelledby="permissions-label">
                 {invitation.requested_permissions.map(key => {
                   const label = PERMISSION_LABELS[key]
                   const isGranted = granted.has(key)
                   return (
                     <button
                       key={key}
+                      type="button"
+                      role="checkbox"
+                      aria-checked={isGranted}
                       onClick={() => togglePermission(key)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-sm text-left transition-colors
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg border text-sm text-start transition-colors
                         ${isGranted
                           ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300'
                           : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300'}`}
                     >
                       {isGranted
-                        ? <CheckSquare className="w-4 h-4 flex-shrink-0 text-teal-500" />
-                        : <Square className="w-4 h-4 flex-shrink-0 text-gray-400" />}
+                        ? <CheckSquare className="w-4 h-4 flex-shrink-0 text-teal-500" aria-hidden="true" />
+                        : <Square className="w-4 h-4 flex-shrink-0 text-gray-400" aria-hidden="true" />}
                       {label ? (lang === 'ar' ? label.ar : label.en) : key}
                     </button>
                   )
