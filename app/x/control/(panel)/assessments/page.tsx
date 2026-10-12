@@ -102,10 +102,17 @@ export default function AdminAssessmentsPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <button onClick={() => toggle(a.id, a.is_active)} className="transition-colors hover:opacity-70">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={a.is_active}
+                    aria-label={lang === 'ar' && a.name_ar ? a.name_ar : a.name_en}
+                    onClick={() => toggle(a.id, a.is_active)}
+                    className="p-1.5 rounded-lg transition-colors hover:opacity-70"
+                  >
                     {a.is_active
-                      ? <ToggleRight className="w-7 h-7" style={{ color: 'var(--vw-blue)' }} />
-                      : <ToggleLeft className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />}
+                      ? <ToggleRight className="w-7 h-7" style={{ color: 'var(--vw-blue)' }} aria-hidden="true" />
+                      : <ToggleLeft className="w-7 h-7" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />}
                   </button>
                 </td>
               </tr>

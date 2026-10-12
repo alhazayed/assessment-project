@@ -358,19 +358,27 @@ function RegisterForm() {
 
         {/* Terms checkbox */}
         <label className="flex items-start gap-3 cursor-pointer">
-          <div
-            className="mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors"
+          {/* Native checkbox so keyboard and screen-reader users can agree; the span is the visual box. */}
+          <input
+            type="checkbox"
+            className="peer sr-only"
+            checked={agreedToTerms}
+            onChange={e => setAgreedToTerms(e.target.checked)}
+            aria-required="true"
+          />
+          <span
+            aria-hidden="true"
+            className="mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-brand-500"
             style={agreedToTerms
               ? { backgroundColor: '#1D6296', borderColor: '#1D6296' }
-              : { borderColor: 'var(--border)' }}
-            onClick={() => setAgreedToTerms(!agreedToTerms)}
+              : { borderColor: 'var(--text-muted)' }}
           >
             {agreedToTerms && (
               <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             )}
-          </div>
+          </span>
           <span className="text-[13px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             {isRtl ? (
               <>

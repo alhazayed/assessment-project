@@ -197,9 +197,26 @@ export default function JournalPage() {
                 <p className="text-[13.5px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   {isExpanded ? entry.body : preview}
                   {!isExpanded && needsTruncation && (
-                    <span className="ms-1 font-semibold" style={{ color: '#1D6296' }}>...</span>
+                    <span className="ms-1 font-semibold" style={{ color: 'var(--vw-blue)' }} aria-hidden="true">...</span>
                   )}
                 </p>
+                {/* The card click is a mouse shortcut; this button is the keyboard and screen-reader control. */}
+                {needsTruncation && (
+                  <button
+                    type="button"
+                    className="mt-2 text-[13px] font-semibold hover:underline"
+                    style={{ color: 'var(--vw-blue)' }}
+                    aria-expanded={isExpanded}
+                    onClick={e => {
+                      e.stopPropagation()
+                      setExpandedId(isExpanded ? null : entry.id)
+                    }}
+                  >
+                    {isExpanded
+                      ? (lang === 'ar' ? 'عرض أقل' : 'Show less')
+                      : (lang === 'ar' ? 'اقرأ المزيد' : 'Read more')}
+                  </button>
+                )}
               </div>
             )
           })}

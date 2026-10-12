@@ -237,8 +237,8 @@ export default function MessagesPage() {
               <button
                 key={item.id}
                 onClick={() => isClinician ? setSelectedPatient(item) : setSelectedClinician(item)}
-                className="w-full text-start px-4 py-3 flex items-center gap-3 transition-colors"
-                style={isSelected ? { background: '#EAF2F9' } : undefined}
+                className={`w-full text-start px-4 py-3 flex items-center gap-3 transition-colors ${isSelected ? 'list-item-selected' : ''}`}
+                aria-current={isSelected ? 'true' : undefined}
               >
                 <div className="avatar-sm" style={{ background: '#1D6296' }}>{name.charAt(0).toUpperCase()}</div>
                 <span className="text-[13.5px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>{name}</span>

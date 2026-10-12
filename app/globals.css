@@ -368,27 +368,56 @@
     border-left-color: var(--vw-orange);
   }
 
-  /* ── ALERT VARIANTS ── */
+  /* ── ALERT VARIANTS ──
+     Alerts keep their light tint in both themes, so they set their own dark
+     text colour and re-scope the text tokens. Without this, dark mode put
+     #F4F8FB text on these light backgrounds (about 1.1:1). */
   .alert-info {
     @apply rounded-[12px] p-4;
     background: #EAF2F9;
     border: 1px solid #CFE2F1;
     border-radius: 14px;
+    --text-primary: #0F3A5C;   /* 10.4:1 on #EAF2F9 */
+    --text-secondary: #2E4A62; /* 8.2:1 */
+    color: var(--text-primary);
   }
   .alert-success {
     @apply rounded-[12px] p-4;
     background: #E6F4EC;
     border: 1px solid #C9E6D6;
+    --text-primary: #14532D;   /* 8.0:1 on #E6F4EC */
+    --text-secondary: #24543A; /* 7.7:1 */
+    color: var(--text-primary);
   }
   .alert-warning {
     @apply rounded-[12px] p-4;
     background: #FBF1DC;
     border: 1px solid #F1E0B8;
+    --text-primary: #5C3D06;   /* 8.8:1 on #FBF1DC */
+    --text-secondary: #6B4A0E; /* 7.2:1 */
+    color: var(--text-primary);
   }
   .alert-error {
     @apply rounded-[12px] p-4;
     background: #FDE8E8;
     border: 1px solid #F8C8C8;
+    --text-primary: #8F1F1F;   /* 7.5:1 on #FDE8E8 */
+    --text-secondary: #7A2A2A; /* 8.2:1 */
+    color: var(--text-primary);
+  }
+
+  /* Selected row in a list (e.g. the Messages contact list). Tinted in both
+     themes and marked with an inline-start bar so selection isn't colour-only
+     in the text. */
+  .list-item-selected {
+    background: #EAF2F9;
+    box-shadow: inset 3px 0 0 var(--vw-blue);
+  }
+  [dir="rtl"] .list-item-selected {
+    box-shadow: inset -3px 0 0 var(--vw-blue);
+  }
+  .dark .list-item-selected {
+    background: rgba(76, 155, 224, 0.15);
   }
 
   /* ── SKELETON LOADER ── */

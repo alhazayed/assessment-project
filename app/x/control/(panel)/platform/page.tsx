@@ -87,10 +87,17 @@ export default function AdminPlatformPage() {
                     </div>
                   )}
                 </div>
-                <button onClick={() => toggleFlag(f.id, f.is_enabled)} className="flex-shrink-0">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={f.is_enabled}
+                  aria-label={f.display_name}
+                  onClick={() => toggleFlag(f.id, f.is_enabled)}
+                  className="flex-shrink-0 p-1.5 -m-1.5 rounded-lg"
+                >
                   {f.is_enabled
-                    ? <ToggleRight className="w-8 h-8" style={{ color: 'var(--vw-blue)' }} />
-                    : <ToggleLeft className="w-8 h-8" style={{ color: 'var(--text-muted)' }} />}
+                    ? <ToggleRight className="w-8 h-8" style={{ color: 'var(--vw-blue)' }} aria-hidden="true" />
+                    : <ToggleLeft className="w-8 h-8" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />}
                 </button>
               </div>
             ))}

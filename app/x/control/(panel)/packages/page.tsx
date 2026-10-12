@@ -369,12 +369,17 @@ export default function AdminPackagesPage() {
                           <Settings2 className="w-4 h-4" />
                         </button>
                         <button
+                          type="button"
+                          role="switch"
+                          aria-checked={pkg.status === 'active'}
+                          aria-label={lang === 'ar' && pkg.name_ar ? pkg.name_ar : pkg.name_en}
                           title={pkg.status === 'active' ? t('admin.packages.deactivate', lang) : t('admin.packages.activate', lang)}
                           onClick={() => setStatus(pkg.id, pkg.status === 'active' ? 'draft' : 'active')}
+                          className="p-1.5 rounded-lg"
                         >
                           {pkg.status === 'active'
-                            ? <ToggleRight className="w-6 h-6" style={{ color: 'var(--vw-blue)' }} />
-                            : <ToggleLeft className="w-6 h-6" style={{ color: 'var(--text-muted)' }} />}
+                            ? <ToggleRight className="w-6 h-6" style={{ color: 'var(--vw-blue)' }} aria-hidden="true" />
+                            : <ToggleLeft className="w-6 h-6" style={{ color: 'var(--text-muted)' }} aria-hidden="true" />}
                         </button>
                         <button
                           title={t('admin.packages.archive', lang)}
