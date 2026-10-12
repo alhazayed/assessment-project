@@ -5,7 +5,7 @@ import { getLanguage } from '@/lib/get-language'
 import { CRISIS_LINES, CRISIS_HELPLINE_URL } from '@/lib/crisis-resources'
 
 export const metadata: Metadata = {
-  title: 'Emergency Resources · موارد الطوارئ | V Welfare',
+  title: 'Emergency Resources · موارد الطوارئ',
   description:
     'Crisis support and emergency mental health resources. If you are in immediate danger, contact emergency services. الدعم في الأزمات وموارد الصحة النفسية الطارئة.',
   robots: { index: true, follow: true },
