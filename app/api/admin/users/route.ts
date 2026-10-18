@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { setAccountSignInAllowed } from '@/lib/security/account-access'
 import { createClient } from '@/lib/supabase/server'
 
 const ALLOWED_ROLES = ['patient', 'clinician', 'admin', 'superadmin'] as const
@@ -116,7 +117,23 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
     }
 
-    await db.from('profiles').update(update).eq('id', id)
+    // Deactivation has to end access, not just flip the flag. Block (or
+    // restore) sign-in first, so if that fails the profile is left untouched.
+    if (update.is_active !== undefined) {
+      try {
+        await setAccountSignInAllowed(db, id, update.is_active as boolean)
+      } catch (err) {
+        console.error('[admin/users] could not change sign-in access:', err)
+        return NextResponse.json({ error: 'Could not change this account\'s sign-in access. Nothing was changed.' }, { status: 500 })
+      }
+      update.deactivated_at = update.is_active ? null : new Date().toISOString()
+    }
+
+    const { error: updateError } = await db.from('profiles').update(update).eq('id', id)
+    if (updateError) {
+      console.error('[admin/users] profile update failed:', updateError.message)
+      return NextResponse.json({ error: 'Failed to update user' }, { status: 500 })
+    }
 
     // Audit log — use caller's server client so actor_id = caller
     const supabase = await createClient()
