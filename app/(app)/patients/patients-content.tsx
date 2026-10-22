@@ -12,6 +12,7 @@ import { t } from '@/lib/i18n'
 import { localizeSeverity } from '@/lib/severity-labels'
 import type { Profile } from '@/lib/types'
 import { bandToSeverity, type SeverityLevel } from '@/lib/severity'
+import { reviewedByLine } from '@/lib/clinical-review'
 
 type ClinicalNote = {
   id: string
@@ -38,6 +39,9 @@ type Submission = {
   total_score: number
   severity_band: string
   high_risk_flag: boolean
+  reviewer_name: string | null
+  reviewer_title: string | null
+  reviewed_at: string | null
   assessment_definitions: { name_en: string; name_ar: string; code: string } | null
 }
 
@@ -67,6 +71,8 @@ export default function PatientsContent() {
   const [selected, setSelected] = useState<Patient | null>(null)
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [subLoading, setSubLoading] = useState(false)
+  const [reviewingId, setReviewingId] = useState<string | null>(null)
+  const [reviewError, setReviewError] = useState('')
 
   const [assessments, setAssessments] = useState<AssessmentDef[]>([])
   const [showAssign, setShowAssign] = useState(false)
@@ -155,15 +161,29 @@ export default function PatientsContent() {
     setShowAssign(false)
     setAssignMsg('')
     setDetailTab('history')
+    setReviewError('')
     setSubLoading(true)
     const { data } = await supabase
       .from('assessment_submissions')
-      .select('id, submitted_at, total_score, severity_band, high_risk_flag, assessment_definitions(name_en, name_ar, code)')
+      .select('id, submitted_at, total_score, severity_band, high_risk_flag, reviewer_name, reviewer_title, reviewed_at, assessment_definitions(name_en, name_ar, code)')
       .eq('patient_id', p.id)
       .order('submitted_at', { ascending: false })
       .limit(20)
     setSubmissions((data as unknown as Submission[]) || [])
     setSubLoading(false)
+  }
+
+  async function confirmReview(submissionId: string) {
+    setReviewingId(submissionId)
+    setReviewError('')
+    const { data, error } = await supabase.rpc('confirm_submission_review', { p_submission_id: submissionId })
+    if (error || !data) {
+      setReviewError(t('patients.review.failed', lang))
+    } else {
+      const r = data as { reviewed_at: string; reviewer_name: string; reviewer_title: string | null }
+      setSubmissions(prev => prev.map(s => s.id === submissionId ? { ...s, ...r } : s))
+    }
+    setReviewingId(null)
   }
 
   async function loadNotes(patientId: string) {
@@ -482,6 +502,7 @@ export default function PatientsContent() {
                 </div>
               ) : (
                 <div className="space-y-2">
+                  {reviewError && <p role="alert" className="text-xs text-red-600">{reviewError}</p>}
                   {submissions.map(s => {
                     const def = s.assessment_definitions
                     const aName = isAr && def?.name_ar ? def.name_ar : def?.name_en
@@ -500,6 +521,21 @@ export default function PatientsContent() {
                             {new Date(s.submitted_at).toLocaleDateString()}
                           </div>
                         </div>
+                        {reviewedByLine(lang, s) ? (
+                          <p className="mt-2 flex items-center gap-1 text-xs text-green-700">
+                            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+                            {reviewedByLine(lang, s)}
+                          </p>
+                        ) : myProfile?.role === 'clinician' && (
+                          <button
+                            onClick={() => confirmReview(s.id)}
+                            disabled={reviewingId !== null}
+                            className="mt-2 flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline disabled:opacity-50"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                            {reviewingId === s.id ? t('patients.review.confirming', lang) : t('patients.review.confirm', lang)}
+                          </button>
+                        )}
                       </div>
                     )
                   })}

@@ -6,6 +6,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { clinicianHasPatientAccess } from '@/lib/authz/clinician-access'
 import { verifyAdminSession } from '@/lib/admin-auth'
+import { reviewedByLine } from '@/lib/clinical-review'
 
 // Per-submission PDF export — the endpoint the mobile Results screen calls
 // (GET /api/export/pdf/<submissionId> with a Bearer token). Also accepts a web
@@ -83,7 +84,7 @@ export async function GET(request: Request, props: { params: Promise<{ submissio
     const db = createAdminClient()
     const { data: sub } = await db
       .from('assessment_submissions')
-      .select('id, patient_id, total_score, severity_band, high_risk_flag, submitted_at, assessment_definitions(name_en, code)')
+      .select('id, patient_id, total_score, severity_band, high_risk_flag, submitted_at, reviewer_name, reviewer_title, reviewed_at, assessment_definitions(name_en, code)')
       .eq('id', submissionId)
       .maybeSingle()
 
@@ -108,6 +109,7 @@ export async function GET(request: Request, props: { params: Promise<{ submissio
     const def = sub.assessment_definitions as unknown as { name_en?: string; code?: string } | null
     const assessmentName = def?.name_en ?? def?.code ?? 'Assessment'
     const generatedDate = new Date().toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' })
+    const reviewedBy = reviewedByLine('en', sub)
 
     const pdfDoc = (
       <Document title="V Welfare — Assessment Report">
@@ -124,6 +126,9 @@ export async function GET(request: Request, props: { params: Promise<{ submissio
             <View style={styles.row}><Text style={styles.label}>Date</Text><Text style={styles.value}>{new Date(sub.submitted_at).toLocaleDateString()}</Text></View>
             <View style={styles.row}><Text style={styles.label}>Total Score</Text><Text style={styles.value}>{sub.total_score}</Text></View>
             <View style={styles.row}><Text style={styles.label}>Severity Band</Text><Text style={styles.value}>{sub.severity_band}</Text></View>
+            {reviewedBy && (
+              <View style={styles.row}><Text style={styles.label}>Clinical Review</Text><Text style={styles.value}>{reviewedBy}</Text></View>
+            )}
             <View style={[styles.badge, { backgroundColor: severityBg(sub.severity_band) }]}>
               <Text style={{ fontSize: 8, color: severityFg(sub.severity_band) }}>
                 {sub.severity_band}{sub.high_risk_flag ? '  ⚠ High Risk — clinical follow-up recommended' : ''}
