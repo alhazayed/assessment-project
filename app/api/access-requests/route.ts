@@ -177,16 +177,17 @@ export async function POST(request: Request) {
     console.error('[POST /api/access-requests] failed to update access code:', codeUpdateError)
   }
 
-  // Check for an existing relationship
-  const { data: existingRelationship } = await supabase
+  // A pair has at most one relationship row (UNIQUE clinician_id, patient_id).
+  // A pending or active one blocks a new request; a revoked/rejected/expired
+  // one is re-opened as a fresh pending request below.
+  const { data: existingRelationship } = await admin
     .from('clinician_patient_relationships')
     .select('id, status')
     .eq('clinician_id', user.id)
     .eq('patient_id', accessCode.patient_id)
-    .in('status', ['pending', 'active'])
     .maybeSingle()
 
-  if (existingRelationship) {
+  if (existingRelationship && ['pending', 'active'].includes(existingRelationship.status)) {
     const message =
       existingRelationship.status === 'pending'
         ? 'An access request is already pending for this patient'
@@ -206,20 +207,43 @@ export async function POST(request: Request) {
     permissionsToUse = parsed.keys
   }
 
-  // Insert the relationship
-  const { data: newRelationship, error: insertError } = await admin
-    .from('clinician_patient_relationships')
-    .insert({
-      clinician_id: user.id,
-      patient_id: accessCode.patient_id,
-      status: 'pending',
-      initiated_by: 'clinician',
-      patient_code_used: patient_code.trim(),
-      request_message: request_message ?? null,
-      requested_permissions: permissionsToUse,
-    })
-    .select()
-    .single()
+  // Create the request, or re-open the pair's earlier ended relationship.
+  const requestFields = {
+    status: 'pending',
+    initiated_by: 'clinician',
+    patient_code_used: patient_code.trim(),
+    request_message: request_message ?? null,
+    requested_permissions: permissionsToUse,
+    requested_at: new Date().toISOString(),
+    responded_at: null,
+    revoked_at: null,
+    revoked_by: null,
+  }
+  const { data: newRelationship, error: insertError } = existingRelationship
+    ? await admin
+        .from('clinician_patient_relationships')
+        .update(requestFields)
+        .eq('id', existingRelationship.id)
+        .select()
+        .single()
+    : await admin
+        .from('clinician_patient_relationships')
+        .insert({ clinician_id: user.id, patient_id: accessCode.patient_id, ...requestFields })
+        .select()
+        .single()
+
+  // Old grants must not survive into the re-opened request: the patient
+  // chooses permissions again when approving.
+  if (existingRelationship && newRelationship) {
+    const { error: resetError } = await admin
+      .from('relationship_permissions')
+      .update({ granted: false, revoked_at: new Date().toISOString() })
+      .eq('relationship_id', existingRelationship.id)
+      .eq('granted', true)
+    if (resetError) {
+      console.error('[POST /api/access-requests] permission reset error:', resetError)
+    }
+  }
 
   if (insertError || !newRelationship) {
     console.error('[POST /api/access-requests] insert relationship error:', insertError)

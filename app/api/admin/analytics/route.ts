@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchAll } from '@/lib/admin/fetch-all'
 
 export async function GET() {
   try {
@@ -9,46 +10,46 @@ export async function GET() {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
     const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString()
 
-    const [recent30Res, defsRes, allUsersRes, recentUsersRes, prevPeriodRes,
-      allTimeTotalsRes, severityDistRes, assessStatsRes,
+    type SubRow = { definition_id: string; total_score: number | null; high_risk_flag: boolean | null; severity_band: string | null }
+
+    // PostgREST caps every response at 1,000 rows (max_rows), so row-level
+    // aggregation pages through the full table with fetchAll() and plain
+    // totals use exact head counts.
+    const [subs30, defsRes, allUsers, recentUsers, prevPeriodRes, allSubs,
       totalCountRes, highRiskCountRes] = await Promise.all([
-      // Last 30 days for daily chart only — small window
-      db.from('assessment_submissions')
-        .select('id, definition_id, high_risk_flag, submitted_at')
-        .gte('submitted_at', thirtyDaysAgo)
-        .order('submitted_at', { ascending: true }),
+      // Last 30 days for the daily chart
+      fetchAll<{ id: string; definition_id: string; high_risk_flag: boolean | null; submitted_at: string }>(() =>
+        db.from('assessment_submissions')
+          .select('id, definition_id, high_risk_flag, submitted_at')
+          .gte('submitted_at', thirtyDaysAgo)
+          .order('submitted_at', { ascending: true })
+          .order('id', { ascending: true })),
       db.from('assessment_definitions')
         .select('id, code, name_en, is_active'),
-      db.from('profiles').select('id, created_at, role'),
-      db.from('profiles').select('id, created_at').gte('created_at', thirtyDaysAgo),
+      fetchAll<{ id: string; role: string }>(() =>
+        db.from('profiles').select('id, role').order('id', { ascending: true })),
+      fetchAll<{ id: string; created_at: string }>(() =>
+        db.from('profiles').select('id, created_at').gte('created_at', thirtyDaysAgo).order('id', { ascending: true })),
       db.from('assessment_submissions')
         .select('id', { count: 'exact', head: true })
         .gte('submitted_at', sixtyDaysAgo)
         .lt('submitted_at', thirtyDaysAgo),
-      // All-time aggregate stats via DB — no full table scan in Lambda
-      db.from('assessment_submissions')
-        .select('total_score, high_risk_flag', { count: 'exact' })
-        .not('total_score', 'is', null)
-        .limit(5000), // cap for score stats; sufficient for stddev
-      db.from('assessment_submissions')
-        .select('severity_band')
-        .not('severity_band', 'is', null)
-        .limit(5000),
-      db.from('assessment_submissions')
-        .select('definition_id, total_score, high_risk_flag, severity_band')
-        .limit(5000),
-      // True totals (not derived from the capped score sample).
+      // Every submission's score fields, for score stats, severity and per-assessment stats
+      fetchAll<SubRow>(() =>
+        db.from('assessment_submissions')
+          .select('definition_id, total_score, high_risk_flag, severity_band')
+          .order('id', { ascending: true })),
       db.from('assessment_submissions').select('id', { count: 'exact', head: true }),
       db.from('assessment_submissions').select('id', { count: 'exact', head: true }).eq('high_risk_flag', true),
     ])
+    if (defsRes.error || prevPeriodRes.error || totalCountRes.error || highRiskCountRes.error) {
+      throw new Error('analytics query failed')
+    }
 
-    const subs30 = recent30Res.data || []
     const defs = defsRes.data || []
-    const allUsers = allUsersRes.data || []
-    const recentUsers = recentUsersRes.data || []
-    const allTimeSubs = allTimeTotalsRes.data || []
-    const severitySubs = severityDistRes.data || []
-    const assessRaw = assessStatsRes.data || []
+    const allTimeSubs = allSubs.filter(s => s.total_score != null)
+    const severitySubs = allSubs.filter(s => s.severity_band != null)
+    const assessRaw = allSubs
 
     // 30-day daily breakdown
     const dailySubMap: Record<string, { count: number; highRisk: number }> = {}
@@ -131,17 +132,16 @@ export async function GET() {
     const roleMap: Record<string, number> = {}
     for (const u of allUsers) roleMap[u.role] = (roleMap[u.role] || 0) + 1
 
-    // Overall stats from capped sample
+    // Overall score stats across every scored submission
     const allScores = allTimeSubs.map(s => s.total_score ?? 0)
     const n = allScores.length
-    // True counts across all submissions, independent of the capped score sample.
     const totalSubmissions = totalCountRes.count ?? n
     const highRiskTotal = highRiskCountRes.count ?? allTimeSubs.filter(s => s.high_risk_flag).length
     const sorted = [...allScores].sort((a, b) => a - b)
     const avg = n ? allScores.reduce((s, v) => s + v, 0) / n : 0
     const median = n === 0 ? 0 : n % 2 === 0 ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2 : sorted[Math.floor(n / 2)]
     const variance = n ? allScores.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / n : 0
-    const prevPeriodCount = (prevPeriodRes as any)?.count ?? 0
+    const prevPeriodCount = prevPeriodRes.count ?? 0
     const currentPeriodCount = subs30.length
     const periodChange = prevPeriodCount > 0
       ? +((currentPeriodCount - prevPeriodCount) / prevPeriodCount * 100).toFixed(1)
@@ -164,7 +164,7 @@ export async function GET() {
     }
 
     return NextResponse.json({ dailySubmissions, severityDistribution, assessmentStats, userGrowth, overallStats })
-  } catch {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  } catch (error) {
+    return adminRouteError(error)
   }
 }

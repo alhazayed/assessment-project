@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchDisplayProfiles } from '@/lib/authz/counterparty'
 
 // GET /api/patient/relationships
 // Returns all clinician relationships for the authenticated patient,
@@ -53,11 +55,6 @@ export async function GET() {
       revoked_at,
       last_access_at,
       clinician_id,
-      clinician:profiles!clinician_patient_relationships_clinician_id_fkey (
-        full_name_en,
-        full_name_ar,
-        avatar_url
-      ),
       relationship_permissions (
         permission_key,
         granted,
@@ -79,14 +76,26 @@ export async function GET() {
     new Set((relationships ?? []).map((r) => r.clinician_id).filter(Boolean))
   ) as string[]
 
+  // Patients can't read clinician profiles or verification rows through RLS,
+  // so both come from the service role, limited to clinicians already on this
+  // patient's own relationships. Without this the patient approved requests
+  // without seeing who was asking.
+  const admin = createAdminClient()
+  const profilesById = await fetchDisplayProfiles(admin, clinicianIds)
+
   const verificationByClinician = new Map<
     string,
-    { specialty: string | null; organization: string | null; professional_title: string | null }
+    {
+      specialty: string | null
+      organization: string | null
+      professional_title: string | null
+      verified: boolean
+    }
   >()
   if (clinicianIds.length > 0) {
-    const { data: verifications, error: verErr } = await supabase
+    const { data: verifications, error: verErr } = await admin
       .from('clinician_verifications')
-      .select('clinician_id, specialty, organization, professional_title')
+      .select('clinician_id, specialty, organization, professional_title, status')
       .in('clinician_id', clinicianIds)
     if (verErr) {
       // Non-fatal: relationships still render without verification metadata.
@@ -97,6 +106,7 @@ export async function GET() {
           specialty: v.specialty ?? null,
           organization: v.organization ?? null,
           professional_title: v.professional_title ?? null,
+          verified: v.status === 'verified',
         })
       }
     }
@@ -104,14 +114,9 @@ export async function GET() {
 
   // Reshape into the documented response schema
   const shaped = (relationships ?? []).map((rel) => {
-    // Supabase infers joined foreign-key rows as arrays in its generic types,
-    // but at runtime a to-one join returns a single object or null.
-    // We cast through `unknown` to bridge the type mismatch safely.
-    const clinicianProfile = rel.clinician as unknown as {
-      full_name_en: string | null
-      full_name_ar: string | null
-      avatar_url: string | null
-    } | null
+    const clinicianProfile = rel.clinician_id
+      ? profilesById.get(rel.clinician_id as string) ?? null
+      : null
 
     const verification = rel.clinician_id
       ? verificationByClinician.get(rel.clinician_id as string) ?? null
@@ -142,6 +147,7 @@ export async function GET() {
         specialty: verification?.specialty ?? null,
         organization: verification?.organization ?? null,
         professional_title: verification?.professional_title ?? null,
+        verified: verification?.verified ?? false,
       },
       permissions: permissions.map((p) => ({
         permission_key: p.permission_key,

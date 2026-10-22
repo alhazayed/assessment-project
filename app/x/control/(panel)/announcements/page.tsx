@@ -46,21 +46,37 @@ export default function AdminAnnouncementsPage() {
   async function create(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    await fetch('/api/admin/announcements', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+    const res = await fetch('/api/admin/announcements', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      flash(data.error || (lang === 'ar' ? 'تعذّر تنفيذ العملية' : 'The change could not be saved'))
+      setSaving(false)
+      return
+    }
     flash(t('admin.announcements.created', lang))
     setShowForm(false); setForm(defaultForm); load()
     setSaving(false)
   }
 
   async function toggleActive(id: string, current: boolean) {
-    await fetch('/api/admin/announcements', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_active: !current }) })
+    const res = await fetch('/api/admin/announcements', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_active: !current }) })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      flash(data.error || (lang === 'ar' ? 'تعذّر تنفيذ العملية' : 'The change could not be saved'))
+      return
+    }
     flash(t(!current ? 'admin.announcements.activated' : 'admin.announcements.deactivated', lang))
     load()
   }
 
   async function remove(id: string) {
     if (!confirm(t('admin.announcements.confirm_delete', lang))) return
-    await fetch('/api/admin/announcements', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    const res = await fetch('/api/admin/announcements', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      flash(data.error || (lang === 'ar' ? 'تعذّر تنفيذ العملية' : 'The change could not be saved'))
+      return
+    }
     flash(t('admin.announcements.deleted', lang))
     load()
   }

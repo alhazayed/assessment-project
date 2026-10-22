@@ -1,8 +1,23 @@
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { buildContentDisposition, getMimeTypeForFormat } from '@/lib/security/file-export'
+import { fetchAll } from '@/lib/admin/fetch-all'
+import { writeAdminAudit } from '@/lib/admin/audit'
+import { escapeHtml } from '@/lib/admin/html'
+
+const FORMATS = ['csv', 'detailed', 'stats', 'risk', 'demographics', 'pdf'] as const
+type ExportFormat = typeof FORMATS[number]
+const ASSESSMENT_CODE_RE = /^[A-Za-z0-9_-]{1,64}$/
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const SEVERITY_RE = /^[A-Za-z0-9 _-]{1,64}$/
+
+/** Coarsens a timestamp to its calendar month (YYYY-MM) for anonymized output. */
+function toMonth(iso: string): string {
+  const d = new Date(iso)
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 7)
+}
 
 function csvSafe(value: string): string {
   if (/^[=+\-@|%\t\r]/.test(String(value))) return `'${value}`
@@ -62,28 +77,62 @@ export async function GET(request: Request) {
     const severity = searchParams.get('severity') || ''
     const from = searchParams.get('from') || ''
     const to = searchParams.get('to') || ''
-    const format = searchParams.get('format') || 'csv'
+    const formatParam = searchParams.get('format') || 'csv'
+
+    // Validate every parameter before it reaches the database or the HTML report.
+    if (!(FORMATS as readonly string[]).includes(formatParam)) {
+      return NextResponse.json({ error: 'Unknown format' }, { status: 400 })
+    }
+    const format = formatParam as ExportFormat
+    if (assessment && !ASSESSMENT_CODE_RE.test(assessment)) {
+      return NextResponse.json({ error: 'Invalid assessment' }, { status: 400 })
+    }
+    if ((from && !DATE_RE.test(from)) || (to && !DATE_RE.test(to))) {
+      return NextResponse.json({ error: 'Invalid date range' }, { status: 400 })
+    }
+    if (severity && severity !== 'high_risk' && !SEVERITY_RE.test(severity)) {
+      return NextResponse.json({ error: 'Invalid severity' }, { status: 400 })
+    }
 
     const db = createAdminClient()
-    let query = db.from('assessment_submissions')
-      .select(`
-        id, total_score, severity_band, high_risk_flag, submitted_at,
-        patient_id, definition_id,
-        guest_dob, guest_gender, guest_education, guest_country,
-        assessment_definitions(name_en, code),
-        profiles(gender, date_of_birth, country_of_residence, educational_status,
-          patient_profiles(employment_status, has_psychiatric_medications))
-      `)
-      .order('submitted_at', { ascending: false })
-      .limit(10000)
 
-    if (from) query = query.gte('submitted_at', from)
-    if (to) query = query.lte('submitted_at', to + 'T23:59:59')
-    if (severity === 'high_risk') query = query.eq('high_risk_flag', true)
+    // The assessment filter must name a known assessment code.
+    let definitionId: string | null = null
+    if (assessment) {
+      const { data: def, error: defErr } = await db
+        .from('assessment_definitions')
+        .select('id')
+        .eq('code', assessment)
+        .maybeSingle()
+      if (defErr) throw new Error(defErr.message)
+      if (!def) return NextResponse.json({ error: 'Invalid assessment' }, { status: 400 })
+      definitionId = def.id
+    }
 
-    const { data: subs } = await query
+    const buildQuery = () => {
+      let query = db.from('assessment_submissions')
+        .select(`
+          id, total_score, severity_band, high_risk_flag, submitted_at,
+          patient_id, definition_id,
+          guest_dob, guest_gender, guest_education, guest_country,
+          assessment_definitions(name_en, code),
+          profiles(gender, date_of_birth, country_of_residence, educational_status,
+            patient_profiles(employment_status, has_psychiatric_medications))
+        `)
+        .order('submitted_at', { ascending: false })
+        .order('id', { ascending: true })
 
-    let rows = (subs || []).map((s: any) => {
+      if (from) query = query.gte('submitted_at', from)
+      if (to) query = query.lte('submitted_at', to + 'T23:59:59')
+      if (severity === 'high_risk') query = query.eq('high_risk_flag', true)
+      if (definitionId) query = query.eq('definition_id', definitionId)
+      return query
+    }
+
+    // fetchAll() pages past PostgREST's 1,000-row max_rows cap.
+    const subs = await fetchAll<any>(buildQuery)
+
+    let rows = subs.map((s: any) => {
       const p = s.profiles
       const pp = Array.isArray(p?.patient_profiles) ? p.patient_profiles[0] : p?.patient_profiles
       const dob = p?.date_of_birth || s.guest_dob || null
@@ -105,28 +154,32 @@ export async function GET(request: Request) {
       }
     })
 
-    if (assessment) rows = rows.filter((r: any) => r.code === assessment)
     if (severity && severity !== 'high_risk') rows = rows.filter((r: any) => (r.severity || '').toLowerCase().includes(severity.toLowerCase()))
 
+    // Anonymized exports never carry submission UUIDs (they link back to the
+    // patient's record) or exact timestamps: each row gets a per-export
+    // sequential ID and its date is coarsened to the month.
+    const anonRows = rows.map((r, i) => ({
+      ...r,
+      recordId: `R${String(i + 1).padStart(6, '0')}`,
+      month: toMonth(r.submittedAt),
+    }))
+
     // Audit log — record who exported what and how many rows
-    try {
-      await db.from('audit_log').insert({
-        actor_id: adminUser.id,
-        action: 'data_export',
-        target_type: 'assessment_submissions',
-        target_id: adminUser.id,
-        details: { format, row_count: rows.length, filters: { assessment, severity, from, to } },
-      })
-    } catch (auditErr) {
-      console.error('[admin/export] audit log failed (non-fatal):', auditErr instanceof Error ? auditErr.message : 'unknown')
-    }
+    await writeAdminAudit({
+      actorId: adminUser.id,
+      action: 'data_export',
+      targetType: 'assessment_submissions',
+      targetId: adminUser.id,
+      details: { format, row_count: rows.length, filters: { assessment, severity, from, to } },
+    }, db)
 
     const dateStr = new Date().toISOString().split('T')[0]
 
     // --- CSV export (anonymized, with demographics) ---
     if (format === 'csv' || format === 'detailed') {
-      const headers = ['Record ID', 'Assessment Type', 'Code', 'Date', 'Age Group', 'Gender', 'Country', 'Education', 'Employment', 'Medication Use', 'Score', 'Severity', 'High Risk']
-      const dataRows = rows.map(r => [r.id, r.assessment, r.code, new Date(r.submittedAt).toISOString().split('T')[0], r.ageGroup, r.gender, r.country, r.education, r.employment, r.medication, r.score, r.severity, r.highRisk])
+      const headers = ['Record ID', 'Assessment Type', 'Code', 'Month', 'Age Group', 'Gender', 'Country', 'Education', 'Employment', 'Medication Use', 'Score', 'Severity', 'High Risk']
+      const dataRows = anonRows.map(r => [r.recordId, r.assessment, r.code, r.month, r.ageGroup, r.gender, r.country, r.education, r.employment, r.medication, r.score, r.severity, r.highRisk])
       const csv = rowsToCsv(headers, dataRows)
       return new NextResponse(csv, {
         headers: {
@@ -167,9 +220,9 @@ export async function GET(request: Request) {
 
     // --- Risk CSV ---
     if (format === 'risk') {
-      const riskRows = rows.filter(r => r.highRisk === 'Yes')
-      const headers = ['Record ID', 'Assessment', 'Code', 'Date', 'Score', 'Severity', 'Age Group', 'Gender', 'Country']
-      const dataRows = riskRows.map(r => [r.id, r.assessment, r.code, new Date(r.submittedAt).toISOString().split('T')[0], r.score, r.severity, r.ageGroup, r.gender, r.country])
+      const riskRows = anonRows.filter(r => r.highRisk === 'Yes')
+      const headers = ['Record ID', 'Assessment', 'Code', 'Month', 'Score', 'Severity', 'Age Group', 'Gender', 'Country']
+      const dataRows = riskRows.map(r => [r.recordId, r.assessment, r.code, r.month, r.score, r.severity, r.ageGroup, r.gender, r.country])
       const csv = rowsToCsv(headers, dataRows)
       return new NextResponse(csv, {
         headers: {
@@ -227,7 +280,7 @@ export async function GET(request: Request) {
       const summaryRows = Object.entries(assessMap).map(([code, d]) => {
         const st = computeStats(d.scores)
         const hrPct = st.count ? ((d.highRisk / st.count) * 100).toFixed(1) : '0'
-        return `<tr><td>${code}</td><td>${d.name}</td><td>${st.count}</td><td>${st.avg}</td><td>${st.median}</td><td>${st.stddev}</td><td>${d.highRisk} (${hrPct}%)</td></tr>`
+        return `<tr><td>${escapeHtml(code)}</td><td>${escapeHtml(d.name)}</td><td>${st.count}</td><td>${st.avg}</td><td>${st.median}</td><td>${st.stddev}</td><td>${d.highRisk} (${hrPct}%)</td></tr>`
       }).join('')
 
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
@@ -248,7 +301,7 @@ tr:nth-child(even) td{background:#f9f9f9}
 @media print{@page{margin:15mm}}
 </style></head><body>
 <h1>V Welfare — Analytics Report</h1>
-<p class="meta">Generated: ${new Date().toLocaleString()} | Total Records: ${rows.length} | Filter: ${assessment || 'All'}</p>
+<p class="meta">Generated: ${escapeHtml(new Date().toLocaleString())} | Total Records: ${rows.length} | Filter: ${escapeHtml(assessment || 'All')}</p>
 <div class="stat-grid">
   <div class="stat-card"><div class="stat-val">${rows.length}</div><div class="stat-lbl">Total Assessments</div></div>
   <div class="stat-card"><div class="stat-val">${rows.filter(r => r.highRisk === 'Yes').length}</div><div class="stat-lbl">High-Risk Flags</div></div>
@@ -257,8 +310,8 @@ tr:nth-child(even) td{background:#f9f9f9}
 <h2>Assessment Summary Statistics</h2>
 <table><thead><tr><th>Code</th><th>Assessment</th><th>Count</th><th>Mean</th><th>Median</th><th>Std Dev</th><th>High Risk</th></tr></thead><tbody>${summaryRows}</tbody></table>
 <h2>Anonymized Records (first 200)</h2>
-<table><thead><tr><th>Record ID</th><th>Assessment</th><th>Date</th><th>Age Group</th><th>Gender</th><th>Country</th><th>Score</th><th>Severity</th><th>High Risk</th></tr></thead><tbody>
-${rows.slice(0, 200).map(r => `<tr><td>${r.id.slice(0, 8)}…</td><td>${r.assessment}</td><td>${new Date(r.submittedAt).toLocaleDateString()}</td><td>${r.ageGroup}</td><td>${r.gender}</td><td>${r.country}</td><td>${r.score}</td><td>${r.severity}</td><td>${r.highRisk}</td></tr>`).join('')}
+<table><thead><tr><th>Record ID</th><th>Assessment</th><th>Month</th><th>Age Group</th><th>Gender</th><th>Country</th><th>Score</th><th>Severity</th><th>High Risk</th></tr></thead><tbody>
+${anonRows.slice(0, 200).map(r => `<tr><td>${escapeHtml(r.recordId)}</td><td>${escapeHtml(r.assessment)}</td><td>${escapeHtml(r.month)}</td><td>${escapeHtml(r.ageGroup)}</td><td>${escapeHtml(r.gender)}</td><td>${escapeHtml(r.country)}</td><td>${escapeHtml(r.score)}</td><td>${escapeHtml(r.severity)}</td><td>${escapeHtml(r.highRisk)}</td></tr>`).join('')}
 </tbody></table>
 <p class="meta" style="margin-top:20px;font-style:italic">This report contains anonymized data only. No personally identifiable information (PII) is included. Compliant with GDPR and HIPAA-inspired privacy practices.</p>
 <script>window.onload=()=>window.print()</script>
@@ -275,7 +328,7 @@ ${rows.slice(0, 200).map(r => `<tr><td>${r.id.slice(0, 8)}…</td><td>${r.assess
     }
 
     return NextResponse.json({ error: 'Unknown format' }, { status: 400 })
-  } catch {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  } catch (error) {
+    return adminRouteError(error)
   }
 }

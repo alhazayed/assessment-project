@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -7,6 +8,9 @@ import { callGemini } from '@/lib/gemini'
 import { scrubPHI } from '@/lib/security/anonymizePHI'
 
 const MAX_MESSAGE_LEN = 1000
+// Assistant replies can be longer than user messages (512 output tokens).
+const MAX_MODEL_TURN_LEN = 4000
+const MAX_HISTORY_TURNS = 10
 
 const SYSTEM_INSTRUCTION = `You are Wafi, a warm and supportive AI companion on the Vwelfare mental health platform. You help users understand their emotional wellbeing and mental health in a compassionate, non-judgmental way.
 
@@ -32,9 +36,63 @@ const EMERGENCY_KEYWORDS = [
   'لا معنى للحياة', 'أريد الموت',
 ]
 
+/**
+ * Normalise text before keyword matching so trivial variations can't slip past
+ * the crisis check: case, Latin accents, Arabic tashkeel and tatweel, Arabic
+ * letter variants (alef/yaa/taa marbuta/hamza seats), zero-width and bidi
+ * controls, punctuation (self-harm vs self harm) and repeated whitespace.
+ */
+function normalizeForKeywordMatch(text: string): string {
+  return text
+    .normalize('NFKD')
+    .toLowerCase()
+    .replace(/[\u0300-\u036f]/g, '')                 // Latin combining diacritics
+    .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, '') // Arabic tashkeel, Quranic marks, tatweel
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g, '') // zero-width / bidi controls
+    .replace(/[\u0622\u0623\u0625\u0671]/g, '\u0627')   // آ أ إ ٱ -> ا
+    .replace(/\u0649/g, '\u064A')                       // ى -> ي
+    .replace(/\u0629/g, '\u0647')                       // ة -> ه
+    .replace(/\u0624/g, '\u0648')                       // ؤ -> و
+    .replace(/\u0626/g, '\u064A')                       // ئ -> ي
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')                   // punctuation/whitespace -> single space
+    .trim()
+}
+
+const NORMALIZED_EMERGENCY_KEYWORDS = EMERGENCY_KEYWORDS.map(normalizeForKeywordMatch)
+
 function containsEmergencyKeyword(text: string): boolean {
-  const lower = text.toLowerCase()
-  return EMERGENCY_KEYWORDS.some(kw => lower.includes(kw))
+  const normalized = ` ${normalizeForKeywordMatch(text)} `
+  return NORMALIZED_EMERGENCY_KEYWORDS.some(kw => normalized.includes(kw))
+}
+
+/**
+ * Chat history lives only in the client, so assistant ("model") turns are
+ * HMAC-signed by this route and must come back with a valid signature bound
+ * to the same user. Unsigned or forged model turns are dropped, which stops a
+ * client from putting words in the assistant's mouth.
+ */
+function historySigningKey(): string | null {
+  const explicit = process.env.AI_CHAT_HISTORY_SECRET
+  if (explicit) return explicit
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceKey) return null
+  // Derive a purpose-specific key so the service key itself is never used directly.
+  return createHmac('sha256', serviceKey).update('ai-chat-history-v1').digest('hex')
+}
+
+function signModelTurn(userId: string, text: string): string | null {
+  const key = historySigningKey()
+  if (!key) return null
+  return createHmac('sha256', key).update(`${userId}\n${text}`).digest('base64url')
+}
+
+function verifyModelTurn(userId: string, text: string, sig: unknown): boolean {
+  if (typeof sig !== 'string' || !sig) return false
+  const expected = signModelTurn(userId, text)
+  if (!expected) return false
+  const a = Buffer.from(sig)
+  const b = Buffer.from(expected)
+  return a.length === b.length && timingSafeEqual(a, b)
 }
 
 function buildEmergencyResponse(lang: string): string {
@@ -87,7 +145,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'AI services temporarily unavailable' }, { status: 503 })
   }
 
-  let body: { message?: string; lang?: string; history?: Array<{ role: string; text: string }> }
+  let body: { message?: string; lang?: string; history?: Array<{ role?: unknown; text?: unknown; sig?: unknown }> }
   try {
     body = await request.json()
   } catch {
@@ -96,14 +154,36 @@ export async function POST(request: Request) {
 
   const message = typeof body.message === 'string' ? body.message.slice(0, MAX_MESSAGE_LEN).trim() : ''
   const lang = body.lang === 'ar' ? 'ar' : 'en'
-  const history = Array.isArray(body.history) ? body.history.slice(-10) : []
+  const rawHistory = Array.isArray(body.history) ? body.history.slice(-MAX_HISTORY_TURNS) : []
 
   if (!message) {
     return NextResponse.json({ error: 'Message is required' }, { status: 400 })
   }
 
-  // Emergency keyword intercept — no API call needed
-  if (containsEmergencyKeyword(message)) {
+  // Keep only user turns and model turns this route signed for this user.
+  // Anything else (unknown roles, unsigned/forged model turns) is dropped.
+  const history: Array<{ role: 'user' | 'model'; text: string }> = []
+  for (const turn of rawHistory) {
+    if (!turn || typeof turn.text !== 'string') continue
+    if (turn.role === 'user') {
+      history.push({ role: 'user', text: turn.text.slice(0, MAX_MESSAGE_LEN) })
+    } else if (
+      turn.role === 'model' &&
+      turn.text.length <= MAX_MODEL_TURN_LEN &&
+      verifyModelTurn(userId, turn.text, turn.sig)
+    ) {
+      history.push({ role: 'model', text: turn.text })
+    }
+  }
+
+  // Emergency keyword intercept — no API call needed. Check the new message,
+  // and it joined with the previous user turn so a phrase split across two
+  // messages is still caught. Older turns aren't re-checked: they were checked
+  // when sent, and re-checking them would repeat the crisis reply every turn.
+  const previousUserTurn = history.filter(t => t.role === 'user').at(-1)?.text ?? ''
+  const splitAcrossTurns =
+    !containsEmergencyKeyword(previousUserTurn) && containsEmergencyKeyword(`${previousUserTurn} ${message}`)
+  if (containsEmergencyKeyword(message) || splitAcrossTurns) {
     return NextResponse.json({ reply: buildEmergencyResponse(lang), emergency: true })
   }
 
@@ -111,12 +191,8 @@ export async function POST(request: Request) {
   const contents: Array<{ role: string; parts: Array<{ text: string }> }> = []
 
   for (const turn of history) {
-    if (typeof turn.text !== 'string') continue
-    // Validate role to prevent prompt injection via history
-    if (turn.role !== 'user' && turn.role !== 'model') continue
-    const role = turn.role === 'user' ? 'user' : 'model'
     // Scrub PHI before any text leaves for the third-party AI provider.
-    contents.push({ role, parts: [{ text: scrubPHI(turn.text.slice(0, MAX_MESSAGE_LEN)) }] })
+    contents.push({ role: turn.role, parts: [{ text: scrubPHI(turn.text) }] })
   }
 
   const langInstruction = lang === 'ar'
@@ -147,5 +223,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Empty response from AI' }, { status: 502 })
   }
 
-  return NextResponse.json({ reply, emergency: false })
+  // Signature lets the client send this reply back as a trusted history turn.
+  return NextResponse.json({ reply, emergency: false, sig: signModelTurn(userId, reply) })
 }

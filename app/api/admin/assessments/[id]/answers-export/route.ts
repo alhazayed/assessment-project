@@ -3,6 +3,8 @@ import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { buildContentDisposition, getMimeTypeForFormat } from '@/lib/security/file-export'
+import { fetchAll, fetchAllByIds } from '@/lib/admin/fetch-all'
+import { writeAdminAudit } from '@/lib/admin/audit'
 import { DEMOGRAPHIC_DIMENSIONS, DEMOGRAPHIC_SELECT, enrichDemographics, type DemographicDimension } from '@/lib/assessment-demographics'
 
 // Formula-injection guard: a leading =,+,-,@ etc. is neutralised so spreadsheet
@@ -48,35 +50,42 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
 
     const db = createAdminClient()
 
-    const [defRes, itemsRes, subsRes] = await Promise.all([
+    const [defRes, itemsRes] = await Promise.all([
       db.from('assessment_definitions').select('id, code').eq('id', definitionId).single(),
       db.from('assessment_items').select('id, item_number, subscale, question_en').eq('definition_id', definitionId),
-      db.from('assessment_submissions')
-        .select(`id, patient_id, total_score, severity_band, high_risk_flag, submitted_at, ${DEMOGRAPHIC_SELECT}`)
-        .eq('definition_id', definitionId)
-        .limit(20000),
     ])
 
     if (defRes.error || !defRes.data) return NextResponse.json({ error: 'Assessment not found' }, { status: 404 })
+    if (itemsRes.error) throw new Error(itemsRes.error.message)
     const code = defRes.data.code
     const itemMap = new Map((itemsRes.data ?? []).map(i => [i.id, i]))
 
+    // Every submission, in a deterministic order, paged past PostgREST's
+    // 1,000-row max_rows cap (which previously truncated this export silently).
     type RawSub = { id: string; patient_id: string; total_score: number; severity_band: string | null; high_risk_flag: boolean; submitted_at: string } & Record<string, unknown>
-    const subs = ((subsRes.data ?? []) as unknown as RawSub[])
+    const rawSubs = await fetchAll<RawSub>(() => db
+      .from('assessment_submissions')
+      .select(`id, patient_id, total_score, severity_band, high_risk_flag, submitted_at, ${DEMOGRAPHIC_SELECT}`)
+      .eq('definition_id', definitionId)
+      .order('submitted_at', { ascending: true })
+      .order('id', { ascending: true }) as unknown as { range(from: number, to: number): PromiseLike<{ data: RawSub[] | null; error: { message: string } | null }> })
+    const subs = rawSubs
       .map(s => ({ sub: s, demo: enrichDemographics(s) }))
       .filter(({ demo }) => DEMOGRAPHIC_DIMENSIONS.every(dim => !filters[dim] || demo[dim] === filters[dim]))
     const subMap = new Map(subs.map(x => [x.sub.id, x]))
     const submissionIds = subs.map(x => x.sub.id)
 
-    const responses: Array<{ submission_id: string; item_id: string; response_value: number; response_label_en: string }> = []
-    const CHUNK = 500
-    for (let i = 0; i < submissionIds.length; i += CHUNK) {
-      const { data } = await db
+    // Every answer for those submissions: chunked by submission and paged
+    // within each chunk, so no chunk is cut at 1,000 rows.
+    const responses = await fetchAllByIds<{ submission_id: string; item_id: string; response_value: number; response_label_en: string }>(
+      submissionIds,
+      idChunk => db
         .from('assessment_responses')
         .select('submission_id, item_id, response_value, response_label_en')
-        .in('submission_id', submissionIds.slice(i, i + CHUNK))
-      if (data) responses.push(...data)
-    }
+        .in('submission_id', idChunk)
+        .order('submission_id', { ascending: true })
+        .order('item_id', { ascending: true }),
+    )
 
     const headers = [
       'submission_id', 'patient_id', 'submitted_at', 'assessment_code',
@@ -98,20 +107,17 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
         r.response_value, r.response_label_en ?? '',
       ])
     }
-    rows.sort((a, b) => String(a[2]).localeCompare(String(b[2])) || Number(a[14]) - Number(b[14]))
+    // Deterministic order: submitted_at, then submission_id, then item number.
+    rows.sort((a, b) => String(a[2]).localeCompare(String(b[2])) || String(a[0]).localeCompare(String(b[0])) || Number(a[14]) - Number(b[14]))
 
     // Audit this PHI-level export (who exported which assessment's answers, and volume).
-    try {
-      await db.from('audit_log').insert({
-        actor_id: user.id,
-        action: 'data_export',
-        target_type: 'assessment_answers',
-        target_id: definitionId,
-        details: { format: 'csv', assessment_code: code, row_count: rows.length, filters },
-      })
-    } catch (auditErr) {
-      console.error('[answers-export] audit log failed (non-fatal):', auditErr instanceof Error ? auditErr.message : 'unknown')
-    }
+    await writeAdminAudit({
+      actorId: user.id,
+      action: 'data_export',
+      targetType: 'assessment_answers',
+      targetId: definitionId,
+      details: { format: 'csv', assessment_code: code, row_count: rows.length, filters },
+    }, db)
 
     const dateStr = new Date().toISOString().slice(0, 10)
     const csv = rowsToCsv(headers, rows)

@@ -110,11 +110,17 @@ export default function AdminPackagesPage() {
 
   async function saveScoring(pkgId: string) {
     setSavingScoring(true)
-    await fetch('/api/admin/packages', {
+    const res = await fetch('/api/admin/packages', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: pkgId, interpretation_bands: bands, output_dimensions: dims }),
     })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      flash(data.error || (isAr ? 'تعذّر الحفظ' : 'Save failed'))
+      setSavingScoring(false)
+      return
+    }
     flash(isAr ? 'تم حفظ قواعد التقييم' : 'Scoring rules saved.')
     setEditingScoring(null)
     load()
@@ -147,22 +153,33 @@ export default function AdminPackagesPage() {
   async function create(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    await fetch('/api/admin/packages', {
+    const res = await fetch('/api/admin/packages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      flash(data.error || (isAr ? 'تعذّر الإنشاء' : 'Create failed'))
+      setSaving(false)
+      return
+    }
     flash(t('admin.packages.created', lang))
     setShowForm(false); setForm(defaultForm); load()
     setSaving(false)
   }
 
   async function setStatus(id: string, status: string) {
-    await fetch('/api/admin/packages', {
+    const res = await fetch('/api/admin/packages', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, status }),
     })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      flash(data.error || (isAr ? 'تعذّر التحديث' : 'Update failed'))
+      return
+    }
     const key = status === 'active' ? 'admin.packages.activated'
       : status === 'archived' ? 'admin.packages.deactivated'
       : 'admin.packages.updated'
@@ -172,11 +189,16 @@ export default function AdminPackagesPage() {
 
   async function remove(id: string) {
     if (!confirm(t('admin.packages.confirm_delete', lang))) return
-    await fetch('/api/admin/packages', {
+    const res = await fetch('/api/admin/packages', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      flash(data.error || (isAr ? 'تعذّر الحذف' : 'Delete failed'))
+      return
+    }
     flash(t('admin.packages.deleted', lang))
     load()
   }

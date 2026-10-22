@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useLang } from '@/lib/use-lang'
 import { Sparkles, Send, Loader2, AlertTriangle } from 'lucide-react'
 
-type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; emergency?: boolean }
+// sig: server-issued signature on AI replies; only signed replies are accepted back as history.
+type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; emergency?: boolean; sig?: string }
 
 const MAX_LEN = 1000
 
@@ -43,11 +44,12 @@ export default function WafiPage() {
     setInput('')
     setLoading(true)
 
-    // Last 10 prior turns; map assistant → "model" (server only accepts user|model).
+    // Last 10 prior turns. Assistant turns are sent as "model" with the server's
+    // signature; unsigned ones (greeting, error notices) would be dropped server-side.
     const history = next
-      .filter(m => m.id !== 'greeting')
+      .filter(m => m.id !== 'greeting' && (m.role === 'user' || m.sig))
       .slice(-11, -1)
-      .map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', text: m.text }))
+      .map(m => (m.role === 'assistant' ? { role: 'model', text: m.text, sig: m.sig } : { role: 'user', text: m.text }))
 
     try {
       const res = await fetch('/api/ai-chat', {
@@ -62,7 +64,7 @@ export default function WafiPage() {
       } else if (!res.ok || !data.reply) {
         setMessages(m => [...m, { id: `a-${Date.now()}`, role: 'assistant', text: data.error || tr('Sorry, I could not respond right now. If you are in crisis, please contact local emergency services.', 'عذراً، لم أتمكن من الرد الآن. إذا كنت في أزمة، يرجى الاتصال بخدمات الطوارئ المحلية.') }])
       } else {
-        setMessages(m => [...m, { id: `a-${Date.now()}`, role: 'assistant', text: data.reply, emergency: !!data.emergency }])
+        setMessages(m => [...m, { id: `a-${Date.now()}`, role: 'assistant', text: data.reply, emergency: !!data.emergency, sig: typeof data.sig === 'string' ? data.sig : undefined }])
       }
     } catch {
       setMessages(m => [...m, { id: `a-${Date.now()}`, role: 'assistant', text: tr('Network error. Please try again.', 'خطأ في الشبكة. حاول مرة أخرى.') }])

@@ -29,8 +29,11 @@ export default function ResetPasswordScreen() {
   }, [])
 
   async function handleReset() {
-    if (password.length < 8) {
-      setError(isAr ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters')
+    // Same rule as the web app and Supabase Auth: 10+ chars, letters and digits.
+    if (password.length < 10 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setError(isAr
+        ? 'يجب أن تكون كلمة المرور 10 أحرف على الأقل وتحتوي على أحرف وأرقام'
+        : 'Password must be at least 10 characters and include letters and numbers')
       return
     }
     if (password !== confirm) {
@@ -41,7 +44,7 @@ export default function ResetPasswordScreen() {
     setError('')
     const { error: err } = await supabase.auth.updateUser({ password })
     if (err) {
-      setError(err.message)
+      setError(isAr ? 'تعذر تحديث كلمة المرور. حاول مرة أخرى.' : 'Could not update your password. Please try again.')
       setLoading(false)
     } else {
       setDone(true)

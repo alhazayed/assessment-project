@@ -1,5 +1,6 @@
 import { requireAdmin } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchAll, fetchAllByIds } from '@/lib/admin/fetch-all'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -97,13 +98,19 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     }
 
     // 2. Submissions for this assessment
-    const { data: subsRaw } = await db
+    // Paged past PostgREST's 1,000-row max_rows cap.
+    type SubRow = {
+      id: string; patient_id: string | null; total_score: number | null; severity_band: string | null
+      submitted_at: string | null; high_risk_flag: boolean | null; is_self_initiated: boolean | null
+      guest_dob: string | null; guest_gender: string | null; guest_marital: string | null
+      guest_education: string | null; guest_country: string | null
+    }
+    const subs = await fetchAll<SubRow>(() => db
       .from('assessment_submissions')
       .select('id, patient_id, total_score, severity_band, submitted_at, high_risk_flag, is_self_initiated, guest_dob, guest_gender, guest_marital, guest_education, guest_country')
       .eq('definition_id', id)
       .order('submitted_at', { ascending: true })
-
-    const subs = subsRaw ?? []
+      .order('id', { ascending: true }))
     const completions = subs.length
 
     // Empty assessment — return the shell so the page renders an empty state.
@@ -124,11 +131,15 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
     const patientIds = Array.from(new Set(subs.map((s) => s.patient_id).filter(Boolean))) as string[]
     const profileMap = new Map<string, { gender: string | null; date_of_birth: string | null; country_of_residence: string | null; educational_status: string | null }>()
     if (patientIds.length) {
-      const { data: profs } = await db
-        .from('profiles')
-        .select('id, gender, date_of_birth, country_of_residence, educational_status')
-        .in('id', patientIds)
-      for (const p of profs ?? []) profileMap.set(p.id, p)
+      const profs = await fetchAllByIds<{ id: string; gender: string | null; date_of_birth: string | null; country_of_residence: string | null; educational_status: string | null }>(
+        patientIds,
+        idChunk => db
+          .from('profiles')
+          .select('id, gender, date_of_birth, country_of_residence, educational_status')
+          .in('id', idChunk)
+          .order('id', { ascending: true }),
+      )
+      for (const p of profs) profileMap.set(p.id, p)
     }
 
     // Resolve demographics per submission (guest fields, else patient profile)
@@ -169,21 +180,28 @@ export async function GET(_request: Request, props: { params: Promise<{ id: stri
       .sort((a, b) => a.date.localeCompare(b.date))
 
     // 6. Item analysis
-    const { data: items } = await db
+    const { data: items, error: itemsErr } = await db
       .from('assessment_items')
       .select('id, item_number, question_en, question_ar, is_safety_item, subscale')
       .eq('definition_id', id)
       .order('item_number', { ascending: true })
 
+    if (itemsErr) throw new Error(itemsErr.message)
+
     const subIds = subs.map((s) => s.id)
-    const { data: responses } = await db
-      .from('assessment_responses')
-      .select('submission_id, item_id, response_value')
-      .in('submission_id', subIds)
+    const responses = await fetchAllByIds<{ submission_id: string; item_id: string | null; response_value: number | null }>(
+      subIds,
+      idChunk => db
+        .from('assessment_responses')
+        .select('submission_id, item_id, response_value')
+        .in('submission_id', idChunk)
+        .order('submission_id', { ascending: true })
+        .order('item_id', { ascending: true }),
+    )
 
     // group responses by item
     const byItem = new Map<string, { values: number[]; totals: number[] }>()
-    for (const r of responses ?? []) {
+    for (const r of responses) {
       if (r.item_id == null || r.response_value == null) continue
       const cur = byItem.get(r.item_id) ?? { values: [], totals: [] }
       cur.values.push(r.response_value)

@@ -8,6 +8,7 @@ import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 import LanguageToggle from '@/components/language-toggle'
 import { COUNTRIES } from '@/lib/countries'
+import { clearLocalAssessmentData } from '@/lib/guest-claim-storage'
 
 type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed'
 type EducationalStatus = 'none' | 'primary' | 'secondary' | 'diploma' | 'bachelor' | 'master' | 'phd' | 'other'
@@ -95,6 +96,7 @@ export default function OnboardingPage() {
 
   async function handleSignOut() {
     const supabase = createClient()
+    clearLocalAssessmentData()
     await supabase.auth.signOut()
     router.push('/login')
   }

@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next'
 import { SITE_URL } from '@/lib/site-url'
 
+// The admin panel is deliberately not listed: naming it here would advertise
+// its path. It is covered by noindex metadata in app/x/control/layout.tsx.
 const PHI_DISALLOW = [
   '/dashboard',
   '/assessments',
@@ -21,7 +23,6 @@ const PHI_DISALLOW = [
   '/checkout',
   '/connect/',
   '/api/',
-  '/x/control',
   '/billing',
 ]
 

@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchAll } from '@/lib/admin/fetch-all'
 import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-auth'
 import * as Sentry from '@sentry/nextjs'
 
@@ -16,7 +17,9 @@ interface TopAssessment {
 export async function GET(request: Request) {
   try {
     await requireAdmin()
-    const supabase = await createClient()
+    // get_top_assessments is revoked from `authenticated`; call it with the
+    // service-role client, and only after requireAdmin() has passed.
+    const supabase = createAdminClient()
 
     const url = new URL(request.url)
     const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '10', 10)))
@@ -44,10 +47,18 @@ export async function GET(request: Request) {
     })
 
     // Direct query: aggregate assessment submissions
-    const { data: submissions, error: fallbackError } = await supabase
-      .from('assessment_submissions')
-      .select('definition_id, total_score, high_risk_flag')
-      .not('definition_id', 'is', null)
+    // Paged past PostgREST's 1,000-row max_rows cap.
+    let submissions: { definition_id: string; total_score: number | null; high_risk_flag: boolean | null }[] | null = null
+    let fallbackError: unknown = null
+    try {
+      submissions = await fetchAll(() => supabase
+        .from('assessment_submissions')
+        .select('definition_id, total_score, high_risk_flag')
+        .not('definition_id', 'is', null)
+        .order('id', { ascending: true }))
+    } catch (e) {
+      fallbackError = e
+    }
 
     if (fallbackError || !submissions) {
       console.error('Top assessments fallback query failed:', fallbackError)

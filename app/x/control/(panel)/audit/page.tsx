@@ -7,6 +7,7 @@ import { t } from '@/lib/i18n'
 
 type AuditLog = {
   id: string
+  actor_id: string | null
   action: string
   target_type: string | null
   target_id: string | null
@@ -16,6 +17,11 @@ type AuditLog = {
 }
 
 type Pagination = { page: number; pageSize: number; total: number; totalPages: number }
+
+// The audit log is append-only; only entries older than this may be purged
+// (also enforced by the API and by purge_audit_log_before() in the database).
+const RETENTION_DAYS = 365
+const latestPurgeDate = () => new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
 export default function AdminAuditPage() {
   const lang = useLang()
@@ -36,14 +42,13 @@ export default function AdminAuditPage() {
   const [to, setTo] = useState('')
   const [page, setPage] = useState(1)
 
-  // Mutations
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  // Retention purge (superadmin)
   const [purgeBefore, setPurgeBefore] = useState('')
   const [purging, setPurging] = useState(false)
   const [msg, setMsg] = useState('')
   const [msgError, setMsgError] = useState(false)
 
-  const canDelete = callerRole === 'superadmin'
+  const canPurge = callerRole === 'superadmin'
 
   const flash = (text: string, error = false) => {
     setMsg(text); setMsgError(error)
@@ -71,27 +76,12 @@ export default function AdminAuditPage() {
   useEffect(() => { setPage(1) }, [search, action, targetType, from, to])
   useEffect(() => { load() }, [load])
 
-  async function deleteEntry(log: AuditLog) {
-    if (!confirm(tr(
-      `Delete this audit entry?\n${log.action} · ${new Date(log.created_at).toLocaleString()}\nThis cannot be undone.`,
-      `حذف هذا السجل؟\n${log.action} · ${new Date(log.created_at).toLocaleString()}\nلا يمكن التراجع.`))) return
-    setDeletingId(log.id)
-    try {
-      const res = await fetch('/api/admin/audit', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: log.id }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (res.ok) { flash(tr('Audit entry deleted', 'تم حذف السجل')); setLogs(prev => prev.filter(l => l.id !== log.id)) }
-      else flash(data.error || 'Failed to delete entry', true)
-    } finally {
-      setDeletingId(null)
-    }
-  }
-
   async function purgeOld() {
     if (!purgeBefore) { flash(tr('Pick a date first', 'اختر تاريخاً أولاً'), true); return }
+    if (purgeBefore > latestPurgeDate()) {
+      flash(tr(`Only entries older than ${RETENTION_DAYS} days can be purged`, `يمكن حذف السجلات الأقدم من ${RETENTION_DAYS} يوماً فقط`), true)
+      return
+    }
     if (!confirm(tr(
       `Permanently delete ALL audit entries before ${purgeBefore}? This cannot be undone.`,
       `حذف جميع السجلات قبل ${purgeBefore} نهائياً؟ لا يمكن التراجع.`))) return
@@ -160,13 +150,19 @@ export default function AdminAuditPage() {
       </div>
 
       {/* Purge old (superadmin) */}
-      {canDelete && (
+      {canPurge && (
         <div className="card p-4 mb-4 flex flex-wrap items-center gap-3" style={{ borderColor: 'rgba(192,42,42,0.2)' }}>
           <AlertTriangle className="w-4 h-4 flex-shrink-0 text-red-600" />
-          <span className="text-[13px] font-medium" style={{ color: 'var(--text-secondary)' }}>
-            {tr('Purge entries older than', 'حذف السجلات الأقدم من')}
+          <label htmlFor="audit-purge-before" className="text-[13px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+            {tr('Retention purge: delete entries older than', 'حذف السجلات المنتهية الاحتفاظ الأقدم من')}
+          </label>
+          <input id="audit-purge-before" type="date" className="input text-sm w-40" value={purgeBefore} max={latestPurgeDate()} onChange={e => setPurgeBefore(e.target.value)} />
+          <span className="text-[12px] basis-full" style={{ color: 'var(--text-muted)' }}>
+            {tr(
+              `The audit log is append-only. Entries can't be deleted one by one; only entries older than ${RETENTION_DAYS} days can be purged, and the purge itself is logged.`,
+              `سجل التدقيق للإضافة فقط. لا يمكن حذف السجلات فردياً، ويمكن حذف السجلات الأقدم من ${RETENTION_DAYS} يوماً فقط، ويُسجَّل الحذف نفسه.`,
+            )}
           </span>
-          <input type="date" className="input text-sm w-40" value={purgeBefore} onChange={e => setPurgeBefore(e.target.value)} />
           <button onClick={purgeOld} disabled={purging || !purgeBefore}
             className="text-xs px-3 py-1.5 rounded-lg font-medium bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50 flex items-center gap-1.5">
             {purging ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
@@ -186,19 +182,23 @@ export default function AdminAuditPage() {
               <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.audit.col.target', lang)}</th>
               <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.audit.col.reason', lang)}</th>
               <th className="text-left px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{t('admin.audit.col.timestamp', lang)}</th>
-              {canDelete && <th className="text-right px-4 py-3 text-[12px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{tr('Actions', 'إجراءات')}</th>}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={canDelete ? 6 : 5} className="text-center py-12 text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.loading', lang)}</td></tr>
+              <tr><td colSpan={5} className="text-center py-12 text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.loading', lang)}</td></tr>
             ) : logs.length === 0 ? (
-              <tr><td colSpan={canDelete ? 6 : 5} className="text-center py-12 text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.audit.empty', lang)}</td></tr>
+              <tr><td colSpan={5} className="text-center py-12 text-[13px]" style={{ color: 'var(--text-muted)' }}>{t('admin.audit.empty', lang)}</td></tr>
             ) : logs.map((log) => (
-              <tr key={log.id} className={deletingId === log.id ? 'opacity-50' : ''} style={{ borderBottom: '1px solid var(--divider)' }}>
+              <tr key={log.id} style={{ borderBottom: '1px solid var(--divider)' }}>
                 <td className="px-4 py-3">
-                  <p className="text-[13.5px] font-medium" style={{ color: 'var(--text-primary)' }}>{log.profiles?.full_name_en || '—'}</p>
-                  <p className="text-[11.5px] capitalize" style={{ color: 'var(--text-muted)' }}>{log.profiles?.role}</p>
+                  {/* actor_id is nullable: an erased actor keeps their audit rows but has no profile. */}
+                  <p className="text-[13.5px] font-medium" style={{ color: log.profiles ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                    {log.profiles
+                      ? (log.profiles.full_name_en || '—')
+                      : tr('Deleted user', 'مستخدم محذوف')}
+                  </p>
+                  {log.profiles?.role && <p className="text-[11.5px] capitalize" style={{ color: 'var(--text-muted)' }}>{log.profiles.role}</p>}
                 </td>
                 <td className="px-4 py-3">
                   <code className="text-[11.5px] font-mono px-2 py-0.5 rounded-[4px]"
@@ -207,15 +207,6 @@ export default function AdminAuditPage() {
                 <td className="px-4 py-3 text-[12.5px] capitalize" style={{ color: 'var(--text-secondary)' }}>{log.target_type || '—'}</td>
                 <td className="px-4 py-3 text-[12px] max-w-xs truncate" style={{ color: 'var(--text-muted)' }}>{log.reason || '—'}</td>
                 <td className="px-4 py-3 text-[12px] whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{new Date(log.created_at).toLocaleString()}</td>
-                {canDelete && (
-                  <td className="px-4 py-3 text-right">
-                    <button onClick={() => deleteEntry(log)} disabled={deletingId === log.id}
-                      title={tr('Delete entry', 'حذف السجل')} aria-label={tr('Delete entry', 'حذف السجل')}
-                      className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50">
-                      {deletingId === log.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                    </button>
-                  </td>
-                )}
               </tr>
             ))}
           </tbody>

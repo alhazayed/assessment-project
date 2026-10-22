@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-auth'
 import * as Sentry from '@sentry/nextjs'
 
@@ -18,7 +18,7 @@ export async function GET(): Promise<Response> {
 
   try {
     await requireAdmin()
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const weekAgo = new Date(Date.now() - 7 * 864e5).toISOString()
     const twoWeeksAgo = new Date(Date.now() - 14 * 864e5).toISOString()
@@ -45,7 +45,7 @@ export async function GET(): Promise<Response> {
       { success: true, current, previous, change, percentage, timestamp: new Date().toISOString() },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'Cache-Control': 'private, no-store',
           'X-Response-Time': `${duration}ms`,
         },
       }

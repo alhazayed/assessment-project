@@ -22,6 +22,9 @@ type Alert = {
 
 type RiskData = {
   alerts: Alert[]
+  /** True for a plain admin: counts only, the named list is superadmin-only. */
+  restricted?: boolean
+  byPriority?: Record<Priority, number>
   summary: {
     totalAlerts: number
     patientsAtRisk: number
@@ -131,6 +134,27 @@ export default function ClinicalRiskPage() {
         {loading ? (
           <div className="p-8 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>
             {isAr ? 'جارٍ التحميل…' : 'Loading…'}
+          </div>
+        ) : data?.restricted ? (
+          <div className="p-6 text-[13px]" style={{ color: 'var(--text-secondary)' }}>
+            <p className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+              {isAr
+                ? 'قائمة المرضى بالأسماء متاحة للمسؤول الأعلى فقط.'
+                : 'The named patient list is available to superadmins only.'}
+            </p>
+            {data.byPriority && (
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(PRIORITY_STYLE) as Priority[]).map(p => (
+                  <span
+                    key={p}
+                    className="text-[11.5px] font-semibold px-2.5 py-1 rounded-full"
+                    style={{ backgroundColor: PRIORITY_STYLE[p].bg, color: PRIORITY_STYLE[p].fg }}
+                  >
+                    {isAr ? PRIORITY_STYLE[p].labelAr : PRIORITY_STYLE[p].label}: {data.byPriority?.[p] ?? 0}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         ) : !data?.alerts.length ? (
           <div className="p-8 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>

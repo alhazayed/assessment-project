@@ -875,6 +875,15 @@ const dict = {
     'error.generic.title': 'Something went wrong',
     'error.generic.sub': 'An unexpected error occurred. Please try refreshing the page.',
     'error.generic.retry': 'Try again',
+    // Password policy (min 10, letters + digits) and generic auth errors
+    'auth.password.ph10': 'Min. 10 characters',
+    'auth.password.hint10': 'At least 10 characters, including letters and numbers',
+    'auth.password.tooShort10': 'Password must be at least 10 characters',
+    'auth.password.lettersDigits': 'Password must contain both letters and numbers',
+    'auth.password.weak': 'This password is too weak or too common. Please choose a different one.',
+    'auth.register.genericError': 'We couldn\'t create your account. Please check your details and try again, or sign in if you already have an account.',
+    'auth.reset.genericError': 'We couldn\'t update your password. Please try again or request a new reset link.',
+    'auth.rateLimited': 'Too many attempts. Please wait a few minutes and try again.',
   },
 
   ar: {
@@ -1751,6 +1760,15 @@ const dict = {
     'error.generic.title': 'حدث خطأ ما',
     'error.generic.sub': 'حدث خطأ غير متوقع. يرجى تحديث الصفحة.',
     'error.generic.retry': 'حاول مرة أخرى',
+    // Password policy (min 10, letters + digits) and generic auth errors
+    'auth.password.ph10': 'لا تقل عن 10 أحرف',
+    'auth.password.hint10': '10 أحرف على الأقل، تشمل حروفاً وأرقاماً',
+    'auth.password.tooShort10': 'كلمة المرور يجب أن تكون 10 أحرف على الأقل',
+    'auth.password.lettersDigits': 'كلمة المرور يجب أن تحتوي على حروف وأرقام',
+    'auth.password.weak': 'كلمة المرور هذه ضعيفة أو شائعة جداً. يرجى اختيار كلمة مرور أخرى.',
+    'auth.register.genericError': 'تعذّر إنشاء حسابك. يرجى التحقق من بياناتك والمحاولة مرة أخرى، أو تسجيل الدخول إذا كان لديك حساب بالفعل.',
+    'auth.reset.genericError': 'تعذّر تحديث كلمة المرور. يرجى المحاولة مرة أخرى أو طلب رابط إعادة تعيين جديد.',
+    'auth.rateLimited': 'محاولات كثيرة جداً. يرجى الانتظار بضع دقائق والمحاولة مرة أخرى.',
   },
 } as const
 

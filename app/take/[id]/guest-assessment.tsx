@@ -11,7 +11,7 @@ import LanguageToggle from '@/components/language-toggle'
 import AssessmentResultView from '@/components/assessment-result-view'
 import type { Lang } from '@/lib/i18n'
 import type { AssessmentDefinition, AssessmentItem } from '@/lib/types'
-import { GUEST_CLAIM_STORAGE_KEY } from '@/lib/guest-claim-storage'
+import { addGuestClaimToken } from '@/lib/guest-claim-storage'
 import { ChevronLeft, ChevronRight, Loader2, ShieldCheck, ArrowRight } from 'lucide-react'
 import CrisisHelpLink from '@/components/crisis-help-link'
 
@@ -150,11 +150,8 @@ export default function GuestAssessment({ definitionId, lang }: { definitionId: 
       try { localStorage.removeItem(storageKey) } catch {}
       setResult(data as ResultShape)
       if (typeof data.claim_token === 'string') {
-        try {
-          const existing: string[] = JSON.parse(localStorage.getItem(GUEST_CLAIM_STORAGE_KEY) || '[]')
-          const next = Array.from(new Set([...existing, data.claim_token])).slice(-10)
-          localStorage.setItem(GUEST_CLAIM_STORAGE_KEY, JSON.stringify(next))
-        } catch {}
+        // Stored with a timestamp; offered for claiming for 24 hours.
+        addGuestClaimToken(data.claim_token)
       }
       setPhase('result')
     } catch {

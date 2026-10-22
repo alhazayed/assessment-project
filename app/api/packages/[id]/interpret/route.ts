@@ -4,10 +4,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { generateRichNarrative } from '@/lib/package-interpret'
 import { scrubPHI } from '@/lib/security/anonymizePHI'
+import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
+import { callGemini } from '@/lib/gemini'
 import type { InterpretationBand } from '@/lib/types'
-
-const GEMINI_API_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
 
 interface AssessmentScore {
   assessment_code: string
@@ -90,7 +89,12 @@ export async function POST(_req: Request, props: { params: Promise<{ id: string 
     let summary_en = ''
     let summary_ar = ''
 
-    if (apiKey && apiKey !== 'your-gemini-api-key-here') {
+    // Global AI cost circuit breaker: when the daily budget is spent, skip the
+    // AI call and use the rule-based narrative below instead of failing.
+    const aiAllowed =
+      !!apiKey && apiKey !== 'your-gemini-api-key-here' && (await checkAiBudget()).allowed
+
+    if (apiKey && aiAllowed) {
       const scoreLines = assessmentScores
         .map(a => `• ${a.name_en} (${a.assessment_code}): ${a.normalized}/100 (weight: ${a.weight_pct}%)`)
         .join('\n')
@@ -126,14 +130,11 @@ Rules:
 - Keep Arabic translations natural, not literal.`
 
       try {
-        const geminiRes = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            // Scrub PHI before any text leaves for the third-party AI provider (defence in depth).
-            contents: [{ role: 'user', parts: [{ text: scrubPHI(prompt) }] }],
-            generationConfig: { temperature: 0.3, maxOutputTokens: 1200 },
-          }),
+        // callGemini adds the model, header-based key, timeout and retries.
+        const geminiRes = await callGemini(apiKey, {
+          // Scrub PHI before any text leaves for the third-party AI provider (defence in depth).
+          contents: [{ role: 'user', parts: [{ text: scrubPHI(prompt) }] }],
+          generationConfig: { temperature: 0.3, maxOutputTokens: 1200 },
         })
 
         if (geminiRes.ok) {

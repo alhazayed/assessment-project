@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, adminRouteError } from '@/lib/admin-auth'
 
 export const maxDuration = 60
@@ -6,10 +6,15 @@ export const maxDuration = 60
 export async function GET(request: Request) {
   try {
     await requireAdmin()
-    const supabase = await createClient()
+    // These RPCs are revoked from `authenticated`; call them with the
+    // service-role client, and only after requireAdmin() has passed.
+    const supabase = createAdminClient()
 
     const url = new URL(request.url)
     const type = url.searchParams.get('type') || null
+    if (type && !/^[a-z_]{1,40}$/.test(type)) {
+      return Response.json({ error: 'Invalid type' }, { status: 400 })
+    }
 
     // Get demographics breakdown
     const { data: demographics, error } = await supabase.rpc(

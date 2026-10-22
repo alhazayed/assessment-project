@@ -283,6 +283,15 @@ export async function POST(request: Request) {
       })
     }
 
+    // A band is only meaningful for a complete set of answers (see
+    // /api/submit-assessment).
+    if (validatedResponses.length !== items.length) {
+      return NextResponse.json(
+        { error: `Every question must be answered (${validatedResponses.length} of ${items.length})` },
+        { status: 400 }
+      )
+    }
+
     const scoringLogic = def.scoring_logic as ScoringBand[]
     const band = calcBand(scoringLogic, totalScore)
     const safetyItemTriggered = validatedResponses.some(r => {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isPermissionKey, validatePermissionKeys } from '@/lib/permissions'
+import { ALL_PERMISSION_KEYS } from '@/lib/types'
 
 interface RouteContext {
   params: Promise<{ token: string }>
@@ -142,16 +143,30 @@ export async function POST(request: Request, props: RouteContext) {
     return NextResponse.json({ error: 'You cannot accept your own invitation' }, { status: 400 })
   }
 
-  // Check for existing active relationship between patient and clinician
+  // The inviting clinician must still be verified when the patient accepts:
+  // a suspension or rejection after the invite was sent ends the invite too.
+  const { data: verification } = await admin
+    .from('clinician_verifications')
+    .select('id')
+    .eq('clinician_id', invitation.clinician_id)
+    .eq('status', 'verified')
+    .maybeSingle()
+
+  if (!verification) {
+    return NextResponse.json({ error: 'This clinician can no longer accept new patients' }, { status: 403 })
+  }
+
+  // A pair has at most one relationship row (UNIQUE clinician_id, patient_id).
+  // A pending or active one blocks a new invite; a revoked/rejected/expired one
+  // is re-opened below instead of inserting a duplicate.
   const { data: existingRelationship } = await admin
     .from('clinician_patient_relationships')
     .select('id, status')
     .eq('clinician_id', invitation.clinician_id)
     .eq('patient_id', user.id)
-    .in('status', ['pending', 'active'])
     .maybeSingle()
 
-  if (existingRelationship) {
+  if (existingRelationship && ['pending', 'active'].includes(existingRelationship.status)) {
     const message =
       existingRelationship.status === 'pending'
         ? 'An access request is already pending with this clinician'
@@ -179,8 +194,9 @@ export async function POST(request: Request, props: RouteContext) {
 
   const now = new Date().toISOString()
 
-  // 1. Update invitation: status='accepted', patient_id, accepted_at
-  const { error: inviteUpdateError } = await admin
+  // 1. Claim the invitation. The status filter makes this a compare-and-set:
+  // if two accounts accept the same link at once, only one update matches.
+  const { data: claimed, error: inviteUpdateError } = await admin
     .from('clinician_invitations')
     .update({
       status: 'accepted',
@@ -188,26 +204,45 @@ export async function POST(request: Request, props: RouteContext) {
       accepted_at: now,
     })
     .eq('id', invitation.id)
+    .eq('status', 'pending')
+    .select('id')
 
   if (inviteUpdateError) {
     console.error('[POST /api/connect/[token]] invitation update error:', inviteUpdateError)
     return NextResponse.json({ error: 'Failed to accept invitation' }, { status: 500 })
   }
 
-  // 2. Insert clinician_patient_relationship
-  const { data: newRelationship, error: relationshipError } = await admin
-    .from('clinician_patient_relationships')
-    .insert({
-      clinician_id: invitation.clinician_id,
-      patient_id: user.id,
-      status: 'active',
-      initiated_by: 'clinician',
-      invitation_id: invitation.id,
-      requested_permissions: requestedPermissions,
-      responded_at: now,
-    })
-    .select()
-    .single()
+  if (!claimed || claimed.length === 0) {
+    return NextResponse.json({ error: 'Invitation not found or already used' }, { status: 404 })
+  }
+
+  // 2. Create the relationship, or re-open the pair's earlier revoked one.
+  const relationshipFields = {
+    status: 'active',
+    initiated_by: 'clinician',
+    invitation_id: invitation.id,
+    requested_permissions: requestedPermissions,
+    requested_at: now,
+    responded_at: now,
+    revoked_at: null,
+    revoked_by: null,
+  }
+  const { data: newRelationship, error: relationshipError } = existingRelationship
+    ? await admin
+        .from('clinician_patient_relationships')
+        .update(relationshipFields)
+        .eq('id', existingRelationship.id)
+        .select()
+        .single()
+    : await admin
+        .from('clinician_patient_relationships')
+        .insert({
+          clinician_id: invitation.clinician_id,
+          patient_id: user.id,
+          ...relationshipFields,
+        })
+        .select()
+        .single()
 
   if (relationshipError || !newRelationship) {
     console.error('[POST /api/connect/[token]] relationship insert error:', relationshipError)
@@ -219,19 +254,22 @@ export async function POST(request: Request, props: RouteContext) {
     return NextResponse.json({ error: 'Failed to create relationship' }, { status: 500 })
   }
 
-  // 3. Insert relationship_permissions for each granted permission
-  if (grantedPermissions.length > 0) {
-    const permissionRows = grantedPermissions.map((permission_key) => ({
+  // 3. Write one row per canonical permission key so a re-opened relationship
+  // never keeps a grant from before it was revoked.
+  {
+    const grantedSet = new Set(grantedPermissions)
+    const permissionRows = ALL_PERMISSION_KEYS.map((permission_key) => ({
       relationship_id: newRelationship.id,
       permission_key,
-      granted: true,
-      granted_at: now,
+      granted: grantedSet.has(permission_key),
+      granted_at: grantedSet.has(permission_key) ? now : null,
+      revoked_at: null,
       modified_by: user.id,
     }))
 
     const { error: permissionsError } = await admin
       .from('relationship_permissions')
-      .insert(permissionRows)
+      .upsert(permissionRows, { onConflict: 'relationship_id,permission_key' })
 
     if (permissionsError) {
       console.error('[POST /api/connect/[token]] permissions insert error:', permissionsError)

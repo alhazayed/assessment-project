@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchAll } from '@/lib/admin/fetch-all'
 
 const AGE_GROUP_ORDER = ['Under 18', '18–24', '25–34', '35–44', '45–54', '55+', 'Unknown']
 
@@ -72,6 +73,7 @@ function crossTab(items: EnrichedSub[], field: keyof EnrichedSub) {
 
 interface EnrichedSub {
   id: string
+  patientId: string | null
   code: string
   name: string
   score: number
@@ -91,7 +93,9 @@ export async function GET() {
     await requireAdmin()
     const db = createAdminClient()
 
-    const { data: rawSubs } = await db
+    // fetchAll() pages past PostgREST's 1,000-row max_rows cap, so the
+    // research view covers every scored submission instead of the newest 1,000.
+    const rawSubs = await fetchAll<any>(() => db
       .from('assessment_submissions')
       .select(`
         id, total_score, severity_band, high_risk_flag, submitted_at,
@@ -103,15 +107,16 @@ export async function GET() {
       `)
       .not('total_score', 'is', null)
       .order('submitted_at', { ascending: false })
-      .limit(5000)
+      .order('id', { ascending: true }))
 
-    const subs: EnrichedSub[] = (rawSubs || []).map((s: any) => {
+    const subs: EnrichedSub[] = rawSubs.map((s: any) => {
       const p = s.profiles
       const pp = Array.isArray(p?.patient_profiles) ? p.patient_profiles[0] : p?.patient_profiles
       const dob = p?.date_of_birth || s.guest_dob || null
       const medVal = pp?.has_psychiatric_medications
       return {
         id: s.id,
+        patientId: s.patient_id ?? null,
         code: s.assessment_definitions?.code || 'Unknown',
         name: s.assessment_definitions?.name_en || 'Unknown',
         score: s.total_score ?? 0,
@@ -335,7 +340,8 @@ export async function GET() {
 
     // --- Overall executive stats ---
     const execStats = {
-      totalUsers: new Set(subs.filter(s => s.id).map(s => s.id)).size,
+      // Distinct registered patients (guest submissions have no patient_id).
+      totalUsers: new Set(subs.filter(s => s.patientId).map(s => s.patientId)).size,
       totalAssessments: subs.length,
       highRiskCount: subs.filter(s => s.highRisk).length,
       highRiskPct: subs.length ? +((subs.filter(s => s.highRisk).length / subs.length) * 100).toFixed(1) : 0,
@@ -354,7 +360,7 @@ export async function GET() {
       totalRecords: subs.length,
     })
   } catch (e) {
-    console.error('Research API error:', e)
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!isAuthRedirectError(e)) console.error('Research API error:', e)
+    return adminRouteError(e)
   }
 }
