@@ -1,4 +1,4 @@
-import { SITE_URL, PUBLIC_MEDICAL_CONTENT_REVIEWED } from '@/lib/site-url'
+import { SITE_URL, PUBLIC_MEDICAL_CONTENT_REVIEWED, PUBLIC_MEDICAL_CONTENT_REVIEWER } from '@/lib/site-url'
 import type { FaqItem } from '@/lib/faq-content'
 
 export function organizationSchema() {
@@ -93,6 +93,16 @@ export function medicalWebPageSchema(opts: {
       audienceType: 'Patient',
     },
     isPartOf: { '@type': 'WebSite', name: 'V Welfare', url: SITE_URL },
+    ...(PUBLIC_MEDICAL_CONTENT_REVIEWER
+      ? {
+          reviewedBy: {
+            '@type': 'Person',
+            name: lang === 'ar' ? PUBLIC_MEDICAL_CONTENT_REVIEWER.nameAr : PUBLIC_MEDICAL_CONTENT_REVIEWER.nameEn,
+            jobTitle: lang === 'ar' ? PUBLIC_MEDICAL_CONTENT_REVIEWER.titleAr : PUBLIC_MEDICAL_CONTENT_REVIEWER.titleEn,
+            ...(PUBLIC_MEDICAL_CONTENT_REVIEWER.url ? { url: PUBLIC_MEDICAL_CONTENT_REVIEWER.url } : {}),
+          },
+        }
+      : {}),
     ...(opts.citation
       ? {
           citation: {
