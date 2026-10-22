@@ -43,6 +43,67 @@ CREATE TRIGGER trg_submissions_clear_review_on_insert
   BEFORE INSERT ON public.assessment_submissions
   FOR EACH ROW EXECUTE FUNCTION public.submissions_clear_review_on_insert();
 
+-- ── Prerequisite: only an admin can verify a clinician ───
+-- confirm_submission_review() trusts clinician_verifications.status, so the
+-- self-verification hole (audit B1) must be closed first. This block is copied
+-- verbatim from 20261018120000 (PR #120); every statement is idempotent, so
+-- whichever migration runs second is a no-op for it.
+-- B1: clinician_verifications
+-- Owners and admins may read. All writes go through the service role
+-- (/api/clinician/verification and /api/admin/clinician-verifications), so
+-- there is no end-user write rule at all. The trigger is a second lock in
+-- case a write rule is ever added back.
+-- ══════════════════════════════════════════════════════════
+DROP POLICY IF EXISTS "cv_clinician_own" ON public.clinician_verifications;
+DROP POLICY IF EXISTS "cv_owner_admin_read" ON public.clinician_verifications;
+CREATE POLICY "cv_owner_admin_read"
+  ON public.clinician_verifications FOR SELECT
+  TO authenticated
+  USING (
+    clinician_id = (SELECT auth.uid())
+    OR get_my_role() = ANY (ARRAY['admin', 'superadmin'])
+  );
+
+CREATE OR REPLACE FUNCTION public.guard_clinician_verification_review()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  IF auth.uid() IS NULL
+     OR coalesce(public.get_my_role() IN ('admin', 'superadmin'), false) THEN
+    RETURN NEW;
+  END IF;
+
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.status IS DISTINCT FROM 'pending_verification'
+       OR NEW.reviewed_by IS NOT NULL
+       OR NEW.reviewed_at IS NOT NULL
+       OR NEW.rejection_reason IS NOT NULL THEN
+      RAISE EXCEPTION 'Only an administrator can review a clinician verification'
+        USING ERRCODE = '42501';
+    END IF;
+  ELSIF NEW.status           IS DISTINCT FROM OLD.status
+     OR NEW.reviewed_by      IS DISTINCT FROM OLD.reviewed_by
+     OR NEW.reviewed_at      IS DISTINCT FROM OLD.reviewed_at
+     OR NEW.rejection_reason IS DISTINCT FROM OLD.rejection_reason
+     OR NEW.clinician_id     IS DISTINCT FROM OLD.clinician_id THEN
+    RAISE EXCEPTION 'Only an administrator can review a clinician verification'
+      USING ERRCODE = '42501';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.guard_clinician_verification_review() FROM PUBLIC, anon, authenticated;
+
+DROP TRIGGER IF EXISTS trg_guard_clinician_verification_review ON public.clinician_verifications;
+CREATE TRIGGER trg_guard_clinician_verification_review
+  BEFORE INSERT OR UPDATE ON public.clinician_verifications
+  FOR EACH ROW EXECUTE FUNCTION public.guard_clinician_verification_review();
+
 -- ── Confirm a review ──────────────────────────────────────
 CREATE OR REPLACE FUNCTION public.confirm_submission_review(p_submission_id uuid)
 RETURNS jsonb
@@ -66,7 +127,14 @@ BEGIN
     INTO v_name, v_title
     FROM public.clinician_verifications cv
    WHERE cv.clinician_id = v_uid
-     AND cv.status = 'verified';
+     AND cv.status = 'verified'
+     -- An admin must have approved it, which also rules out rows a clinician
+     -- self-verified before the B1 fix above existed.
+     AND EXISTS (
+       SELECT 1 FROM public.profiles a
+        WHERE a.id = cv.reviewed_by
+          AND a.role IN ('admin', 'superadmin')
+     );
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Clinician is not verified' USING ERRCODE = '42501';
   END IF;
