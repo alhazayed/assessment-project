@@ -221,4 +221,10 @@ SELECT pg_temp.expect('B6 admin with MFA can deactivate a patient', pg_temp.u('a
   format('UPDATE public.profiles SET is_active = false WHERE id = %L', pg_temp.u('p')),
   'allowed');
 
+-- Failed admin logins are audited by the service role with no actor.
+INSERT INTO public.audit_log (action, target_type) VALUES ('admin_login_failed', 'admin_session');
+SELECT pg_temp.expect('audit: users cannot write actor-less audit rows', pg_temp.u('p'), 'aal1',
+  $q$INSERT INTO public.audit_log (action, target_type) VALUES ('forged', 'admin_session')$q$,
+  'denied');
+
 ROLLBACK;

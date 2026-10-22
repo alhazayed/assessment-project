@@ -318,6 +318,14 @@ ALTER POLICY superadmin_can_view_webhook_events ON public.stripe_webhook_events
 
 
 -- ══════════════════════════════════════════════════════════
+-- Audit: failed admin logins (bad PIN or password) have no signed-in user,
+-- so their audit rows were rejected by actor_id NOT NULL and never written.
+-- Let those rows carry a NULL actor. The end-user insert rule still requires
+-- actor_id = auth.uid(), so only the service role can write a NULL actor.
+-- ══════════════════════════════════════════════════════════
+ALTER TABLE public.audit_log ALTER COLUMN actor_id DROP NOT NULL;
+
+-- ══════════════════════════════════════════════════════════
 -- Safety net: production has had changes "applied directly to remote", so
 -- fail the whole migration if any rule still reads a role from profiles
 -- without going through get_my_role(), or if the removed write paths are
