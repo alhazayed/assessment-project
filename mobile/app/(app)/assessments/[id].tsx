@@ -93,55 +93,56 @@ export default function AssessmentScreen() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setSubmitting(false); return }
 
-    const responses = items
-      .filter(item => answers[item.id] !== undefined)
-      .map(item => {
-        const opt = item.response_options.find(o => o.value === answers[item.id])!
-        return {
-          item_id: item.id,
-          response_value: answers[item.id],
-          response_label_en: opt.label_en,
-          response_label_ar: opt.label_ar,
-        }
+    // Results are scored and saved by the server (the database no longer
+    // accepts results written directly by the app).
+    const { data: { session } } = await supabase.auth.getSession()
+    let saved: { submission_id: string; score: number; high_risk: boolean } | null = null
+    try {
+      const res = await fetch(`${WEB_URL}/api/submit-assessment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({
+          definition_id: def.id,
+          responses: items
+            .filter(item => answers[item.id] !== undefined)
+            .map(item => ({ item_id: item.id, value: answers[item.id] })),
+        }),
       })
-
-    const totalScore = responses.reduce((sum, r) => sum + r.response_value, 0)
-    const band = calcBand(def.scoring_logic as ScoringBand[], totalScore)
-    const highRisk = responses.some(r => {
-      const item = items.find(i => i.id === r.item_id)
-      return item?.is_safety_item && r.response_value > 0
-    }) || (def.high_risk_threshold !== null && totalScore >= def.high_risk_threshold)
-
-    const { data: submission } = await supabase
-      .from('assessment_submissions')
-      .insert({
-        patient_id: user.id,
-        definition_id: def.id,
-        total_score: totalScore,
-        severity_band: band?.severity_en ?? null,
-        high_risk_flag: highRisk,
-        is_self_initiated: true,
-      })
-      .select('id')
-      .single()
-
-    if (submission) {
-      await supabase.from('assessment_responses').insert(
-        responses.map(r => ({ submission_id: submission.id, ...r }))
-      )
-      // Clear in-progress session
-      await supabase
-        .from('assessment_sessions')
-        .delete()
-        .eq('patient_id', user.id)
-        .eq('definition_id', def.id)
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        Alert.alert(
+          lang === 'ar' ? 'تعذّر الحفظ' : 'Could not save',
+          body.code === 'consent_required'
+            ? (lang === 'ar'
+                ? 'يرجى الموافقة على شروط الخصوصية في الموقع قبل حفظ نتائجك.'
+                : 'Please accept the privacy consent on the website before saving results.')
+            : (lang === 'ar' ? 'حدث خطأ. حاول مرة أخرى.' : 'Something went wrong. Please try again.'),
+        )
+        setSubmitting(false)
+        return
+      }
+      saved = body
+    } catch {
+      Alert.alert(lang === 'ar' ? 'تعذّر الحفظ' : 'Could not save', lang === 'ar' ? 'تحقق من اتصالك بالإنترنت.' : 'Check your internet connection.')
+      setSubmitting(false)
+      return
     }
 
+    // Clear in-progress session
+    await supabase
+      .from('assessment_sessions')
+      .delete()
+      .eq('patient_id', user.id)
+      .eq('definition_id', def.id)
+
     setResult({
-      score: totalScore,
-      band,
-      highRisk,
-      submissionId: submission?.id ?? null,
+      score: saved!.score,
+      band: calcBand(def.scoring_logic as ScoringBand[], saved!.score),
+      highRisk: saved!.high_risk,
+      submissionId: saved!.submission_id,
     })
     setStep('result')
     setSubmitting(false)

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAdmin, adminRouteError } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { setAccountSignInAllowed } from '@/lib/security/account-access'
 
 /**
  * DELETE /api/admin/delete-user
@@ -189,9 +190,13 @@ async function countUserData(db: ReturnType<typeof createAdminClient>, userId: s
  * Allows for recovery and preserves referential integrity
  */
 async function softDeleteUserData(db: ReturnType<typeof createAdminClient>, userId: string) {
+  // Block sign-in first: a soft-deleted account must actually lose access,
+  // and if this fails nothing has been changed yet.
+  await setAccountSignInAllowed(db, userId, false)
+
   // Soft delete profile (mark as inactive). Clear any pending GDPR deletion
   // request so the account no longer shows as "deletion requested" once actioned.
-  await db
+  const { error } = await db
     .from('profiles')
     .update({
       is_active: false,
@@ -199,6 +204,7 @@ async function softDeleteUserData(db: ReturnType<typeof createAdminClient>, user
       deletion_requested_at: null,
     })
     .eq('id', userId)
+  if (error) throw error
 }
 
 /**

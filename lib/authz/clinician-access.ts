@@ -6,10 +6,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  * SAME function the RLS policies use — so the API and the database agree on one
  * authorization model instead of each re-implementing ownership logic.
  *
- * `has_clinician_access` returns true when the clinician has an active consent
- * relationship granting `permission`, OR — for backward compatibility — the
- * patient is still linked by the legacy `profiles.assigned_clinician_id`. Legacy
- * patients therefore keep working with no manual migration.
+ * `has_clinician_access` returns true only when the clinician is an active,
+ * verified clinician AND has an active consent relationship granting
+ * `permission`. The legacy `profiles.assigned_clinician_id` link no longer
+ * grants anything (migration 20261018120000), so revoking consent or
+ * suspending a clinician takes effect immediately.
  *
  * `permission` must be one of the relationship_permissions keys, e.g.
  * 'view_assessment_results', 'view_assessment_history', 'view_mood_tracking',

@@ -72,9 +72,13 @@ function calcBand(scoringLogic: ScoringBand[], score: number): ScoringBand | nul
 
 export async function POST(request: Request) {
   try {
-    // Auth check via SSR client (validates session cookie)
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    // Auth check: the web app sends its session cookie; the native app sends
+    // its access token as a Bearer header (it can no longer insert results
+    // directly — this route is the only way to save a submission).
+    const authHeader = request.headers.get('Authorization')
+    const { data: { user } } = authHeader?.startsWith('Bearer ')
+      ? await createAdminClient().auth.getUser(authHeader.slice(7))
+      : await (await createClient()).auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // Use admin client for all DB ops — bypasses RLS which can fail in route

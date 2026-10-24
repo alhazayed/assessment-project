@@ -1,19 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security/client-ip'
 import { scrubPHI } from '@/lib/security/anonymizePHI'
-
-/** Extract the real client IP, preferring Cloudflare's trusted header. */
-function extractIp(request: Request): string {
-  const cfIp = request.headers.get('cf-connecting-ip')?.trim()
-  if (cfIp && /^[\d.:a-fA-F]{2,45}$/.test(cfIp)) return cfIp
-  const xff = request.headers.get('x-forwarded-for')
-  if (xff) {
-    const first = xff.split(',')[0]?.trim()
-    if (first && /^[\d.:a-fA-F]{2,45}$/.test(first)) return first
-  }
-  return 'unknown'
-}
 
 interface AssessmentMeta {
   keywords_en: string[]
@@ -94,7 +83,7 @@ function scoreAssessment(query: string, meta: AssessmentMeta): number {
 
 export async function POST(request: Request) {
   try {
-    const ip = extractIp(request)
+    const ip = getClientIp(request)
 
     // Burst: 5/min per IP; Daily: 50/day per IP (local matching is free)
     const [burstRl, dailyRl] = await Promise.all([

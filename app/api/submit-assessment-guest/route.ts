@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security/client-ip'
 import { verifyTurnstileToken } from '@/lib/security/verifyTurnstile'
 import { createGuestClaimToken } from '@/lib/guest-claim'
 import type { ScoringBand } from '@/lib/types'
@@ -90,31 +91,9 @@ function calcBand(scoringLogic: ScoringBand[], score: number): ScoringBand | nul
   return scoringLogic[scoringLogic.length - 1]
 }
 
-/** Extract the real client IP, preferring Cloudflare's trusted header. */
-function extractIp(request: Request): string {
-  // CF-Connecting-IP is set by Cloudflare and cannot be spoofed by the client
-  const cfIp = request.headers.get('cf-connecting-ip')?.trim()
-  if (cfIp && isValidIp(cfIp)) return cfIp
-
-  // Fall back to the leftmost IP in X-Forwarded-For (set by load balancers)
-  const xff = request.headers.get('x-forwarded-for')
-  if (xff) {
-    // Take the first (client) IP in the chain
-    const first = xff.split(',')[0]?.trim()
-    if (first && isValidIp(first)) return first
-  }
-
-  return 'unknown'
-}
-
-function isValidIp(ip: string): boolean {
-  // Basic IPv4 or IPv6 check — not exhaustive but blocks obvious garbage
-  return /^[\d.:a-fA-F]{2,45}$/.test(ip)
-}
-
 export async function POST(request: Request) {
   try {
-    const ip = extractIp(request)
+    const ip = getClientIp(request)
 
     // Dual-window IP rate limiting:
     //   Burst:  3 submissions per minute   (blocks rapid-fire scripts)

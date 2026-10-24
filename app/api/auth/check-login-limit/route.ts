@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security/client-ip'
 
 export async function POST(request: Request) {
   try {
@@ -9,9 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email required' }, { status: 400 })
     }
 
-    const cfIp = request.headers.get('cf-connecting-ip')?.trim()
-    const xff = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    const ip = (cfIp && /^[\d.:a-fA-F]{2,45}$/.test(cfIp) ? cfIp : xff) ?? 'unknown'
+    const ip = getClientIp(request)
 
     // Rate limit: 5 login attempts per 15 minutes per IP
     const ipLimit = await checkRateLimit(`login:ip:${ip}`, { limit: 5, windowMs: 15 * 60 * 1000 })

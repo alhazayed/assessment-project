@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { computeHmac } from '@/lib/admin-auth'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security/client-ip'
 import { cookies } from 'next/headers'
 
 // Constant-time comparison for the admin PIN. HMAC-wrapping both sides with a
@@ -19,15 +19,23 @@ function timingSafeStrEqual(a: unknown, b: unknown): boolean {
 export async function POST(request: Request) {
   try {
     // Rate-limit: 5 attempts per 15 minutes per IP
-    const cfIp = request.headers.get('cf-connecting-ip')?.trim()
-    const xff = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    const ip = (cfIp && /^[\d.:a-fA-F]{2,45}$/.test(cfIp) ? cfIp : xff) ?? 'unknown'
+    const ip = getClientIp(request)
     const rl = await checkRateLimit(`admin-login:${ip}`, { limit: 5, windowMs: 15 * 60 * 1000 })
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many login attempts. Try again in 15 minutes.' }, { status: 429 })
     }
 
     const { email, password, pin } = await request.json()
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim()) {
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+    }
+
+    // Per-account lockout as well, so rotating IPs cannot keep guessing one
+    // admin's password and PIN.
+    const accountRl = await checkRateLimit(`admin-login:email:${email.trim().toLowerCase()}`, { limit: 5, windowMs: 15 * 60 * 1000 })
+    if (!accountRl.allowed) {
+      return NextResponse.json({ error: 'Too many login attempts. Try again in 15 minutes.' }, { status: 429 })
+    }
 
     const expectedPin = process.env.ADMIN_PIN
     if (!expectedPin) return NextResponse.json({ error: 'Admin PIN not configured on server' }, { status: 503 })
@@ -58,8 +66,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single()
-    if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
+    const { data: profile } = await supabase.from('profiles').select('role, is_active').eq('id', data.user.id).single()
+    if (!profile || profile.is_active === false || !['admin', 'superadmin'].includes(profile.role)) {
       // Sign out and return the SAME generic 401 as a bad PIN/password so a valid
       // non-admin credential pair cannot be distinguished (no factor enumeration).
       await supabase.auth.signOut()
@@ -70,15 +78,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
     }
 
-    const token = await computeHmac(data.user.id, profile.role)
+    // Password and PIN are only the first step. The admin_session cookie is
+    // issued by /api/admin/login/mfa once an authenticator-app code has
+    // raised this Supabase session to aal2, which is also what the database
+    // admin rules require.
     const store = await cookies()
-    store.set('admin_session', token, {
-      httpOnly: true, secure: true,
-      sameSite: 'lax', path: '/', maxAge: 60 * 60 * 8,
-    })
+    store.set('admin_session', '', { maxAge: 0, path: '/' })
 
-    return NextResponse.json({ ok: true })
+    const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors()
+    if (factorsError) throw factorsError
+
+    const verified = factors.totp.find(f => f.status === 'verified')
+    if (verified) {
+      return NextResponse.json({ mfa: 'verify', factorId: verified.id })
+    }
+
+    // First admin login since MFA became mandatory: drop any half-finished
+    // enrolment and start a fresh one.
+    for (const factor of factors.all) {
+      if (factor.factor_type === 'totp' && factor.status !== 'verified') {
+        await supabase.auth.mfa.unenroll({ factorId: factor.id })
+      }
+    }
+    const { data: enrolled, error: enrollError } = await supabase.auth.mfa.enroll({
+      factorType: 'totp',
+      friendlyName: 'V Welfare admin',
+    })
+    if (enrollError || !enrolled) throw enrollError ?? new Error('MFA enrolment failed')
+
+    return NextResponse.json({
+      mfa: 'enroll',
+      factorId: enrolled.id,
+      qrCode: enrolled.totp.qr_code,
+      secret: enrolled.totp.secret,
+    })
   } catch (err) {
+    console.error('[admin/login] error:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

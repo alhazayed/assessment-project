@@ -11,6 +11,9 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPin, setShowPin] = useState(false)
+  // Second step: an authenticator-app code. 'enroll' shows the QR code first.
+  const [mfa, setMfa] = useState<null | { mode: 'verify' | 'enroll'; factorId: string; qrCode?: string; secret?: string }>(null)
+  const [code, setCode] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -24,6 +27,35 @@ export default function AdminLoginPage() {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Login failed'); setLoading(false); return }
+      setMfa({ mode: data.mfa, factorId: data.factorId, qrCode: data.qrCode, secret: data.secret })
+      setForm(p => ({ ...p, password: '', pin: '' }))
+      setLoading(false)
+    } catch {
+      setError('Network error')
+      setLoading(false)
+    }
+  }
+
+  async function handleMfaSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!mfa) return
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/admin/login/mfa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ factorId: mfa.factorId, code }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Verification failed')
+        setCode('')
+        setLoading(false)
+        // An expired first step can't be finished: start again from the password.
+        if (data.restart) setMfa(null)
+        return
+      }
       router.push('/x/control/overview')
     } catch {
       setError('Network error')
@@ -49,6 +81,49 @@ export default function AdminLoginPage() {
               {error}
             </div>
           )}
+          {mfa ? (
+          <form onSubmit={handleMfaSubmit} className="space-y-4">
+            {mfa.mode === 'enroll' ? (
+              <div className="space-y-3 text-sm" style={{ color: '#A9CFE7' }}>
+                <p>Admin accounts now need an authenticator app. Scan this code with Google Authenticator, Microsoft Authenticator, 1Password or a similar app.</p>
+                {mfa.qrCode && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={mfa.qrCode} alt="QR code to add V Welfare admin to your authenticator app" width={176} height={176} className="mx-auto rounded-lg bg-white p-2" />
+                )}
+                {mfa.secret && (
+                  <p>Can&apos;t scan it? Enter this key instead: <code className="break-all font-mono text-white">{mfa.secret}</code></p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm" style={{ color: '#A9CFE7' }}>Enter the 6-digit code from your authenticator app.</p>
+            )}
+            <div>
+              <label htmlFor="admin-mfa-code" className="block text-sm font-medium mb-1.5" style={{ color: '#A9CFE7' }}>Authenticator code</label>
+              <input
+                id="admin-mfa-code"
+                type="text" inputMode="numeric" autoComplete="one-time-code" required
+                pattern="[0-9]{6}" maxLength={6} autoFocus
+                className="w-full rounded-lg px-3 py-2.5 text-white text-sm tracking-widest placeholder-slate-500 focus:outline-none focus:ring-2"
+                style={{ backgroundColor: '#0E314D', border: '1px solid #1D6296' }}
+                value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="123456"
+              />
+            </div>
+            <button
+              type="submit" disabled={loading || code.length !== 6}
+              className="w-full mt-2 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg text-sm transition-colors hover:opacity-90"
+              style={{ backgroundColor: '#F3650A' }}
+            >
+              {loading ? 'Verifying…' : 'Verify and continue'}
+            </button>
+            <button
+              type="button" onClick={() => { setMfa(null); setCode(''); setError('') }}
+              className="w-full text-sm underline" style={{ color: '#7EB7DB' }}
+            >
+              Start again
+            </button>
+          </form>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: '#A9CFE7' }}>Email</label>
@@ -94,6 +169,7 @@ export default function AdminLoginPage() {
               {loading ? 'Authenticating…' : 'Access Control Panel'}
             </button>
           </form>
+          )}
         </div>
         <p className="text-center text-xs mt-4" style={{ color: '#53A0CF' }}>This is a restricted area. Unauthorized access is prohibited.</p>
       </div>
