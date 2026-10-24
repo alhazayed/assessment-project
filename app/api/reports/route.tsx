@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { renderToBuffer, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { verifyAdminSession } from '@/lib/admin-auth'
+import { reviewedByLine } from '@/lib/clinical-review'
 
 const BRAND = { primary: '#1D6296', accent: '#F3650A', dark: '#12273C' }
 
@@ -119,7 +120,7 @@ export async function GET(request: Request) {
   const [profileRes, submissionsRes, moodRes] = await Promise.all([
     supabase.from('profiles').select('full_name_en, full_name_ar, date_of_birth, gender, country_of_residence, created_at').eq('id', patientId).single(),
     supabase.from('assessment_submissions')
-      .select('submitted_at, total_score, severity_band, high_risk_flag, assessment_definitions(name_en, code)')
+      .select('submitted_at, total_score, severity_band, high_risk_flag, reviewer_name, reviewer_title, reviewed_at, assessment_definitions(name_en, code)')
       .eq('patient_id', patientId)
       .order('submitted_at', { ascending: false })
       .limit(20),
@@ -193,6 +194,12 @@ export async function GET(request: Request) {
                   <Text style={styles.label}>Score</Text>
                   <Text style={styles.value}>{s.total_score}</Text>
                 </View>
+                {reviewedByLine('en', s) && (
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Clinical Review</Text>
+                    <Text style={styles.value}>{reviewedByLine('en', s)}</Text>
+                  </View>
+                )}
                 <View style={[styles.badge, { backgroundColor: severityBg(s.severity_band) }]}>
                   <Text style={{ fontSize: 8, color: severityText(s.severity_band) }}>
                     {s.severity_band}{s.high_risk_flag ? '  ⚠ High Risk' : ''}

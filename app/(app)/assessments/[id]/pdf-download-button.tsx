@@ -13,6 +13,7 @@ interface Props {
   score: number
   band: string
   highRisk: boolean
+  reviewedBy: string | null
   explanation: string
   whatThisMeans: string[]
   recommendations: string[]

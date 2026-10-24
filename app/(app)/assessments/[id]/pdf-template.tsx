@@ -11,6 +11,8 @@ interface AssessmentPdfProps {
   score: number
   band: string
   highRisk: boolean
+  /** Localized "reviewed by" line, or null while unreviewed. */
+  reviewedBy: string | null
   explanation: string
   whatThisMeans: string[]
   recommendations: string[]
@@ -116,7 +118,7 @@ function bandColor(band: string) {
 
 export function AssessmentPdfDocument({
   lang, patientName, assessmentName, assessmentCode, completedOn,
-  score, band, highRisk, explanation, whatThisMeans, recommendations,
+  score, band, highRisk, reviewedBy, explanation, whatThisMeans, recommendations,
 }: AssessmentPdfProps) {
   const isAr = lang === 'ar'
   const colors = bandColor(band)
@@ -129,6 +131,7 @@ export function AssessmentPdfDocument({
     assessment: isAr ? 'التقييم' : 'Assessment',
     completed: isAr ? 'تاريخ الإكمال' : 'Completed',
     score: isAr ? 'النتيجة' : 'Score',
+    review: isAr ? 'المراجعة السريرية' : 'Clinical review',
     highRisk: isAr ? 'نتيجة عالية الخطورة — يُنصح بمتابعة سريرية' : 'High-risk result — clinical follow-up recommended',
     whatItMeans: isAr ? 'ماذا تعني هذه النتيجة' : 'What This Means',
     recommendations: isAr ? 'التوصيات' : 'Recommendations',
@@ -155,6 +158,9 @@ export function AssessmentPdfDocument({
           <View style={styles.row}><Text style={styles.label}>{L.patient}</Text><Text style={styles.value}>{patientName}</Text></View>
           <View style={styles.row}><Text style={styles.label}>{L.assessment}</Text><Text style={styles.value}>{assessmentName} ({assessmentCode})</Text></View>
           <View style={styles.row}><Text style={styles.label}>{L.completed}</Text><Text style={styles.value}>{completedOn}</Text></View>
+          {reviewedBy && (
+            <View style={styles.row}><Text style={styles.label}>{L.review}</Text><Text style={styles.value}>{reviewedBy}</Text></View>
+          )}
         </View>
 
         {highRisk && (

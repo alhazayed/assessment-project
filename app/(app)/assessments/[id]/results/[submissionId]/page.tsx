@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import { getLanguage } from '@/lib/get-language'
 import AssessmentResultView from '@/components/assessment-result-view'
 import type { AssessmentDefinition } from '@/lib/types'
+import { reviewedByLine } from '@/lib/clinical-review'
 
 interface Props {
   params: Promise<{ id: string; submissionId: string }>
@@ -59,6 +60,7 @@ export default async function SubmissionResultPage(props: Props) {
       submittedAt={submission.submitted_at}
       patientNames={{ en: profile?.full_name_en ?? '', ar: profile?.full_name_ar ?? null }}
       submissionId={submission.id}
+      reviewedBy={reviewedByLine(lang, submission)}
     />
   )
 }

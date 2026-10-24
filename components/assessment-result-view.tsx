@@ -5,7 +5,7 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import {
-  CheckCircle2, AlertTriangle, AlertCircle, BookOpen, FlaskConical, Brain, Loader2, Sparkles,
+  CheckCircle2, AlertTriangle, AlertCircle, BookOpen, FlaskConical, Brain, Loader2, Sparkles, ShieldCheck,
 } from 'lucide-react'
 import type { AssessmentDefinition } from '@/lib/types'
 import { getAssessmentContent, getLocalizedBandContent, getLocalizedAssessmentMeta, IPIP_DOMAINS, getIpipDomainLevel } from '@/lib/assessment-content'
@@ -49,6 +49,8 @@ export interface AssessmentResultProps {
   submittedAt: string
   patientNames: { en: string; ar: string | null }
   submissionId?: string
+  /** Localized "reviewed by" line, set once a clinician has confirmed the review. */
+  reviewedBy?: string | null
   showNavLinks?: boolean
 }
 
@@ -62,6 +64,7 @@ export default function AssessmentResultView({
   submittedAt,
   patientNames,
   submissionId,
+  reviewedBy,
   showNavLinks = true,
 }: AssessmentResultProps) {
   const supabase = useMemo(() => createClient(), [])
@@ -155,6 +158,12 @@ export default function AssessmentResultView({
           <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${severityColor(bandEn)}`}>
             {displayBand}
           </span>
+          {reviewedBy && (
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-[12.5px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+              <ShieldCheck className="w-4 h-4 text-green-600 flex-shrink-0" aria-hidden="true" />
+              {reviewedBy}
+            </p>
+          )}
         </div>
 
         {highRisk && (
@@ -181,6 +190,7 @@ export default function AssessmentResultView({
               score={score}
               band={displayBand}
               highRisk={highRisk}
+              reviewedBy={reviewedBy ?? null}
               explanation={bandContent?.explanation ?? ''}
               whatThisMeans={bandContent?.whatThisMeans ?? []}
               recommendations={bandContent?.recommendations ?? []}
