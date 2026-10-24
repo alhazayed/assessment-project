@@ -26,6 +26,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const showPackages = flagRow?.is_enabled ?? false
   const isMobileApp = isMobileAppUserAgent((await headers()).get('user-agent'))
 
+  // A deactivated or soft-deleted account is banned in Supabase Auth, but a
+  // session issued before that stays valid until its token expires. End it now.
+  if (profile?.is_active === false) {
+    redirect('/api/auth/account-inactive')
+  }
+
   // Admin accounts are web-only in the native app: bounce them to the notice
   // instead of the standard app shell (defense in depth on top of middleware +
   // the admin PIN).

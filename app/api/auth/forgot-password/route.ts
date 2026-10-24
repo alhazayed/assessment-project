@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security/client-ip'
 import { sanitizeResetRedirect } from '@/lib/security/redirect'
 
 export async function POST(request: Request) {
   try {
     // 3 reset requests per 15 minutes per IP — prevents email bombing
-    const cfIp = request.headers.get('cf-connecting-ip')?.trim()
-    const xff = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    const ip = (cfIp && /^[\d.:a-fA-F]{2,45}$/.test(cfIp) ? cfIp : xff) ?? 'unknown'
+    const ip = getClientIp(request)
 
     const rl = await checkRateLimit(`forgot-password:${ip}`, { limit: 3, windowMs: 15 * 60 * 1000 })
     if (!rl.allowed) {

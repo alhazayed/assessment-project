@@ -34,7 +34,7 @@ export async function GET(request: Request) {
 
   // Clinicians may only fetch notes for patients they have a treating
   // relationship with. Centralized authorization: active consent granting
-  // 'generate_clinical_notes' OR the legacy assigned_clinician_id link.
+  // 'generate_clinical_notes' to an active, verified clinician.
   const { data: callerProfile } = await supabase
     .from('profiles').select('role').eq('id', user.id).single()
   if (callerProfile?.role === 'clinician') {

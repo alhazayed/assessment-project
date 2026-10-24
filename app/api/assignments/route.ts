@@ -10,7 +10,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 // A clinician may only reach another user's assignments when they have a
 // treating relationship with that patient. Authorization goes through the
 // centralized has_clinician_access primitive (active consent granting
-// `view_assessment_history` OR the legacy assigned_clinician_id link), plus the
+// `view_assessment_history` to an active, verified clinician), plus the
 // assignment-specific arm of assign_read: a clinician may also read assignments
 // they authored themselves. This mirrors the RLS policy so the API returns a
 // clean 403 instead of leaking that the patient exists via an empty result set.
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
   // Clinicians may only assign to patients they have a treating relationship
   // with; admins/superadmins may assign to anyone. Authorization goes through
   // the centralized primitive (active consent granting 'view_assessment_history'
-  // OR the legacy assigned_clinician_id link) so legacy patients keep working.
+  // to an active, verified clinician).
   if (callerRole === 'clinician') {
     const allowed = await clinicianHasPatientAccess(supabase, user.id, patient_id, 'view_assessment_history')
     if (!allowed) {

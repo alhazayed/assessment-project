@@ -1,18 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/security/client-ip'
 import type { ScoringBand } from '@/lib/types'
-
-function extractIp(request: Request): string {
-  const cfIp = request.headers.get('cf-connecting-ip')?.trim()
-  if (cfIp && /^[\d.:a-fA-F]{2,45}$/.test(cfIp)) return cfIp
-  const xff = request.headers.get('x-forwarded-for')
-  if (xff) {
-    const first = xff.split(',')[0]?.trim()
-    if (first && /^[\d.:a-fA-F]{2,45}$/.test(first)) return first
-  }
-  return 'unknown'
-}
 
 function calcBand(scoringLogic: ScoringBand[], score: number): ScoringBand | null {
   if (!scoringLogic || scoringLogic.length === 0) return null
@@ -42,7 +32,7 @@ interface ScoreBody {
 
 export async function POST(request: Request) {
   try {
-    const ip = extractIp(request)
+    const ip = getClientIp(request)
     // 10 guest scorings per hour per IP
     const rl = await checkRateLimit(`guest-score:${ip}`, { limit: 10, windowMs: 60 * 60 * 1000 })
     if (!rl.allowed) {
