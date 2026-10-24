@@ -12,7 +12,7 @@ import {
 } from '@/lib/public-learn'
 import { medicalWebPageSchema, breadcrumbSchema } from '@/lib/geo-schema'
 import { getLearnScoring, formatRange, scoringSummary } from '@/lib/learn-scoring'
-import { PUBLIC_MEDICAL_CONTENT_REVIEWED } from '@/lib/site-url'
+import { PUBLIC_MEDICAL_CONTENT_REVIEWED, PUBLIC_MEDICAL_CONTENT_REVIEWER } from '@/lib/site-url'
 import { AlertTriangle, ChevronRight } from 'lucide-react'
 
 interface Props {
@@ -96,6 +96,14 @@ export default async function LearnDetailPage({ params }: Props) {
 
         <p className="text-[13px] mb-6" style={{ color: 'var(--text-muted)' }}>
           {isRtl ? `آخر مراجعة: ${PUBLIC_MEDICAL_CONTENT_REVIEWED}` : `Last reviewed: ${PUBLIC_MEDICAL_CONTENT_REVIEWED}`}
+          {PUBLIC_MEDICAL_CONTENT_REVIEWER && (
+            <>
+              {' · '}
+              {isRtl
+                ? `تمت مراجعة النتيجة بواسطة ${PUBLIC_MEDICAL_CONTENT_REVIEWER.nameAr}، ${PUBLIC_MEDICAL_CONTENT_REVIEWER.titleAr}`
+                : `Clinically reviewed by ${PUBLIC_MEDICAL_CONTENT_REVIEWER.nameEn}, ${PUBLIC_MEDICAL_CONTENT_REVIEWER.titleEn}`}
+            </>
+          )}
         </p>
 
         <section className="card p-6 mb-6">

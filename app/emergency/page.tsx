@@ -1,14 +1,22 @@
-import type { Metadata } from 'next'
+import { localizedPublicMetadata } from '@/lib/public-metadata'
 import Link from 'next/link'
 import { AlertTriangle, Phone, ExternalLink, ArrowLeft } from 'lucide-react'
 import { getLanguage } from '@/lib/get-language'
 import { CRISIS_LINES, CRISIS_HELPLINE_URL } from '@/lib/crisis-resources'
 
-export const metadata: Metadata = {
-  title: 'Emergency Resources · موارد الطوارئ',
-  description:
-    'Crisis support and emergency mental health resources. If you are in immediate danger, contact emergency services. الدعم في الأزمات وموارد الصحة النفسية الطارئة.',
-  robots: { index: true, follow: true },
+export async function generateMetadata() {
+  return localizedPublicMetadata({
+    en: {
+      title: 'Emergency Resources',
+      description:
+        'Crisis support and emergency mental health resources. If you are in immediate danger, contact emergency services.',
+    },
+    ar: {
+      title: 'موارد الطوارئ',
+      description: 'الدعم في الأزمات وموارد الصحة النفسية الطارئة. إذا كنت في خطر مباشر، فاتصل بخدمات الطوارئ.',
+    },
+    path: '/emergency',
+  })
 }
 
 /**
