@@ -173,6 +173,17 @@ export async function POST(request: Request) {
       })
     }
 
+    // Every item must be answered before a band is assigned: a partial
+    // submission (e.g. PHQ-9 with item 9 left out) would otherwise score as
+    // "Minimal" with no risk flag. Both the web and native clients already
+    // require every answer, so this only rejects crafted requests.
+    if (validatedResponses.length !== items.length) {
+      return NextResponse.json(
+        { error: `Every question must be answered (${validatedResponses.length} of ${items.length})` },
+        { status: 400 }
+      )
+    }
+
     // Scoring bands + high-risk
     const scoringLogic = def.scoring_logic as ScoringBand[]
     const band = calcBand(scoringLogic, totalScore)

@@ -37,7 +37,10 @@ export default function RegisterScreen() {
     if (!email.trim()) { setError(t('emailRequired', lang)); return }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email.trim())) { setError(t('invalidEmail', lang)); return }
-    if (password.length < 8) { setError(t('passwordTooShort', lang)); return }
+    // Same rule as the web app and Supabase Auth: 10+ chars, letters and digits.
+    if (password.length < 10 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      setError(t('passwordTooShort', lang)); return
+    }
 
     setLoading(true)
     setError('')

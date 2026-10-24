@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchAll } from '@/lib/admin/fetch-all'
 
 const PAGE_SIZE = 100
 
@@ -65,34 +66,35 @@ export async function GET(request: Request) {
       definitionId = def.id
     }
 
-    // Cap on rows scanned for filtering — matches the research endpoint's cap.
-    const SCAN_CAP = 5000
-
     // Apply every DB-feasible filter, then fetch the matching set (no range yet)
     // so demographic filters and pagination operate on the full filtered data.
-    let query = db.from('assessment_submissions')
-      .select(`
-        id, total_score, severity_band, high_risk_flag, submitted_at,
-        patient_id, definition_id,
-        guest_dob, guest_gender, guest_education, guest_country,
-        assessment_definitions(name_en, code),
-        profiles(gender, date_of_birth, country_of_residence, educational_status,
-          patient_profiles(employment_status, has_psychiatric_medications))
-      `)
-      .order('submitted_at', { ascending: false })
-      .limit(SCAN_CAP)
+    // fetchAll() pages past PostgREST's 1,000-row max_rows cap.
+    const buildQuery = () => {
+      let query = db.from('assessment_submissions')
+        .select(`
+          id, total_score, severity_band, high_risk_flag, submitted_at,
+          patient_id, definition_id,
+          guest_dob, guest_gender, guest_education, guest_country,
+          assessment_definitions(name_en, code),
+          profiles(gender, date_of_birth, country_of_residence, educational_status,
+            patient_profiles(employment_status, has_psychiatric_medications))
+        `)
+        .order('submitted_at', { ascending: false })
+        .order('id', { ascending: true })
 
-    if (from) query = query.gte('submitted_at', from)
-    if (to) query = query.lte('submitted_at', to + 'T23:59:59')
-    if (severity === 'high_risk') query = query.eq('high_risk_flag', true)
-    else if (severity) query = query.ilike('severity_band', `%${severity}%`)
-    if (minScore) query = query.gte('total_score', parseInt(minScore))
-    if (maxScore) query = query.lte('total_score', parseInt(maxScore))
-    if (definitionId) query = query.eq('definition_id', definitionId)
+      if (from) query = query.gte('submitted_at', from)
+      if (to) query = query.lte('submitted_at', to + 'T23:59:59')
+      if (severity === 'high_risk') query = query.eq('high_risk_flag', true)
+      else if (severity) query = query.ilike('severity_band', `%${severity}%`)
+      if (minScore) query = query.gte('total_score', parseInt(minScore))
+      if (maxScore) query = query.lte('total_score', parseInt(maxScore))
+      if (definitionId) query = query.eq('definition_id', definitionId)
+      return query
+    }
 
-    const { data: subs } = await query
+    const subs = await fetchAll<any>(buildQuery)
 
-    let results = (subs || []).map((s: any) => {
+    let results = subs.map((s: any) => {
       const p = s.profiles
       const pp = Array.isArray(p?.patient_profiles) ? p.patient_profiles[0] : p?.patient_profiles
       const dob = p?.date_of_birth || s.guest_dob || null
@@ -144,7 +146,7 @@ export async function GET(request: Request) {
         totalPages: Math.ceil(total / PAGE_SIZE),
       },
     })
-  } catch {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  } catch (error) {
+    return adminRouteError(error)
   }
 }

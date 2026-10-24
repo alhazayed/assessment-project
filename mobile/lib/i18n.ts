@@ -21,7 +21,7 @@ const translations = {
     passwordRequired: 'Password is required',
     nameRequired: 'Name is required',
     invalidEmail: 'Please enter a valid email address',
-    passwordTooShort: 'Password must be at least 8 characters',
+    passwordTooShort: 'Password must be at least 10 characters and include letters and numbers',
     checkYourEmail: 'Check your email for a confirmation link.',
     signInError: 'Invalid email or password. Please try again.',
 
@@ -225,7 +225,7 @@ const translations = {
     passwordRequired: 'كلمة المرور مطلوبة',
     nameRequired: 'الاسم مطلوب',
     invalidEmail: 'يرجى إدخال بريد إلكتروني صحيح',
-    passwordTooShort: 'يجب أن تكون كلمة المرور 8 أحرف على الأقل',
+    passwordTooShort: 'يجب أن تكون كلمة المرور 10 أحرف على الأقل وتحتوي على أحرف وأرقام',
     checkYourEmail: 'تحقق من بريدك الإلكتروني للحصول على رابط التأكيد.',
     signInError: 'البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.',
 

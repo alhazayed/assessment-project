@@ -163,8 +163,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create assignment' }, { status: 500 })
   }
 
-  // Fire notification to patient
-  await supabase.from('notifications').insert({
+  // Fire notification to patient. RLS only lets a user write their own
+  // notifications, so this has to go through the service role; the caller's
+  // right to assign was checked above.
+  const { error: notifyError } = await createAdminClient().from('notifications').insert({
     user_id: patient_id,
     type: 'assignment',
     title_en: 'New assessment assigned',
@@ -173,6 +175,9 @@ export async function POST(request: Request) {
     body_ar: `تم تعيينك لإجراء: ${def?.name_ar ?? 'تقييم'}`,
     link: '/assessments',
   })
+  if (notifyError) {
+    console.error('assignment notification error:', notifyError)
+  }
 
   return NextResponse.json({ assignment: data })
 }

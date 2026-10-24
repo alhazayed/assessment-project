@@ -1,5 +1,6 @@
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchAll } from '@/lib/admin/fetch-all'
 import { KPI_DEFINITIONS, type KPIValue, type KPIStatus } from '@/lib/types/kpi'
 import { NextResponse } from 'next/server'
 
@@ -61,7 +62,19 @@ export async function GET() {
     const iso7d = start7d.toISOString()
     const iso30d = start30d.toISOString()
 
-    const count = (q: any) => q.then((r: any) => r.count ?? 0)
+    const count = (q: any) => q.then((r: any) => {
+      if (r.error) throw new Error(r.error.message)
+      return r.count ?? 0
+    })
+    // DAU/WAU/MAU need distinct patients, so page through every submission in
+    // the window: a plain select is truncated at PostgREST's 1,000-row cap.
+    const activePatients = (sinceIso: string) =>
+      fetchAll<{ patient_id: string | null }>(() => db
+        .from('assessment_submissions')
+        .select('patient_id')
+        .gte('submitted_at', sinceIso)
+        .not('patient_id', 'is', null)
+        .order('id', { ascending: true }))
 
     // Fire the real queries in parallel.
     const [
@@ -80,9 +93,9 @@ export async function GET() {
       completionRows,
     ] = await Promise.all([
       count(db.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'patient')),
-      db.from('assessment_submissions').select('patient_id').gte('submitted_at', todayIso),
-      db.from('assessment_submissions').select('patient_id').gte('submitted_at', iso7d),
-      db.from('assessment_submissions').select('patient_id').gte('submitted_at', iso30d),
+      activePatients(todayIso),
+      activePatients(iso7d),
+      activePatients(iso30d),
       count(db.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', todayIso)),
       count(db.from('audit_log').select('id', { count: 'exact', head: true }).eq('action', 'password_reset').gte('created_at', todayIso)),
       count(db.from('audit_log').select('id', { count: 'exact', head: true }).eq('action', 'email_verified').gte('created_at', todayIso)),
@@ -91,15 +104,20 @@ export async function GET() {
       count(db.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'clinician')),
       count(db.from('clinician_verifications').select('id', { count: 'exact', head: true }).eq('status', 'pending_verification')),
       count(db.from('messages').select('id', { count: 'exact', head: true }).gte('created_at', todayIso)),
-      db.from('assessment_submissions').select('started_at, submitted_at').gte('submitted_at', iso7d).not('started_at', 'is', null),
+      fetchAll<{ started_at: string; submitted_at: string }>(() => db
+        .from('assessment_submissions')
+        .select('started_at, submitted_at')
+        .gte('submitted_at', iso7d)
+        .not('started_at', 'is', null)
+        .order('id', { ascending: true })),
     ])
 
-    const distinct = (rows: any) =>
-      new Set((rows?.data ?? []).map((r: any) => r.patient_id).filter(Boolean)).size
+    const distinct = (rows: { patient_id: string | null }[]) =>
+      new Set(rows.map(r => r.patient_id).filter(Boolean)).size
 
     // Average completion time (minutes) over the last 7 days
-    const durations: number[] = (completionRows?.data ?? [])
-      .map((r: any) => {
+    const durations: number[] = completionRows
+      .map((r) => {
         const s = new Date(r.started_at).getTime()
         const e = new Date(r.submitted_at).getTime()
         return e > s ? (e - s) / 60000 : null
@@ -155,12 +173,9 @@ export async function GET() {
     })
 
     return NextResponse.json(kpis)
-  } catch (err: any) {
+  } catch (err) {
     // requireAdmin() throws a redirect for unauthenticated/non-admin callers.
-    if (err?.digest?.toString().startsWith('NEXT_REDIRECT')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    console.error('KPI fetch error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    if (!isAuthRedirectError(err)) console.error('KPI fetch error:', err)
+    return adminRouteError(err)
   }
 }

@@ -33,13 +33,23 @@ export default function AdminPlatformPage() {
   function flash(m: string) { setMsg(m); setTimeout(() => setMsg(''), 3000) }
 
   async function toggleFlag(id: string, current: boolean) {
-    await fetch('/api/admin/flags', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_enabled: !current }) })
+    const res = await fetch('/api/admin/flags', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_enabled: !current }) })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      flash(data.error || (lang === 'ar' ? 'تعذّر تنفيذ العملية' : 'The change could not be saved'))
+      return
+    }
     flash(t(!current ? 'admin.platform.feature_enabled' : 'admin.platform.feature_disabled', lang))
     load()
   }
 
   async function saveSetting(key: string) {
-    await fetch('/api/admin/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: settingEdits[key] }) })
+    const res = await fetch('/api/admin/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value: settingEdits[key] }) })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      flash(data.error || (lang === 'ar' ? 'تعذّر تنفيذ العملية' : 'The change could not be saved'))
+      return
+    }
     flash(t('admin.platform.setting_saved', lang))
     load()
   }

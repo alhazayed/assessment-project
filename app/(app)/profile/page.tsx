@@ -9,6 +9,7 @@ import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
 import { localizeSeverity } from '@/lib/severity-labels'
 import { COUNTRIES } from '@/lib/countries'
+import { clearLocalAssessmentData } from '@/lib/guest-claim-storage'
 
 type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed'
 type EducationalStatus = 'none' | 'primary' | 'secondary' | 'diploma' | 'bachelor' | 'master' | 'phd' | 'other'
@@ -288,6 +289,7 @@ export default function ProfilePage() {
       }
       // Sign out after a successfully recorded deletion request.
       const supabaseClient = createClient()
+      clearLocalAssessmentData()
       await supabaseClient.auth.signOut()
       router.push('/')
     } catch {

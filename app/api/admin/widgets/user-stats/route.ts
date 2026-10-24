@@ -1,6 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-auth'
 import * as Sentry from '@sentry/nextjs'
+import { fetchAll } from '@/lib/admin/fetch-all'
 
 export const maxDuration = 30
 
@@ -17,20 +18,18 @@ export async function GET(): Promise<Response> {
 
   try {
     await requireAdmin()
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
-    // Query roles aggregation
-    const { data: profiles, error } = await supabase
+    // Every profile's role, paged past PostgREST's 1,000-row max_rows cap
+    // (fetchAll throws on a query error).
+    const profiles = await fetchAll<{ role: string }>(() => supabase
       .from('profiles')
       .select('role')
-
-    if (error) {
-      throw new Error(`Failed to fetch user stats: ${error.message}`)
-    }
+      .order('id', { ascending: true }))
 
     // Aggregate by role
     const roles: Record<string, number> = {}
-    ;(profiles || []).forEach((p: any) => {
+    profiles.forEach((p) => {
       roles[p.role] = (roles[p.role] || 0) + 1
     })
 
@@ -38,7 +37,7 @@ export async function GET(): Promise<Response> {
 
     const response: UserStatsResponse = {
       success: true,
-      total: profiles?.length || 0,
+      total: profiles.length,
       roles,
       source: 'live',
       timestamp: new Date().toISOString(),
@@ -46,7 +45,7 @@ export async function GET(): Promise<Response> {
 
     return Response.json(response, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Cache-Control': 'private, no-store',
         'X-Response-Time': `${duration}ms`,
       },
     })

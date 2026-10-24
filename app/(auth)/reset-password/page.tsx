@@ -32,8 +32,13 @@ export default function ResetPasswordPage() {
     e.preventDefault()
     setError(null)
 
+    // Same rule as registration (and Supabase Auth's server-side policy).
+    if (password.length < 10) {
+      setError(t('auth.password.tooShort10', lang))
+      return
+    }
     if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      setError(lang === 'ar' ? 'كلمة المرور يجب أن تحتوي على حروف وأرقام' : 'Password must contain both letters and numbers')
+      setError(t('auth.password.lettersDigits', lang))
       return
     }
 
@@ -42,7 +47,12 @@ export default function ResetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password })
 
     if (error) {
-      setError(error.message)
+      // Map to fixed copy instead of echoing the raw Supabase message.
+      const code = (error as { code?: string }).code
+      if (code === 'weak_password') setError(t('auth.password.weak', lang))
+      else if (error.status === 429 || code === 'over_request_rate_limit') setError(t('auth.rateLimited', lang))
+      else if (code === 'same_password') setError(lang === 'ar' ? 'يجب أن تختلف كلمة المرور الجديدة عن الحالية.' : 'Your new password must be different from your current one.')
+      else setError(t('auth.reset.genericError', lang))
       setLoading(false)
     } else {
       setDone(true)
@@ -110,7 +120,7 @@ export default function ResetPasswordPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              minLength={8}
+              minLength={10}
               autoComplete="new-password"
               placeholder="••••••••"
             />
@@ -124,14 +134,14 @@ export default function ResetPasswordPage() {
             </button>
           </div>
           <p className="text-[11.5px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
-            {t('auth.reset.hint', lang)}
+            {t('auth.password.hint10', lang)}
           </p>
         </div>
 
         <button
           type="submit"
           className="btn-accent w-full gap-2"
-          disabled={loading || hasSession !== true || password.length < 8}
+          disabled={loading || hasSession !== true || password.length < 10}
         >
           <KeyRound className="w-4 h-4" />
           {loading ? t('auth.reset.submitting', lang) : t('auth.reset.submit', lang)}

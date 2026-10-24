@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin, adminRouteError } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,14 +41,17 @@ export async function GET(request: Request) {
       if (term) query = query.or(`action.ilike.%${term}%,reason.ilike.%${term}%`)
     }
 
-    const { data: logs, count } = await query.range(offset, offset + PAGE_SIZE - 1)
+    const { data: logs, count, error } = await query.range(offset, offset + PAGE_SIZE - 1)
+    if (error) throw error
 
-    // Distinct action / target-type values for the filter dropdowns (sampled).
+    // Distinct action / target-type values for the filter dropdowns, sampled
+    // from the most recent 1,000 entries (PostgREST's max_rows cap; a larger
+    // .limit() would be silently truncated to this anyway).
     const { data: distinctRows } = await db
       .from('audit_log')
       .select('action, target_type')
       .order('created_at', { ascending: false })
-      .limit(2000)
+      .limit(1000)
 
     const actions = Array.from(new Set((distinctRows || []).map((r: any) => r.action).filter(Boolean))).sort()
     const targetTypes = Array.from(new Set((distinctRows || []).map((r: any) => r.target_type).filter(Boolean))).sort()
@@ -65,89 +67,75 @@ export async function GET(request: Request) {
         totalPages: Math.ceil((count ?? 0) / PAGE_SIZE),
       },
     })
-  } catch {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  } catch (error) {
+    return adminRouteError(error)
   }
 }
+
+/** Audit entries younger than this can never be purged (enforced in SQL too). */
+const RETENTION_DAYS = 365
 
 /**
  * DELETE /api/admin/audit
  *
- * Superadmin-only. Delete a single audit entry by id, or purge all entries
- * older than a given date. A meta audit entry records the purge.
+ * Superadmin-only retention purge. The audit log is append-only: single-entry
+ * deletion is not supported, and a database trigger blocks every UPDATE and
+ * DELETE except through purge_audit_log_before(), which refuses any cutoff
+ * newer than 365 days ago and writes its own 'audit_log_purged' audit row.
  *
- * Body (one of):
- *   { id: string }      — delete a single entry
- *   { before: string }  — delete all entries with created_at < before (ISO date)
+ * Body: { before: string } — purge entries with created_at < before (ISO date),
+ * where before must be at least 365 days in the past.
  */
 export async function DELETE(request: Request) {
   try {
     const { user: callerUser, role } = await requireAdmin()
     if (role !== 'superadmin') {
       return NextResponse.json(
-        { error: 'Only superadmin can delete audit log entries' },
+        { error: 'Only superadmin can purge audit log entries' },
         { status: 403 }
       )
     }
 
     const body = await request.json().catch(() => ({}))
-    const { id, before } = body
+    const { id, before } = (body ?? {}) as { id?: unknown; before?: unknown }
 
-    if (!id && !before) {
+    if (id !== undefined) {
       return NextResponse.json(
-        { error: 'Provide either id (single delete) or before (purge older than date)' },
+        { error: 'Audit log entries cannot be deleted individually; the log is append-only.' },
+        { status: 405 }
+      )
+    }
+    if (typeof before !== 'string' || !before) {
+      return NextResponse.json({ error: 'Provide before (purge entries older than this date)' }, { status: 400 })
+    }
+
+    const cutoff = new Date(before)
+    if (isNaN(cutoff.getTime())) {
+      return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
+    }
+    const latestAllowed = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000)
+    if (cutoff > latestAllowed) {
+      return NextResponse.json(
+        { error: `Only entries older than ${RETENTION_DAYS} days can be purged (cutoff must be on or before ${latestAllowed.toISOString().slice(0, 10)}).` },
         { status: 400 }
       )
     }
 
+    // The SQL function enforces the retention window again and writes the
+    // 'audit_log_purged' row itself, so no separate audit insert here.
     const db = createAdminClient()
-    let deletedCount = 0
-
-    if (id) {
-      const { error, count } = await db
-        .from('audit_log')
-        .delete({ count: 'exact' })
-        .eq('id', id)
-      if (error) {
-        return NextResponse.json({ error: 'Database operation failed' }, { status: 500 })
-      }
-      deletedCount = count ?? 0
-    } else {
-      // Purge older than `before`. Guard against an invalid date.
-      const cutoff = new Date(before)
-      if (isNaN(cutoff.getTime())) {
-        return NextResponse.json({ error: 'Invalid date' }, { status: 400 })
-      }
-      const { error, count } = await db
-        .from('audit_log')
-        .delete({ count: 'exact' })
-        .lt('created_at', cutoff.toISOString())
-      if (error) {
-        return NextResponse.json({ error: 'Database operation failed' }, { status: 500 })
-      }
-      deletedCount = count ?? 0
+    const { data: deletedCount, error } = await db.rpc('purge_audit_log_before', {
+      p_before: cutoff.toISOString(),
+      p_actor: callerUser.id,
+    })
+    if (error) {
+      console.error('Audit purge failed:', error.message)
+      return NextResponse.json({ error: 'Audit purge failed' }, { status: 500 })
     }
 
-    // Record a meta audit entry so the purge itself leaves a trace.
-    // Use the caller's server client so actor_id resolves to the caller.
-    const supabase = await createClient()
-    const { data: { user: actor } } = await supabase.auth.getUser()
-    if (actor) {
-      await db.from('audit_log').insert({
-        actor_id: actor.id,
-        action: 'audit_log_deleted',
-        target_type: 'audit_log',
-        target_id: id || null,
-        reason: id
-          ? `Deleted audit entry ${id}`
-          : `Purged ${deletedCount} audit entr${deletedCount === 1 ? 'y' : 'ies'} older than ${before}`,
-        details: { deleted_count: deletedCount, method: id ? 'single' : 'purge', before: before || null },
-      })
-    }
-
-    return NextResponse.json({ ok: true, deletedCount })
+    return NextResponse.json({ ok: true, deletedCount: typeof deletedCount === 'number' ? deletedCount : 0 })
   } catch (error) {
-    console.error('Audit delete error:', error)
+    console.error('Audit purge error:', error)
     return adminRouteError(error)
   }
 }

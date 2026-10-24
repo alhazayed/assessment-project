@@ -5,6 +5,7 @@ import {
   DEMOGRAPHIC_DIMENSIONS, DEMOGRAPHIC_SELECT, enrichDemographics,
   type DemographicDimension, type Demographics, type RawDemographicSub,
 } from '@/lib/assessment-demographics'
+import { fetchAll, fetchAllByIds } from '@/lib/admin/fetch-all'
 
 /**
  * GET /api/admin/assessments/[id]/item-analytics
@@ -36,17 +37,25 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
 
     const db = createAdminClient()
 
-    const [defRes, itemsRes, subsRes] = await Promise.all([
+    const [defRes, itemsRes] = await Promise.all([
       db.from('assessment_definitions').select('id, code, name_en, name_ar, total_questions').eq('id', definitionId).single(),
       db.from('assessment_items').select('id, item_number, question_en, question_ar, subscale, response_options').eq('definition_id', definitionId).order('item_number', { ascending: true }),
-      db.from('assessment_submissions').select(`id, ${DEMOGRAPHIC_SELECT}`).eq('definition_id', definitionId).limit(20000),
     ])
 
     if (defRes.error || !defRes.data) return NextResponse.json({ error: 'Assessment not found' }, { status: 404 })
+    if (itemsRes.error) throw new Error(itemsRes.error.message)
     const items = itemsRes.data ?? []
 
+    // Every submission, paged past PostgREST's 1,000-row max_rows cap.
+    type SubRow = { id: string } & RawDemographicSub
+    const subRows = await fetchAll<SubRow>(() => db
+      .from('assessment_submissions')
+      .select(`id, ${DEMOGRAPHIC_SELECT}`)
+      .eq('definition_id', definitionId)
+      .order('id', { ascending: true }) as unknown as { range(from: number, to: number): PromiseLike<{ data: SubRow[] | null; error: { message: string } | null }> })
+
     // Enrich every submission with all demographic variants.
-    const enriched = ((subsRes.data ?? []) as unknown as Array<{ id: string } & RawDemographicSub>)
+    const enriched = subRows
       .map(s => ({ id: s.id, demo: enrichDemographics(s) }))
 
     // Distinct values per dimension across the full dataset → dropdown options.
@@ -64,15 +73,15 @@ export async function GET(request: Request, ctx: { params: Promise<{ id: string 
     const submissionIds = filtered.map(e => e.id)
 
     // Responses for the filtered submissions (chunked).
-    const responses: Array<{ submission_id: string; item_id: string; response_value: number }> = []
-    const CHUNK = 500
-    for (let i = 0; i < submissionIds.length; i += CHUNK) {
-      const { data } = await db
+    const responses = await fetchAllByIds<{ submission_id: string; item_id: string; response_value: number }>(
+      submissionIds,
+      idChunk => db
         .from('assessment_responses')
         .select('submission_id, item_id, response_value')
-        .in('submission_id', submissionIds.slice(i, i + CHUNK))
-      if (data) responses.push(...data)
-    }
+        .in('submission_id', idChunk)
+        .order('submission_id', { ascending: true })
+        .order('item_id', { ascending: true }),
+    )
 
     const byItem = new Map<string, number[]>()
     // item_id -> group value -> values

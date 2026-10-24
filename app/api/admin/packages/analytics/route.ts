@@ -1,20 +1,33 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-auth'
+import { fetchAll, fetchAllByIds } from '@/lib/admin/fetch-all'
 
 export async function GET() {
+  try {
+    return await packageAnalytics()
+  } catch (error) {
+    if (!isAuthRedirectError(error)) console.error('[admin/packages/analytics] error:', error instanceof Error ? error.message : 'unknown')
+    return adminRouteError(error)
+  }
+}
+
+async function packageAnalytics() {
   await requireAdmin()
   const db = createAdminClient()
 
-  const { data: pkgResults } = await db
+  // Paged past PostgREST's 1,000-row max_rows cap; throws on a query error.
+  const pkgResults = await fetchAll(() => db
     .from('package_results')
     .select(`
+      id,
       composite_score,
       package_id,
       user_id,
       packages(name_en, name_ar, category, color)
     `)
     .eq('status', 'completed')
+    .order('id', { ascending: true }))
 
   if (!pkgResults?.length) {
     return NextResponse.json({
@@ -25,14 +38,18 @@ export async function GET() {
     })
   }
 
-  const uniqueUserIds = Array.from(new Set(pkgResults.map(r => r.user_id)))
+  const uniqueUserIds = Array.from(new Set(pkgResults.map(r => r.user_id))) as string[]
 
-  const { data: profiles } = await db
-    .from('profiles')
-    .select('id, gender, marital_status, educational_status, date_of_birth')
-    .in('id', uniqueUserIds)
+  const profiles = await fetchAllByIds<{ id: string; gender: string | null }>(
+    uniqueUserIds,
+    ids => db
+      .from('profiles')
+      .select('id, gender')
+      .in('id', ids)
+      .order('id', { ascending: true }),
+  )
 
-  const profileMap = new Map((profiles ?? []).map(p => [p.id, p]))
+  const profileMap = new Map(profiles.map(p => [p.id, p]))
 
   // Per-package stats
   const pkgMap = new Map<string, {

@@ -15,5 +15,12 @@ export default async function PatientsPage() {
     redirect('/login?next=/patients')
   }
 
+  // Patient rosters are for clinicians (and admins); RLS already hides the
+  // data, this just stops other roles landing on an empty clinician screen.
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (!profile || !['clinician', 'admin', 'superadmin'].includes(profile.role)) {
+    redirect('/dashboard')
+  }
+
   return <PatientsContent />
 }

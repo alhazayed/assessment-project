@@ -99,7 +99,9 @@ export async function GET(request: Request, props: { params: Promise<{ submissio
       const { data: prof } = await db.from('profiles').select('role').eq('id', userId).single()
       if (prof && ['admin', 'superadmin'].includes(prof.role) && (await verifyAdminSession())) {
         allowed = true
-      } else {
+      } else if (prof?.role === 'clinician') {
+        // Consent rows outlive a role change, so a former clinician must not
+        // keep pulling reports through an old relationship.
         allowed = await clinicianHasPatientAccess(db, userId, sub.patient_id, 'view_reports')
       }
     }

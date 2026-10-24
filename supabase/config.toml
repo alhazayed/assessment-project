@@ -52,6 +52,14 @@ enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
 enable_signup = true
+# Server-side password policy, matching the register and reset-password forms
+# (min 10 characters, at least one letter and one digit). This file only
+# configures the local stack: set the same values in the hosted project under
+# Authentication > Providers > Email (and enable leaked-password protection).
+minimum_password_length = 10
+# One of "", "letters_digits", "lower_upper_letters_digits",
+# "lower_upper_letters_digits_symbols".
+password_requirements = "letters_digits"
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.

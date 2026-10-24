@@ -6,6 +6,7 @@ import { Users, ClipboardCheck, AlertTriangle, Activity, TrendingUp, TrendingDow
 import Link from 'next/link'
 import DashboardOverview from '@/components/admin/dashboard-overview'
 import { severityBadgeClass } from '@/lib/severity'
+import { fetchAll } from '@/lib/admin/fetch-all'
 
 export default async function AdminOverviewPage() {
   await requireAdmin()
@@ -17,8 +18,10 @@ export default async function AdminOverviewPage() {
   const twoWeeksAgo = new Date(Date.now() - 14 * 864e5).toISOString()
   const todayStart = new Date(now.setHours(0, 0, 0, 0)).toISOString()
 
+  // PostgREST truncates every response at 1,000 rows (max_rows), so counts use
+  // exact head counts and row-level aggregation pages with fetchAll().
   const [
-    { data: profiles },
+    profiles,
     { count: totalCount },
     { count: weekCount },
     { count: prevWeekCount },
@@ -26,12 +29,13 @@ export default async function AdminOverviewPage() {
     { count: highRiskCount },
     { count: prevHighRiskCount },
     { count: activeAssessmentCount },
-    { data: topAssessmentsRaw },
+    { data: definitions },
     { data: recentSubmissions },
     { data: recentAudit },
-    { data: allSubsStats },
+    allSubsStats,
+    { count: highRiskAllCount },
   ] = await Promise.all([
-    db.from('profiles').select('role'),
+    fetchAll<{ role: string }>(() => db.from('profiles').select('role').order('id', { ascending: true })),
     db.from('assessment_submissions').select('id', { count: 'exact', head: true }),
     db.from('assessment_submissions').select('id', { count: 'exact', head: true }).gte('submitted_at', weekAgo),
     db.from('assessment_submissions').select('id', { count: 'exact', head: true }).gte('submitted_at', twoWeeksAgo).lt('submitted_at', weekAgo),
@@ -39,27 +43,33 @@ export default async function AdminOverviewPage() {
     db.from('assessment_submissions').select('id', { count: 'exact', head: true }).eq('high_risk_flag', true).gte('submitted_at', weekAgo),
     db.from('assessment_submissions').select('id', { count: 'exact', head: true }).eq('high_risk_flag', true).gte('submitted_at', twoWeeksAgo).lt('submitted_at', weekAgo),
     db.from('assessment_definitions').select('id', { count: 'exact', head: true }).eq('is_active', true),
-    db.from('assessment_submissions').select('definition_id, assessment_definitions(name_en, code)').limit(500),
+    db.from('assessment_definitions').select('id, name_en, code'),
     db.from('assessment_submissions')
       .select('id, total_score, severity_band, high_risk_flag, submitted_at, assessment_definitions(name_en, code), profiles(full_name_en)')
       .order('submitted_at', { ascending: false }).limit(10),
     db.from('audit_log').select('id, action, target_type, created_at, profiles(full_name_en)')
       .order('created_at', { ascending: false }).limit(8),
-    db.from('assessment_submissions').select('total_score, severity_band, high_risk_flag').limit(5000),
+    fetchAll<{ severity_band: string | null }>(() => db
+      .from('assessment_submissions')
+      .select('severity_band')
+      .order('id', { ascending: true })),
+    db.from('assessment_submissions').select('id', { count: 'exact', head: true }).eq('high_risk_flag', true),
   ])
 
-  // Top assessments
-  const countMap: Record<string, { name: string; code: string; count: number }> = {}
-  ;(topAssessmentsRaw || []).forEach((s: any) => {
-    const id = s.definition_id
-    if (!countMap[id]) countMap[id] = { name: s.assessment_definitions?.name_en || '', code: s.assessment_definitions?.code || '', count: 0 }
-    countMap[id].count++
-  })
-  const top5 = Object.values(countMap).sort((a, b) => b.count - a.count).slice(0, 5)
+  // Top assessments: one exact count per definition (previously counted from
+  // a 500-row sample of submissions).
+  const defCounts = await Promise.all((definitions || []).map(async (d: any) => {
+    const { count } = await db
+      .from('assessment_submissions')
+      .select('id', { count: 'exact', head: true })
+      .eq('definition_id', d.id)
+    return { name: d.name_en || '', code: d.code || '', count: count ?? 0 }
+  }))
+  const top5 = defCounts.filter(d => d.count > 0).sort((a, b) => b.count - a.count).slice(0, 5)
 
   // Role counts
   const roles: Record<string, number> = {}
-  ;(profiles || []).forEach((p: any) => { roles[p.role] = (roles[p.role] || 0) + 1 })
+  profiles.forEach((p) => { roles[p.role] = (roles[p.role] || 0) + 1 })
 
   function pctChange(current: number | null, previous: number | null) {
     const cur = current ?? 0
@@ -72,13 +82,13 @@ export default async function AdminOverviewPage() {
   const riskChange = pctChange(highRiskCount, prevHighRiskCount)
 
   const severityMap: Record<string, number> = {}
-  ;(allSubsStats || []).forEach((s: any) => {
+  allSubsStats.forEach((s) => {
     const b = s.severity_band || 'Unknown'
     severityMap[b] = (severityMap[b] || 0) + 1
   })
-  const totalSubs = allSubsStats?.length || 0
+  const totalSubs = allSubsStats.length
   const severityDist = Object.entries(severityMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
-  const highRiskAll = (allSubsStats || []).filter((s: any) => s.high_risk_flag).length
+  const highRiskAll = highRiskAllCount ?? 0
 
   const severityBadge = severityBadgeClass
 
@@ -96,7 +106,7 @@ export default async function AdminOverviewPage() {
   const statsCards = [
     {
       label: t('admin.overview.total_users', lang),
-      value: (profiles || []).length,
+      value: profiles.length,
       icon: Users,
       color: 'bg-brand-50 text-brand-600',
       sub: `${roles.patient || 0} ${t('admin.overview.patients', lang)} · ${roles.clinician || 0} ${t('admin.overview.clinicians', lang)}`,
@@ -200,7 +210,7 @@ export default async function AdminOverviewPage() {
               { role: 'superadmin', color: '#ef4444' },
             ].map(({ role, color }) => {
               const count = roles[role] || 0
-              const pct = (profiles || []).length > 0 ? (count / (profiles || []).length) * 100 : 0
+              const pct = profiles.length > 0 ? (count / profiles.length) * 100 : 0
               return (
                 <div key={role}>
                   <div className="flex items-center justify-between mb-1">
@@ -294,7 +304,7 @@ export default async function AdminOverviewPage() {
               <div key={e.id} className="flex items-center justify-between py-2.5" style={{ borderBottom: '1px solid var(--divider)' }}>
                 <div>
                   <p className="text-[13px]" style={{ color: 'var(--text-primary)' }}>
-                    <span className="font-semibold">{e.profiles?.full_name_en || t('admin.anonymous', lang)}</span>
+                    <span className="font-semibold">{e.profiles ? (e.profiles.full_name_en || '—') : (lang === 'ar' ? 'مستخدم محذوف' : 'Deleted user')}</span>
                     <span className="mx-1.5" style={{ color: 'var(--text-muted)' }}>·</span>
                     <span className="font-mono text-[11px] px-1.5 py-0.5 rounded-[4px]" style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--text-secondary)' }}>{e.action}</span>
                   </p>

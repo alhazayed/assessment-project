@@ -1,10 +1,24 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-auth'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { buildContentDisposition, getMimeTypeForFormat } from '@/lib/security/file-export'
+import { fetchAll, fetchAllByIds } from '@/lib/admin/fetch-all'
+import { writeAdminAudit } from '@/lib/admin/audit'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const STATUS_RE = /^[a-z_]{1,32}$/
 
 export async function GET(req: Request) {
+  try {
+    return await exportPackageResults(req)
+  } catch (error) {
+    if (!isAuthRedirectError(error)) console.error('[admin/packages/export] error:', error instanceof Error ? error.message : 'unknown')
+    return adminRouteError(error)
+  }
+}
+
+async function exportPackageResults(req: Request) {
   const { user: adminUser, role } = await requireAdmin()
   // This export includes user identifiers alongside clinical risk text, so it is
   // superadmin-only (matching the platform's other PHI/identifier exports).
@@ -20,59 +34,71 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const packageId = searchParams.get('package_id')
   const status = searchParams.get('status') ?? 'completed'
+  if (packageId && !UUID_RE.test(packageId)) {
+    return NextResponse.json({ error: 'package_id must be a UUID' }, { status: 400 })
+  }
+  if (!STATUS_RE.test(status)) {
+    return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+  }
 
   const db = createAdminClient()
 
-  let query = db
-    .from('package_results')
-    .select(`
-      id,
-      composite_score,
-      band_en,
-      status,
-      completed_at,
-      created_at,
-      package_id,
-      user_id,
-      packages(name_en, category),
-      individual_scores,
-      strengths_en,
-      risk_indicators_en,
-      recommendations_en
-    `)
-    .eq('status', status)
-    .order('completed_at', { ascending: false })
+  const buildQuery = () => {
+    let query = db
+      .from('package_results')
+      .select(`
+        id,
+        composite_score,
+        band_en,
+        status,
+        completed_at,
+        created_at,
+        package_id,
+        user_id,
+        packages(name_en, category),
+        individual_scores,
+        strengths_en,
+        risk_indicators_en,
+        recommendations_en
+      `)
+      .eq('status', status)
+      .order('completed_at', { ascending: false })
+      .order('id', { ascending: true })
 
-  if (packageId) {
-    query = query.eq('package_id', packageId)
+    if (packageId) {
+      query = query.eq('package_id', packageId)
+    }
+    return query
   }
 
-  const { data: results, error } = await query
-
-  if (error) {
-    return NextResponse.json({ error: 'Failed to fetch results' }, { status: 500 })
-  }
+  // Paged past PostgREST's 1,000-row max_rows cap; throws on a query error.
+  const results = await fetchAll(buildQuery)
 
   // Fetch user names (profiles.full_name/email don't exist — names are *_en/_ar
   // and email lives in auth.users). Build id -> {name, email} maps.
-  const userIds = Array.from(new Set((results ?? []).map(r => r.user_id)))
-  const { data: profiles } = await db
-    .from('profiles')
-    .select('id, full_name_en, full_name_ar')
-    .in('id', userIds)
+  const userIds = Array.from(new Set(results.map(r => r.user_id))) as string[]
+  const profiles = await fetchAllByIds<{ id: string; full_name_en: string; full_name_ar: string | null }>(
+    userIds,
+    ids => db
+      .from('profiles')
+      .select('id, full_name_en, full_name_ar')
+      .in('id', ids)
+      .order('id', { ascending: true }),
+  )
 
-  const profileMap = new Map((profiles ?? []).map(p => [p.id, p]))
+  const profileMap = new Map(profiles.map(p => [p.id, p]))
 
   // Email lives in auth.users — resolve via the admin API (paginated).
   const emailMap = new Map<string, string>()
+  const wanted = new Set(userIds)
   try {
     const perPage = 50
     for (let pageNum = 1; pageNum <= 200; pageNum++) {
       const { data: authData, error: authErr } = await db.auth.admin.listUsers({ page: pageNum, perPage })
       const authUsers = authData?.users || []
       if (authErr || authUsers.length === 0) break
-      for (const au of authUsers) if (au.email) emailMap.set(au.id, au.email)
-      if (authUsers.length < perPage) break
+      for (const au of authUsers) if (au.email && wanted.has(au.id)) emailMap.set(au.id, au.email)
+      if (authUsers.length < perPage || emailMap.size >= wanted.size) break
     }
   } catch { /* email is best-effort */ }
 
@@ -107,7 +133,7 @@ export async function GET(req: Request) {
     return s
   }
 
-  const rows = (results ?? []).map(r => {
+  const rows = results.map(r => {
     const pkg = (r.packages as unknown) as { name_en: string; category: string } | null
     const profile = profileMap.get(r.user_id)
     const indScores = r.individual_scores
@@ -139,17 +165,13 @@ export async function GET(req: Request) {
     : `package_results_all_${new Date().toISOString().slice(0, 10)}.csv`
 
   // Audit log — record who exported what and how many rows
-  try {
-    await db.from('audit_log').insert({
-      actor_id: adminUser.id,
-      action: 'data_export',
-      target_type: 'package_results',
-      target_id: packageId ?? adminUser.id,
-      details: { format: 'csv', row_count: rows.length, filters: { package_id: packageId, status } },
-    })
-  } catch (auditErr) {
-    console.error('[admin/packages/export] audit log failed (non-fatal):', auditErr instanceof Error ? auditErr.message : 'unknown')
-  }
+  await writeAdminAudit({
+    actorId: adminUser.id,
+    action: 'data_export',
+    targetType: 'package_results',
+    targetId: packageId ?? adminUser.id,
+    details: { format: 'csv', row_count: rows.length, filters: { package_id: packageId, status } },
+  }, db)
 
   return new NextResponse(csv, {
     headers: {

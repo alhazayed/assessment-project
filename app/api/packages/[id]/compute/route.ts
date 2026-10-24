@@ -41,7 +41,10 @@ export async function POST(_req: Request, props: { params: Promise<{ id: string 
       .eq('id', params.id)
       .single()
 
-    if (!pkg) return NextResponse.json({ error: 'Package not found' }, { status: 404 })
+    // Only active packages can produce results (draft/archived are treated as missing).
+    if (!pkg || pkg.status !== 'active') {
+      return NextResponse.json({ error: 'Package not found' }, { status: 404 })
+    }
 
     const available = (pkg.package_assessments as PkgAssessment[]).filter(a => a.is_available)
     if (available.length === 0) {

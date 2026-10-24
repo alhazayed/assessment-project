@@ -88,12 +88,12 @@ function RegisterForm() {
       setError(isRtl ? 'يرجى إدخال اسم كامل صحيح' : 'Please enter a valid full name')
       return
     }
-    if (password.length < 8) {
-      setError(isRtl ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters')
+    if (password.length < 10) {
+      setError(t('auth.password.tooShort10', lang))
       return
     }
     if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      setError(isRtl ? 'كلمة المرور يجب أن تحتوي على حروف وأرقام' : 'Password must contain both letters and numbers')
+      setError(t('auth.password.lettersDigits', lang))
       return
     }
     if (password !== confirmPassword) {
@@ -173,7 +173,14 @@ function RegisterForm() {
       })
 
       if (error) {
-        setError(error.message)
+        // Never show error.message: messages like "User already registered"
+        // reveal which emails have accounts. Only non-identifying causes get
+        // a specific message; everything else is generic.
+        const code = (error as { code?: string }).code
+        if (code === 'weak_password') setError(t('auth.password.weak', lang))
+        else if (error.status === 429 || code === 'over_request_rate_limit' || code === 'over_email_send_rate_limit') setError(t('auth.rateLimited', lang))
+        else if (code === 'captcha_failed') setError(isRtl ? 'فشل التحقق من CAPTCHA' : 'CAPTCHA verification failed')
+        else setError(t('auth.register.genericError', lang))
         setLoading(false)
         if (turnstileToken) window.turnstile?.reset()
       } else if (data.session) {
@@ -305,8 +312,9 @@ function RegisterForm() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              minLength={8}
-              placeholder={t('auth.register.password.ph', lang)}
+              minLength={10}
+              autoComplete="new-password"
+              placeholder={t('auth.password.ph10', lang)}
             />
             <button
               type="button"
@@ -319,7 +327,7 @@ function RegisterForm() {
             </button>
           </div>
           <p className="mt-1.5 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
-            {isRtl ? '٨ أحرف على الأقل، تشمل حروفاً وأرقاماً' : 'At least 8 characters, including letters and numbers'}
+            {t('auth.password.hint10', lang)}
           </p>
         </div>
 
@@ -336,7 +344,7 @@ function RegisterForm() {
               value={confirmPassword}
               onChange={e => setConfirmPassword(e.target.value)}
               required
-              minLength={8}
+              minLength={10}
               placeholder={isRtl ? '••••••••' : '••••••••'}
             />
             <button

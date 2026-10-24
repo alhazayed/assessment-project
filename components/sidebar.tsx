@@ -36,6 +36,7 @@ import UnreadMessagesBadge from '@/components/unread-messages-badge'
 import BrandLogo from '@/components/brand-logo'
 import DarkModeToggle from '@/components/dark-mode-toggle'
 import CrisisHelpLink from '@/components/crisis-help-link'
+import { clearLocalAssessmentData } from '@/lib/guest-claim-storage'
 
 interface SidebarProps {
   profile: Profile | null
@@ -108,6 +109,9 @@ export default function Sidebar({ profile, lang, showPackages = false, isMobileA
       : patientNav
 
   async function handleSignOut() {
+    // Clear guest-claim tokens and locally saved assessment drafts so the next
+    // person on a shared device can't see or claim them.
+    clearLocalAssessmentData()
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')

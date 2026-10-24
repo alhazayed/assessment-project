@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchAll } from '@/lib/admin/fetch-all'
 import { requireAdmin, adminRouteError, isAuthRedirectError } from '@/lib/admin-auth'
 import * as Sentry from '@sentry/nextjs'
 
@@ -16,7 +17,9 @@ export async function GET(request: Request) {
   try {
     await requireAdmin()
 
-    const supabase = await createClient()
+    // get_admin_dashboard_stats is revoked from `authenticated`; call it with
+    // the service-role client, and only after requireAdmin() has passed.
+    const supabase = createAdminClient()
 
     // Get days parameter from query
     const url = new URL(request.url)
@@ -45,11 +48,19 @@ export async function GET(request: Request) {
       extra: { rpcError, days },
     })
 
-    const { data: directStats, error: fallbackError } = await supabase
-      .from('assessment_submissions')
-      .select('submitted_at, total_score, high_risk_flag, patient_id')
-      .gte('submitted_at', new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
-      .order('submitted_at', { ascending: false })
+    // Paged past PostgREST's 1,000-row max_rows cap.
+    let directStats: { submitted_at: string; total_score: number | null; high_risk_flag: boolean | null; patient_id: string | null }[] | null = null
+    let fallbackError: unknown = null
+    try {
+      directStats = await fetchAll(() => supabase
+        .from('assessment_submissions')
+        .select('submitted_at, total_score, high_risk_flag, patient_id')
+        .gte('submitted_at', new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
+        .order('submitted_at', { ascending: false })
+        .order('id', { ascending: true }))
+    } catch (e) {
+      fallbackError = e
+    }
 
     if (fallbackError || !directStats) {
       console.error('Dashboard stats fallback query failed:', fallbackError)
@@ -85,7 +96,7 @@ export async function GET(request: Request) {
       const dateStats = statsByDate.get(date)!
       dateStats.submissions += 1
       if (row.high_risk_flag) dateStats.high_risk_count += 1
-      dateStats.unique_patients.add(row.patient_id)
+      if (row.patient_id) dateStats.unique_patients.add(row.patient_id)
       if (row.total_score !== null) dateStats.scores.push(row.total_score)
     }
 

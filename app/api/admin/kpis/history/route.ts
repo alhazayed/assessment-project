@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('admin_daily_stats query failed:', error.message)
       return NextResponse.json(
-        { error: 'Failed to load trend data', detail: error.message },
+        { error: 'Failed to load trend data' },
         { status: 500 }
       )
     }

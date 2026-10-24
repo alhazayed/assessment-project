@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { fetchDisplayProfiles } from '@/lib/authz/counterparty'
 
 // GET /api/clinician/patients
 // Returns all active patients for the authenticated clinician, with
@@ -43,11 +44,6 @@ export async function GET() {
       id,
       last_access_at,
       patient_id,
-      patient:profiles!clinician_patient_relationships_patient_id_fkey (
-        full_name_en,
-        full_name_ar,
-        avatar_url
-      ),
       relationship_permissions (
         permission_key,
         granted
@@ -82,8 +78,8 @@ export async function GET() {
     // procedure dependency).
     const { data: submissions, error: subError } = await supabase
       .from('assessment_submissions')
-      .select('user_id, submitted_at, severity_band')
-      .in('user_id', patientIds)
+      .select('patient_id, submitted_at, severity_band')
+      .in('patient_id', patientIds)
       .order('submitted_at', { ascending: false })
 
     if (subError) {
@@ -92,7 +88,7 @@ export async function GET() {
     } else {
       // Keep only the first (most recent) submission seen for each patient
       for (const sub of submissions ?? []) {
-        const uid = sub.user_id as string
+        const uid = sub.patient_id as string
         if (uid && !latestSubmissionsByPatient[uid]) {
           latestSubmissionsByPatient[uid] = {
             submitted_at: sub.submitted_at,
@@ -103,11 +99,13 @@ export async function GET() {
     }
   }
 
+  const admin = createAdminClient()
+  const profilesById = await fetchDisplayProfiles(admin, patientIds)
+
   // Update last_access_at on all active relationships for this clinician.
   // Use the admin client so this write is not blocked by RLS policies that
   // restrict patient-owned rows.
   if (rows.length > 0) {
-    const admin = createAdminClient()
     const { error: updateError } = await admin
       .from('clinician_patient_relationships')
       .update({ last_access_at: new Date().toISOString() })
@@ -122,15 +120,6 @@ export async function GET() {
 
   // Reshape into the documented response schema
   const patients = rows.map((rel) => {
-    // Supabase infers joined foreign-key rows as arrays in its generic types,
-    // but at runtime a to-one join returns a single object or null.
-    // We cast through `unknown` to bridge the type mismatch safely.
-    const patientProfile = rel.patient as unknown as {
-      full_name_en: string | null
-      full_name_ar: string | null
-      avatar_url: string | null
-    } | null
-
     const permissions = (
       rel.relationship_permissions as Array<{
         permission_key: string
@@ -139,6 +128,7 @@ export async function GET() {
     ) ?? []
 
     const patientId = rel.patient_id as string
+    const patientProfile = profilesById.get(patientId) ?? null
     const lastSubmission = latestSubmissionsByPatient[patientId] ?? null
 
     return {

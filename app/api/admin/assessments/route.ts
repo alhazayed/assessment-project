@@ -1,38 +1,64 @@
 import { NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireAdmin, adminRouteError } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { writeAdminAudit } from '@/lib/admin/audit'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function GET() {
   try {
     await requireAdmin()
     const db = createAdminClient()
-    const { data: defs } = await db.from('assessment_definitions').select('id, code, name_en, name_ar, total_questions, is_active').order('name_en')
-    const { data: subs } = await db.from('assessment_submissions').select('definition_id')
+    const { data: defs, error } = await db.from('assessment_definitions').select('id, code, name_en, name_ar, total_questions, is_active').order('name_en')
+    if (error) throw new Error(error.message)
 
-    const countMap: Record<string, number> = {}
-    ;(subs || []).forEach((s: any) => { countMap[s.definition_id] = (countMap[s.definition_id] || 0) + 1 })
+    // One exact head count per definition: a plain select of every submission
+    // is truncated at PostgREST's 1,000-row max_rows cap.
+    const counts = await Promise.all((defs || []).map(async (d: any) => {
+      const { count, error: countErr } = await db
+        .from('assessment_submissions')
+        .select('id', { count: 'exact', head: true })
+        .eq('definition_id', d.id)
+      if (countErr) throw new Error(countErr.message)
+      return count ?? 0
+    }))
 
-    const assessments = (defs || []).map((d: any) => ({ ...d, submission_count: countMap[d.id] || 0 }))
+    const assessments = (defs || []).map((d: any, i: number) => ({ ...d, submission_count: counts[i] }))
       .sort((a: any, b: any) => b.submission_count - a.submission_count)
 
     return NextResponse.json({ assessments })
-  } catch {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  } catch (error) {
+    return adminRouteError(error)
   }
 }
 
 export async function PATCH(request: Request) {
   try {
     const { user } = await requireAdmin()
-    const { id, is_active } = await request.json()
+    const body = await request.json().catch(() => null)
+    const id = body?.id
+    const isActive = body?.is_active
+    if (typeof id !== 'string' || !UUID_RE.test(id) || typeof isActive !== 'boolean') {
+      return NextResponse.json({ error: 'Expected { id: uuid, is_active: boolean }' }, { status: 400 })
+    }
     const db = createAdminClient()
-    await db.from('assessment_definitions').update({ is_active }).eq('id', id)
-    await db.from('audit_log').insert({
-      actor_id: user.id, action: 'assessment_definition_update', target_type: 'assessment_definition', target_id: id,
-      reason: `is_active=${is_active}`,
-    }).then(() => {}, () => {})
+    const { data: updated, error } = await db
+      .from('assessment_definitions')
+      .update({ is_active: isActive })
+      .eq('id', id)
+      .select('id')
+    if (error) throw new Error(error.message)
+    if (!updated || updated.length === 0) return NextResponse.json({ error: 'Assessment not found' }, { status: 404 })
+
+    await writeAdminAudit({
+      actorId: user.id,
+      action: 'assessment_definition_update',
+      targetType: 'assessment_definition',
+      targetId: id,
+      details: { is_active: isActive },
+    }, db)
     return NextResponse.json({ ok: true })
-  } catch {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  } catch (error) {
+    return adminRouteError(error)
   }
 }
