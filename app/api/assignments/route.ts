@@ -7,32 +7,19 @@ import { clinicianHasPatientAccess } from '@/lib/authz/clinician-access'
 import { logClinicianPhiAccess } from '@/lib/audit/phi-access'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-// A clinician may only reach another user's assignments when they have a
+// A clinician may only reach another user's assignments while they have a
 // treating relationship with that patient. Authorization goes through the
 // centralized has_clinician_access primitive (active consent granting
-// `view_assessment_history` to an active, verified clinician), plus the
-// assignment-specific arm of assign_read: a clinician may also read assignments
-// they authored themselves. This mirrors the RLS policy so the API returns a
-// clean 403 instead of leaking that the patient exists via an empty result set.
+// `view_assessment_history` to an active, verified clinician), mirroring the
+// assign_read RLS policy. Assignments a clinician authored stop being visible
+// once the relationship is revoked. The API returns a clean 403 instead of
+// leaking that the patient exists via an empty result set.
 async function clinicianCanAccessPatient(
   supabase: SupabaseClient,
   clinicianId: string,
   patientId: string,
 ): Promise<boolean> {
-  if (await clinicianHasPatientAccess(supabase, clinicianId, patientId, 'view_assessment_history')) {
-    return true
-  }
-
-  // Mirror the `clinician_id = auth.uid()` arm of the assign_read RLS policy:
-  // a clinician may read assignments they authored for this patient (e.g. ones
-  // created before a re-assignment changed the treating relationship). Without
-  // this the API gate would 403 a request that RLS would permit.
-  const { count } = await supabase
-    .from('assessment_assignments')
-    .select('id', { count: 'exact', head: true })
-    .eq('patient_id', patientId)
-    .eq('clinician_id', clinicianId)
-  return (count ?? 0) > 0
+  return clinicianHasPatientAccess(supabase, clinicianId, patientId, 'view_assessment_history')
 }
 
 export async function GET(request: Request) {
