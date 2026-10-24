@@ -222,6 +222,17 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
       return NextResponse.json({ error: 'Failed to revoke relationship' }, { status: 500 })
     }
 
+    // Clear the legacy care-team link too. It no longer grants access on its
+    // own, but leaving it set would keep this clinician named as the patient's.
+    const { error: legacyError } = await admin
+      .from('profiles')
+      .update({ assigned_clinician_id: null })
+      .eq('id', relationship.patient_id)
+      .eq('assigned_clinician_id', relationship.clinician_id)
+    if (legacyError) {
+      console.error('[PATCH /api/access-requests/[id]] legacy link clear error:', legacyError)
+    }
+
     // Notify clinician
     const { error: notifError } = await admin.from('notification_events').insert({
       recipient_id: relationship.clinician_id,

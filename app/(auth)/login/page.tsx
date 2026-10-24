@@ -38,7 +38,11 @@ function LoginForm() {
       ? (lang === 'ar'
           ? 'انتهت صلاحية رابط التحقق أو تم استخدامه. سجّل الدخول أو اطلب رابطاً جديداً.'
           : 'Your verification link has expired or was already used. Sign in, or request a new link.')
-      : null
+      : searchParams.get('error') === 'account_inactive'
+        ? (lang === 'ar'
+            ? 'هذا الحساب غير مفعّل. تواصل مع الدعم إذا كنت تعتقد أن هذا خطأ.'
+            : 'This account is no longer active. Contact support if you think this is a mistake.')
+        : null
   )
   // True when Turnstile can't be used (failed to connect, errored, timed out,
   // or its script never loaded). We then stop hard-gating login on the CAPTCHA

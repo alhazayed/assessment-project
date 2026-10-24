@@ -43,41 +43,42 @@ export async function computeHmac(userId: string, role: string): Promise<string>
   return Buffer.from(sig).toString('base64url')
 }
 
-export async function requireAdmin() {
+// Shared admin gate: authenticated user + active admin/superadmin profile +
+// an MFA-verified (aal2) Supabase session + a valid HMAC admin_session cookie.
+// aal2 is required because the database admin rules only apply to aal2
+// sessions (migration 20261018120000), so a password-only session must never
+// look like an admin session here either.
+async function resolveAdminSession() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/x/control/login')
+  if (!user) return null
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (!profile || !['admin', 'superadmin'].includes(profile.role)) redirect('/x/control/login')
+  const { data: profile } = await supabase.from('profiles').select('role, is_active').eq('id', user.id).single()
+  if (!profile || profile.is_active === false || !['admin', 'superadmin'].includes(profile.role)) return null
+
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aal?.currentLevel !== 'aal2') return null
 
   const store = await cookies()
   const cookie = store.get('admin_session')?.value
   // HMAC includes current role — if role was revoked, stored cookie will not match
   const expected = await computeHmac(user.id, profile.role)
-  if (!timingSafeStrEqual(cookie, expected)) redirect('/x/control/login')
+  if (!timingSafeStrEqual(cookie, expected)) return null
 
   return { user, role: profile.role as 'admin' | 'superadmin' }
+}
+
+export async function requireAdmin() {
+  const session = await resolveAdminSession()
+  if (!session) redirect('/x/control/login')
+  return session
 }
 
 // Non-throwing admin gate for mixed-role routes (e.g. patient-OR-admin
 // endpoints) that cannot call requireAdmin() because a legitimate non-admin
 // caller must not be redirected. Applies the SAME requirements as
-// requireAdmin() — authenticated user + admin/superadmin role + valid HMAC
-// admin_session cookie — and returns the admin identity, or null when the
-// caller is not an authenticated admin with a valid admin session.
+// requireAdmin() and returns the admin identity, or null when the caller is
+// not an authenticated admin with a valid admin session.
 export async function verifyAdminSession() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (!profile || !['admin', 'superadmin'].includes(profile.role)) return null
-
-  const store = await cookies()
-  const cookie = store.get('admin_session')?.value
-  const expected = await computeHmac(user.id, profile.role)
-  if (!timingSafeStrEqual(cookie, expected)) return null
-
-  return { user, role: profile.role as 'admin' | 'superadmin' }
+  return resolveAdminSession()
 }

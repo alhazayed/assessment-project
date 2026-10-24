@@ -43,8 +43,7 @@ export async function POST(request: Request) {
 
     // Verify the caller is either the patient or the clinician in the relevant
     // conversation. Authorization goes through the centralized primitive keyed
-    // on 'message_patient' (active consent OR legacy assigned_clinician_id), so
-    // both consent-based and legacy patient↔clinician pairs are honoured.
+    // on 'message_patient' (active consent to an active, verified clinician).
     const { data: callerProfile } = await supabase
       .from('profiles')
       .select('id, role')
