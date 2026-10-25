@@ -73,7 +73,9 @@ export async function GET() {
     responsesFor(),
     rows('assessment_drafts', () => db.from('assessment_drafts').select('definition_id, answers, current_index, updated_at').eq('patient_id', uid)),
     rows('patient_profiles', () => db.from('patient_profiles').select('*').eq('id', uid)),
-    rows('messages', () => db.from('messages').select('id, patient_id, clinician_id, sender_id, body, attachments, is_urgent, read_at, created_at').or(`patient_id.eq.${uid},clinician_id.eq.${uid}`).order('created_at').order('id')),
+    // Read with the caller's session so messages_read applies: a clinician's
+    // export leaves out conversations with patients who revoked them.
+    rows('messages', () => supabase.from('messages').select('id, patient_id, clinician_id, sender_id, body, attachments, is_urgent, read_at, created_at').or(`patient_id.eq.${uid},clinician_id.eq.${uid}`).order('created_at').order('id')),
     rows('chat_sessions', () => db.from('chat_sessions').select('id, messages, started_at, updated_at').eq('patient_id', uid)),
     rows('ai_insights', () => db.from('ai_insights').select('*').eq('patient_id', uid)),
     rows('clinician_patient_relationships', () => db.from('clinician_patient_relationships').select('*').or(`patient_id.eq.${uid},clinician_id.eq.${uid}`)),
