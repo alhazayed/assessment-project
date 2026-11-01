@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { generateRichNarrative } from '@/lib/package-interpret'
 import type { ScoringBand, InterpretationBand } from '@/lib/types'
+import { PROFILE_DEFS, buildProfileReport, toResultColumns } from '@/lib/package-profiles'
+import { loadScaleInputs } from '@/lib/package-profiles/load'
 
 interface PkgAssessment {
   assessment_code: string
@@ -49,6 +51,59 @@ export async function POST(_req: Request, props: { params: Promise<{ id: string 
     const available = (pkg.package_assessments as PkgAssessment[]).filter(a => a.is_available)
     if (available.length === 0) {
       return NextResponse.json({ error: 'No available assessments in this package' }, { status: 400 })
+    }
+
+    // Profile packages: each scale is read on its own published bands and the
+    // report is built from evidence-based pattern rules (lib/package-profiles).
+    if (pkg.scoring_method === 'profile_rules') {
+      const baseDef = pkg.profile_key ? PROFILE_DEFS[pkg.profile_key as string] : undefined
+      if (!baseDef) {
+        return NextResponse.json({ error: 'Package configuration invalid' }, { status: 500 })
+      }
+      const availableCodes = new Set(available.map(a => a.assessment_code))
+      const def = { ...baseDef, codes: baseDef.codes.filter(c => availableCodes.has(c)) }
+      const inputs = await loadScaleInputs(db, user.id, def)
+      const done = new Set(inputs.map(i => i.code))
+      const notDone = def.codes.filter(c => !done.has(c))
+      if (notDone.length > 0) {
+        return NextResponse.json({ error: 'Complete every assessment in this package first', missing: notDone }, { status: 400 })
+      }
+
+      const report = buildProfileReport(def, inputs)
+      const now = new Date().toISOString()
+      const { data: result, error: resultErr } = await db
+        .from('package_results')
+        .upsert({
+          package_id: params.id,
+          user_id: user.id,
+          composite_score: report.composite?.score ?? null,
+          band_en: report.headline.en,
+          band_ar: report.headline.ar,
+          individual_scores: Object.fromEntries(report.scales.map(s => [s.code, s.total])),
+          dimension_scores: report,
+          ...toResultColumns(report),
+          status: 'completed',
+          completed_at: now,
+        }, { onConflict: 'package_id,user_id' })
+        .select('id')
+        .single()
+
+      if (resultErr || !result) {
+        console.error('compute: save profile result failed:', resultErr?.message ?? 'unknown')
+        return NextResponse.json({ error: 'Failed to save result' }, { status: 500 })
+      }
+
+      await db
+        .from('package_sessions')
+        .upsert({
+          package_id: params.id,
+          user_id: user.id,
+          status: 'completed',
+          completed_at: now,
+          result_id: result.id,
+        }, { onConflict: 'package_id,user_id' })
+
+      return NextResponse.json({ result_id: result.id, composite_score: report.composite?.score ?? null })
     }
 
     const codes = available.map(a => a.assessment_code)
