@@ -24,20 +24,20 @@ begin
 end $$;
 
 insert into assessment_definitions (code, name_en, name_ar, description_en, description_ar, total_questions, scoring_logic, high_risk_threshold, is_active)
-values ('IPIP120', 'IPIP-NEO-120 Personality Inventory', 'قائمة الشخصية IPIP-NEO-120', 'A 120-item public-domain measure of the five broad personality domains (Neuroticism, Extraversion, Openness, Agreeableness, Conscientiousness) and 30 facets (Johnson, 2014). For ages 16+. Rate how accurately each statement describes you as you generally are now, compared with people you know of the same sex and roughly your age. Validated in English only. An Arabic translation is offered for convenience but has not been validated.', 'مقياس من 120 بنداً في الملكية العامة يقيس المجالات الخمسة الكبرى للشخصية (العصابية، الانبساطية، الانفتاح، القبول، يقظة الضمير) و30 سمة فرعية (Johnson, 2014). للأعمار 16 سنة فأكثر. قيّم مدى دقة وصف كل عبارة لك كما أنت عادةً الآن، مقارنةً بأشخاص تعرفهم من الجنس نفسه وفي عمرك تقريباً. هذا المقياس مُعتمد علمياً باللغة الإنجليزية فقط. الترجمة العربية متاحة للتيسير لكنها غير مُعتمدة علمياً.', 120, '[{"min": 120, "max": 600, "severity_en": "Personality profile", "severity_ar": "ملف الشخصية", "color": "#6366f1"}]'::jsonb, null, true)
+values ('IPIP120', 'IPIP-NEO-120 Personality Inventory', 'قائمة الشخصية IPIP-NEO-120', 'A 120-item public-domain measure of the five broad personality domains (Neuroticism, Extraversion, Openness, Agreeableness, Conscientiousness) and 30 facets (Johnson, 2014). For ages 16+. Rate how accurately each statement describes you as you generally are now, compared with people you know of the same sex and roughly your age. Validated in English only. An Arabic translation is offered for convenience but has not been validated.', 'مقياس من 120 بنداً في الملكية العامة يقيس المجالات الخمسة الكبرى للشخصية (العصابية، الانبساطية، الانفتاح، القبول، يقظة الضمير) و30 سمة فرعية (Johnson, 2014). للأعمار 16 سنة فأكثر. قيّم مدى دقة وصف كل عبارة لك كما أنت عادةً الآن، مقارنةً بأشخاص تعرفهم من الجنس نفسه وفي عمرك تقريباً. هذا المقياس مُعتمد علمياً باللغة الإنجليزية فقط. الترجمة العربية متاحة للتيسير لكنها غير مُعتمدة علمياً.', 120, '[{"min": 120, "max": 600, "severity_en": "Personality profile", "severity_ar": "ملف الشخصية", "color": "#6366f1"}]'::jsonb, null, false)
 on conflict (code) do update set
   name_en = excluded.name_en, name_ar = excluded.name_ar,
   description_en = excluded.description_en, description_ar = excluded.description_ar,
   total_questions = excluded.total_questions, scoring_logic = excluded.scoring_logic,
-  high_risk_threshold = excluded.high_risk_threshold, is_active = excluded.is_active;
+  high_risk_threshold = excluded.high_risk_threshold, is_active = false;
 
 insert into assessment_definitions (code, name_en, name_ar, description_en, description_ar, total_questions, scoring_logic, high_risk_threshold, is_active)
-values ('ACSI28', 'Athletic Coping Skills Inventory (ACSI-28)', 'قائمة مهارات التكيّف الرياضي (ACSI-28)', 'A 28-item measure of an athlete''s psychological coping skills across seven areas, such as coping with adversity, performing under pressure, concentration and coachability (Smith et al., 1995). Indicate how often you have each experience when playing sport. Validated in English only. An Arabic translation is offered for convenience but has not been validated.', 'مقياس من 28 بنداً لمهارات التكيّف النفسي لدى الرياضي في سبعة مجالات، مثل التعامل مع الشدائد والأداء تحت الضغط والتركيز وتقبّل التوجيه (Smith et al., 1995). حدّد كم مرة تمر بكل تجربة أثناء ممارسة الرياضة. هذا المقياس مُعتمد علمياً باللغة الإنجليزية فقط. الترجمة العربية متاحة للتيسير لكنها غير مُعتمدة علمياً.', 28, '[{"min": 0, "max": 84, "severity_en": "Coping skills profile", "severity_ar": "ملف مهارات التكيّف", "color": "#0ea5e9"}]'::jsonb, null, true)
+values ('ACSI28', 'Athletic Coping Skills Inventory (ACSI-28)', 'قائمة مهارات التكيّف الرياضي (ACSI-28)', 'A 28-item measure of an athlete''s psychological coping skills across seven areas, such as coping with adversity, performing under pressure, concentration and coachability (Smith et al., 1995). Indicate how often you have each experience when playing sport. Validated in English only. An Arabic translation is offered for convenience but has not been validated.', 'مقياس من 28 بنداً لمهارات التكيّف النفسي لدى الرياضي في سبعة مجالات، مثل التعامل مع الشدائد والأداء تحت الضغط والتركيز وتقبّل التوجيه (Smith et al., 1995). حدّد كم مرة تمر بكل تجربة أثناء ممارسة الرياضة. هذا المقياس مُعتمد علمياً باللغة الإنجليزية فقط. الترجمة العربية متاحة للتيسير لكنها غير مُعتمدة علمياً.', 28, '[{"min": 0, "max": 84, "severity_en": "Coping skills profile", "severity_ar": "ملف مهارات التكيّف", "color": "#0ea5e9"}]'::jsonb, null, false)
 on conflict (code) do update set
   name_en = excluded.name_en, name_ar = excluded.name_ar,
   description_en = excluded.description_en, description_ar = excluded.description_ar,
   total_questions = excluded.total_questions, scoring_logic = excluded.scoring_logic,
-  high_risk_threshold = excluded.high_risk_threshold, is_active = excluded.is_active;
+  high_risk_threshold = excluded.high_risk_threshold, is_active = false;
 
 insert into assessment_definitions (code, name_en, name_ar, description_en, description_ar, total_questions, scoring_logic, high_risk_threshold, is_active)
 values ('ADES', 'Adolescent Dissociative Experiences Scale (A-DES)', 'مقياس التجارب الانفصالية لدى المراهقين (A-DES)', 'A 30-item screening measure of dissociative experiences (memory gaps, absorption, passive influence, depersonalisation and derealisation) developed for adolescents aged 11 to 18 (Armstrong et al., 1997). For each statement, choose how much the experience happens to you, from 0 (never) to 10 (always). Validated in English only. An Arabic translation is offered for convenience but has not been validated.', 'مقياس فحص من 30 بنداً للتجارب الانفصالية (فجوات الذاكرة، الاستغراق، التأثير السلبي، تبدد الشخصية والواقع) صُمم للمراهقين من 11 إلى 18 سنة (Armstrong et al., 1997). لكل عبارة، اختر مدى حدوث هذه التجربة لك من 0 (أبداً) إلى 10 (دائماً). هذا المقياس مُعتمد علمياً باللغة الإنجليزية فقط. الترجمة العربية متاحة للتيسير لكنها غير مُعتمدة علمياً.', 30, '[{"min": 0, "max": 59, "severity_en": "Low dissociation", "severity_ar": "تجارب انفصالية منخفضة", "color": "green"}, {"min": 60, "max": 89, "severity_en": "Mild dissociation", "severity_ar": "تجارب انفصالية خفيفة", "color": "yellow"}, {"min": 90, "max": 119, "severity_en": "Moderate dissociation", "severity_ar": "تجارب انفصالية متوسطة", "color": "amber"}, {"min": 120, "max": 300, "severity_en": "High dissociation", "severity_ar": "تجارب انفصالية مرتفعة", "color": "red"}]'::jsonb, null, false)
@@ -45,23 +45,23 @@ on conflict (code) do update set
   name_en = excluded.name_en, name_ar = excluded.name_ar,
   description_en = excluded.description_en, description_ar = excluded.description_ar,
   total_questions = excluded.total_questions, scoring_logic = excluded.scoring_logic,
-  high_risk_threshold = excluded.high_risk_threshold, is_active = excluded.is_active;
+  high_risk_threshold = excluded.high_risk_threshold, is_active = false;
 
 insert into assessment_definitions (code, name_en, name_ar, description_en, description_ar, total_questions, scoring_logic, high_risk_threshold, is_active)
-values ('BPQ', 'Borderline Personality Questionnaire (BPQ)', 'استبيان الشخصية الحدّية (BPQ)', 'An 80-item true/false screening questionnaire for borderline personality traits, with nine subscales based on the DSM criteria (Poreh et al., 2006). Answer for how you have usually been over the past two years or longer. It includes questions about self-harm and suicide. Validated in English only. An Arabic translation is offered for convenience but has not been validated.', 'استبيان فحص من 80 بنداً (صحيح/خطأ) لسمات الشخصية الحدّية، بتسعة مقاييس فرعية مبنية على معايير DSM (Poreh et al., 2006). أجب عن كيف كنت عادةً خلال السنتين الماضيتين أو أكثر. يتضمن أسئلة عن إيذاء النفس والانتحار. هذا المقياس مُعتمد علمياً باللغة الإنجليزية فقط. الترجمة العربية متاحة للتيسير لكنها غير مُعتمدة علمياً.', 80, '[{"min": 0, "max": 29, "severity_en": "Subclinical range", "severity_ar": "ضمن النطاق دون السريري", "color": "green"}, {"min": 30, "max": 34, "severity_en": "Mild", "severity_ar": "خفيف", "color": "yellow"}, {"min": 35, "max": 42, "severity_en": "Moderate", "severity_ar": "متوسط", "color": "amber"}, {"min": 43, "max": 80, "severity_en": "Severe", "severity_ar": "شديد", "color": "red"}]'::jsonb, 43, true)
+values ('BPQ', 'Borderline Personality Questionnaire (BPQ)', 'استبيان الشخصية الحدّية (BPQ)', 'An 80-item true/false screening questionnaire for borderline personality traits, with nine subscales based on the DSM criteria (Poreh et al., 2006). Answer for how you have usually been over the past two years or longer. It includes questions about self-harm and suicide. Validated in English only. An Arabic translation is offered for convenience but has not been validated.', 'استبيان فحص من 80 بنداً (صحيح/خطأ) لسمات الشخصية الحدّية، بتسعة مقاييس فرعية مبنية على معايير DSM (Poreh et al., 2006). أجب عن كيف كنت عادةً خلال السنتين الماضيتين أو أكثر. يتضمن أسئلة عن إيذاء النفس والانتحار. هذا المقياس مُعتمد علمياً باللغة الإنجليزية فقط. الترجمة العربية متاحة للتيسير لكنها غير مُعتمدة علمياً.', 80, '[{"min": 0, "max": 29, "severity_en": "Subclinical range", "severity_ar": "ضمن النطاق دون السريري", "color": "green"}, {"min": 30, "max": 34, "severity_en": "Mild", "severity_ar": "خفيف", "color": "yellow"}, {"min": 35, "max": 42, "severity_en": "Moderate", "severity_ar": "متوسط", "color": "amber"}, {"min": 43, "max": 80, "severity_en": "Severe", "severity_ar": "شديد", "color": "red"}]'::jsonb, 43, false)
 on conflict (code) do update set
   name_en = excluded.name_en, name_ar = excluded.name_ar,
   description_en = excluded.description_en, description_ar = excluded.description_ar,
   total_questions = excluded.total_questions, scoring_logic = excluded.scoring_logic,
-  high_risk_threshold = excluded.high_risk_threshold, is_active = excluded.is_active;
+  high_risk_threshold = excluded.high_risk_threshold, is_active = false;
 
 insert into assessment_definitions (code, name_en, name_ar, description_en, description_ar, total_questions, scoring_logic, high_risk_threshold, is_active)
-values ('DSS', 'Digital Stress Scale (DSS)', 'مقياس الضغط الرقمي (DSS)', 'A 24-item measure of stress linked to phone and social media use across five areas: availability stress, approval anxiety, fear of missing out, connection overload and online vigilance (Hall et al., 2021). For ages 14+. Answer for how often you felt this way over the past 7 days. Validated in English only. An Arabic translation is offered for convenience but has not been validated.', 'مقياس من 24 بنداً للضغط المرتبط باستخدام الهاتف ووسائل التواصل الاجتماعي في خمسة مجالات: ضغط الإتاحة، القلق من الاستحسان، الخوف من تفويت الأحداث، الإرهاق من كثرة التواصل، واليقظة الدائمة على الإنترنت (Hall et al., 2021). للأعمار 14 سنة فأكثر. أجب عن مدى شعورك بذلك خلال الأيام السبعة الماضية. هذا المقياس مُعتمد علمياً باللغة الإنجليزية فقط. الترجمة العربية متاحة للتيسير لكنها غير مُعتمدة علمياً.', 24, '[{"min": 24, "max": 120, "severity_en": "Digital stress profile", "severity_ar": "ملف الضغط الرقمي", "color": "#0ea5e9"}]'::jsonb, null, true)
+values ('DSS', 'Digital Stress Scale (DSS)', 'مقياس الضغط الرقمي (DSS)', 'A 24-item measure of stress linked to phone and social media use across five areas: availability stress, approval anxiety, fear of missing out, connection overload and online vigilance (Hall et al., 2021). For ages 14+. Answer for how often you felt this way over the past 7 days. Validated in English only. An Arabic translation is offered for convenience but has not been validated.', 'مقياس من 24 بنداً للضغط المرتبط باستخدام الهاتف ووسائل التواصل الاجتماعي في خمسة مجالات: ضغط الإتاحة، القلق من الاستحسان، الخوف من تفويت الأحداث، الإرهاق من كثرة التواصل، واليقظة الدائمة على الإنترنت (Hall et al., 2021). للأعمار 14 سنة فأكثر. أجب عن مدى شعورك بذلك خلال الأيام السبعة الماضية. هذا المقياس مُعتمد علمياً باللغة الإنجليزية فقط. الترجمة العربية متاحة للتيسير لكنها غير مُعتمدة علمياً.', 24, '[{"min": 24, "max": 120, "severity_en": "Digital stress profile", "severity_ar": "ملف الضغط الرقمي", "color": "#0ea5e9"}]'::jsonb, null, false)
 on conflict (code) do update set
   name_en = excluded.name_en, name_ar = excluded.name_ar,
   description_en = excluded.description_en, description_ar = excluded.description_ar,
   total_questions = excluded.total_questions, scoring_logic = excluded.scoring_logic,
-  high_risk_threshold = excluded.high_risk_threshold, is_active = excluded.is_active;
+  high_risk_threshold = excluded.high_risk_threshold, is_active = false;
 
 delete from assessment_items where definition_id in (select id from assessment_definitions where code in ('IPIP120', 'ACSI28', 'ADES', 'BPQ', 'DSS'));
 
@@ -387,54 +387,87 @@ from assessment_definitions d, (values
 ) as v(n, qen, qar, k, safety, sub)
 where d.code = 'DSS';
 
-insert into assessment_governance (definition_id, original_author, publisher, license_type, commercial_use_allowed, copyright_status, arabic_validation_status, reference_citations, scoring_method, clinical_limitations, last_review_date)
-select id, 'Johnson, J. A. (2014), from the International Personality Item Pool (Goldberg et al.)', 'International Personality Item Pool', 'public domain', true, 'Public domain (IPIP). Items free for any use. Norms and report text from third-party scoring services are not public domain.', 'not_validated', 'Johnson, J. A. (2014). Measuring thirty facets of the five factor model with a 120-item public domain inventory: Development of the IPIP-NEO-120. Journal of Research in Personality, 51, 78-89.', 'Facet = sum of 4 items (4-20); domain = sum of its 6 facets (24-120). Reverse-keyed items are pre-inverted in response options. The 120-600 total is stored only so the platform has one number; it is not interpreted. No norms are loaded, so no percentiles.', 'Descriptive, not diagnostic. Liberalism facet includes items about voting and crime that may read differently outside Western settings.', current_date
+with steward as (
+  select steward_id from assessment_governance where steward_id is not null
+  group by steward_id order by count(*) desc limit 1
+)
+insert into assessment_governance (definition_id, original_author, publisher, license_type, commercial_use_allowed, copyright_status, arabic_validation_status, reference_citations, scoring_method, clinical_limitations, last_review_date, steward_id)
+select id, 'Johnson, J. A. (2014), from the International Personality Item Pool (Goldberg et al.)', 'International Personality Item Pool', 'public domain', true, 'Public domain (IPIP). Items free for any use. Norms and report text from third-party scoring services are not public domain.', 'not_validated', 'Johnson, J. A. (2014). Measuring thirty facets of the five factor model with a 120-item public domain inventory: Development of the IPIP-NEO-120. Journal of Research in Personality, 51, 78-89.', 'Facet = sum of 4 items (4-20); domain = sum of its 6 facets (24-120). Reverse-keyed items are pre-inverted in response options. The 120-600 total is stored only so the platform has one number; it is not interpreted. No norms are loaded, so no percentiles.', 'Descriptive, not diagnostic. Liberalism facet includes items about voting and crime that may read differently outside Western settings.', current_date, (select steward_id from steward)
 from assessment_definitions where code = 'IPIP120'
 on conflict (definition_id) do update set
   original_author = excluded.original_author, publisher = excluded.publisher, license_type = excluded.license_type,
   commercial_use_allowed = excluded.commercial_use_allowed, copyright_status = excluded.copyright_status,
   arabic_validation_status = excluded.arabic_validation_status, reference_citations = excluded.reference_citations,
   scoring_method = excluded.scoring_method, clinical_limitations = excluded.clinical_limitations,
-  last_review_date = excluded.last_review_date;
+  last_review_date = excluded.last_review_date,
+  steward_id = coalesce(assessment_governance.steward_id, excluded.steward_id);
 
-insert into assessment_governance (definition_id, original_author, publisher, license_type, commercial_use_allowed, copyright_status, arabic_validation_status, reference_citations, scoring_method, clinical_limitations, last_review_date)
-select id, 'Smith, R. E., Schutz, R. W., Smoll, F. L., & Ptacek, J. T. (1995)', 'Journal of Sport and Exercise Psychology (Human Kinetics)', 'copyrighted', false, 'Published in a copyrighted journal. Commonly used in research; permission for commercial use not confirmed. Check with the authors or publisher.', 'not_validated', 'Smith, R. E., Schutz, R. W., Smoll, F. L., & Ptacek, J. T. (1995). Development and validation of a multidimensional measure of sport-specific psychological skills: The Athletic Coping Skills Inventory-28. Journal of Sport and Exercise Psychology, 17(4), 379-398.', 'Items scored 0-3; items 3, 7, 10, 12, 19, 23 reverse-scored (pre-inverted). Seven subscales of 4 items (0-12); total 0-84. No norms loaded, so no percentiles.', 'Designed for athletes. Higher scores mean stronger coping skills. Athletes may over-rate themselves.', current_date
+with steward as (
+  select steward_id from assessment_governance where steward_id is not null
+  group by steward_id order by count(*) desc limit 1
+)
+insert into assessment_governance (definition_id, original_author, publisher, license_type, commercial_use_allowed, copyright_status, arabic_validation_status, reference_citations, scoring_method, clinical_limitations, last_review_date, steward_id)
+select id, 'Smith, R. E., Schutz, R. W., Smoll, F. L., & Ptacek, J. T. (1995)', 'Journal of Sport and Exercise Psychology (Human Kinetics)', 'copyrighted', false, 'Published in a copyrighted journal. Commonly used in research; permission for commercial use not confirmed. Check with the authors or publisher.', 'not_validated', 'Smith, R. E., Schutz, R. W., Smoll, F. L., & Ptacek, J. T. (1995). Development and validation of a multidimensional measure of sport-specific psychological skills: The Athletic Coping Skills Inventory-28. Journal of Sport and Exercise Psychology, 17(4), 379-398.', 'Items scored 0-3; items 3, 7, 10, 12, 19, 23 reverse-scored (pre-inverted). Seven subscales of 4 items (0-12); total 0-84. No norms loaded, so no percentiles.', 'Designed for athletes. Higher scores mean stronger coping skills. Athletes may over-rate themselves.', current_date, (select steward_id from steward)
 from assessment_definitions where code = 'ACSI28'
 on conflict (definition_id) do update set
   original_author = excluded.original_author, publisher = excluded.publisher, license_type = excluded.license_type,
   commercial_use_allowed = excluded.commercial_use_allowed, copyright_status = excluded.copyright_status,
   arabic_validation_status = excluded.arabic_validation_status, reference_citations = excluded.reference_citations,
   scoring_method = excluded.scoring_method, clinical_limitations = excluded.clinical_limitations,
-  last_review_date = excluded.last_review_date;
+  last_review_date = excluded.last_review_date,
+  steward_id = coalesce(assessment_governance.steward_id, excluded.steward_id);
 
-insert into assessment_governance (definition_id, original_author, publisher, license_type, commercial_use_allowed, copyright_status, arabic_validation_status, reference_citations, scoring_method, clinical_limitations, last_review_date)
-select id, 'Armstrong, J. G., Putnam, F. W., Carlson, E. B., Libero, D. Z., & Smith, S. R. (1997)', 'Journal of Nervous and Mental Disease', 'free to use (confirm)', true, 'Distributed freely by its developers for clinical and research use; confirm terms before commercial use.', 'not_validated', 'Armstrong, J. G., Putnam, F. W., Carlson, E. B., Libero, D. Z., & Smith, S. R. (1997). Development and validation of a measure of adolescent dissociation: The Adolescent Dissociative Experiences Scale. The Journal of Nervous and Mental Disease, 185(8), 491-497.', 'Items 0-10. Total and subscale scores are item means (0-10); the stored total is the item sum (0-300). Bands on the mean: <2.0 low, 2.0-2.9 mild, 3.0-3.9 moderate, 4.0+ high (NovoPsych guideline, not from the original authors).', 'Developed for ages 11-18; the platform is adults-only, so this is switched off. Screening only.', current_date
+with steward as (
+  select steward_id from assessment_governance where steward_id is not null
+  group by steward_id order by count(*) desc limit 1
+)
+insert into assessment_governance (definition_id, original_author, publisher, license_type, commercial_use_allowed, copyright_status, arabic_validation_status, reference_citations, scoring_method, clinical_limitations, last_review_date, steward_id)
+select id, 'Armstrong, J. G., Putnam, F. W., Carlson, E. B., Libero, D. Z., & Smith, S. R. (1997)', 'Journal of Nervous and Mental Disease', 'free to use (confirm)', true, 'Distributed freely by its developers for clinical and research use; confirm terms before commercial use.', 'not_validated', 'Armstrong, J. G., Putnam, F. W., Carlson, E. B., Libero, D. Z., & Smith, S. R. (1997). Development and validation of a measure of adolescent dissociation: The Adolescent Dissociative Experiences Scale. The Journal of Nervous and Mental Disease, 185(8), 491-497.', 'Items 0-10. Total and subscale scores are item means (0-10); the stored total is the item sum (0-300). Bands on the mean: <2.0 low, 2.0-2.9 mild, 3.0-3.9 moderate, 4.0+ high (NovoPsych guideline, not from the original authors).', 'Developed for ages 11-18; the platform is adults-only, so this is switched off. Screening only.', current_date, (select steward_id from steward)
 from assessment_definitions where code = 'ADES'
 on conflict (definition_id) do update set
   original_author = excluded.original_author, publisher = excluded.publisher, license_type = excluded.license_type,
   commercial_use_allowed = excluded.commercial_use_allowed, copyright_status = excluded.copyright_status,
   arabic_validation_status = excluded.arabic_validation_status, reference_citations = excluded.reference_citations,
   scoring_method = excluded.scoring_method, clinical_limitations = excluded.clinical_limitations,
-  last_review_date = excluded.last_review_date;
+  last_review_date = excluded.last_review_date,
+  steward_id = coalesce(assessment_governance.steward_id, excluded.steward_id);
 
-insert into assessment_governance (definition_id, original_author, publisher, license_type, commercial_use_allowed, copyright_status, arabic_validation_status, reference_citations, scoring_method, clinical_limitations, last_review_date)
-select id, 'Poreh, A. M., Rawlings, D., Claridge, G., Freeman, J. L., Faulkner, C., & Shelton, C. (2006)', 'Journal of Personality Disorders (Guilford Press)', 'copyrighted', false, 'Published in a copyrighted journal; permission for commercial use not confirmed. Check with the authors or publisher.', 'not_validated', 'Poreh, A. M., Rawlings, D., Claridge, G., Freeman, J. L., Faulkner, C., & Shelton, C. (2006). The BPQ: A scale for the assessment of borderline personality based on DSM-IV criteria. Journal of Personality Disorders, 20(3), 247-260.', 'True/false; keyed answer = 1 (13 items keyed False). Total 0-80: 0-29 subclinical, 30-34 mild, 35-42 moderate, 43-80 severe. Subscales shown as percent of items endorsed. Any keyed answer on the suicide/self-harm subscale raises the high-risk flag.', 'Screening only; does not diagnose BPD. Suicide/self-harm items ask about lifetime history, not current risk. Overlaps with ADHD, eating disorders, substance use, depression and PTSD.', current_date
+with steward as (
+  select steward_id from assessment_governance where steward_id is not null
+  group by steward_id order by count(*) desc limit 1
+)
+insert into assessment_governance (definition_id, original_author, publisher, license_type, commercial_use_allowed, copyright_status, arabic_validation_status, reference_citations, scoring_method, clinical_limitations, last_review_date, steward_id)
+select id, 'Poreh, A. M., Rawlings, D., Claridge, G., Freeman, J. L., Faulkner, C., & Shelton, C. (2006)', 'Journal of Personality Disorders (Guilford Press)', 'copyrighted', false, 'Published in a copyrighted journal; permission for commercial use not confirmed. Check with the authors or publisher.', 'not_validated', 'Poreh, A. M., Rawlings, D., Claridge, G., Freeman, J. L., Faulkner, C., & Shelton, C. (2006). The BPQ: A scale for the assessment of borderline personality based on DSM-IV criteria. Journal of Personality Disorders, 20(3), 247-260.', 'True/false; keyed answer = 1 (13 items keyed False). Total 0-80: 0-29 subclinical, 30-34 mild, 35-42 moderate, 43-80 severe. Subscales shown as percent of items endorsed. Any keyed answer on the suicide/self-harm subscale raises the high-risk flag.', 'Screening only; does not diagnose BPD. Suicide/self-harm items ask about lifetime history, not current risk. Overlaps with ADHD, eating disorders, substance use, depression and PTSD.', current_date, (select steward_id from steward)
 from assessment_definitions where code = 'BPQ'
 on conflict (definition_id) do update set
   original_author = excluded.original_author, publisher = excluded.publisher, license_type = excluded.license_type,
   commercial_use_allowed = excluded.commercial_use_allowed, copyright_status = excluded.copyright_status,
   arabic_validation_status = excluded.arabic_validation_status, reference_citations = excluded.reference_citations,
   scoring_method = excluded.scoring_method, clinical_limitations = excluded.clinical_limitations,
-  last_review_date = excluded.last_review_date;
+  last_review_date = excluded.last_review_date,
+  steward_id = coalesce(assessment_governance.steward_id, excluded.steward_id);
 
-insert into assessment_governance (definition_id, original_author, publisher, license_type, commercial_use_allowed, copyright_status, arabic_validation_status, reference_citations, scoring_method, clinical_limitations, last_review_date)
-select id, 'Hall, J. A., Steele, R. G., Christofferson, J. L., & Mihailova, T. (2021)', 'Psychological Assessment (American Psychological Association)', 'copyrighted', false, 'Published in an APA journal; permission for commercial use not confirmed. Check with the authors or APA.', 'not_validated', 'Hall, J. A., Steele, R. G., Christofferson, J. L., & Mihailova, T. (2021). Development and initial evaluation of a multidimensional digital stress scale. Psychological Assessment, 33(3), 230-242.', 'Items 1-5. Total and subscale scores are item means (1-5); the stored total is the item sum (24-120). No norms loaded, so the percentile categories are not shown.', 'Ages 14+. Normed on 735 adolescents and young adults.', current_date
+with steward as (
+  select steward_id from assessment_governance where steward_id is not null
+  group by steward_id order by count(*) desc limit 1
+)
+insert into assessment_governance (definition_id, original_author, publisher, license_type, commercial_use_allowed, copyright_status, arabic_validation_status, reference_citations, scoring_method, clinical_limitations, last_review_date, steward_id)
+select id, 'Hall, J. A., Steele, R. G., Christofferson, J. L., & Mihailova, T. (2021)', 'Psychological Assessment (American Psychological Association)', 'copyrighted', false, 'Published in an APA journal; permission for commercial use not confirmed. Check with the authors or APA.', 'not_validated', 'Hall, J. A., Steele, R. G., Christofferson, J. L., & Mihailova, T. (2021). Development and initial evaluation of a multidimensional digital stress scale. Psychological Assessment, 33(3), 230-242.', 'Items 1-5. Total and subscale scores are item means (1-5); the stored total is the item sum (24-120). No norms loaded, so the percentile categories are not shown.', 'Ages 14+. Normed on 735 adolescents and young adults.', current_date, (select steward_id from steward)
 from assessment_definitions where code = 'DSS'
 on conflict (definition_id) do update set
   original_author = excluded.original_author, publisher = excluded.publisher, license_type = excluded.license_type,
   commercial_use_allowed = excluded.commercial_use_allowed, copyright_status = excluded.copyright_status,
   arabic_validation_status = excluded.arabic_validation_status, reference_citations = excluded.reference_citations,
   scoring_method = excluded.scoring_method, clinical_limitations = excluded.clinical_limitations,
-  last_review_date = excluded.last_review_date;
+  last_review_date = excluded.last_review_date,
+  steward_id = coalesce(assessment_governance.steward_id, excluded.steward_id);
+
+-- The governance gate trigger (trg_governance_gate) refuses an active
+-- definition without complete governance, and on an upsert it checks the
+-- proposed row's new id, not the existing one. So every definition is written
+-- inactive first, governance (with a steward) is filled in, and only then are
+-- the four launch assessments switched on. A-DES stays off (18+ site).
+update assessment_definitions set is_active = true
+where code in ('IPIP120', 'ACSI28', 'BPQ', 'DSS');
 
 commit;
