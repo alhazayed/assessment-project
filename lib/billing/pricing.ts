@@ -22,20 +22,28 @@ export function isValidTier(value: unknown): value is Tier {
 }
 
 /**
- * Apply a validated promo discount to a base price, clamped to >= 0.
- * discount_type values written by the admin API: 'percentage' | 'fixed_amount' | 'free'.
+ * Apply a validated promo discount to a base price (USD), clamped to >= 0.
+ *
+ * Units match what the admin panel stores in `promo_codes`:
+ *   - 'percentage'   → discount_value is whole percent (1–100)
+ *   - 'fixed_amount' → discount_value is in CENTS (the column is an integer and
+ *                      the admin form asks for "Amount off (cents)")
+ *   - 'free'         → price becomes 0
+ * A code with code_type 'free_use' (no discount_type) also makes the price 0.
  */
 export function applyDiscount(
   base: number,
   discountType: string | null,
-  discountValue: number | null
+  discountValue: number | null,
+  codeType: string | null = null
 ): number {
+  if (codeType === 'free_use') return 0
   if (!discountType) return base
   if (discountType === 'free') return 0
   if (discountValue == null) return base
-  const discounted =
-    discountType === 'percentage'
-      ? base * (1 - discountValue / 100)
-      : base - discountValue // fixed_amount discount
+  let discounted: number
+  if (discountType === 'percentage') discounted = base * (1 - discountValue / 100)
+  else if (discountType === 'fixed_amount') discounted = base - discountValue / 100
+  else return base
   return Math.max(0, Math.round(discounted * 100) / 100)
 }

@@ -20,6 +20,7 @@ import {
   isValidTier,
   VALID_TIERS,
 } from '../../lib/billing/pricing'
+import { evaluatePromo, normalizePromoCode, type PromoRow } from '../../lib/billing/promo'
 import { constructEvent, StripeWebhookError } from '../../lib/stripe/webhook'
 
 describe('pricing — server-authoritative amounts (PAY-1)', () => {
@@ -46,9 +47,18 @@ describe('pricing — server-authoritative amounts (PAY-1)', () => {
     assert.equal(applyDiscount(49.99, 'percentage', 50), 25) // 24.995 -> 25.00
   })
 
-  test('fixed_amount discount subtracts and clamps at zero', () => {
-    assert.equal(applyDiscount(9.99, 'fixed_amount', 5), 4.99)
-    assert.equal(applyDiscount(9.99, 'fixed_amount', 999), 0) // never negative
+  test('fixed_amount discount_value is in cents (matches the admin form) and clamps at zero', () => {
+    assert.equal(applyDiscount(9.99, 'fixed_amount', 500), 4.99) // $5.00 off
+    assert.equal(applyDiscount(24.99, 'fixed_amount', 1), 24.98) // 1 cent off
+    assert.equal(applyDiscount(9.99, 'fixed_amount', 99900), 0) // never negative
+  })
+
+  test('a free_use code makes the order free', () => {
+    assert.equal(applyDiscount(49.99, null, null, 'free_use'), 0)
+  })
+
+  test('an unknown discount type never changes the price', () => {
+    assert.equal(applyDiscount(9.99, 'bogus', 50), 9.99)
   })
 
   test('free discount zeroes the price regardless of value', () => {
@@ -107,5 +117,46 @@ describe('stripe webhook signature verification (PAY-5)', () => {
 
   test('rejects a header with no v1 signature', () => {
     assert.throws(() => constructEvent(body, `t=${now()}`, SECRET), StripeWebhookError)
+  })
+})
+
+describe('promo code eligibility', () => {
+  const now = new Date('2026-11-01T12:00:00Z')
+  const base: PromoRow = {
+    id: 'c1', code: 'SAVE10', code_type: 'discount', discount_type: 'percentage', discount_value: 10,
+    max_uses: null, current_uses: 0, valid_from: '2026-10-01T00:00:00Z', valid_until: null, active: true,
+  }
+  const ok = { now, usedByUser: false, openReservations: 0 }
+
+  test('normalizes user input', () => {
+    assert.equal(normalizePromoCode('  save10 '), 'SAVE10')
+    assert.equal(normalizePromoCode('   '), null)
+    assert.equal(normalizePromoCode(42), null)
+  })
+
+  test('accepts a valid active code', () => {
+    assert.deepEqual(evaluatePromo(base, ok), { ok: true })
+  })
+
+  test('rejects missing or inactive codes', () => {
+    assert.deepEqual(evaluatePromo(null, ok), { ok: false, reason: 'invalid' })
+    assert.deepEqual(evaluatePromo({ ...base, active: false }, ok), { ok: false, reason: 'invalid' })
+  })
+
+  test('respects the validity window', () => {
+    assert.deepEqual(evaluatePromo({ ...base, valid_from: '2026-12-01T00:00:00Z' }, ok), { ok: false, reason: 'not_yet_active' })
+    assert.deepEqual(evaluatePromo({ ...base, valid_until: '2026-10-31T23:59:59Z' }, ok), { ok: false, reason: 'expired' })
+    assert.deepEqual(evaluatePromo({ ...base, valid_until: '2026-11-01T23:59:59Z' }, ok), { ok: true })
+  })
+
+  test('one use per customer', () => {
+    assert.deepEqual(evaluatePromo(base, { ...ok, usedByUser: true }), { ok: false, reason: 'already_used' })
+  })
+
+  test('max uses counts redemptions plus other open checkouts', () => {
+    const limited = { ...base, max_uses: 3, current_uses: 2 }
+    assert.deepEqual(evaluatePromo(limited, ok), { ok: true })
+    assert.deepEqual(evaluatePromo(limited, { ...ok, openReservations: 1 }), { ok: false, reason: 'limit_reached' })
+    assert.deepEqual(evaluatePromo({ ...limited, current_uses: 3 }, ok), { ok: false, reason: 'limit_reached' })
   })
 })

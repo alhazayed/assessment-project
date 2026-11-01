@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { VALID_TIERS, TIER_PRICES_USD, isValidTier, applyDiscount } from '@/lib/billing/pricing'
 import { isPackagesEnabled } from '@/lib/feature-flags'
+import { checkPromoCode } from '@/lib/billing/promo'
+import { fulfilPayment } from '@/lib/billing/fulfil'
 
 /**
  * POST /api/checkout/create-session
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
     // performs those controlled operations with the service-role client.
     const db = createAdminClient()
 
-    const body = await request.json()
+    const body = await request.json().catch(() => ({}))
     // NOTE: any client-supplied `amount` is deliberately ignored. The charge
     // amount is derived server-side from the tier price and validated promo.
     const { packageId, promoCode } = body
@@ -77,53 +79,21 @@ export async function POST(request: Request) {
 
     const basePrice = TIER_PRICES_USD[packageId as (typeof VALID_TIERS)[number]]
 
-    // Validate promo code if provided, and capture its discount for server-side
-    // price computation.
+    // Validate promo code if provided (same checker as the checkout preview),
+    // and capture its discount for server-side price computation.
     let promoCodeId: string | null = null
-    let discountType: string | null = null
-    let discountValue: number | null = null
+    let appliedCode: string | null = null
+    let amount = basePrice
     if (promoCode) {
-      const { data: code } = await db
-        .from('promo_codes')
-        .select('id, code, discount_type, discount_value, max_uses, current_uses, valid_from, valid_until, active')
-        .eq('code', promoCode.toUpperCase())
-        .eq('active', true)
-        .maybeSingle()
-
-      if (!code) {
-        return NextResponse.json(
-          { error: 'Invalid promo code' },
-          { status: 400 }
-        )
+      const check = await checkPromoCode(db, promoCode, user.id)
+      if (!check.ok) {
+        return NextResponse.json({ error: check.error, reason: check.reason }, { status: 400 })
       }
-
-      const now = new Date()
-      if (code.valid_from && new Date(code.valid_from) > now) {
-        return NextResponse.json(
-          { error: 'Promo code is not yet active' },
-          { status: 400 }
-        )
-      }
-      if (code.valid_until && new Date(code.valid_until) < now) {
-        return NextResponse.json(
-          { error: 'Promo code has expired' },
-          { status: 400 }
-        )
-      }
-      if (code.max_uses && (code.current_uses ?? 0) >= code.max_uses) {
-        return NextResponse.json(
-          { error: 'Promo code usage limit reached' },
-          { status: 400 }
-        )
-      }
-
-      promoCodeId = code.id
-      discountType = code.discount_type
-      discountValue = code.discount_value
+      promoCodeId = check.code.id
+      appliedCode = check.code.code
+      amount = applyDiscount(basePrice, check.code.discount_type, check.code.discount_value, check.code.code_type)
     }
-
-    // Final charge amount is computed entirely server-side.
-    const amount = applyDiscount(basePrice, discountType, discountValue)
+    const discountCents = Math.round(basePrice * 100) - Math.round(amount * 100)
 
     // TODO: Replace with a real Stripe PaymentIntent when live keys exist.
     const rand = () => Math.random().toString(36).substring(2, 12)
@@ -149,8 +119,9 @@ export async function POST(request: Request) {
         stripe_session_id: mockSessionId,
         stripe_client_secret: mockClientSecret,
         promo_code_id: promoCodeId,
+        discount_applied_cents: discountCents,
         metadata: {
-          promoCode: promoCode || null,
+          promoCode: appliedCode,
           basePrice,
           finalAmount: amount,
         },
@@ -166,8 +137,21 @@ export async function POST(request: Request) {
       )
     }
 
-    // Promo usage is recorded by the webhook on successful payment, so an
-    // abandoned checkout never consumes a use.
+    // A promo code that makes the order free ($0) can't go through Stripe
+    // (it has a minimum charge), so fulfil it right here.
+    if (amountCents === 0) {
+      try {
+        await fulfilPayment(db, payment, { paymentMethod: 'promo_code' })
+      } catch (err) {
+        console.error('Free checkout fulfilment error:', err)
+        await db.from('payments').update({ status: 'failed' }).eq('id', payment.id)
+        return NextResponse.json({ error: 'Failed to apply promo code' }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, free: true, paymentId: payment.id })
+    }
+
+    // Otherwise promo usage is recorded by the webhook on successful payment,
+    // so an abandoned checkout never consumes a use.
 
     return NextResponse.json({
       success: true,
