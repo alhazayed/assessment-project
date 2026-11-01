@@ -6,6 +6,7 @@ import { generateRichNarrative } from '@/lib/package-interpret'
 import type { ScoringBand, InterpretationBand } from '@/lib/types'
 import { PROFILE_DEFS, buildProfileReport, toResultColumns } from '@/lib/package-profiles'
 import { loadScaleInputs } from '@/lib/package-profiles/load'
+import { hasPackageAccess } from '@/lib/billing/package-access'
 
 interface PkgAssessment {
   assessment_code: string
@@ -46,6 +47,14 @@ export async function POST(_req: Request, props: { params: Promise<{ id: string 
     // Only active packages can produce results (draft/archived are treated as missing).
     if (!pkg || pkg.status !== 'active') {
       return NextResponse.json({ error: 'Package not found' }, { status: 404 })
+    }
+
+    // The combined report is paid: only buyers (and staff) can build or read it.
+    if (!(await hasPackageAccess(db, user.id, params.id))) {
+      return NextResponse.json(
+        { error: 'Buy this package to unlock the combined report', reason: 'purchase_required' },
+        { status: 402 }
+      )
     }
 
     const available = (pkg.package_assessments as PkgAssessment[]).filter(a => a.is_available)

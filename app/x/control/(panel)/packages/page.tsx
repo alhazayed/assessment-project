@@ -36,6 +36,7 @@ interface Package {
   index_name_ar: string | null
   is_prototype: boolean
   updated_at: string
+  price_cents: number | null
   interpretation_bands: InterpBand[]
   output_dimensions: OutputDim[]
   package_assessments: PackageAssessment[]
@@ -167,6 +168,36 @@ export default function AdminPackagesPage() {
     flash(t('admin.packages.created', lang))
     setShowForm(false); setForm(defaultForm); load()
     setSaving(false)
+  }
+
+  // Price is entered in dollars; stored in cents. Empty = not for sale.
+  async function savePrice(id: string, raw: string, current: number | null) {
+    const trimmed = raw.trim()
+    let cents: number | null = null
+    if (trimmed !== '') {
+      const dollars = Number(trimmed)
+      if (!Number.isFinite(dollars) || dollars < 1 || dollars > 1000) {
+        flash(isAr ? 'أدخل سعراً بين 1 و1000 دولار، أو اتركه فارغاً' : 'Enter a price from $1 to $1000, or leave it empty')
+        load()
+        return
+      }
+      cents = Math.round(dollars * 100)
+    }
+    if (cents === current) return
+    const res = await fetch('/api/admin/packages', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, price_cents: cents }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      flash(data.error || (isAr ? 'تعذّر حفظ السعر' : 'Could not save the price'))
+    } else {
+      flash(cents == null
+        ? (isAr ? 'أُزيل السعر: الباقة غير معروضة للبيع' : 'Price removed: the package is not for sale')
+        : (isAr ? 'تم حفظ السعر' : 'Price saved'))
+    }
+    load()
   }
 
   async function setStatus(id: string, status: string) {
@@ -376,6 +407,24 @@ export default function AdminPackagesPage() {
                       <span className={`text-[11.5px] px-2 py-0.5 rounded-full border font-medium ${statusBadge(pkg.status)}`}>
                         {t(`admin.packages.status.${pkg.status}` as Parameters<typeof t>[0], lang)}
                       </span>
+                      <label className="mt-2 flex items-center gap-1 text-[11.5px]" style={{ color: 'var(--text-muted)' }}>
+                        <span>{isAr ? 'السعر $' : 'Price $'}</span>
+                        <input
+                          key={`${pkg.id}-${pkg.price_cents}`}
+                          type="number"
+                          inputMode="decimal"
+                          min={1}
+                          max={1000}
+                          step="0.01"
+                          defaultValue={pkg.price_cents != null ? (pkg.price_cents / 100).toFixed(2) : ''}
+                          placeholder={isAr ? 'غير معروض' : 'not for sale'}
+                          aria-label={isAr ? `سعر ${pkg.name_ar}` : `Price of ${pkg.name_en}`}
+                          onBlur={e => savePrice(pkg.id, e.currentTarget.value, pkg.price_cents)}
+                          onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+                          className="w-20 px-1.5 py-0.5 rounded border text-[12px]"
+                          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--page-bg)', color: 'var(--text-primary)' }}
+                        />
+                      </label>
                     </td>
                     <td className="px-4 py-3 text-[12px]" style={{ color: 'var(--text-muted)' }}>
                       {new Date(pkg.updated_at).toLocaleDateString()}

@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
-import { TIER_PRICES_USD, isValidTier, applyDiscount } from '@/lib/billing/pricing'
+import { applyDiscount } from '@/lib/billing/pricing'
+import { resolveProduct } from '@/lib/billing/product'
 import { isPackagesEnabled } from '@/lib/feature-flags'
 import { checkPromoCode } from '@/lib/billing/promo'
 
@@ -53,15 +54,16 @@ export async function POST(request: Request) {
     if (!promoCode || typeof promoCode !== 'string' || !promoCode.trim()) {
       return NextResponse.json({ error: 'Promo code is required' }, { status: 400 })
     }
-    if (!isValidTier(packageId)) {
-      return NextResponse.json({ error: 'Invalid package tier' }, { status: 400 })
-    }
-
-    const basePrice = TIER_PRICES_USD[packageId]
-
     // Promo tables are RLS-locked; read with the service-role client (user is
     // already authenticated above). Same checker create-session charges from.
     const db = createAdminClient()
+
+    // A tier or a package UUID; same price lookup create-session charges from.
+    const resolved = await resolveProduct(db, packageId)
+    if (!resolved.ok) {
+      return NextResponse.json({ error: 'Invalid package' }, { status: 400 })
+    }
+    const basePrice = resolved.product.priceUSD
     const check = await checkPromoCode(db, promoCode, user.id)
     if (!check.ok) {
       return NextResponse.json({ error: check.error, reason: check.reason }, { status: 400 })

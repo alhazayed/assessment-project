@@ -18,6 +18,8 @@ type Pkg = {
   color: string | null
   status: string
   sort_order: number
+  price_cents: number | null
+  currency: string | null
   package_assessments: PkgAssessment[]
 }
 
@@ -28,10 +30,10 @@ export default async function MyPackagesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?next=/my-packages')
 
-  const [pkgRes, subsRes, resultsRes] = await Promise.all([
+  const [pkgRes, subsRes, resultsRes, purchasesRes] = await Promise.all([
     supabase
       .from('packages')
-      .select('id, name_en, name_ar, description_en, description_ar, category, color, status, sort_order, package_assessments(assessment_code, is_available)')
+      .select('id, name_en, name_ar, description_en, description_ar, category, color, status, sort_order, price_cents, currency, package_assessments(assessment_code, is_available)')
       .eq('status', 'active')
       .order('sort_order', { ascending: true }),
     supabase
@@ -43,6 +45,12 @@ export default async function MyPackagesPage() {
       .select('package_id, status')
       .eq('user_id', user.id)
       .eq('status', 'completed'),
+    supabase
+      .from('package_purchases')
+      .select('package_id, expires_at')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .not('package_id', 'is', null),
   ])
 
   const packages = (pkgRes.data || []) as Pkg[]
@@ -52,6 +60,16 @@ export default async function MyPackagesPage() {
       .filter(Boolean)
   )
   const completedPackageIds = new Set<string>((resultsRes.data || []).map((r: any) => r.package_id))
+  const now = Date.now()
+  const ownedPackageIds = new Set<string>(
+    (purchasesRes.data || [])
+      .filter((p: any) => !p.expires_at || new Date(p.expires_at).getTime() > now)
+      .map((p: any) => p.package_id)
+  )
+  const fmtPrice = (pkg: Pkg) =>
+    pkg.price_cents != null
+      ? new Intl.NumberFormat(isAr ? 'ar-SA' : 'en-US', { style: 'currency', currency: (pkg.currency || 'usd').toUpperCase() }).format(pkg.price_cents / 100)
+      : null
 
   return (
     <div className="p-4 sm:p-6 lg:p-7 max-w-6xl">
@@ -96,6 +114,13 @@ export default async function MyPackagesPage() {
                   )}
                 </div>
                 <h3 className="text-[15px] font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{name}</h3>
+                <p className="text-[12px] font-semibold mb-2" style={{ color: ownedPackageIds.has(pkg.id) ? '#1B8A5A' : 'var(--text-muted)' }}>
+                  {ownedPackageIds.has(pkg.id)
+                    ? (isAr ? 'تم الشراء' : 'Purchased')
+                    : fmtPrice(pkg)
+                      ? (isAr ? `التقرير المجمّع: ${fmtPrice(pkg)}` : `Combined report: ${fmtPrice(pkg)}`)
+                      : null}
+                </p>
                 {desc && <p className="text-[13px] mb-4 line-clamp-3 flex-1" style={{ color: 'var(--text-secondary)' }}>{desc}</p>}
                 <span className="mt-auto inline-flex items-center gap-1 text-[13px] font-semibold" style={{ color: accent }}>
                   {isCompleted ? (isAr ? 'عرض النتيجة' : 'View result') : inProgress ? (isAr ? 'متابعة' : 'Continue') : (isAr ? 'ابدأ' : 'Start')}

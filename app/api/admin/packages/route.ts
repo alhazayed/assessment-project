@@ -43,6 +43,9 @@ const FIELDS: Record<string, FieldCheck> = {
   index_name_en: text(200),
   index_name_ar: text(200),
   sort_order: v => (Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 10000 ? null : 'must be an integer 0–10000'),
+  // One-time price in cents; null = not for sale. Mirrors the DB check.
+  price_cents: v => (v === null || (Number.isInteger(v) && (v as number) >= 100 && (v as number) <= 100000)
+    ? null : 'must be null or a whole number of cents from 100 to 100000'),
   interpretation_bands: jsonArray(20),
   output_dimensions: jsonArray(50),
 }
