@@ -35,13 +35,13 @@ export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
     id: 'stress',
     labelEn: 'Stress',
     labelAr: 'الضغط النفسي',
-    codes: ['PSS10', 'PSS4', 'K10'],
+    codes: ['PSS10', 'PSS4', 'K10', 'DSS'],
   },
   {
     id: 'trauma',
     labelEn: 'Trauma & PTSD',
     labelAr: 'الصدمة واضطراب ما بعد الصدمة',
-    codes: ['PCL5', 'IESR', 'ACE'],
+    codes: ['PCL5', 'IESR', 'ACE', 'ADES'],
   },
   {
     id: 'wellbeing',
@@ -65,13 +65,13 @@ export const ASSESSMENT_CATEGORIES: AssessmentCategory[] = [
     id: 'personality',
     labelEn: 'Personality & mindfulness',
     labelAr: 'الشخصية واليقظة',
-    codes: ['BFI44', 'IPIP120', 'FFMQ', 'ECRR'],
+    codes: ['BFI44', 'IPIP120', 'BPQ', 'FFMQ', 'ECRR'],
   },
   {
     id: 'other',
     labelEn: 'Other',
     labelAr: 'أخرى',
-    codes: ['ASRS', 'EAT26', 'PHQ15', 'DERS', 'OLBI'],
+    codes: ['ASRS', 'EAT26', 'PHQ15', 'DERS', 'OLBI', 'ACSI28'],
   },
 ]
 

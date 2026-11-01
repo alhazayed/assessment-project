@@ -346,7 +346,7 @@ export default function AssessmentContent({ id, userId, assignmentId }: Props) {
         )}
       </div>
 
-      <ScreeningDisclaimer lang={lang} className="mb-4" />
+      <ScreeningDisclaimer lang={lang} className="mb-4" code={definition.code} />
 
       {hasSavedProgress && (
         <div className="mb-4 p-3 rounded-xl border flex items-center justify-between gap-3" style={{ backgroundColor: '#EEF5FB', borderColor: '#1D6296' }}>

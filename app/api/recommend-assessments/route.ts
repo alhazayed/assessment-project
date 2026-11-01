@@ -67,6 +67,24 @@ const ASSESSMENT_META: Record<string, AssessmentMeta> = {
     reason_en: 'If you want to understand your core personality traits and how you relate to the world, the IPIP-120 Big Five assessment offers deep insight.',
     reason_ar: 'إذا أردت فهم سمات شخصيتك الجوهرية وكيفية تعاملك مع العالم، فإن تقييم IPIP-120 للشخصية الخمسة الكبرى يقدم رؤية عميقة.',
   },
+  DSS: {
+    keywords_en: ['phone', 'social media', 'instagram', 'tiktok', 'notification', 'online', 'fomo', 'missing out', 'likes', 'scrolling', 'always available', 'screen'],
+    keywords_ar: ['الهاتف', 'الجوال', 'وسائل التواصل', 'إشعارات', 'الإنترنت', 'السوشيال', 'إنستغرام', 'تيك توك', 'تفويت', 'لايكات', 'متاح دائماً'],
+    reason_en: 'Stress around your phone, notifications or social media is what the Digital Stress Scale measures, across five areas such as fear of missing out and connection overload.',
+    reason_ar: 'الضغط المرتبط بالهاتف أو الإشعارات أو وسائل التواصل هو ما يقيسه مقياس الضغط الرقمي، في خمسة مجالات منها الخوف من تفويت الأحداث والإرهاق من كثرة التواصل.',
+  },
+  ACSI28: {
+    keywords_en: ['sport', 'athlete', 'coach', 'competition', 'match', 'game day', 'training', 'performance anxiety', 'team'],
+    keywords_ar: ['رياضة', 'رياضي', 'مدرب', 'منافسة', 'مباراة', 'تدريب', 'الأداء', 'فريق'],
+    reason_en: 'For athletes, the ACSI-28 profiles seven mental skills behind sport performance, such as coping with pressure, concentration and confidence.',
+    reason_ar: 'للرياضيين، يرسم مقياس ACSI-28 ملفاً لسبع مهارات ذهنية وراء الأداء الرياضي، مثل التعامل مع الضغط والتركيز والثقة.',
+  },
+  BPQ: {
+    keywords_en: ['borderline', 'bpd', 'fear of abandonment', 'abandon', 'unstable relationship', 'emptiness', 'mood swing', 'intense anger', 'identity', 'self-harm'],
+    keywords_ar: ['حدية', 'الشخصية الحدية', 'الهجر', 'التخلي', 'علاقات غير مستقرة', 'فراغ', 'تقلب المزاج', 'غضب شديد', 'إيذاء النفس'],
+    reason_en: 'Fear of abandonment, unstable relationships, emptiness or intense mood swings are areas covered by the Borderline Personality Questionnaire.',
+    reason_ar: 'الخوف من الهجر والعلاقات غير المستقرة والشعور بالفراغ وتقلبات المزاج الشديدة مجالات يغطيها استبيان الشخصية الحدّية.',
+  },
 }
 
 function scoreAssessment(query: string, meta: AssessmentMeta): number {

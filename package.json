@@ -14,6 +14,7 @@
     "test:payments": "npx tsx --test __tests__/security/payments.test.ts __tests__/security/client-ip.test.ts",
     "test:radar": "npx tsx --test __tests__/radar/*.test.ts",
     "test:severity": "npx tsx --test __tests__/severity/*.test.ts",
+    "test:scales": "npx tsx --test __tests__/scales/*.test.ts",
     "load:100": "k6 run load-tests/scenarios/100vus.js",
     "load:250": "k6 run load-tests/scenarios/250vus.js",
     "load:500": "k6 run load-tests/scenarios/500vus.js",

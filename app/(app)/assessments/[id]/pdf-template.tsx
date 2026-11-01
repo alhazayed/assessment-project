@@ -8,7 +8,7 @@ interface AssessmentPdfProps {
   assessmentName: string
   assessmentCode: string
   completedOn: string
-  score: number
+  score: number | string
   band: string
   highRisk: boolean
   /** Localized "reviewed by" line, or null while unreviewed. */
