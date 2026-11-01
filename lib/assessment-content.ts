@@ -1721,41 +1721,149 @@ export const ASSESSMENT_CONTENT: Record<string, AssessmentContent> = {
   },
 
   IPIP120: {
-    overview: 'The IPIP-NEO-120 is a 120-item public-domain personality inventory measuring the five major personality domains — Neuroticism, Extraversion, Openness to Experience, Agreeableness, and Conscientiousness — and 30 specific facets (six per domain). Developed from the International Personality Item Pool (IPIP) by Goldberg et al. as a free alternative to the commercial NEO-PI-R, the IPIP-NEO shows comparable validity and reliability. Each domain captures a broad dimension of personality; the 30 facets provide the granular picture. Domain scores range from 24 to 120; the midpoint is 72. Results are descriptive, not diagnostic — there is no "good" or "bad" personality profile.',
-    measuresDomain: 'Five major personality domains (OCEAN) and 30 specific personality facets',
+    overview: 'The IPIP-NEO-120 (Johnson, 2014) is a 120-item public-domain personality inventory built from the International Personality Item Pool. It measures the five broad domains of the five-factor model (Neuroticism, Extraversion, Openness to Experience, Agreeableness and Conscientiousness) and six facets within each domain, 30 facets in all. Each facet has four items (score 4–20) and each domain 24 items (score 24–120). Results describe tendencies; there is no "good" or "bad" personality.',
+    measuresDomain: 'Five broad personality domains (OCEAN) and 30 narrower facets',
     bands: {
-      'Reserved & Structured Profile': {
-        explanation: 'An overall IPIP-120 total in the 120–299 range reflects a personality orientation that tends toward introversion, practicality, emotional sensitivity, and/or more structured or conventional approaches. The total is only a summary — your five domain scores (each 24–120) and the 30 facets tell the real story. For example, high Conscientiousness with low Extraversion describes many highly effective, disciplined people who prefer working independently.',
-        whatThisMeans: ['You likely prefer familiar environments, routine, and depth over breadth in social connection', 'Practicality and conscientiousness can be strengths even with a lower overall total', 'A higher Neuroticism domain indicates emotional sensitivity that can be both a source of depth and of distress', 'This is a common and functional personality profile — the total does not indicate a problem'],
-        recommendations: ['Review your individual OCEAN domain and facet scores — they are far more informative than the total', 'High introversion paired with high Conscientiousness predicts strong performance in focused, independent work', 'If the Neuroticism domain is elevated, evidence-based approaches (CBT, mindfulness) help manage emotional reactivity'],
-        relatedDisorders: [],
-      },
-      'Moderate Trait Expression': {
-        explanation: 'A total of 300–360 reflects moderate expression across the Big Five. You show a mix of introversion and extraversion, emotional stability and sensitivity, and a blend of open and conventional tendencies. Moderate profiles are the most common in population samples; which specific domains and facets are higher vs. lower is what matters.',
-        whatThisMeans: ['You adapt reasonably well across social, work, and personal contexts', 'Extreme tendencies in any single domain are unlikely — your overall profile is relatively balanced', 'Strengths and challenges depend on your specific domain and facet pattern'],
-        recommendations: ['Explore your domain and facet scores to identify your strongest and lowest traits', 'Moderate Conscientiousness suggests room to strengthen organisation, goal-setting, or follow-through', 'Moderate Agreeableness means you can be both collaborative and assertive depending on context'],
-        relatedDisorders: [],
-      },
-      'Balanced Personality Profile': {
-        explanation: 'A total of 361–420 reflects broadly balanced personality expression. You show meaningful engagement across multiple domains — likely a combination of openness, social engagement, warmth, and organisation — while Neuroticism is moderate or below average. This profile is associated with adaptability and wellbeing.',
-        whatThisMeans: ['You engage positively across social and intellectual domains with moderate emotional stability', 'A balance of Openness and Conscientiousness supports both creative thinking and follow-through', 'Agreeableness at this level supports healthy, cooperative relationships without necessarily being conflict-avoidant'],
-        recommendations: ['Identify your two or three highest facets — these are your personality strengths to leverage', 'Balanced profiles adapt well across roles; consider how your particular trait combination fits your career and relationships', 'High Openness + Conscientiousness pairs creativity with the discipline to execute'],
-        relatedDisorders: [],
-      },
-      'Expressive & Engaged Profile': {
-        explanation: 'A total of 421–480 reflects high expression across the Big Five. You likely show above-average Openness, Extraversion, Agreeableness, and Conscientiousness, with lower Neuroticism. This profile is associated with intellectual curiosity, social energy, warmth, and organised goal-pursuit.',
-        whatThisMeans: ['You tend to be socially engaged, intellectually curious, warm, and organised', 'This combination is associated with leadership effectiveness, relationship satisfaction, and creative achievement', 'Very high Openness can make finishing projects harder — balancing novelty-seeking with follow-through helps'],
-        recommendations: ['Leverage high Openness and Conscientiousness in creative, intellectually demanding roles', 'High Agreeableness can lead to over-accommodating others — assertiveness skills complement this strength', 'Check the facet breakdown: very high Extraversion benefits from built-in recovery time'],
-        relatedDisorders: [],
-      },
-      'Highly Active & Open Profile': {
-        explanation: 'A total of 481–600 reflects very high expression across most Big Five domains — particularly Openness, Extraversion, Agreeableness, and Conscientiousness — with minimal Neuroticism. This is the highest-engagement profile, associated with intellectual vitality, social drive, and organisational strength.',
-        whatThisMeans: ['You are likely highly socially engaged, intellectually curious, warm, and achievement-oriented', 'This profile appears more often in leadership, entrepreneurial, creative, and helping professions', 'Very high Openness can mean breadth of interests over depth — intentional focus is valuable', 'Very high Agreeableness can conflict with assertiveness and boundary-setting'],
-        recommendations: ['Identify the 1–2 facets where your score is highest and pursue roles that leverage them', 'Very high Extraversion + Openness with high Conscientiousness is characteristic of effective leaders and innovators', 'Watch for "too much of a good thing": very high Agreeableness can make saying no hard; very high Openness can scatter attention'],
+      'Personality profile': {
+        explanation: 'Your result is a profile, not a single score. The number above adds up all 120 answers and has no meaning on its own, because the five domains measure different things. Look at your five domain scores and the facets under each one: they show where your tendencies sit, from low to high, on each trait. Facets often explain more than the domain itself; two people with the same Extraversion score can differ a lot in, for example, assertiveness and cheerfulness.',
+        whatThisMeans: [
+          'High or low scores are not better or worse; each end of a trait has its own strengths and costs',
+          'High Neuroticism means you tend to feel negative emotions more often and more strongly, which is worth knowing if you are under stress',
+          'Personality traits are fairly stable in adulthood but can shift gradually over years',
+          'Low, average and high here are based on the possible score range, not on comparison with a population sample',
+        ],
+        recommendations: [
+          'Start with your highest and lowest domains, then read the facets under them to see what drives each score',
+          'Think about where your traits help you and where they create friction at work, in study and in relationships',
+          'If your Neuroticism facets (anxiety, depression, vulnerability) are high and you are struggling, consider a mood or anxiety screen and talking to a professional',
+          'A psychologist can help you interpret a full profile in context, especially for career or therapy planning',
+        ],
         relatedDisorders: [],
       },
     },
     relatedCodes: ['BFI44', 'RSES', 'PSS10', 'SWLS'],
+  },
+
+  ACSI28: {
+    overview: 'The Athletic Coping Skills Inventory (ACSI-28; Smith, Schutz, Smoll & Ptacek, 1995) is a 28-item questionnaire for athletes. It measures seven psychological skills that support sport performance: coping with adversity, peaking under pressure, goal setting and mental preparation, concentration, freedom from worry, confidence and achievement motivation, and coachability. Each skill is scored 0–12 and the total 0–84, with higher scores meaning stronger skills. It works best when repeated across a season (for example pre-season, in-season and post-season) to track change.',
+    measuresDomain: 'Sport-specific psychological coping skills',
+    bands: {
+      'Coping skills profile': {
+        explanation: 'Your total (0–84) gives an overall picture of your mental skills in sport, but the seven skill scores are more useful. Each is scored 0–12. Your highest skills are strengths to build on; your lowest ones are good targets for mental skills training. Scores are not compared with a norm group here, so read them as your own profile rather than a ranking against other athletes.',
+        whatThisMeans: [
+          'Higher scores on a skill mean you report using that skill more often in training and competition',
+          'A low "freedom from worry" score means worry about performing or about what others think is putting pressure on you',
+          'A low "coachability" score means feedback from coaches may feel personal or upsetting rather than helpful',
+          'Some athletes rate themselves very positively, so the profile is most useful when discussed honestly with a coach or sport psychologist',
+        ],
+        recommendations: [
+          'Pick one or two of your lowest skills to work on this season',
+          'Goal setting, pre-performance routines, breathing and self-talk are well-supported ways to build these skills',
+          'Repeat the ACSI-28 at the same points each season to see whether training is working',
+          'A sport psychologist can build a mental skills plan around your profile',
+        ],
+        relatedDisorders: [],
+      },
+    },
+    relatedCodes: ['PSS10', 'CDRISC', 'GAD7'],
+  },
+
+  ADES: {
+    overview: 'The Adolescent Dissociative Experiences Scale (A-DES; Armstrong et al., 1997) is a 30-item self-report screen for dissociation in young people aged 11 to 18. It asks how often experiences such as memory gaps, being absorbed in fantasy, feeling that actions are not under one\'s control, and feeling unreal or detached from oneself happen, from 0 (never) to 10 (always). The total and four subscales (dissociative amnesia; absorption and imaginative involvement; passive influence; depersonalisation and derealisation) are averages from 0 to 10. Higher scores have been linked with trauma history and with dissociative disorders.',
+    measuresDomain: 'Frequency of dissociative experiences in adolescents',
+    bands: {
+      'Low dissociation': {
+        explanation: 'An average below 2.0 means dissociative experiences are reported rarely. This is typical of young people without clinical problems; some absorption and daydreaming are a normal part of adolescence.',
+        whatThisMeans: ['Dissociative experiences are infrequent', 'This level is typical for adolescents in the general population'],
+        recommendations: ['No specific action is suggested by this score', 'If something specific worried you, such as memory gaps, it is still worth talking about with a trusted adult or clinician'],
+        relatedDisorders: [],
+      },
+      'Mild dissociation': {
+        explanation: 'An average of 2.0 to 2.9 means some dissociative experiences are reported, generally still within the range seen in adolescents without clinical problems. Look at which subscale is highest and which statements were rated highly.',
+        whatThisMeans: ['Some dissociative experiences happen, but not often', 'Stress, poor sleep and intense absorption in screens or fantasy can raise these experiences'],
+        recommendations: ['Notice when these experiences happen and whether stress or tiredness makes them more likely', 'Talk with a clinician if the experiences are distressing or getting more frequent'],
+        relatedDisorders: [],
+      },
+      'Moderate dissociation': {
+        explanation: 'An average of 3.0 to 3.9 means dissociative experiences are reported fairly often and may point to elevated risk. Dissociation can be a way the mind copes with overwhelming stress or trauma, and it can be mistaken for inattention, defiance or "typical teenage" behaviour.',
+        whatThisMeans: ['Dissociative experiences are happening often enough to be worth a closer look', 'They may affect schoolwork, memory, relationships or sense of self'],
+        recommendations: ['A clinical assessment by a mental health professional experienced with adolescents is recommended', 'The statements rated highly are a good starting point for that conversation', 'Grounding skills and a regular sleep routine can help in the meantime'],
+        relatedDisorders: [
+          { name: 'Post-traumatic stress disorder', description: 'Dissociation is common after trauma and can be part of PTSD.' },
+          { name: 'Depersonalisation/derealisation disorder', description: 'Persistent feelings of being detached from oneself or that the world is unreal.' },
+        ],
+      },
+      'High dissociation': {
+        explanation: 'An average of 4.0 or higher means frequent dissociative experiences, at a level seen in clinical groups. This is a screening result, not a diagnosis, but it should be followed up with a professional assessment.',
+        whatThisMeans: ['Dissociative experiences are frequent and likely affecting daily life', 'Scores at this level are associated with trauma history and with dissociative disorders'],
+        recommendations: ['Arrange an assessment with a mental health professional experienced in trauma and dissociation', 'Share this result and the statements rated highly with them', 'If you feel unsafe or overwhelmed, use the crisis resources on this site'],
+        relatedDisorders: [
+          { name: 'Dissociative disorders', description: 'Conditions involving disruption of memory, identity, awareness or perception.' },
+          { name: 'Post-traumatic stress disorder', description: 'Dissociation is common after trauma and can be part of PTSD.' },
+        ],
+      },
+    },
+    relatedCodes: ['PCL5', 'IESR', 'ACE'],
+  },
+
+  BPQ: {
+    overview: 'The Borderline Personality Questionnaire (BPQ; Poreh et al., 2006) is an 80-item true/false screen for borderline personality traits. Its nine subscales follow the DSM criteria for borderline personality disorder: impulsivity, affective instability, abandonment, unstable relationships, self-image, suicide and self-harm, emptiness, intense anger and stress-related quasi-psychotic states. The total ranges from 0 to 80. It is a screening and discussion tool; it cannot diagnose borderline personality disorder on its own.',
+    measuresDomain: 'Borderline personality traits across nine DSM-based areas',
+    bands: {
+      'Subclinical range': {
+        explanation: 'A total of 0 to 29 is below the range linked with borderline personality traits; about three in four people in the community score in this range. Individual subscales can still be raised, so check the breakdown.',
+        whatThisMeans: ['Your answers do not suggest a pattern of borderline personality traits overall', 'A raised single subscale can still point to an area worth attention'],
+        recommendations: ['Look at your highest subscale and whether it reflects a current difficulty', 'If you answered yes to any self-harm or suicide question, please talk to someone you trust or a professional'],
+        relatedDisorders: [],
+      },
+      'Mild': {
+        explanation: 'A total of 30 to 34 is mildly raised, higher than about three in four people in the community. Some borderline-type patterns, such as mood swings, fear of rejection or impulsivity, may be present.',
+        whatThisMeans: ['Some traits linked to borderline personality are present', 'These traits can cause strain in relationships and emotional ups and downs'],
+        recommendations: ['Consider discussing the result with a mental health professional', 'Skills for managing strong emotions (for example from DBT) are helpful at any level'],
+        relatedDisorders: [],
+      },
+      'Moderate': {
+        explanation: 'A total of 35 to 42 is moderately raised, higher than about 85 in 100 people in the community. Several areas of difficulty linked with borderline personality are likely to be present.',
+        whatThisMeans: ['Several borderline-type patterns are reported', 'Emotional intensity, relationships and sense of self may be hard to manage'],
+        recommendations: ['A clinical assessment with a psychologist or psychiatrist is recommended', 'Dialectical behaviour therapy (DBT) and other structured therapies are effective for these difficulties', 'Because BPD symptoms overlap with ADHD, depression, PTSD, eating disorders and substance use, a full assessment matters'],
+        relatedDisorders: [
+          { name: 'Borderline personality disorder', description: 'A pattern of unstable emotions, relationships and self-image with marked impulsivity.' },
+        ],
+      },
+      'Severe': {
+        explanation: 'A total of 43 or more is in the severe range, higher than about 95 in 100 people in the community, and consistent with marked borderline personality traits. This is a screening result, not a diagnosis, but it should be followed up.',
+        whatThisMeans: ['Many borderline-type patterns are reported', 'People scoring here often have intense emotions, relationship difficulties, and higher rates of self-harm'],
+        recommendations: ['Please arrange an assessment with a mental health professional soon', 'DBT, mentalization-based therapy and schema therapy are effective treatments', 'If you are thinking about harming yourself, use the crisis resources on this site now'],
+        relatedDisorders: [
+          { name: 'Borderline personality disorder', description: 'A pattern of unstable emotions, relationships and self-image with marked impulsivity.' },
+        ],
+      },
+    },
+    relatedCodes: ['DERS', 'PHQ9', 'PCL5'],
+  },
+
+  DSS: {
+    overview: 'The Digital Stress Scale (DSS; Hall et al., 2021) is a 24-item measure of stress linked to phone and social media use, for ages 14 and up. It covers five areas: availability stress (pressure to always be reachable), approval anxiety (worry about how posts are received), fear of missing out, connection overload (too many messages and notifications) and online vigilance (preoccupation with staying connected). Scores are averages from 1 (never) to 5 (always) over the past 7 days. Research suggests digital stress, more than screen time itself, is what links technology use with anxiety and low mood.',
+    measuresDomain: 'Stress linked to phone and social media use over the past week',
+    bands: {
+      'Digital stress profile': {
+        explanation: 'Your overall average (1–5) shows how often you felt digital stress in the past week. The five subscales are more useful, because they point to different causes and different fixes. An average near 1 means "never" and near 5 means "always". Scores are not compared with a norm group here.',
+        whatThisMeans: [
+          'High availability stress means you feel you must always be reachable and responsive',
+          'High approval anxiety means worry about how others react to your posts is a source of stress',
+          'High fear of missing out means worry about being left out is driving how you use your phone',
+          'High connection overload or online vigilance means the volume of notifications, or the urge to keep checking, is wearing on you',
+        ],
+        recommendations: [
+          'Target your highest subscale: notification limits and set "offline" times for overload and vigilance; agreed response expectations with friends for availability stress',
+          'For approval anxiety, try posting less or turning off like counts, and notice the thoughts about being judged',
+          'Phone-free periods, especially before sleep, help most people',
+          'If digital stress comes with low mood or anxiety, consider a mood or anxiety screen and talking to a professional',
+        ],
+        relatedDisorders: [],
+      },
+    },
+    relatedCodes: ['PSS10', 'GAD7', 'UCLA'],
   },
 
   BFI44: {

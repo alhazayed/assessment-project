@@ -14,6 +14,8 @@ import type { AssessmentDefinition, AssessmentItem } from '@/lib/types'
 import { addGuestClaimToken } from '@/lib/guest-claim-storage'
 import { ChevronLeft, ChevronRight, Loader2, ShieldCheck, ArrowRight } from 'lucide-react'
 import CrisisHelpLink from '@/components/crisis-help-link'
+import { TranslationNotice } from '@/components/screening-disclaimer'
+import { isEnglishOnlyValidated } from '@/lib/scale-scoring'
 
 type Answer = { value: number; label_en: string; label_ar: string }
 type ResultShape = {
@@ -314,6 +316,8 @@ export default function GuestAssessment({ definitionId, lang }: { definitionId: 
           </div>
           <div className="progress-track"><div className="progress-fill transition-all" style={{ width: `${progressPct}%`, backgroundColor: 'var(--vw-blue)' }} /></div>
         </div>
+
+        {isEnglishOnlyValidated(definition.code) && <TranslationNotice lang={lang} className="mb-4" />}
 
         {currentItem && (
           <div className="card p-6 sm:p-8">

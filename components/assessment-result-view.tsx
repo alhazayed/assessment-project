@@ -19,6 +19,7 @@ import ScreeningDisclaimer from '@/components/screening-disclaimer'
 import SelfMapLink from '@/components/self-map-link'
 import NextStepAndPath from '@/components/next-step-and-path'
 import { deriveStrengths } from '@/lib/self-knowledge'
+import { computeSubscaleScores, displayTotal, formatSubscaleValue, getScaleScoring, type SubscaleScore } from '@/lib/scale-scoring'
 
 const AssessmentPdfDownloadButton = dynamic(
   () => import('@/app/(app)/assessments/[id]/pdf-download-button').then(m => m.AssessmentPdfDownloadButton),
@@ -69,7 +70,9 @@ export default function AssessmentResultView({
 }: AssessmentResultProps) {
   const supabase = useMemo(() => createClient(), [])
   const [relatedAssessments, setRelatedAssessments] = useState<RelatedAssessment[]>([])
-  const [domainScores, setDomainScores] = useState<Record<string, number> | null>(null)
+  const [breakdown, setBreakdown] = useState<{ subscales: SubscaleScore[]; domains: SubscaleScore[] } | null>(null)
+  const scaleScoring = getScaleScoring(definition.code)
+  const shownScore = displayTotal(definition.code, score, definition.total_questions)
 
   const displayBand = lang === 'ar' ? bandAr : bandEn
   const severityLevel = bandToSeverity(bandEn)
@@ -114,22 +117,17 @@ export default function AssessmentResultView({
   }, [definition.code, supabase])
 
   useEffect(() => {
-    if (definition.code !== 'IPIP120' || !submissionId) return
-    async function loadDomains() {
+    if (!getScaleScoring(definition.code) || !submissionId) return
+    async function loadBreakdown() {
       const [{ data: items }, { data: responses }] = await Promise.all([
         supabase.from('assessment_items').select('id, subscale').eq('definition_id', definition.id),
         supabase.from('assessment_responses').select('item_id, response_value').eq('submission_id', submissionId),
       ])
       if (!items || !responses) return
-      const answerMap = Object.fromEntries(responses.map(r => [r.item_id, r.response_value]))
-      const scores: Record<string, number> = { N: 0, E: 0, O: 0, A: 0, C: 0 }
-      items.forEach(item => {
-        const domain = item.subscale?.charAt(0)
-        if (domain && domain in scores) scores[domain] += answerMap[item.id] ?? 0
-      })
-      setDomainScores(scores)
+      const answers = Object.fromEntries(responses.map(r => [r.item_id, r.response_value as number]))
+      setBreakdown(computeSubscaleScores(definition.code, items, answers))
     }
-    loadDomains()
+    loadBreakdown()
   }, [definition.code, definition.id, submissionId, supabase])
 
   return (
@@ -151,7 +149,7 @@ export default function AssessmentResultView({
         <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{t('assessment.result.title', lang)}</h2>
         <p className="text-[13.5px] mb-6" style={{ color: 'var(--text-muted)' }}>{defName}</p>
         <div className="rounded-xl p-6 mb-4 inline-block min-w-48" style={{ backgroundColor: 'var(--surface-alt)' }}>
-          <p className="text-5xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{score}</p>
+          <p className="text-5xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{shownScore}</p>
           <p className={`text-[11px] mb-3 ${lang === 'ar' ? '' : 'uppercase tracking-wide'}`} style={{ color: 'var(--text-muted)' }}>
             {t('assessment.result.score', lang)} · {completedOn}
           </p>
@@ -187,7 +185,7 @@ export default function AssessmentResultView({
               assessmentName={defName}
               assessmentCode={definition.code}
               completedOn={completedOn}
-              score={score}
+              score={shownScore}
               band={displayBand}
               highRisk={highRisk}
               reviewedBy={reviewedBy ?? null}
@@ -210,7 +208,7 @@ export default function AssessmentResultView({
 
       <AttemptCompareCard definitionId={definition.id} lang={lang} />
 
-      <ScreeningDisclaimer lang={lang} />
+      <ScreeningDisclaimer lang={lang} code={definition.code} />
 
       {strengths.length > 0 && (
         <div className="card p-6">
@@ -257,32 +255,52 @@ export default function AssessmentResultView({
         </div>
       </div>
 
-      {definition.code === 'IPIP120' && domainScores && (
+      {scaleScoring && breakdown && breakdown.subscales.length > 0 && (
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-4">
             <Brain className="w-4 h-4" style={{ color: 'var(--vw-blue)' }} />
-            <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{lang === 'ar' ? 'ملفك الشخصي' : 'Your Personality Profile'}</h3>
+            <h3 className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
+              {breakdown.domains.length > 0
+                ? (lang === 'ar' ? 'ملفك الشخصي' : 'Your Personality Profile')
+                : (lang === 'ar' ? 'النتائج حسب المقياس الفرعي' : 'Results by subscale')}
+            </h3>
           </div>
           <div className="space-y-4">
-            {Object.entries(IPIP_DOMAINS).map(([key, info]) => {
-              const ds = domainScores[key] ?? 0
-              const level = getIpipDomainLevel(ds)
-              const pct = Math.round(((ds - 24) / 96) * 100)
-              const desc = lang === 'ar' ? info[`${level}_ar`] : info[level]
+            {(breakdown.domains.length > 0 ? breakdown.domains : breakdown.subscales).map(row => {
+              const pct = row.max > row.min ? Math.round(((row.value - row.min) / (row.max - row.min)) * 100) : 0
+              const domainInfo = breakdown.domains.length > 0 ? IPIP_DOMAINS[row.key] : undefined
+              const level = domainInfo ? getIpipDomainLevel(row.value) : null
+              const desc = domainInfo && level ? (lang === 'ar' ? domainInfo[`${level}_ar`] : domainInfo[level]) : null
+              const facets = domainInfo ? breakdown.subscales.filter(f => f.key.split('-')[0] === row.key) : []
               return (
-                <div key={key}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{lang === 'ar' ? info.label_ar : info.label}</span>
-                    <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{ds}</span>
+                <div key={row.key}>
+                  <div className="flex items-center justify-between mb-1.5 gap-3">
+                    <span className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>{lang === 'ar' ? row.labelAr : row.labelEn}</span>
+                    <span className="text-[13px] font-bold tabular-nums" style={{ color: 'var(--text-primary)' }} dir="ltr">
+                      {formatSubscaleValue(definition.code, row.value)}
+                    </span>
                   </div>
-                  <div className="progress-track mb-1.5">
+                  <div className="progress-track mb-1.5" role="presentation">
                     <div className="progress-fill transition-all" style={{ width: `${pct}%`, backgroundColor: 'var(--vw-blue)' }} />
                   </div>
-                  <p className="text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{desc}</p>
+                  {desc && <p className="text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>{desc}</p>}
+                  {facets.length > 0 && (
+                    <ul className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+                      {facets.map(f => (
+                        <li key={f.key} className="flex items-center justify-between text-[12px]" style={{ color: 'var(--text-secondary)' }}>
+                          <span>{lang === 'ar' ? f.labelAr : f.labelEn}</span>
+                          <span className="tabular-nums font-medium" dir="ltr">{f.value} / {f.max}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )
             })}
           </div>
+          <p className="mt-4 text-[11.5px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            {lang === 'ar' ? scaleScoring.noteAr : scaleScoring.noteEn}
+          </p>
         </div>
       )}
 

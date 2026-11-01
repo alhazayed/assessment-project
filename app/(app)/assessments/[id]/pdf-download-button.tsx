@@ -10,7 +10,7 @@ interface Props {
   assessmentName: string
   assessmentCode: string
   completedOn: string
-  score: number
+  score: number | string
   band: string
   highRisk: boolean
   reviewedBy: string | null

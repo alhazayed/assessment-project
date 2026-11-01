@@ -57,7 +57,7 @@ const CATEGORIES: Category[] = [
     icon: Wind,
     accent: 'bg-orange-500 text-white',
     badge: 'bg-orange-50 text-orange-700 border-orange-200',
-    codes: ['PSS10', 'PSS4', 'K10'],
+    codes: ['PSS10', 'PSS4', 'K10', 'DSS'],
   },
   {
     id: 'trauma',
@@ -66,7 +66,7 @@ const CATEGORIES: Category[] = [
     icon: ShieldAlert,
     accent: 'bg-red-600 text-white',
     badge: 'bg-red-50 text-red-700 border-red-200',
-    codes: ['PCL5', 'IESR', 'ACE'],
+    codes: ['PCL5', 'IESR', 'ACE', 'ADES'],
   },
   {
     id: 'wellbeing',
@@ -102,7 +102,7 @@ const CATEGORIES: Category[] = [
     icon: Brain,
     accent: 'bg-violet-600 text-white',
     badge: 'bg-violet-50 text-violet-700 border-violet-200',
-    codes: ['BFI44', 'IPIP120', 'FFMQ', 'ECRR'],
+    codes: ['BFI44', 'IPIP120', 'BPQ', 'FFMQ', 'ECRR'],
   },
   {
     id: 'other',
@@ -111,7 +111,7 @@ const CATEGORIES: Category[] = [
     icon: MoreHorizontal,
     accent: 'bg-gray-700 text-white',
     badge: 'bg-gray-100 text-gray-700 border-gray-200',
-    codes: ['ASRS', 'EAT26', 'PHQ15', 'DERS', 'OLBI'],
+    codes: ['ASRS', 'EAT26', 'PHQ15', 'DERS', 'OLBI', 'ACSI28'],
   },
 ]
 

@@ -52,6 +52,8 @@ const LEVELS: Record<string, SeverityLevel> = {
   'Unlikely manic/hypomanic episode': 'minimal',
   'Very high resilience': 'minimal',
   'Low': 'minimal',
+  'Low dissociation': 'minimal',
+  'Subclinical range': 'minimal',
 
   // ── mild ──
   'Mild': 'mild',
@@ -68,6 +70,7 @@ const LEVELS: Record<string, SeverityLevel> = {
   'Dissatisfied': 'mild',
   'Moderate resilience': 'mild',
   'Medium': 'mild',
+  'Mild dissociation': 'mild',
 
   // ── moderate ──
   'Moderate': 'moderate',
@@ -95,6 +98,7 @@ const LEVELS: Record<string, SeverityLevel> = {
   'Poor quality of life': 'moderate',
   'Extremely dissatisfied': 'moderate',
   'High': 'moderate',
+  'Moderate dissociation': 'moderate',
 
   // ── severe ──
   'Moderately severe': 'severe',
@@ -128,6 +132,7 @@ const LEVELS: Record<string, SeverityLevel> = {
   'Pathological worry': 'severe',
   'Marked social anxiety': 'severe',
   'Significant difficulties': 'severe',
+  'High dissociation': 'severe',
 
   // ── descriptive profiles (no good/bad direction) ──
   'Balanced Personality Profile': 'neutral',
@@ -135,6 +140,9 @@ const LEVELS: Record<string, SeverityLevel> = {
   'Highly Active & Open Profile': 'neutral',
   'Moderate Trait Expression': 'neutral',
   'Reserved & Structured Profile': 'neutral',
+  'Personality profile': 'neutral',
+  'Coping skills profile': 'neutral',
+  'Digital stress profile': 'neutral',
 }
 
 /** True when a label is covered by the explicit table (not the keyword fallback). */
