@@ -7,6 +7,8 @@ import Link from 'next/link'
 import { ArrowLeft, ArrowRight, CheckCircle2, AlertTriangle, Lightbulb, ShieldAlert } from 'lucide-react'
 import { PdfDownloadButtonLazy as PdfDownloadButton } from '../pdf-download-button-lazy'
 import type { InterpretationBand, OutputDimension, PackageResult } from '@/lib/types'
+import { isProfileReport } from '@/lib/package-profiles/types'
+import { PackageProfileReport } from '@/components/package-profile-report'
 
 
 interface PkgAssessment {
@@ -93,6 +95,8 @@ export default async function PackageResultPage(props: { params: Promise<{ id: s
   }
 
   const r = result as PackageResult
+  const profile = isProfileReport(r.dimension_scores) ? r.dimension_scores : null
+  const legacyDims = (profile ? {} : r.dimension_scores) as Record<string, number>
   const pkgName = isAr ? pkg.name_ar : pkg.name_en
   const pkgBands = pkg.interpretation_bands as InterpretationBand[]
   const pkgDimensions = pkg.output_dimensions as OutputDimension[]
@@ -141,6 +145,9 @@ export default async function PackageResultPage(props: { params: Promise<{ id: s
         )}
       </div>
 
+      {profile ? (
+        <div className="mb-6"><PackageProfileReport report={profile} isAr={isAr} /></div>
+      ) : (<>
       {/* Composite score hero */}
       <div
         className="card p-6 mb-6 flex flex-col sm:flex-row items-center gap-6"
@@ -226,14 +233,14 @@ export default async function PackageResultPage(props: { params: Promise<{ id: s
       )}
 
       {/* Output dimensions */}
-      {pkgDimensions.length > 0 && Object.keys(r.dimension_scores).length > 0 && (
+      {pkgDimensions.length > 0 && Object.keys(legacyDims).length > 0 && (
         <div className="card p-5 mb-6">
           <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
             {t('packages.result.dimensions', lang)}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {pkgDimensions.map(dim => {
-              const score = r.dimension_scores[dim.key] ?? r.dimension_scores[Object.keys(r.dimension_scores)[0]]
+              const score = legacyDims[dim.key] ?? legacyDims[Object.keys(legacyDims)[0]]
               const barColor = score >= 70 ? '#22c55e' : score >= 45 ? '#f59e0b' : '#ef4444'
               return (
                 <div
@@ -303,6 +310,8 @@ export default async function PackageResultPage(props: { params: Promise<{ id: s
           </ul>
         </div>
       )}
+
+      </>)}
 
       {/* Actions */}
       <div className="flex items-center gap-3 flex-wrap mb-6">

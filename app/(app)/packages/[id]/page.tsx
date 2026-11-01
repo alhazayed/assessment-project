@@ -30,6 +30,7 @@ interface PkgRow {
   index_name_en: string | null
   index_name_ar: string | null
   is_prototype: boolean
+  scoring_method: string
   interpretation_bands: InterpretationBand[]
   output_dimensions: OutputDimension[]
   disclaimer_en: string
@@ -68,6 +69,8 @@ export default async function PackageDetailPage(props: { params: Promise<{ id: s
   const name = isAr ? row.name_ar : row.name_en
   const description = isAr ? row.description_ar : row.description_en
   const catLabel = CATEGORY_LABELS[row.category]
+  // Profile packages report each scale on its own bands; there is no 0–100 index or weights.
+  const isProfile = row.scoring_method === 'profile_rules'
 
   const sortedAssessments = [...row.package_assessments].sort((a, b) => a.sort_order - b.sort_order)
   const availableAssessments = sortedAssessments.filter(a => a.is_available)
@@ -215,8 +218,13 @@ export default async function PackageDetailPage(props: { params: Promise<{ id: s
           >
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: 'var(--text-muted)' }}>
-                {t('packages.result.composite', lang)}
+                {isProfile ? t('packages.result.title', lang) : t('packages.result.composite', lang)}
               </p>
+              {isProfile ? (
+                <p className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
+                  {isAr ? existingResult.band_ar : existingResult.band_en}
+                </p>
+              ) : (<>
               <p className="text-[22px] font-extrabold" style={{ color: row.color }}>
                 {existingResult.composite_score}
                 <span className="text-[13px] font-normal ms-1" style={{ color: 'var(--text-muted)' }}>/100</span>
@@ -224,6 +232,7 @@ export default async function PackageDetailPage(props: { params: Promise<{ id: s
               <p className="text-[12px] font-medium" style={{ color: 'var(--text-secondary)' }}>
                 {isAr ? existingResult.band_ar : existingResult.band_en}
               </p>
+              </>)}
             </div>
           </div>
         )}
@@ -295,9 +304,9 @@ export default async function PackageDetailPage(props: { params: Promise<{ id: s
                 </div>
 
                 {/* Weight */}
-                <span className="text-[11px] font-mono flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+                {!isProfile && <span className="text-[11px] font-mono flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
                   {a.weight_pct}%
-                </span>
+                </span>}
 
                 {/* Action button */}
                 {a.is_available && defId && (
@@ -340,7 +349,7 @@ export default async function PackageDetailPage(props: { params: Promise<{ id: s
       )}
 
       {/* Interpretation bands */}
-      {row.interpretation_bands?.length > 0 && (
+      {!isProfile && row.interpretation_bands?.length > 0 && (
         <div className="card p-5 mb-6">
           <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
             {t('packages.output_index', lang)}

@@ -205,7 +205,8 @@ export interface PackageResult {
   band_en: string | null
   band_ar: string | null
   individual_scores: Record<string, number>
-  dimension_scores: Record<string, number>
+  /** Numeric dimensions for weighted packages; a ProfileReport for profile packages. */
+  dimension_scores: Record<string, number> | import('@/lib/package-profiles/types').ProfileReport
   strengths_en: string[]
   strengths_ar: string[]
   risk_indicators_en: string[]

@@ -17,7 +17,8 @@
     "load:100": "k6 run load-tests/scenarios/100vus.js",
     "load:250": "k6 run load-tests/scenarios/250vus.js",
     "load:500": "k6 run load-tests/scenarios/500vus.js",
-    "load:1000": "k6 run load-tests/scenarios/1000vus.js"
+    "load:1000": "k6 run load-tests/scenarios/1000vus.js",
+    "test:packages": "npx tsx --test __tests__/packages/*.test.ts"
   },
   "dependencies": {
     "@capacitor/app": "^7.0.0",

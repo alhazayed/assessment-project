@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from '@react-pdf/renderer'
 import type { PackageResult, InterpretationBand, OutputDimension } from '@/lib/types'
+import { isProfileReport, type FiredPattern, type ProfileReport } from '@/lib/package-profiles/types'
 
 interface PkgAssessment {
   assessment_code: string
@@ -192,6 +193,82 @@ function scoreColor(score: number) {
   return '#ef4444'
 }
 
+const KIND_PDF: Record<FiredPattern['kind'], { color: string; label: string }> = {
+  safety: { color: '#dc2626', label: 'Needs attention now' },
+  clinical: { color: '#ea580c', label: 'Professional view recommended' },
+  attention: { color: '#d97706', label: 'Worth acting on' },
+  info: { color: '#1D6296', label: 'About you' },
+  strength: { color: '#16a34a', label: 'Strength' },
+}
+
+function ProfilePdfBody({ report }: { report: ProfileReport }) {
+  return (
+    <>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Summary</Text>
+        <Text style={[styles.bandLabel, { color: '#111827', marginBottom: 8 }]}>{report.headline.en}</Text>
+        {report.composite && (
+          <Text style={styles.summaryText}>
+            {report.composite.label.en}: {report.composite.score} / {report.composite.max} ({report.composite.band.en})
+          </Text>
+        )}
+        {report.quadrant && (
+          <Text style={styles.summaryText}>
+            {report.quadrant.label.en}: {report.quadrant.result.en}. {report.quadrant.text.en}
+          </Text>
+        )}
+      </View>
+
+      {report.patterns.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>What the combined results show</Text>
+          {report.patterns.map(p => (
+            <View key={p.id} style={[styles.insightCard, { borderLeftColor: KIND_PDF[p.kind].color, borderLeftWidth: 3 }]} wrap={false}>
+              <Text style={{ fontSize: 7, color: KIND_PDF[p.kind].color, marginBottom: 2 }}>{KIND_PDF[p.kind].label.toUpperCase()}</Text>
+              <Text style={[styles.insightCardTitle, { color: '#111827' }]}>{p.title.en}</Text>
+              <Text style={styles.bulletText}>{p.text.en}</Text>
+              {p.recommendation && <Text style={[styles.bulletText, { marginTop: 4 }]}>Suggested next step: {p.recommendation.en}</Text>}
+              {p.evidence && <Text style={{ fontSize: 7, color: '#9CA3AF', marginTop: 4 }}>Evidence: {p.evidence}</Text>}
+            </View>
+          ))}
+        </View>
+      )}
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Scale by scale</Text>
+        {report.scales.map(sc => (
+          <View key={sc.code} style={{ marginBottom: 8 }} wrap={false}>
+            <View style={styles.row}>
+              <Text style={styles.assessmentName}>{sc.name.en}</Text>
+              <Text style={{ fontSize: 9, color: '#374151' }}>
+                {sc.max !== null ? `${sc.total} / ${sc.max}` : ''}{sc.band ? `  ${sc.band.en}` : ''}
+              </Text>
+            </View>
+            {sc.subscales.map(sub => (
+              <View key={sub.key} style={[styles.row, { marginBottom: 2, paddingLeft: 10 }]}>
+                <Text style={{ fontSize: 8, color: '#6B7280', flex: 1 }}>{sub.label.en}</Text>
+                <Text style={{ fontSize: 8, color: '#6B7280' }}>
+                  {sub.metric === 'mean' ? sub.score.toFixed(1) : sub.score} of {sub.max}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ))}
+        <Text style={{ fontSize: 7, color: '#9CA3AF' }}>Each scale is scored on its own published bands. Scores are not averaged across scales.</Text>
+      </View>
+
+      {report.notes.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>About this report</Text>
+          {report.notes.map((n, i) => (
+            <Text key={i} style={[styles.bulletText, { marginBottom: 3 }]}>{n.en}</Text>
+          ))}
+        </View>
+      )}
+    </>
+  )
+}
+
 export function PackagePdfDocument({ pkg, result, completedOn }: PdfReportProps) {
   const band = pkg.interpretation_bands?.find(b =>
     (result.composite_score ?? 0) >= b.min && (result.composite_score ?? 0) <= b.max
@@ -201,6 +278,7 @@ export function PackagePdfDocument({ pkg, result, completedOn }: PdfReportProps)
     .filter(a => a.is_available)
 
   const compositeColor = scoreColor(result.composite_score ?? 0)
+  const profile = isProfileReport(result.dimension_scores) ? result.dimension_scores : null
 
   return (
     <Document
@@ -214,10 +292,11 @@ export function PackagePdfDocument({ pkg, result, completedOn }: PdfReportProps)
         <View style={styles.header}>
           <Text style={styles.brandLine}>V Welfare · Assessment Package Report</Text>
           <Text style={styles.title}>{pkg.name_en}</Text>
-          <Text style={styles.subtitle}>Composite Assessment Results</Text>
+          <Text style={styles.subtitle}>{profile ? 'Combined Assessment Report' : 'Composite Assessment Results'}</Text>
           <Text style={styles.meta}>Completed {completedOn}</Text>
         </View>
 
+        {profile ? <ProfilePdfBody report={profile} /> : (<>
         {/* Composite Score */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Composite Score</Text>
@@ -325,6 +404,8 @@ export function PackagePdfDocument({ pkg, result, completedOn }: PdfReportProps)
             </View>
           </View>
         )}
+
+        </>)}
 
         {/* Disclaimer */}
         <Text style={styles.disclaimer}>
