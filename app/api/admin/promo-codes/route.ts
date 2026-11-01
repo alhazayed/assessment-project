@@ -41,9 +41,10 @@ export async function POST(request: Request) {
     } = body
 
     // Validate input
-    if (!code || typeof code !== 'string' || code.trim().length === 0) {
+    const normalizedCode = typeof code === 'string' ? code.trim().toUpperCase() : ''
+    if (!/^[A-Z0-9_-]{3,40}$/.test(normalizedCode)) {
       return NextResponse.json(
-        { error: 'Code is required and must be non-empty' },
+        { error: 'Code must be 3–40 characters: letters, numbers, - or _' },
         { status: 400 }
       )
     }
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
       )
     }
 
+    let value: number | null = null
     if (codeType === 'discount') {
       if (!discountType || !['percentage', 'fixed_amount', 'free'].includes(discountType)) {
         return NextResponse.json(
@@ -63,13 +65,27 @@ export async function POST(request: Request) {
         )
       }
 
-      if (discountType !== 'free' && (discountValue === undefined || discountValue <= 0)) {
-        return NextResponse.json(
-          { error: 'Discount value must be positive' },
-          { status: 400 }
-        )
+      if (discountType !== 'free') {
+        value = Number(discountValue)
+        if (!Number.isInteger(value) || value <= 0) {
+          return NextResponse.json(
+            { error: 'Discount value must be a positive whole number' },
+            { status: 400 }
+          )
+        }
+        if (discountType === 'percentage' && value > 100) {
+          return NextResponse.json(
+            { error: 'Percentage discount cannot exceed 100' },
+            { status: 400 }
+          )
+        }
       }
     }
+
+    const maxUsesErr = validateMaxUses(maxUses)
+    if (maxUsesErr) return NextResponse.json({ error: maxUsesErr }, { status: 400 })
+    const validUntilErr = validateValidUntil(validUntil)
+    if (validUntilErr) return NextResponse.json({ error: validUntilErr }, { status: 400 })
 
     const supabase = await createClient()
     const { data: { user: currentUser } } = await supabase.auth.getUser()
@@ -79,37 +95,26 @@ export async function POST(request: Request) {
 
     const db = createAdminClient()
 
-    // Check if code already exists
-    const { data: existing } = await db
-      .from('promo_codes')
-      .select('id')
-      .eq('code', code.toUpperCase())
-      .single()
-
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Code already exists' },
-        { status: 409 }
-      )
-    }
-
     // Create promo code
     const { data: newCode, error } = await db
       .from('promo_codes')
       .insert({
-        code: code.toUpperCase(),
+        code: normalizedCode,
         code_type: codeType,
         discount_type: codeType === 'discount' ? discountType : null,
-        discount_value: codeType === 'discount' ? discountValue : null,
+        discount_value: value,
         description: description || null,
         created_by: currentUser.id,
-        max_uses: maxUses || null,
+        max_uses: maxUses ? Number(maxUses) : null,
         valid_until: validUntil || null,
       })
       .select()
       .single()
 
     if (error) {
+      if ((error as { code?: string }).code === '23505') {
+        return NextResponse.json({ error: 'Code already exists' }, { status: 409 })
+      }
       return NextResponse.json({ error: 'Database operation failed' }, { status: 500 })
     }
 
@@ -119,12 +124,12 @@ export async function POST(request: Request) {
       action: 'promo_code_created',
       target_type: 'promo_code',
       target_id: newCode.id,
-      reason: `Created ${codeType} code: ${code}`,
+      reason: `Created ${codeType} code: ${normalizedCode}`,
       details: {
-        code: code.toUpperCase(),
+        code: normalizedCode,
         code_type: codeType,
-        discount_type: discountType,
-        discount_value: discountValue,
+        discount_type: codeType === 'discount' ? discountType : null,
+        discount_value: value,
       },
     })
 
@@ -208,12 +213,17 @@ export async function PATCH(request: Request) {
       )
     }
 
+    const maxUsesErr = validateMaxUses(maxUses)
+    if (maxUsesErr) return NextResponse.json({ error: maxUsesErr }, { status: 400 })
+    const validUntilErr = validateValidUntil(validUntil)
+    if (validUntilErr) return NextResponse.json({ error: validUntilErr }, { status: 400 })
+
     const db = createAdminClient()
-    const update: Record<string, unknown> = {}
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() }
 
     if (active !== undefined) update.active = Boolean(active)
-    if (maxUses !== undefined) update.max_uses = maxUses
-    if (validUntil !== undefined) update.valid_until = validUntil
+    if (maxUses !== undefined) update.max_uses = maxUses === null || maxUses === '' ? null : Number(maxUses)
+    if (validUntil !== undefined) update.valid_until = validUntil || null
 
     const { data: updated, error } = await db
       .from('promo_codes')
@@ -279,6 +289,19 @@ export async function DELETE(request: Request) {
       .eq('id', id)
       .single()
 
+    // A code that has been used is referenced by payment records (revenue
+    // history), so the database refuses to delete it. Say so plainly.
+    const { count: paymentRefs } = await db
+      .from('payments')
+      .select('id', { count: 'exact', head: true })
+      .eq('promo_code_id', id)
+    if ((paymentRefs ?? 0) > 0) {
+      return NextResponse.json(
+        { error: 'This code has been used at checkout, so it cannot be deleted. Deactivate it instead.' },
+        { status: 409 }
+      )
+    }
+
     // Delete
     const { error } = await db
       .from('promo_codes')
@@ -306,4 +329,20 @@ export async function DELETE(request: Request) {
     console.error('Promo code deletion error:', error)
     return adminRouteError(error)
   }
+}
+
+function validateMaxUses(maxUses: unknown): string | null {
+  if (maxUses === undefined || maxUses === null || maxUses === '') return null
+  const n = Number(maxUses)
+  if (!Number.isInteger(n) || n <= 0) return 'Max uses must be a positive whole number'
+  return null
+}
+
+function validateValidUntil(validUntil: unknown): string | null {
+  if (validUntil === undefined || validUntil === null || validUntil === '') return null
+  if (typeof validUntil !== 'string' || Number.isNaN(Date.parse(validUntil))) {
+    return 'Valid-until must be a date'
+  }
+  if (Date.parse(validUntil) < Date.now()) return 'Valid-until must be in the future'
+  return null
 }

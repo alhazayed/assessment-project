@@ -77,7 +77,9 @@ export default function PromoCodesPage() {
           discountValue: codeType === 'discount' && discountType !== 'free' ? Number(discountValue) : undefined,
           description: description.trim() || undefined,
           maxUses: maxUses ? Number(maxUses) : undefined,
-          validUntil: validUntil ? new Date(validUntil).toISOString() : undefined,
+          // A date input gives midnight UTC of that day, which expired codes a day
+          // early. Keep the code valid until the END of the chosen day (local time).
+          validUntil: validUntil ? new Date(`${validUntil}T23:59:59.999`).toISOString() : undefined,
         }),
       })
       const data = await res.json().catch(() => ({}))
@@ -103,7 +105,10 @@ export default function PromoCodesPage() {
         body: JSON.stringify({ id: c.id, active: !c.active }),
       })
       if (res.ok) load()
-      else flash('Failed to update code', true)
+      else {
+        const data = await res.json().catch(() => ({}))
+        flash(data.error || 'Failed to update code', true)
+      }
     } finally {
       setBusy(null)
     }
@@ -119,7 +124,10 @@ export default function PromoCodesPage() {
         body: JSON.stringify({ id: c.id }),
       })
       if (res.ok) { flash(tr('Code deleted', 'تم حذف الرمز')); load() }
-      else flash('Failed to delete code', true)
+      else {
+        const data = await res.json().catch(() => ({}))
+        flash(data.error || 'Failed to delete code', true)
+      }
     } finally {
       setBusy(null)
     }
@@ -141,7 +149,7 @@ export default function PromoCodesPage() {
             {tr('Promo & Free-Use Codes', 'الرموز الترويجية ورموز الاستخدام المجاني')}
           </h1>
           <p className="text-[13.5px]" style={{ color: 'var(--text-secondary)' }}>
-            {tr('Create and manage discount and free-access codes for packages', 'إنشاء وإدارة رموز الخصم والوصول المجاني للباقات')}
+            {tr('Create and manage discount and free-access codes for subscriptions. Each customer can use a code once.', 'إنشاء وإدارة رموز الخصم والوصول المجاني للاشتراكات. يمكن لكل عميل استخدام الرمز مرة واحدة.')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -181,7 +189,7 @@ export default function PromoCodesPage() {
                   <label className="block text-[12.5px] font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>
                     {discountType === 'percentage' ? tr('Percent off', 'نسبة الخصم') : tr('Amount off (cents)', 'مبلغ الخصم (سنت)')} *
                   </label>
-                  <input className="input w-full" type="number" min="1" value={discountValue} onChange={e => setDiscountValue(e.target.value)} required />
+                  <input className="input w-full" type="number" min="1" max={discountType === 'percentage' ? 100 : undefined} step="1" value={discountValue} onChange={e => setDiscountValue(e.target.value)} required />
                 </div>
               )}
             </>
@@ -192,7 +200,8 @@ export default function PromoCodesPage() {
           </div>
           <div>
             <label className="block text-[12.5px] font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>{tr('Valid until', 'صالح حتى')}</label>
-            <input className="input w-full" type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
+            <input className="input w-full" type="date" min={new Date().toISOString().slice(0, 10)} value={validUntil} onChange={e => setValidUntil(e.target.value)} />
+            <p className="text-[11.5px] mt-1" style={{ color: 'var(--text-muted)' }}>{tr('Valid through the end of this day', 'صالح حتى نهاية هذا اليوم')}</p>
           </div>
           <div className="sm:col-span-2">
             <label className="block text-[12.5px] font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>{tr('Description', 'الوصف')}</label>
@@ -232,7 +241,7 @@ export default function PromoCodesPage() {
                   <td className="px-4 py-3 capitalize" style={{ color: 'var(--text-secondary)' }}>{c.code_type === 'free_use' ? tr('Free use', 'مجاني') : tr('Discount', 'خصم')}</td>
                   <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{discountLabel(c)}</td>
                   <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{c.current_uses}{c.max_uses ? ` / ${c.max_uses}` : ''}</td>
-                  <td className="px-4 py-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{c.valid_until ? new Date(c.valid_until).toLocaleDateString() : tr('No expiry', 'بلا انتهاء')}</td>
+                  <td className="px-4 py-3 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>{c.valid_until ? <>{new Date(c.valid_until).toLocaleDateString()}{new Date(c.valid_until) < new Date() && <span className="ms-1 text-red-600">({tr('expired', 'منتهي')})</span>}</> : tr('No expiry', 'بلا انتهاء')}</td>
                   <td className="px-4 py-3">
                     <button onClick={() => toggleActive(c)} className={`flex items-center gap-1.5 text-[12px] font-medium ${c.active ? 'text-green-600' : 'text-gray-400'}`}>
                       {c.active ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}

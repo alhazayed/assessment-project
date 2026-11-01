@@ -109,6 +109,10 @@ function CheckoutForm() {
         let msg: string
         if (response.status === 429) {
           msg = lang === 'ar' ? 'محاولات كثيرة جدًا. حاول لاحقًا.' : 'Too many attempts. Please try again later.'
+        } else if (data.reason === 'already_used') {
+          msg = lang === 'ar' ? 'لقد استخدمت هذا الرمز من قبل' : 'You have already used this promo code'
+        } else if (data.reason === 'not_yet_active') {
+          msg = lang === 'ar' ? 'رمز الخصم غير مفعّل بعد' : 'Promo code is not yet active'
         } else if (/limit/i.test(err)) {
           msg = lang === 'ar' ? 'انتهت الحد الأقصى للاستخدام' : 'Promo code usage limit reached'
         } else if (/expired/i.test(err)) {
@@ -145,8 +149,7 @@ function CheckoutForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           packageId: selectedPackage.id,
-          promoCode: promoApplied ? promoCode : null,
-          amount: finalPrice,
+          promoCode: promoApplied ? promoCode.trim() : null,
         }),
       })
 
@@ -155,7 +158,15 @@ function CheckoutForm() {
         throw new Error(error.error || 'Failed to create checkout session')
       }
 
-      const { clientSecret, sessionId } = await response.json()
+      const data = await response.json()
+
+      // A promo code made the order free: it's already activated server-side.
+      if (data.free) {
+        router.push(`/checkout/success?package=${selectedPackage.id}`)
+        return
+      }
+
+      const { clientSecret } = data
 
       if (clientSecret) {
         setClientSecret(clientSecret)
@@ -181,7 +192,7 @@ function CheckoutForm() {
   }
 
   const handlePaymentSuccess = () => {
-    router.push('/checkout/success')
+    router.push(`/checkout/success?package=${selectedPackage.id}`)
   }
 
   const handlePaymentError = (error: string) => {
@@ -380,7 +391,9 @@ function CheckoutForm() {
                 </>
               ) : (
                 <>
-                  {lang === 'ar' ? 'متابعة الدفع' : 'Proceed to Payment'}
+                  {finalPrice === 0
+                    ? (lang === 'ar' ? 'تفعيل مجانًا' : 'Activate for free')
+                    : (lang === 'ar' ? 'متابعة الدفع' : 'Proceed to Payment')}
                 </>
               )}
             </button>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { constructEvent, StripeWebhookError, type StripeEvent } from '@/lib/stripe/webhook'
+import { fulfilPayment } from '@/lib/billing/fulfil'
 
 // Stripe webhooks must read the raw request body for signature verification,
 // so this route must run on the Node.js runtime (not Edge) and never be cached.
@@ -147,57 +148,17 @@ async function handlePaymentSucceeded(
     return
   }
 
-  // Already fulfilled — nothing to do.
-  if (payment.status === 'succeeded') return
-
+  // No early return on status 'succeeded': fulfilPayment is idempotent, and a
+  // retry after a partial failure must still finish granting access / redeeming.
   const intentId: string | undefined =
     obj.payment_intent || (obj.object === 'payment_intent' ? obj.id : undefined)
 
-  // Mark the payment succeeded.
-  await supabase
-    .from('payments')
-    .update({
-      status: 'succeeded',
-      stripe_payment_intent_id: intentId || payment.stripe_payment_intent_id,
-      payment_method: obj.payment_method_types?.[0] || obj.payment_method || null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', payment.id)
-
-  // Grant access via a package_purchase (idempotent on payment_id).
-  const { data: existingPurchase } = await supabase
-    .from('package_purchases')
-    .select('id')
-    .eq('payment_id', payment.id)
-    .maybeSingle()
-
-  if (!existingPurchase) {
-    const now = new Date()
-    const expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-
-    await supabase.from('package_purchases').insert({
-      user_id: payment.user_id,
-      package_id: payment.package_id, // may be null for tier subscriptions
-      payment_id: payment.id,
-      tier: payment.tier ?? null,
-      status: 'active',
-      access_level: 'full',
-      purchased_at: now.toISOString(),
-      expires_at: expires.toISOString(),
-    })
-  }
-
-  // Record promo code usage tied to this transaction, if applicable.
-  if (payment.promo_code_id) {
-    await supabase.from('promo_code_usage').insert({
-      promo_code_id: payment.promo_code_id,
-      user_id: payment.user_id,
-      transaction_id: payment.id,
-    })
-    await supabase.rpc('increment_promo_code_usage', {
-      code_id: payment.promo_code_id,
-    })
-  }
+  // Mark paid, grant access, and redeem the promo code (atomically, once per
+  // customer). Throws on failure so this handler returns 500 and Stripe retries.
+  await fulfilPayment(supabase, payment, {
+    intentId: intentId || null,
+    paymentMethod: obj.payment_method_types?.[0] || obj.payment_method || null,
+  })
 }
 
 async function handlePaymentFailed(

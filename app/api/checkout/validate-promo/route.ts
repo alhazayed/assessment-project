@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
-import { VALID_TIERS, TIER_PRICES_USD, isValidTier, applyDiscount } from '@/lib/billing/pricing'
+import { TIER_PRICES_USD, isValidTier, applyDiscount } from '@/lib/billing/pricing'
 import { isPackagesEnabled } from '@/lib/feature-flags'
+import { checkPromoCode } from '@/lib/billing/promo'
 
 /**
  * POST /api/checkout/validate-promo
@@ -59,33 +60,17 @@ export async function POST(request: Request) {
     const basePrice = TIER_PRICES_USD[packageId]
 
     // Promo tables are RLS-locked; read with the service-role client (user is
-    // already authenticated above). Same lookup + gates as create-session.
+    // already authenticated above). Same checker create-session charges from.
     const db = createAdminClient()
-    const { data: code } = await db
-      .from('promo_codes')
-      .select('id, code, discount_type, discount_value, max_uses, current_uses, valid_from, valid_until, active')
-      .eq('code', promoCode.trim().toUpperCase())
-      .eq('active', true)
-      .maybeSingle()
-
-    if (!code) {
-      return NextResponse.json({ error: 'Invalid or expired promo code' }, { status: 400 })
+    const check = await checkPromoCode(db, promoCode, user.id)
+    if (!check.ok) {
+      return NextResponse.json({ error: check.error, reason: check.reason }, { status: 400 })
     }
-
-    const now = new Date()
-    if (code.valid_from && new Date(code.valid_from) > now) {
-      return NextResponse.json({ error: 'Promo code is not yet active' }, { status: 400 })
-    }
-    if (code.valid_until && new Date(code.valid_until) < now) {
-      return NextResponse.json({ error: 'Promo code has expired' }, { status: 400 })
-    }
-    if (code.max_uses && (code.current_uses ?? 0) >= code.max_uses) {
-      return NextResponse.json({ error: 'Promo code usage limit reached' }, { status: 400 })
-    }
+    const code = check.code
 
     // Authoritative final price (same helper create-session charges from).
-    const finalPrice = applyDiscount(basePrice, code.discount_type, code.discount_value)
-    const isPercentage = code.discount_type === 'percentage'
+    const finalPrice = applyDiscount(basePrice, code.discount_type, code.discount_value, code.code_type)
+    const isPercentage = code.code_type !== 'free_use' && code.discount_type === 'percentage'
 
     return NextResponse.json({
       valid: true,
