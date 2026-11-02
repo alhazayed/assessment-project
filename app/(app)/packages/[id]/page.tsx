@@ -280,6 +280,11 @@ export default async function PackageDetailPage(props: {
             allCompleted={allAvailableCompleted}
             labelCompleteAll={t('packages.detail.complete_all', lang)}
           />
+          {forSale && (
+            <Link href={`/checkout?package=${params.id}`} className="mt-3 inline-block text-[12.5px] font-semibold underline" style={{ color: '#1D6296' }}>
+              {isAr ? 'اشترِ هذه الباقة هدية لشخص آخر' : 'Buy this package as a gift for someone'}
+            </Link>
+          )}
         </div>
         ) : (
         <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'var(--surface-alt)', border: '1px solid var(--divider)' }}>
@@ -308,6 +313,11 @@ export default async function PackageDetailPage(props: {
                   {isAr ? 'غير متاحة للشراء بعد.' : 'Not on sale yet.'}
                 </p>
               )}
+              <p className="text-[12px] mt-3" style={{ color: 'var(--text-secondary)' }}>
+                <Link href="/redeem" className="font-semibold underline" style={{ color: '#1D6296' }}>
+                  {isAr ? 'لديك رمز هدية؟ استخدمه هنا' : 'Have a gift code? Redeem it'}
+                </Link>
+              </p>
             </div>
           </div>
         </div>

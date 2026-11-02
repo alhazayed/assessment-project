@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import ResendGiftButton from './resend-gift-button'
 import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { CreditCard, CheckCircle2, Clock, XCircle, Receipt, Sparkles, ArrowRight } from 'lucide-react'
+import { CreditCard, CheckCircle2, Clock, XCircle, Receipt, Sparkles, ArrowRight, Gift } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 
 interface PaymentRow {
@@ -82,7 +84,8 @@ const PAY_STATUS: Record<string, { icon: typeof CheckCircle2; color: string; bg:
   cancelled: { icon: XCircle, color: '#6B7280', bg: '#F1F1F2' },
 }
 
-export default async function BillingPage() {
+export default async function BillingPage(props: { searchParams: Promise<{ gift?: string }> }) {
+  const giftJustSent = (await props.searchParams).gift === 'sent'
   const supabase = await createClient()
   const lang = await getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
@@ -121,6 +124,21 @@ export default async function BillingPage() {
       .order('purchased_at', { ascending: false }),
   ])
 
+  // Gifts this user bought for others (service-role table, filtered to them).
+  const { data: giftRows } = await createAdminClient()
+    .from('package_gift_codes')
+    .select('id, recipient_email, emailed_at, redeemed_at, created_at, packages(name_en, name_ar)')
+    .eq('buyer_id', user.id)
+    .order('created_at', { ascending: false })
+  const gifts = (giftRows || []) as unknown as {
+    id: string
+    recipient_email: string
+    emailed_at: string | null
+    redeemed_at: string | null
+    created_at: string
+    packages: { name_en: string; name_ar: string } | null
+  }[]
+
   const payments = (paymentsRes.data || []) as PaymentRow[]
   const activeSub = (purchaseRes.data?.[0] || null) as PurchaseRow | null
   const ownedPackages = (ownedRes.data || []) as unknown as {
@@ -151,6 +169,14 @@ export default async function BillingPage() {
         </h1>
         <p style={{ color: 'var(--text-secondary)' }}>{t('billing.subtitle', lang)}</p>
       </div>
+
+      {giftJustSent && (
+        <div role="status" className="card p-4 mb-6 text-[14px]" style={{ borderInlineStart: '4px solid #1B8A5A', color: 'var(--text-primary)' }}>
+          {lang === 'ar'
+            ? 'تم الشراء. أرسلنا إلى المستلم رمزاً يُستخدم مرة واحدة، ويمكنك متابعته أدناه.'
+            : 'Purchase complete. We have emailed the recipient a one-time code; you can follow it below.'}
+        </div>
+      )}
 
       {/* Plan: the platform is free. Only a legacy monthly subscriber (from
           before packages became the only paid product) sees a plan here; a
@@ -242,6 +268,38 @@ export default async function BillingPage() {
                 <Link href={`/packages/${op.package_id}`} className="btn-secondary text-[13px] flex-shrink-0">
                   {lang === 'ar' ? 'فتح' : 'Open'}
                 </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Gifts bought for others */}
+      {gifts.length > 0 && (
+        <div className="card p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Gift className="w-4 h-4" style={{ color: '#1D6296' }} />
+            <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
+              {lang === 'ar' ? 'هداياك' : 'Gifts you bought'}
+            </h2>
+          </div>
+          <ul className="divide-y" style={{ borderColor: 'var(--divider)' }}>
+            {gifts.map(g => (
+              <li key={g.id} className="py-3 flex items-center justify-between gap-3 flex-wrap">
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                    {g.packages ? (lang === 'ar' ? g.packages.name_ar : g.packages.name_en) : tierLabel(null, lang)}
+                  </p>
+                  <p className="text-[12px] break-all" style={{ color: 'var(--text-muted)' }}>
+                    {lang === 'ar' ? 'إلى' : 'To'} <span dir="ltr">{g.recipient_email}</span> ·{' '}
+                    {g.redeemed_at
+                      ? `${lang === 'ar' ? 'استُخدم في' : 'Redeemed'} ${formatDate(g.redeemed_at, lang)}`
+                      : g.emailed_at
+                        ? (lang === 'ar' ? 'أُرسل الرمز، لم يُستخدم بعد' : 'Code sent, not used yet')
+                        : (lang === 'ar' ? 'لم يُرسل الرمز بعد' : 'Code not sent yet')}
+                  </p>
+                </div>
+                {!g.redeemed_at && <ResendGiftButton giftId={g.id} lang={lang} />}
               </li>
             ))}
           </ul>

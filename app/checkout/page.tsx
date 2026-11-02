@@ -31,8 +31,14 @@ function CheckoutForm() {
   const packageId = searchParams.get('package') || ''
   const [fetchedPackage, setFetchedPackage] = useState<Package | null>(null)
   const [productLoading, setProductLoading] = useState(true)
-  const [productError, setProductError] = useState<'invalid' | 'not_for_sale' | 'owned' | null>(null)
+  const [productError, setProductError] = useState<'invalid' | 'not_for_sale' | null>(null)
+  const [alreadyOwned, setAlreadyOwned] = useState(false)
   const selectedPackage = fetchedPackage
+
+  // Buy for someone else: the recipient gets a one-time code by email.
+  const [isGift, setIsGift] = useState(false)
+  const [giftEmail, setGiftEmail] = useState('')
+  const giftEmailValid = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(giftEmail.trim())
 
   const [promoCode, setPromoCode] = useState('')
   const [discount, setDiscount] = useState(0)
@@ -55,10 +61,10 @@ function CheckoutForm() {
         if (cancelled) return
         if (!res.ok) {
           setProductError(data.reason === 'not_for_sale' ? 'not_for_sale' : 'invalid')
-        } else if (data.owned) {
-          setProductError('owned')
         } else {
           setFetchedPackage({ id: data.id, nameEn: data.nameEn, nameAr: data.nameAr, priceUSD: data.priceUSD })
+          // Already theirs: they can still buy it for someone else.
+          if (data.owned) { setAlreadyOwned(true); setIsGift(true) }
         }
       })
       .catch(() => { if (!cancelled) setProductError('invalid') })
@@ -70,19 +76,6 @@ function CheckoutForm() {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#1D6296' }} />
-      </div>
-    )
-  }
-
-  if (productError === 'owned') {
-    return (
-      <div className="text-center py-12">
-        <p className="text-lg mb-4" style={{ color: 'var(--text-primary)' }}>
-          {lang === 'ar' ? 'لديك هذه الباقة بالفعل' : 'You already have this package'}
-        </p>
-        <Link href={`/packages/${packageId}`} className="btn-accent inline-flex items-center gap-2">
-          {lang === 'ar' ? 'افتح الباقة' : 'Open the package'}
-        </Link>
       </div>
     )
   }
@@ -105,7 +98,8 @@ function CheckoutForm() {
 
   const basePrice = selectedPackage.priceUSD
   // A package purchase goes straight back to the package, now unlocked.
-  const successPath = `/packages/${selectedPackage.id}?purchased=1`
+  // A gift goes to billing, where the buyer can see it was sent.
+  const successPath = isGift ? '/billing?gift=sent' : `/packages/${selectedPackage.id}?purchased=1`
   // The final price is authoritative from the server when a promo is applied
   // (validated by /api/checkout/validate-promo, the same helper create-session
   // charges from), so the preview total always matches the actual charge.
@@ -179,6 +173,7 @@ function CheckoutForm() {
         body: JSON.stringify({
           packageId: selectedPackage.id,
           promoCode: promoApplied ? promoCode.trim() : null,
+          giftEmail: isGift ? giftEmail.trim() : null,
         }),
       })
 
@@ -304,9 +299,63 @@ function CheckoutForm() {
             color: 'var(--text-secondary)',
           }}
         >
-          {lang === 'ar'
-            ? 'دفعة واحدة، بلا اشتراك. يبقى التقرير المجمّع لهذه الباقة متاحاً لك.'
-            : 'One-time payment, no subscription. The combined report for this package stays unlocked for you.'}
+          {isGift
+            ? (lang === 'ar'
+                ? 'دفعة واحدة. نرسل إلى المستلم رمزاً يُستخدم مرة واحدة لفتح الباقة في حسابه.'
+                : 'One-time payment. We email the recipient a one-time code that opens the package on their account.')
+            : (lang === 'ar'
+                ? 'دفعة واحدة، بلا اشتراك. يبقى التقرير المجمّع لهذه الباقة متاحاً لك.'
+                : 'One-time payment, no subscription. The combined report for this package stays unlocked for you.')}
+        </div>
+
+        {/* Buy for someone else */}
+        <div className="mt-6 p-4 rounded-lg" style={{ backgroundColor: 'var(--surface)' }}>
+          {alreadyOwned ? (
+            <p className="text-[13.5px] mb-3" style={{ color: 'var(--text-secondary)' }}>
+              {lang === 'ar'
+                ? 'لديك هذه الباقة بالفعل. يمكنك شراؤها هدية لشخص آخر.'
+                : 'You already have this package. You can buy it as a gift for someone else.'}{' '}
+              <Link href={`/packages/${selectedPackage.id}`} className="font-semibold underline" style={{ color: '#1D6296' }}>
+                {lang === 'ar' ? 'افتح باقتك' : 'Open yours'}
+              </Link>
+            </p>
+          ) : (
+            <label className="flex items-center gap-2 text-[14px] font-semibold cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+              <input
+                type="checkbox"
+                checked={isGift}
+                onChange={e => setIsGift(e.target.checked)}
+                disabled={showStripeForm}
+                className="w-4 h-4"
+              />
+              {lang === 'ar' ? 'شراء لشخص آخر (هدية)' : 'Buy for someone else (gift)'}
+            </label>
+          )}
+          {isGift && (
+            <div className={alreadyOwned ? '' : 'mt-3'}>
+              <label htmlFor="gift-email" className="block text-[13px] mb-1" style={{ color: 'var(--text-secondary)' }}>
+                {lang === 'ar' ? 'البريد الإلكتروني للمستلم' : "Recipient's email"}
+              </label>
+              <input
+                id="gift-email"
+                type="email"
+                dir="ltr"
+                autoComplete="email"
+                value={giftEmail}
+                onChange={e => setGiftEmail(e.target.value)}
+                disabled={showStripeForm}
+                maxLength={254}
+                className="w-full px-3 py-2 rounded-lg border text-[14px]"
+                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--page-bg)', color: 'var(--text-primary)' }}
+                aria-invalid={giftEmail !== '' && !giftEmailValid ? true : undefined}
+              />
+              <p className="text-[12px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                {lang === 'ar'
+                  ? 'سيصله رمز يُستخدم مرة واحدة. لن تُفتح الباقة في حسابك.'
+                  : 'They get a one-time code. The package is not unlocked on your account.'}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -409,7 +458,7 @@ function CheckoutForm() {
             {/* Payment Button */}
             <button
               onClick={handlePayment}
-              disabled={paymentLoading}
+              disabled={paymentLoading || (isGift && !giftEmailValid)}
               className="w-full py-4 rounded-lg font-bold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50"
               style={{ backgroundColor: '#1D6296' }}
             >

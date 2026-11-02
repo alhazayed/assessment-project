@@ -8,6 +8,7 @@ import { hasPackageAccess } from '@/lib/billing/package-access'
 import { isPackagesEnabled } from '@/lib/feature-flags'
 import { checkPromoCode } from '@/lib/billing/promo'
 import { fulfilPayment } from '@/lib/billing/fulfil'
+import { normalizeGiftEmail } from '@/lib/billing/gift-codes'
 
 /**
  * POST /api/checkout/create-session
@@ -63,6 +64,12 @@ export async function POST(request: Request) {
     // NOTE: any client-supplied `amount` is deliberately ignored. The charge
     // amount is derived server-side from the package price and validated promo.
     const { packageId, promoCode } = body
+    // Optional: buy for someone else. The recipient gets a one-time code by
+    // email instead of the package being unlocked on this account.
+    const giftEmail = body.giftEmail == null || body.giftEmail === '' ? null : normalizeGiftEmail(body.giftEmail)
+    if (body.giftEmail && !giftEmail) {
+      return NextResponse.json({ error: 'Enter a valid email address for the recipient', reason: 'invalid_gift_email' }, { status: 400 })
+    }
 
     // packageId is a package UUID (the monthly tiers are no longer sold). The
     // price is always read server-side from packages.price_cents.
@@ -84,8 +91,9 @@ export async function POST(request: Request) {
     }
     const product = resolved.product
 
-    // Don't sell a package to someone who already has it.
-    if (product.kind === 'package' && (await hasPackageAccess(db, user.id, product.packageId))) {
+    // Don't sell a package to someone who already has it (they can still
+    // buy it as a gift).
+    if (!giftEmail && (await hasPackageAccess(db, user.id, product.packageId))) {
       return NextResponse.json(
         { error: 'You already have this package', reason: 'already_owned' },
         { status: 409 }
@@ -137,6 +145,7 @@ export async function POST(request: Request) {
         metadata: {
           promoCode: appliedCode,
           productKind: product.kind,
+          giftRecipientEmail: giftEmail,
           basePrice,
           finalAmount: amount,
         },
@@ -162,7 +171,7 @@ export async function POST(request: Request) {
         await db.from('payments').update({ status: 'failed' }).eq('id', payment.id)
         return NextResponse.json({ error: 'Failed to apply promo code' }, { status: 500 })
       }
-      return NextResponse.json({ success: true, free: true, paymentId: payment.id, kind: product.kind })
+      return NextResponse.json({ success: true, free: true, paymentId: payment.id, kind: product.kind, gift: !!giftEmail })
     }
 
     // Otherwise promo usage is recorded by the webhook on successful payment,
@@ -174,6 +183,7 @@ export async function POST(request: Request) {
       clientSecret: mockClientSecret,
       paymentId: payment.id,
       kind: product.kind,
+      gift: !!giftEmail,
     })
   } catch (error) {
     console.error('Checkout session error:', error)
