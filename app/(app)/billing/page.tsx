@@ -152,7 +152,10 @@ export default async function BillingPage() {
         <p style={{ color: 'var(--text-secondary)' }}>{t('billing.subtitle', lang)}</p>
       </div>
 
-      {/* Current Plan */}
+      {/* Plan: the platform is free. Only a legacy monthly subscriber (from
+          before packages became the only paid product) sees a plan here; a
+          user with no packages sees the free-plan note. */}
+      {(activeSub || ownedPackages.length === 0) && (
       <div className="card p-6 mb-6">
         <div className="flex items-center gap-2 mb-5">
           <Sparkles className="w-4 h-4" style={{ color: '#1D6296' }} />
@@ -214,6 +217,7 @@ export default async function BillingPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* One-time package purchases */}
       {ownedPackages.length > 0 && (

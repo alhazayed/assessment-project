@@ -20,42 +20,19 @@ interface Package {
   priceUSD: number
 }
 
-const PACKAGES: Record<string, Package> = {
-  basic: {
-    id: 'basic',
-    nameEn: 'Basic',
-    nameAr: 'الأساسي',
-    priceUSD: 9.99,
-  },
-  standard: {
-    id: 'standard',
-    nameEn: 'Standard',
-    nameAr: 'القياسي',
-    priceUSD: 24.99,
-  },
-  professional: {
-    id: 'professional',
-    nameEn: 'Professional',
-    nameAr: 'احترافي',
-    priceUSD: 49.99,
-  },
-}
-
 function CheckoutForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const lang = useLang()
   const isRtl = lang === 'ar'
 
-  const packageId = searchParams.get('package') || 'standard'
-  const tierPackage = PACKAGES[packageId]
-  // Not a tier: a single profile package (UUID). Its name and price come from
-  // the server, the same price create-session charges.
-  const isSinglePackage = !tierPackage
+  // Packages are the only paid product: a profile package UUID. Its name and
+  // price come from the server, the same price create-session charges.
+  const packageId = searchParams.get('package') || ''
   const [fetchedPackage, setFetchedPackage] = useState<Package | null>(null)
-  const [productLoading, setProductLoading] = useState(isSinglePackage)
+  const [productLoading, setProductLoading] = useState(true)
   const [productError, setProductError] = useState<'invalid' | 'not_for_sale' | 'owned' | null>(null)
-  const selectedPackage = tierPackage ?? fetchedPackage
+  const selectedPackage = fetchedPackage
 
   const [promoCode, setPromoCode] = useState('')
   const [discount, setDiscount] = useState(0)
@@ -70,7 +47,6 @@ function CheckoutForm() {
   const [showStripeForm, setShowStripeForm] = useState(false)
 
   useEffect(() => {
-    if (!isSinglePackage) return
     let cancelled = false
     setProductLoading(true)
     fetch(`/api/checkout/product?id=${encodeURIComponent(packageId)}`)
@@ -88,7 +64,7 @@ function CheckoutForm() {
       .catch(() => { if (!cancelled) setProductError('invalid') })
       .finally(() => { if (!cancelled) setProductLoading(false) })
     return () => { cancelled = true }
-  }, [isSinglePackage, packageId])
+  }, [packageId])
 
   if (productLoading) {
     return (
@@ -129,9 +105,7 @@ function CheckoutForm() {
 
   const basePrice = selectedPackage.priceUSD
   // A package purchase goes straight back to the package, now unlocked.
-  const successPath = isSinglePackage
-    ? `/packages/${selectedPackage.id}?purchased=1`
-    : `/checkout/success?package=${selectedPackage.id}`
+  const successPath = `/packages/${selectedPackage.id}?purchased=1`
   // The final price is authoritative from the server when a promo is applied
   // (validated by /api/checkout/validate-promo, the same helper create-session
   // charges from), so the preview total always matches the actual charge.
@@ -330,13 +304,9 @@ function CheckoutForm() {
             color: 'var(--text-secondary)',
           }}
         >
-          {isSinglePackage
-            ? (lang === 'ar'
-                ? 'دفعة واحدة. يبقى التقرير المجمّع لهذه الباقة متاحاً لك.'
-                : 'One-time payment. The combined report for this package stays unlocked for you.')
-            : (lang === 'ar'
-                ? '📅 الفترة: 30 يوم. يمكنك الإلغاء في أي وقت.'
-                : '📅 Billing period: 30 days. Cancel anytime.')}
+          {lang === 'ar'
+            ? 'دفعة واحدة، بلا اشتراك. يبقى التقرير المجمّع لهذه الباقة متاحاً لك.'
+            : 'One-time payment, no subscription. The combined report for this package stays unlocked for you.'}
         </div>
       </div>
 

@@ -26,13 +26,9 @@ function fakeDb(tables: Record<string, unknown[]>): SupabaseClient {
 }
 
 describe('product lookup', () => {
-  test('tiers keep their fixed prices', async () => {
-    const r = await resolveProduct(fakeDb({}), 'standard')
-    assert.ok(r.ok)
-    if (r.ok) {
-      assert.equal(r.product.kind, 'tier')
-      assert.equal(r.product.priceUSD, 24.99)
-      assert.equal(r.product.packageId, null)
+  test('the retired monthly tiers can no longer be bought', async () => {
+    for (const tier of ['basic', 'standard', 'professional']) {
+      assert.deepEqual(await resolveProduct(fakeDb({}), tier), { ok: false, error: 'invalid' })
     }
   })
 
@@ -94,5 +90,23 @@ describe('report access', () => {
     assert.equal(await hasPackageAccess(fakeDb({ profiles: [{ role: 'superadmin' }] }), USER, PKG_ID), true)
     assert.equal(await hasPackageAccess(fakeDb({ profiles: [{ role: 'admin' }] }), USER, PKG_ID), true)
     assert.equal(await hasPackageAccess(fakeDb({ profiles: [{ role: 'clinician' }] }), USER, PKG_ID), false)
+  })
+})
+
+describe('catalog: what each report contains', () => {
+  test('every launch package lists its report contents and scales', async () => {
+    const { packageReportContents, packageScaleNames } = await import('../../lib/package-profiles/catalog')
+    const { PROFILE_DEFS } = await import('../../lib/package-profiles/definitions')
+    for (const key of Object.keys(PROFILE_DEFS)) {
+      const items = packageReportContents(key)
+      assert.ok(items.length >= 4, key)
+      assert.ok(items.every(i => i.en && i.ar), key)
+      assert.equal(packageScaleNames(key).length, PROFILE_DEFS[key].codes.length)
+    }
+    // The check-up has a combined score and a safety item, so both are promised.
+    const checkup = packageReportContents('mental_health_checkup').map(i => i.en).join('\n')
+    assert.match(checkup, /PHQ-ADS/)
+    assert.match(checkup, /emergency/)
+    assert.deepEqual(packageReportContents('unknown'), [])
   })
 })

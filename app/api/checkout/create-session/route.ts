@@ -12,8 +12,7 @@ import { fulfilPayment } from '@/lib/billing/fulfil'
 /**
  * POST /api/checkout/create-session
  *
- * Create a Stripe checkout session for a subscription tier or for one
- * profile package (one-time purchase, packageId = the package UUID).
+ * Create a Stripe checkout session for one profile package (one-time purchase, packageId = the package UUID).
  * Validates promo codes and applies discounts, then records a pending
  * payment that the Stripe webhook fulfils once payment succeeds.
  *
@@ -62,11 +61,11 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({}))
     // NOTE: any client-supplied `amount` is deliberately ignored. The charge
-    // amount is derived server-side from the tier price and validated promo.
+    // amount is derived server-side from the package price and validated promo.
     const { packageId, promoCode } = body
 
-    // packageId is a subscription tier or a package UUID. The price is always
-    // read server-side (tier table or packages.price_cents).
+    // packageId is a package UUID (the monthly tiers are no longer sold). The
+    // price is always read server-side from packages.price_cents.
     if (!packageId) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -120,8 +119,7 @@ export async function POST(request: Request) {
     // Server-computed amount in dollars; persist in cents.
     const amountCents = Math.round(amount * 100)
 
-    // Create a pending payment record. Tier subscriptions have no package_id;
-    // package purchases have no tier.
+    // Create a pending payment record (tier stays null: packages only).
     const { data: payment, error: paymentError } = await db
       .from('payments')
       .insert({

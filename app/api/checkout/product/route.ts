@@ -6,7 +6,7 @@ import { resolveProduct } from '@/lib/billing/product'
 import { hasPackageAccess } from '@/lib/billing/package-access'
 
 /**
- * GET /api/checkout/product?id=<tier | package uuid>
+ * GET /api/checkout/product?id=<package uuid>
  *
  * Name and server-side price of what the checkout page is selling, so the
  * page shows the same price create-session will charge.

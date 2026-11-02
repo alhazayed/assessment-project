@@ -5,7 +5,7 @@ export async function generateMetadata() {
     en: {
       title: 'Assessment Packages',
       description:
-        'V Welfare mental health assessment packages for personal wellness and clinician-supported care. Browse plans in Arabic and English.',
+        'V Welfare mental health assessment packages for personal wellness and clinician-supported care. One-time purchase, no subscription; every assessment stays free. In Arabic and English.',
     },
     ar: {
       title: 'باقات التقييم',
