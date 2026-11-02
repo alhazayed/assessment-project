@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
-import { VALID_TIERS, TIER_PRICES_USD, isValidTier, applyDiscount } from '@/lib/billing/pricing'
+import { applyDiscount } from '@/lib/billing/pricing'
+import { resolveProduct } from '@/lib/billing/product'
+import { hasPackageAccess } from '@/lib/billing/package-access'
 import { isPackagesEnabled } from '@/lib/feature-flags'
 import { checkPromoCode } from '@/lib/billing/promo'
 import { fulfilPayment } from '@/lib/billing/fulfil'
@@ -10,7 +12,8 @@ import { fulfilPayment } from '@/lib/billing/fulfil'
 /**
  * POST /api/checkout/create-session
  *
- * Create a Stripe checkout session for a subscription tier purchase.
+ * Create a Stripe checkout session for a subscription tier or for one
+ * profile package (one-time purchase, packageId = the package UUID).
  * Validates promo codes and applies discounts, then records a pending
  * payment that the Stripe webhook fulfils once payment succeeds.
  *
@@ -62,7 +65,8 @@ export async function POST(request: Request) {
     // amount is derived server-side from the tier price and validated promo.
     const { packageId, promoCode } = body
 
-    // Validate input — packageId here is a subscription tier.
+    // packageId is a subscription tier or a package UUID. The price is always
+    // read server-side (tier table or packages.price_cents).
     if (!packageId) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -70,14 +74,26 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!VALID_TIERS.includes(packageId)) {
+    const resolved = await resolveProduct(db, packageId)
+    if (!resolved.ok) {
       return NextResponse.json(
-        { error: 'Invalid package tier' },
+        resolved.error === 'not_for_sale'
+          ? { error: 'This package is not for sale', reason: 'not_for_sale' }
+          : { error: 'Invalid package' },
         { status: 400 }
       )
     }
+    const product = resolved.product
 
-    const basePrice = TIER_PRICES_USD[packageId as (typeof VALID_TIERS)[number]]
+    // Don't sell a package to someone who already has it.
+    if (product.kind === 'package' && (await hasPackageAccess(db, user.id, product.packageId))) {
+      return NextResponse.json(
+        { error: 'You already have this package', reason: 'already_owned' },
+        { status: 409 }
+      )
+    }
+
+    const basePrice = product.priceUSD
 
     // Validate promo code if provided (same checker as the checkout preview),
     // and capture its discount for server-side price computation.
@@ -104,14 +120,14 @@ export async function POST(request: Request) {
     // Server-computed amount in dollars; persist in cents.
     const amountCents = Math.round(amount * 100)
 
-    // Create a pending payment record. package_id is null for tier
-    // subscriptions (tiers are not rows in the packages catalog).
+    // Create a pending payment record. Tier subscriptions have no package_id;
+    // package purchases have no tier.
     const { data: payment, error: paymentError } = await db
       .from('payments')
       .insert({
         user_id: user.id,
-        package_id: null,
-        tier: packageId,
+        package_id: product.packageId,
+        tier: product.tier,
         amount_cents: amountCents,
         currency: 'usd',
         status: 'pending',
@@ -122,6 +138,7 @@ export async function POST(request: Request) {
         discount_applied_cents: discountCents,
         metadata: {
           promoCode: appliedCode,
+          productKind: product.kind,
           basePrice,
           finalAmount: amount,
         },
@@ -147,7 +164,7 @@ export async function POST(request: Request) {
         await db.from('payments').update({ status: 'failed' }).eq('id', payment.id)
         return NextResponse.json({ error: 'Failed to apply promo code' }, { status: 500 })
       }
-      return NextResponse.json({ success: true, free: true, paymentId: payment.id })
+      return NextResponse.json({ success: true, free: true, paymentId: payment.id, kind: product.kind })
     }
 
     // Otherwise promo usage is recorded by the webhook on successful payment,
@@ -158,6 +175,7 @@ export async function POST(request: Request) {
       sessionId: mockSessionId,
       clientSecret: mockClientSecret,
       paymentId: payment.id,
+      kind: product.kind,
     })
   } catch (error) {
     console.error('Checkout session error:', error)

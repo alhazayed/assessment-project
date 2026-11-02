@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { hasPackageAccess } from '@/lib/billing/package-access'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { generateRichNarrative } from '@/lib/package-interpret'
 import { scrubPHI } from '@/lib/security/anonymizePHI'
@@ -49,6 +50,14 @@ export async function POST(_req: Request, props: { params: Promise<{ id: string 
       .single()
 
     if (!pkg) return NextResponse.json({ error: 'Package not found' }, { status: 404 })
+
+    // The combined report is paid: only buyers (and staff) can build or read it.
+    if (!(await hasPackageAccess(db, user.id, params.id))) {
+      return NextResponse.json(
+        { error: 'Buy this package to unlock the combined report', reason: 'purchase_required' },
+        { status: 402 }
+      )
+    }
 
     const { data: result } = await db
       .from('package_results')

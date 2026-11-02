@@ -96,24 +96,48 @@ export default async function BillingPage() {
   const p = profile as Pick<Profile, 'role'> | null
   if (p?.role === 'admin' || p?.role === 'superadmin') redirect('/x/control')
 
-  const [paymentsRes, purchaseRes] = await Promise.all([
+  const [paymentsRes, purchaseRes, ownedRes] = await Promise.all([
     supabase
       .from('payments')
       .select('id, tier, package_id, amount_cents, currency, status, discount_applied_cents, created_at, metadata')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50),
+    // Subscription tiers only; one-time package purchases are listed below.
     supabase
       .from('package_purchases')
       .select('id, tier, package_id, status, access_level, purchased_at, expires_at')
       .eq('user_id', user.id)
       .eq('status', 'active')
+      .is('package_id', null)
       .order('purchased_at', { ascending: false })
       .limit(1),
+    supabase
+      .from('package_purchases')
+      .select('id, package_id, purchased_at, packages(name_en, name_ar)')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .not('package_id', 'is', null)
+      .order('purchased_at', { ascending: false }),
   ])
 
   const payments = (paymentsRes.data || []) as PaymentRow[]
   const activeSub = (purchaseRes.data?.[0] || null) as PurchaseRow | null
+  const ownedPackages = (ownedRes.data || []) as unknown as {
+    id: string
+    package_id: string
+    purchased_at: string
+    packages: { name_en: string; name_ar: string } | null
+  }[]
+
+  // Package names for payment-history rows that bought a single package.
+  const pkgIds = Array.from(new Set(payments.map(p => p.package_id).filter((x): x is string => !!x)))
+  const { data: pkgNames } = pkgIds.length
+    ? await supabase.from('packages').select('id, name_en, name_ar').in('id', pkgIds)
+    : { data: [] as { id: string; name_en: string; name_ar: string }[] }
+  const pkgNameById = new Map((pkgNames || []).map(p => [p.id, lang === 'ar' ? p.name_ar : p.name_en]))
+  const paymentLabel = (pay: PaymentRow) =>
+    pay.package_id ? (pkgNameById.get(pay.package_id) ?? tierLabel(null, lang)) : tierLabel(pay.tier, lang)
 
   return (
     <div className="p-4 sm:p-6 lg:p-7 max-w-5xl">
@@ -191,6 +215,35 @@ export default async function BillingPage() {
         )}
       </div>
 
+      {/* One-time package purchases */}
+      {ownedPackages.length > 0 && (
+        <div className="card p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircle2 className="w-4 h-4" style={{ color: '#1B8A5A' }} />
+            <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
+              {lang === 'ar' ? 'باقاتك' : 'Your packages'}
+            </h2>
+          </div>
+          <ul className="divide-y" style={{ borderColor: 'var(--divider)' }}>
+            {ownedPackages.map(op => (
+              <li key={op.id} className="py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                    {op.packages ? (lang === 'ar' ? op.packages.name_ar : op.packages.name_en) : tierLabel(null, lang)}
+                  </p>
+                  <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                    {lang === 'ar' ? 'تاريخ الشراء' : 'Bought'} {formatDate(op.purchased_at, lang)}
+                  </p>
+                </div>
+                <Link href={`/packages/${op.package_id}`} className="btn-secondary text-[13px] flex-shrink-0">
+                  {lang === 'ar' ? 'فتح' : 'Open'}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Payment History */}
       <div className="card p-6">
         <div className="flex items-center gap-2 mb-5">
@@ -246,7 +299,7 @@ export default async function BillingPage() {
                       </td>
                       <td className="py-3.5">
                         <p className="text-[13.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
-                          {tierLabel(pay.tier, lang)}
+                          {paymentLabel(pay)}
                         </p>
                         {hasDiscount && (
                           <p className="text-[11.5px]" style={{ color: '#1B8A5A' }}>

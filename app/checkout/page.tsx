@@ -48,7 +48,14 @@ function CheckoutForm() {
   const isRtl = lang === 'ar'
 
   const packageId = searchParams.get('package') || 'standard'
-  const selectedPackage = PACKAGES[packageId]
+  const tierPackage = PACKAGES[packageId]
+  // Not a tier: a single profile package (UUID). Its name and price come from
+  // the server, the same price create-session charges.
+  const isSinglePackage = !tierPackage
+  const [fetchedPackage, setFetchedPackage] = useState<Package | null>(null)
+  const [productLoading, setProductLoading] = useState(isSinglePackage)
+  const [productError, setProductError] = useState<'invalid' | 'not_for_sale' | 'owned' | null>(null)
+  const selectedPackage = tierPackage ?? fetchedPackage
 
   const [promoCode, setPromoCode] = useState('')
   const [discount, setDiscount] = useState(0)
@@ -62,12 +69,56 @@ function CheckoutForm() {
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [showStripeForm, setShowStripeForm] = useState(false)
 
+  useEffect(() => {
+    if (!isSinglePackage) return
+    let cancelled = false
+    setProductLoading(true)
+    fetch(`/api/checkout/product?id=${encodeURIComponent(packageId)}`)
+      .then(async res => {
+        const data = await res.json().catch(() => ({}))
+        if (cancelled) return
+        if (!res.ok) {
+          setProductError(data.reason === 'not_for_sale' ? 'not_for_sale' : 'invalid')
+        } else if (data.owned) {
+          setProductError('owned')
+        } else {
+          setFetchedPackage({ id: data.id, nameEn: data.nameEn, nameAr: data.nameAr, priceUSD: data.priceUSD })
+        }
+      })
+      .catch(() => { if (!cancelled) setProductError('invalid') })
+      .finally(() => { if (!cancelled) setProductLoading(false) })
+    return () => { cancelled = true }
+  }, [isSinglePackage, packageId])
+
+  if (productLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#1D6296' }} />
+      </div>
+    )
+  }
+
+  if (productError === 'owned') {
+    return (
+      <div className="text-center py-12">
+        <p className="text-lg mb-4" style={{ color: 'var(--text-primary)' }}>
+          {lang === 'ar' ? 'لديك هذه الباقة بالفعل' : 'You already have this package'}
+        </p>
+        <Link href={`/packages/${packageId}`} className="btn-accent inline-flex items-center gap-2">
+          {lang === 'ar' ? 'افتح الباقة' : 'Open the package'}
+        </Link>
+      </div>
+    )
+  }
+
   if (!selectedPackage) {
     return (
       <div className="text-center py-12">
         <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
         <p className="text-lg" style={{ color: 'var(--text-primary)' }}>
-          {lang === 'ar' ? 'الحزمة غير صحيحة' : 'Invalid package'}
+          {productError === 'not_for_sale'
+            ? (lang === 'ar' ? 'هذه الباقة غير متاحة للشراء حالياً' : 'This package is not on sale right now')
+            : (lang === 'ar' ? 'الحزمة غير صحيحة' : 'Invalid package')}
         </p>
         <Link href="/packages" className="btn-accent mt-4 inline-flex items-center gap-2">
           {lang === 'ar' ? '← العودة للحزم' : '← Back to Packages'}
@@ -77,6 +128,10 @@ function CheckoutForm() {
   }
 
   const basePrice = selectedPackage.priceUSD
+  // A package purchase goes straight back to the package, now unlocked.
+  const successPath = isSinglePackage
+    ? `/packages/${selectedPackage.id}?purchased=1`
+    : `/checkout/success?package=${selectedPackage.id}`
   // The final price is authoritative from the server when a promo is applied
   // (validated by /api/checkout/validate-promo, the same helper create-session
   // charges from), so the preview total always matches the actual charge.
@@ -162,7 +217,7 @@ function CheckoutForm() {
 
       // A promo code made the order free: it's already activated server-side.
       if (data.free) {
-        router.push(`/checkout/success?package=${selectedPackage.id}`)
+        router.push(successPath)
         return
       }
 
@@ -192,7 +247,7 @@ function CheckoutForm() {
   }
 
   const handlePaymentSuccess = () => {
-    router.push(`/checkout/success?package=${selectedPackage.id}`)
+    router.push(successPath)
   }
 
   const handlePaymentError = (error: string) => {
@@ -275,9 +330,13 @@ function CheckoutForm() {
             color: 'var(--text-secondary)',
           }}
         >
-          {lang === 'ar'
-            ? '📅 الفترة: 30 يوم. يمكنك الإلغاء في أي وقت.'
-            : '📅 Billing period: 30 days. Cancel anytime.'}
+          {isSinglePackage
+            ? (lang === 'ar'
+                ? 'دفعة واحدة. يبقى التقرير المجمّع لهذه الباقة متاحاً لك.'
+                : 'One-time payment. The combined report for this package stays unlocked for you.')
+            : (lang === 'ar'
+                ? '📅 الفترة: 30 يوم. يمكنك الإلغاء في أي وقت.'
+                : '📅 Billing period: 30 days. Cancel anytime.')}
         </div>
       </div>
 
@@ -451,8 +510,8 @@ export default function CheckoutPage() {
           </h1>
           <p style={{ color: 'var(--text-secondary)' }}>
             {lang === 'ar'
-              ? 'أدخل تفاصيل الدفع لتفعيل اشتراكك'
-              : 'Enter your payment details to activate your subscription'}
+              ? 'أدخل تفاصيل الدفع لإتمام عملية الشراء'
+              : 'Enter your payment details to complete your purchase'}
           </p>
         </div>
 

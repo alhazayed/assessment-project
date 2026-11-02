@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { hasPackageAccess } from '@/lib/billing/package-access'
 import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
 import { redirect, notFound } from 'next/navigation'
@@ -78,6 +79,11 @@ export default async function PackageResultPage(props: { params: Promise<{ id: s
     .single()
 
   if (!pkg) notFound()
+
+  // The combined report is paid: send non-buyers back to the package page.
+  if (!(await hasPackageAccess(db, user.id, params.id))) {
+    redirect(`/packages/${params.id}`)
+  }
 
   // Fetch result
   const { data: result } = await db

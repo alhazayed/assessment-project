@@ -5,7 +5,10 @@ import { t } from '@/lib/i18n'
 import { localizeSeverity } from '@/lib/severity-labels'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, CheckCircle2, Circle, Lock, Layers } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2, Circle, Lock, Layers, ShoppingBag } from 'lucide-react'
+import { hasPackageAccess } from '@/lib/billing/package-access'
+import { packageSaleState } from '@/lib/billing/product'
+import { isPackagesEnabled } from '@/lib/feature-flags'
 import ComputeButton from './compute-button'
 import type { InterpretationBand, OutputDimension } from '@/lib/types'
 
@@ -35,6 +38,8 @@ interface PkgRow {
   output_dimensions: OutputDimension[]
   disclaimer_en: string
   disclaimer_ar: string
+  price_cents: number | null
+  currency: string | null
   package_assessments: PkgAssessment[]
 }
 
@@ -46,8 +51,12 @@ const CATEGORY_LABELS: Record<string, { en: string; ar: string }> = {
   general:    { en: 'General',                   ar: 'عام' },
 }
 
-export default async function PackageDetailPage(props: { params: Promise<{ id: string }> }) {
+export default async function PackageDetailPage(props: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ purchased?: string }>
+}) {
   const params = await props.params;
+  const justPurchased = (await props.searchParams).purchased === '1'
   const supabase = await createClient()
   const lang = await getLanguage()
   const isAr = lang === 'ar'
@@ -122,6 +131,16 @@ export default async function PackageDetailPage(props: { params: Promise<{ id: s
     .eq('user_id', user.id)
     .eq('status', 'completed')
     .maybeSingle()
+
+  // The individual assessments are free; the combined report is paid.
+  const [hasAccess, salesOpen] = await Promise.all([
+    hasPackageAccess(db, user.id, params.id),
+    isPackagesEnabled(),
+  ])
+  const forSale = salesOpen && packageSaleState(row) === 'for_sale'
+  const priceLabel = row.price_cents != null
+    ? new Intl.NumberFormat(isAr ? 'ar-SA' : 'en-US', { style: 'currency', currency: (row.currency || 'usd').toUpperCase() }).format(row.price_cents / 100)
+    : null
 
   const resultPath = `/packages/${params.id}/result`
   const backLabel = t('packages.detail.back', lang)
@@ -211,7 +230,7 @@ export default async function PackageDetailPage(props: { params: Promise<{ id: s
         </div>
 
         {/* Existing result summary */}
-        {existingResult && (
+        {hasAccess && existingResult && (
           <div
             className="mt-4 p-3 rounded-lg flex items-center justify-between gap-3"
             style={{ backgroundColor: `${row.color}10`, border: `1px solid ${row.color}30` }}
@@ -237,7 +256,19 @@ export default async function PackageDetailPage(props: { params: Promise<{ id: s
           </div>
         )}
 
+        {justPurchased && (
+          <div className="mt-4 p-3 rounded-lg flex items-start gap-2" style={{ backgroundColor: '#E6F4EC', color: '#1B8A5A' }} role="status">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden />
+            <p className="text-[13px] font-medium">
+              {hasAccess
+                ? (isAr ? 'تم الشراء. التقرير المجمّع لهذه الباقة متاح لك الآن.' : 'Purchase complete. The combined report for this package is now unlocked.')
+                : (isAr ? 'نؤكد عملية الدفع. حدّث الصفحة بعد لحظات.' : 'We are confirming your payment. Refresh this page in a moment.')}
+            </p>
+          </div>
+        )}
+
         {/* Action */}
+        {hasAccess ? (
         <div className="mt-4">
           <ComputeButton
             packageId={params.id}
@@ -250,6 +281,37 @@ export default async function PackageDetailPage(props: { params: Promise<{ id: s
             labelCompleteAll={t('packages.detail.complete_all', lang)}
           />
         </div>
+        ) : (
+        <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'var(--surface-alt)', border: '1px solid var(--divider)' }}>
+          <div className="flex items-start gap-3">
+            <Lock className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: row.color }} aria-hidden />
+            <div className="min-w-0 flex-1">
+              <p className="text-[13.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {isAr ? 'التقرير المجمّع مدفوع' : 'The combined report is a paid extra'}
+              </p>
+              <p className="text-[12.5px] mt-1 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                {isAr
+                  ? 'يمكنك إجراء كل مقياس مجاناً. شراء الباقة يفتح تقريراً واحداً يقرأ نتائجك معاً، مع ملف PDF. دفعة واحدة، بلا اشتراك.'
+                  : 'You can take each assessment for free. Buying the package unlocks one report that reads your results together, with a PDF. One-time payment, no subscription.'}
+              </p>
+              {forSale ? (
+                <Link
+                  href={`/checkout?package=${params.id}`}
+                  className="mt-3 inline-flex items-center gap-2 text-[13px] font-semibold px-4 py-2 rounded-lg"
+                  style={{ backgroundColor: row.color, color: '#fff' }}
+                >
+                  <ShoppingBag className="w-4 h-4" aria-hidden />
+                  {isAr ? `اشترِ الباقة · ${priceLabel}` : `Buy package · ${priceLabel}`}
+                </Link>
+              ) : (
+                <p className="text-[12px] mt-2 font-medium" style={{ color: 'var(--text-muted)' }}>
+                  {isAr ? 'غير متاحة للشراء بعد.' : 'Not on sale yet.'}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+        )}
       </div>
 
       {/* Component assessments */}

@@ -1,7 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
- * Fulfil a payment: mark it succeeded, grant 30 days of access, and redeem its
+ * Fulfil a payment: mark it succeeded, grant access (30 days for a tier
+ * subscription; no expiry for a one-time package purchase), and redeem its
  * promo code. Used by the Stripe webhook and by create-session for orders a
  * promo code makes free ($0 — Stripe cannot charge zero). Idempotent.
  *
@@ -42,7 +43,8 @@ export async function fulfilPayment(
 
   if (!existingPurchase) {
     const now = new Date()
-    const expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    // A package is a one-time purchase: its report stays unlocked.
+    const expires = payment.package_id ? null : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
     const { error } = await db.from('package_purchases').insert({
       user_id: payment.user_id,
       package_id: payment.package_id, // null for tier subscriptions
@@ -51,7 +53,7 @@ export async function fulfilPayment(
       status: 'active',
       access_level: 'full',
       purchased_at: now.toISOString(),
-      expires_at: expires.toISOString(),
+      expires_at: expires ? expires.toISOString() : null,
     })
     if (error) throw new Error(`Failed to grant access: ${error.message}`)
   }
