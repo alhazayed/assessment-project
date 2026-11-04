@@ -10,7 +10,10 @@
 export const VALID_TIERS = ['basic', 'standard', 'professional'] as const
 export type Tier = (typeof VALID_TIERS)[number]
 
-/** Authoritative tier prices in whole USD dollars. Mirrors the checkout UI. */
+/**
+ * Prices of the retired monthly tiers, in whole USD. No longer sold (packages
+ * are the only paid product); kept so old payment rows still have labels.
+ */
 export const TIER_PRICES_USD: Record<Tier, number> = {
   basic: 9.99,
   standard: 24.99,

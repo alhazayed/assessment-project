@@ -1,421 +1,185 @@
-'use client'
-
-import { useState } from 'react'
 import Link from 'next/link'
-import { Check, ArrowRight, Zap } from 'lucide-react'
-import { useLang } from '@/lib/use-lang'
-import { t } from '@/lib/i18n'
+import { ArrowRight, Check, FileText, Layers, Target } from 'lucide-react'
+import PublicMarketingShell from '@/components/public-marketing-shell'
+import { getLanguage } from '@/lib/get-language'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { isPackagesEnabled } from '@/lib/feature-flags'
+import { packageReportContents, packageScaleNames } from '@/lib/package-profiles/catalog'
 
-interface Package {
+/**
+ * Public package catalog. The platform is free; packages are the only paid
+ * product. Each card says what the package is for, what its combined report
+ * contains, and its one-time price.
+ */
+
+interface CatalogRow {
   id: string
-  nameEn: string
-  nameAr: string
-  descEn: string
-  descAr: string
-  priceUSD: number
-  priceMTH: string
-  popular: boolean
-  features: {
-    en: string[]
-    ar: string[]
+  profile_key: string | null
+  name_en: string
+  name_ar: string
+  description_en: string | null
+  description_ar: string | null
+  purpose_en: string | null
+  purpose_ar: string | null
+  color: string | null
+  price_cents: number | null
+  currency: string | null
+}
+
+function formatPrice(cents: number, currency: string | null, lang: 'en' | 'ar'): string {
+  try {
+    return new Intl.NumberFormat(lang === 'ar' ? 'ar' : 'en-US', {
+      style: 'currency',
+      currency: (currency || 'usd').toUpperCase(),
+      minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+    }).format(cents / 100)
+  } catch {
+    return `$${(cents / 100).toFixed(2)}`
   }
 }
 
-const PACKAGES: Package[] = [
-  {
-    id: 'basic',
-    nameEn: 'Basic',
-    nameAr: 'الأساسي',
-    descEn: 'Essential assessments for personal wellness',
-    descAr: 'التقييمات الأساسية لصحتك العقلية',
-    priceUSD: 9.99,
-    priceMTH: 'month',
-    popular: false,
-    features: {
-      en: [
-        'Up to 4 assessments per month',
-        'Basic mood tracking',
-        'PDF export of results',
-        'Mobile-friendly access',
-        'Email support',
-      ],
-      ar: [
-        'ما يصل إلى 4 تقييمات شهريًا',
-        'تتبع المزاج الأساسي',
-        'تصدير النتائج كـ PDF',
-        'الوصول من الهاتف المحمول',
-        'دعم البريد الإلكتروني',
-      ],
-    },
-  },
-  {
-    id: 'standard',
-    nameEn: 'Standard',
-    nameAr: 'القياسي',
-    descEn: 'Complete assessment suite with insights',
-    descAr: 'مجموعة تقييمات شاملة مع رؤى',
-    priceUSD: 24.99,
-    priceMTH: 'month',
-    popular: true,
-    features: {
-      en: [
-        'Unlimited assessments',
-        'Advanced mood tracking',
-        'Weekly progress reports',
-        'Symptom trends & insights',
-        'PDF & CSV export',
-        'Priority email support',
-        'Custom notes & annotations',
-      ],
-      ar: [
-        'تقييمات غير محدودة',
-        'تتبع المزاج المتقدم',
-        'تقارير الأسبوع',
-        'اتجاهات الأعراض والرؤى',
-        'تصدير PDF و CSV',
-        'دعم البريد الإلكتروني الأولوي',
-        'ملاحظات وتعليقات مخصصة',
-      ],
-    },
-  },
-  {
-    id: 'professional',
-    nameEn: 'Professional',
-    nameAr: 'احترافي',
-    descEn: 'Advanced features for healthcare providers',
-    descAr: 'ميزات متقدمة لمقدمي الرعاية الصحية',
-    priceUSD: 49.99,
-    priceMTH: 'month',
-    popular: false,
-    features: {
-      en: [
-        'Everything in Standard',
-        'Shareable reports with providers',
-        'Monthly wellness summaries',
-        'Risk assessment alerts',
-        'Integration with EHR systems',
-        '24/7 priority support',
-        'Custom assessment creation',
-        'HIPAA compliant storage',
-      ],
-      ar: [
-        'جميع ميزات القياسي',
-        'تقارير قابلة للمشاركة مع الأطباء',
-        'ملخصات الصحة الشهرية',
-        'تنبيهات تقييم المخاطر',
-        'التكامل مع أنظمة الرعاية',
-        'دعم أولوي على مدار الساعة',
-        'إنشاء تقييمات مخصصة',
-        'تخزين متوافق مع HIPAA',
-      ],
-    },
-  },
-]
+export default async function PackagesCatalogPage() {
+  const lang = await getLanguage()
+  const isAr = lang === 'ar'
+  const onSale = await isPackagesEnabled()
 
-function PackageCard({
-  pkg,
-  lang,
-  isRtl,
-}: {
-  pkg: Package
-  lang: 'en' | 'ar'
-  isRtl: boolean
-}) {
-  const name = lang === 'ar' ? pkg.nameAr : pkg.nameEn
-  const desc = lang === 'ar' ? pkg.descAr : pkg.descEn
-  const features = pkg.features[lang]
-
-  // Emphasise the popular card with ring + shadow (and a small upward lift on
-  // wide screens) instead of `scale-105`. Scaling a grid item grows its rendered
-  // box into its neighbours, which cropped adjacent card titles, prices, and
-  // buttons.
-  return (
-    <div
-      className={`relative flex flex-col h-full rounded-2xl border-2 transition-all ${
-        pkg.popular
-          ? 'border-[#1D6296] shadow-xl ring-2 ring-[#1D6296] lg:-translate-y-2'
-          : 'border-[var(--border)]'
-      }`}
-      style={{
-        backgroundColor: pkg.popular ? 'rgba(29, 98, 150, 0.05)' : 'var(--surface)',
-      }}
-    >
-      {/* Popular Badge */}
-      {pkg.popular && (
-        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-          <div
-            className="flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold text-white"
-            style={{ backgroundColor: '#1D6296' }}
-          >
-            <Zap className="w-4 h-4" />
-            {lang === 'ar' ? 'الأكثر شيوعًا' : 'Most Popular'}
-          </div>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="p-8 border-b" style={{ borderColor: 'var(--border)' }}>
-        <h3
-          className="text-2xl font-bold mb-2"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          {name}
-        </h3>
-        <p
-          className="text-sm mb-6"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          {desc}
-        </p>
-
-        {/* Pricing */}
-        <div className="flex items-baseline gap-1 mb-2">
-          <span
-            className="text-4xl font-bold"
-            style={{ color: '#1D6296' }}
-          >
-            ${pkg.priceUSD}
-          </span>
-          <span
-            className="text-sm"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            /{pkg.priceMTH}
-          </span>
-        </div>
-        <p
-          className="text-xs mb-6"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          {lang === 'ar'
-            ? 'بدون التزام - إلغاء في أي وقت'
-            : 'No commitment — cancel anytime'}
-        </p>
-
-        {/* CTA Button */}
-        <Link
-          href={`/checkout?package=${pkg.id}`}
-          className="w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all mb-2"
-          style={{
-            backgroundColor: pkg.popular ? '#1D6296' : 'var(--accent-50)',
-            color: pkg.popular ? 'white' : '#1D6296',
-          }}
-        >
-          {lang === 'ar' ? 'اختر هذه الخطة' : 'Choose Plan'}
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-
-        <p
-          className="text-xs text-center"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          {lang === 'ar'
-            ? 'نسخة تجريبية مجانية لمدة 7 أيام'
-            : 'Free 7-day trial'}
-        </p>
-      </div>
-
-      {/* Features */}
-      <div className="flex-1 p-8">
-        <ul className="space-y-4">
-          {features.map((feature, idx) => (
-            <li
-              key={idx}
-              className="flex gap-3 text-sm"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              <Check
-                className="w-5 h-5 flex-shrink-0"
-                style={{ color: '#1B8A5A' }}
-              />
-              <span>{feature}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  )
-}
-
-export default function PackagesPage() {
-  const lang = useLang()
-  const isRtl = lang === 'ar'
+  // Public catalog data only (names, descriptions, prices); read server-side.
+  const { data } = await createAdminClient()
+    .from('packages')
+    .select('id, profile_key, name_en, name_ar, description_en, description_ar, purpose_en, purpose_ar, color, price_cents, currency')
+    .eq('status', 'active')
+    .not('profile_key', 'is', null)
+    .order('sort_order', { ascending: true })
+  const packages = (data ?? []) as CatalogRow[]
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ backgroundColor: 'var(--page-bg)' }}
-    >
-      {/* Header */}
-      <header
-        className="sticky top-0 z-40 border-b safe-top safe-x"
-        style={{
-          backgroundColor: 'var(--surface)',
-          borderColor: 'var(--border)',
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center">
-          <Link href="/dashboard" className="font-bold text-lg">
-            {lang === 'ar' ? '← العودة' : '← Back'}
-          </Link>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
+    <PublicMarketingShell>
+      <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 py-12 sm:py-16">
+        <div className="text-center mb-12 max-w-2xl mx-auto">
           <h1
-            className="text-4xl sm:text-5xl font-extrabold mb-4"
-            style={{
-              color: 'var(--text-primary)',
-              letterSpacing: '-0.025em',
-            }}
+            className="text-3xl sm:text-5xl font-extrabold mb-4"
+            style={{ color: 'var(--text-primary)', letterSpacing: '-0.025em' }}
           >
-            {lang === 'ar'
-              ? 'اختر خطتك (Plans)'
-              : 'Choose Your Plan'}
+            {isAr ? 'باقات التقييم' : 'Assessment packages'}
           </h1>
-          <p
-            className="text-lg max-w-2xl mx-auto mb-4"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            {lang === 'ar'
-              ? 'الخطط (Plans) للوصول والاشتراك. الملفات الشخصية (Profiles) مسارات اكتشاف الذات متعددة التقييمات.'
-              : 'Plans cover subscription access. Profiles are multi-assessment self-knowledge pathways.'}
+          <p className="text-base sm:text-lg" style={{ color: 'var(--text-secondary)' }}>
+            {isAr
+              ? 'كل التقييمات على المنصة مجانية. الباقة تجمع عدة تقييمات معتمدة وتقرأ نتائجها معاً في تقرير واحد. تدفع مرة واحدة، بلا اشتراك.'
+              : 'Every assessment on the platform is free. A package brings several validated assessments together and reads their results as one report. You pay once; there is no subscription.'}
           </p>
-          <Link
-            href="/my-packages"
-            className="inline-flex items-center gap-2 text-[14px] font-semibold"
-            style={{ color: '#1D6296' }}
-          >
-            {lang === 'ar' ? 'استكشف الملفات الشخصية →' : 'Explore Profiles →'}
-          </Link>
         </div>
 
-        {/* Pricing Cards */}
-        <div
-          className="grid gap-8 mb-16 sm:grid-cols-2 lg:grid-cols-3 overflow-visible"
-          style={{ gridAutoRows: 'max-content' }}
-        >
-          {PACKAGES.map((pkg) => (
-            <PackageCard
-              key={pkg.id}
-              pkg={pkg}
-              lang={lang as 'en' | 'ar'}
-              isRtl={isRtl}
-            />
-          ))}
-        </div>
+        {packages.length === 0 ? (
+          <p className="text-center" style={{ color: 'var(--text-muted)' }}>
+            {isAr ? 'لا توجد باقات متاحة حالياً.' : 'No packages are available right now.'}
+          </p>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2">
+            {packages.map(pkg => {
+              const name = isAr ? pkg.name_ar : pkg.name_en
+              const desc = isAr ? pkg.description_ar : pkg.description_en
+              const purpose = isAr ? pkg.purpose_ar : pkg.purpose_en
+              const contents = packageReportContents(pkg.profile_key)
+              const scales = packageScaleNames(pkg.profile_key)
+              const color = pkg.color || '#1D6296'
+              const price = pkg.price_cents ? formatPrice(pkg.price_cents, pkg.currency, lang) : null
 
-        {/* FAQ Section */}
-        <div className="max-w-3xl mx-auto">
-          <h2
-            className="text-2xl font-bold mb-8 text-center"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            {lang === 'ar'
-              ? 'الأسئلة الشائعة'
-              : 'Frequently Asked Questions'}
-          </h2>
-
-          <div className="space-y-6">
-            {[
-              {
-                q: lang === 'ar'
-                  ? 'هل يمكنني تغيير خطتي لاحقًا؟'
-                  : 'Can I change my plan later?',
-                a: lang === 'ar'
-                  ? 'نعم، يمكنك الترقية أو الانخفاض في أي وقت. سيتم تطبيق التغييرات على الفور.'
-                  : 'Yes, you can upgrade or downgrade anytime. Changes apply immediately.',
-              },
-              {
-                q: lang === 'ar'
-                  ? 'هل تقدمون نسخة تجريبية مجانية؟'
-                  : 'Do you offer a free trial?',
-                a: lang === 'ar'
-                  ? 'نعم، 7 أيام مجانية لجميع الخطط. لا توجد بطاقة ائتمان مطلوبة.'
-                  : 'Yes, 7 days free on all plans. No credit card required.',
-              },
-              {
-                q: lang === 'ar'
-                  ? 'ماذا يحدث عند إلغاء الاشتراك؟'
-                  : 'What happens when I cancel?',
-                a: lang === 'ar'
-                  ? 'يمكنك الإلغاء في أي وقت. ستفقد الوصول عند نهاية الفترة المدفوعة.'
-                  : "You can cancel anytime. You'll lose access at the end of your billing period.",
-              },
-            ].map((faq, idx) => (
-              <div
-                key={idx}
-                className="p-6 rounded-lg"
-                style={{ backgroundColor: 'var(--surface)' }}
-              >
-                <h3
-                  className="font-semibold mb-2"
-                  style={{ color: 'var(--text-primary)' }}
+              return (
+                <article
+                  key={pkg.id}
+                  className="card p-6 flex flex-col"
+                  style={{ borderTop: `4px solid ${color}` }}
                 >
-                  {faq.q}
-                </h3>
-                <p
-                  className="text-sm"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  {faq.a}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                      {name}
+                    </h2>
+                    {price && onSale && (
+                      <span className="text-xl font-extrabold whitespace-nowrap" style={{ color }}>
+                        {price}
+                      </span>
+                    )}
+                  </div>
+                  {desc && (
+                    <p className="text-[14px] mb-5" style={{ color: 'var(--text-secondary)' }}>
+                      {desc}
+                    </p>
+                  )}
 
-        {/* Trust Section */}
-        <div className="mt-16 pt-16 border-t" style={{ borderColor: 'var(--border)' }}>
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            <div>
-              <p
-                className="text-3xl font-bold mb-2"
-                style={{ color: '#1D6296' }}
-              >
-                39+
-              </p>
-              <p
-                className="text-sm"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                {lang === 'ar' ? 'تقييمات مثبتة' : 'Validated Assessments'}
-              </p>
-            </div>
-            <div>
-              <p
-                className="text-3xl font-bold mb-2"
-                style={{ color: '#1D6296' }}
-              >
-                100%
-              </p>
-              <p
-                className="text-sm"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                {lang === 'ar' ? 'سري وآمن' : 'Confidential & Secure'}
-              </p>
-            </div>
-            <div>
-              <p
-                className="text-3xl font-bold mb-2"
-                style={{ color: '#1D6296' }}
-              >
-                24/7
-              </p>
-              <p
-                className="text-sm"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                {lang === 'ar' ? 'دعم متاح' : 'Support Available'}
-              </p>
-            </div>
+                  {purpose && (
+                    <section className="mb-5">
+                      <h3 className="flex items-center gap-2 text-[13px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>
+                        <Target className="w-4 h-4" aria-hidden="true" />
+                        {isAr ? 'لمن هذه الباقة وبماذا تساعد' : 'Who it is for and how it helps'}
+                      </h3>
+                      <p className="text-[14px]" style={{ color: 'var(--text-secondary)' }}>{purpose}</p>
+                    </section>
+                  )}
+
+                  {contents.length > 0 && (
+                    <section className="mb-5">
+                      <h3 className="flex items-center gap-2 text-[13px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>
+                        <FileText className="w-4 h-4" aria-hidden="true" />
+                        {isAr ? 'ما يتضمنه التقرير' : 'What the report gives you'}
+                      </h3>
+                      <ul className="space-y-1.5">
+                        {contents.map((c, i) => (
+                          <li key={i} className="flex gap-2 text-[14px]" style={{ color: 'var(--text-secondary)' }}>
+                            <Check className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#1B8A5A' }} aria-hidden="true" />
+                            <span>{isAr ? c.ar : c.en}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+
+                  {scales.length > 0 && (
+                    <section className="mb-6">
+                      <h3 className="flex items-center gap-2 text-[13px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>
+                        <Layers className="w-4 h-4" aria-hidden="true" />
+                        {isAr ? `التقييمات المشمولة (${scales.length})` : `Assessments included (${scales.length})`}
+                      </h3>
+                      <p className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>
+                        {scales.map(s => (isAr ? s.ar : s.en)).join(isAr ? '، ' : ', ')}
+                      </p>
+                    </section>
+                  )}
+
+                  <div className="mt-auto">
+                    {onSale && price ? (
+                      <Link
+                        href={`/packages/${pkg.id}`}
+                        className="btn-accent w-full inline-flex items-center justify-center gap-2"
+                      >
+                        {isAr ? `احصل على الباقة · ${price}` : `Get this package · ${price}`}
+                        <ArrowRight className="w-4 h-4 rtl:rotate-180" aria-hidden="true" />
+                      </Link>
+                    ) : (
+                      <p
+                        className="text-center text-[13px] font-semibold py-2.5 rounded-lg"
+                        style={{ backgroundColor: 'var(--surface-alt)', color: 'var(--text-muted)' }}
+                      >
+                        {isAr ? 'متاحة قريباً' : 'Available soon'}
+                      </p>
+                    )}
+                    <p className="text-center text-[12px] mt-2" style={{ color: 'var(--text-muted)' }}>
+                      {isAr
+                        ? 'التقييمات داخل الباقة مجانية دائماً؛ الدفع للتقرير المجمّع فقط.'
+                        : 'The assessments inside are always free; you pay only for the combined report.'}
+                    </p>
+                  </div>
+                </article>
+              )
+            })}
           </div>
-        </div>
+        )}
+
+        <p className="text-center text-[12.5px] mt-10 max-w-2xl mx-auto" style={{ color: 'var(--text-muted)' }}>
+          {isAr
+            ? 'التقارير للفحص والتأمل الذاتي وليست تشخيصاً. للتشخيص والعلاج راجع مختصاً مرخصاً.'
+            : 'Reports are for screening and self-reflection, not a diagnosis. For diagnosis and treatment, see a licensed professional.'}
+        </p>
       </main>
-    </div>
+    </PublicMarketingShell>
   )
 }

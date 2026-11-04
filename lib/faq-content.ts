@@ -48,9 +48,9 @@ export const PLATFORM_FAQ: FaqItem[] = [
     questionEn: 'Are assessments free?',
     questionAr: 'هل التقييمات مجانية؟',
     answerEn:
-      'Yes. Validated screening assessments are free after you create an account. Some future subscription packages for advanced features may be offered separately.',
+      'Yes. Every assessment and its result is free after you create an account. The only paid option is a package: a one-time purchase that combines several assessments into one report. There is no subscription.',
     answerAr:
-      'نعم. تقييمات الفحص المعتمدة مجانية بعد إنشاء حساب. قد تُعرض لاحقاً باقات اشتراك لميزات متقدمة بشكل منفصل.',
+      'نعم. جميع التقييمات ونتائجها مجانية بعد إنشاء حساب. الخيار المدفوع الوحيد هو الباقة: شراء لمرة واحدة يجمع عدة تقييمات في تقرير واحد. لا يوجد اشتراك.',
   },
   {
     id: 'crisis',

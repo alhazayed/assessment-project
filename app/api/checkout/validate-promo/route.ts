@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     // already authenticated above). Same checker create-session charges from.
     const db = createAdminClient()
 
-    // A tier or a package UUID; same price lookup create-session charges from.
+    // A package UUID; same price lookup create-session charges from.
     const resolved = await resolveProduct(db, packageId)
     if (!resolved.ok) {
       return NextResponse.json({ error: 'Invalid package' }, { status: 400 })
