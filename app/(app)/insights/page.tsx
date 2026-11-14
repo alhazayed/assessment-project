@@ -169,7 +169,7 @@ export default function InsightsPage() {
             )}
           </div>
 
-          {/* AI "Full Picture" synthesis across all assessment scales */}
+          {/* AI explanation of each result on its own (the combined reading is the paid package report) */}
           <SynthesisCard isAr={isAr} />
 
           {/* Streak card */}

@@ -5,6 +5,7 @@ import { t } from '@/lib/i18n'
 import { localizeSeverity } from '@/lib/severity-labels'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
+import TrackOnView from '@/components/track-on-view'
 import { ArrowLeft, ArrowRight, CheckCircle2, Circle, Lock, Layers, ShoppingBag } from 'lucide-react'
 import { hasPackageAccess } from '@/lib/billing/package-access'
 import { packageSaleState } from '@/lib/billing/product'
@@ -147,6 +148,7 @@ export default async function PackageDetailPage(props: {
 
   return (
     <div className="p-4 sm:p-6 lg:p-7 max-w-3xl" dir={isAr ? 'rtl' : 'ltr'}>
+      <TrackOnView event="package_viewed" props={{ package: row.id, owned: hasAccess, for_sale: forSale }} />
 
       {/* Back link */}
       <Link

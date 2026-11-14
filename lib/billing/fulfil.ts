@@ -1,7 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { issueGiftCode } from '@/lib/billing/gift-codes'
 import { sendEmail } from '@/lib/email/send'
-import { giftReceiptEmail, receiptEmail } from '@/lib/email/templates'
+import { bulkCodesEmail, giftReceiptEmail, receiptEmail } from '@/lib/email/templates'
+import { bulkQuantityOf, createBulkCodes } from '@/lib/billing/bulk'
+import { trackServer } from '@/lib/analytics-server'
 import { absoluteUrl } from '@/lib/site-url'
 
 /**
@@ -48,8 +50,18 @@ export async function fulfilPayment(
 
   const giftEmail =
     typeof payment.metadata?.giftRecipientEmail === 'string' ? payment.metadata.giftRecipientEmail : null
+  const bulkQuantity = bulkQuantityOf(payment.metadata)
 
-  if (giftEmail && payment.package_id) {
+  if (bulkQuantity && payment.package_id) {
+    // Bulk order: N codes for the buyer to hand out; nothing unlocks on the
+    // buyer's own account. Codes are created once; the email with the plain
+    // codes goes out only on the call that created them.
+    const codes = await createBulkCodes(db, { id: payment.id, user_id: payment.user_id, package_id: payment.package_id }, bulkQuantity)
+    if (codes) {
+      await sendBulkCodes(db, payment, codes)
+      await trackServer('package_paid', { kind: 'bulk', quantity: bulkQuantity, amount_cents: payment.amount_cents ?? 0 })
+    }
+  } else if (giftEmail && payment.package_id) {
     // Gift: one code row per payment (payment_id is unique), created once.
     const { data: existingGift } = await db
       .from('package_gift_codes')
@@ -76,7 +88,10 @@ export async function fulfilPayment(
         console.error('[fulfil] gift code issue failed:', err instanceof Error ? err.message : err)
       }
     }
-    if (isNew) await sendBuyerReceipt(db, payment, { giftRecipient: giftEmail })
+    if (isNew) {
+      await sendBuyerReceipt(db, payment, { giftRecipient: giftEmail })
+      await trackServer('package_paid', { kind: 'gift', quantity: 1, amount_cents: payment.amount_cents ?? 0 })
+    }
   } else {
     const { data: existingPurchase } = await db
       .from('package_purchases')
@@ -99,7 +114,10 @@ export async function fulfilPayment(
         expires_at: expires ? expires.toISOString() : null,
       })
       if (error) throw new Error(`Failed to grant access: ${error.message}`)
-      if (payment.package_id) await sendBuyerReceipt(db, payment, { giftRecipient: null })
+      if (payment.package_id) {
+        await sendBuyerReceipt(db, payment, { giftRecipient: null })
+        await trackServer('package_paid', { kind: 'self', quantity: 1, amount_cents: payment.amount_cents ?? 0 })
+      }
     }
   }
 
@@ -117,6 +135,40 @@ export async function fulfilPayment(
 
 function formatUsd(cents: number | null | undefined): string {
   return `$${((cents ?? 0) / 100).toFixed(2)}`
+}
+
+/**
+ * Email the buyer of a bulk order their codes (also their receipt). Best
+ * effort: if it fails, the codes can be replaced from the order page.
+ */
+async function sendBulkCodes(
+  db: SupabaseClient,
+  payment: { id: string; user_id: string; package_id: string | null; amount_cents?: number | null },
+  codes: string[]
+): Promise<void> {
+  try {
+    const [{ data: userRes }, { data: pkg }] = await Promise.all([
+      db.auth.admin.getUserById(payment.user_id),
+      db.from('packages').select('name_en, name_ar').eq('id', payment.package_id).maybeSingle(),
+    ])
+    const to = userRes?.user?.email
+    if (!to) return
+    const sent = await sendEmail(
+      bulkCodesEmail({
+        to,
+        pkg: { en: pkg?.name_en ?? 'Assessment package', ar: pkg?.name_ar ?? 'باقة تقييم' },
+        amount: formatUsd(payment.amount_cents),
+        codes,
+        redeemUrl: absoluteUrl('/redeem'),
+        orderUrl: absoluteUrl(`/billing/codes/${payment.id}`),
+      })
+    )
+    if (sent.ok) {
+      await db.from('package_gift_codes').update({ emailed_at: new Date().toISOString() }).eq('payment_id', payment.id)
+    }
+  } catch (err) {
+    console.error('[fulfil] bulk codes email failed:', err instanceof Error ? err.message : err)
+  }
 }
 
 /** Best effort: a missing or failed receipt never undoes the purchase. */

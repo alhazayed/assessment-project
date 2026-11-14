@@ -24,10 +24,11 @@ export async function POST(_request: Request, props: { params: Promise<{ id: str
   const db = createAdminClient()
   const { data: gift } = await db
     .from('package_gift_codes')
-    .select('id, buyer_id, recipient_email, package_id, redeemed_at')
+    .select('id, kind, buyer_id, recipient_email, package_id, redeemed_at')
     .eq('id', id)
     .maybeSingle()
-  if (!gift || gift.buyer_id !== user.id) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  // Bulk codes have no recipient; they are replaced from the order page.
+  if (!gift || gift.buyer_id !== user.id || gift.kind !== 'gift' || !gift.recipient_email) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (gift.redeemed_at) return NextResponse.json({ error: 'This gift has already been used', reason: 'used' }, { status: 409 })
 
   try {

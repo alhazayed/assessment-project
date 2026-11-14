@@ -77,3 +77,30 @@ export function giftCodeEmail(p: { to: string; pkg: PackageNames; code: string; 
     text: `Someone has given you ${p.pkg.en} on V Welfare. Your one-time code: ${p.code}\nRedeem it: ${p.redeemUrl}\n\nأهداك أحدهم باقة ${p.pkg.ar}. رمزك: ${p.code}`,
   }
 }
+
+/** Codes for a bulk order (clinician intake or staff), sent to the buyer. Also the receipt. */
+export function bulkCodesEmail(p: {
+  to: string
+  pkg: PackageNames
+  amount: string
+  codes: string[]
+  redeemUrl: string
+  orderUrl: string
+}): EmailMessage {
+  const list = `<ol style="direction:ltr;font-family:monospace;font-size:16px;letter-spacing:2px;background:#EAF2F9;padding:14px 14px 14px 36px;border-radius:8px">${p.codes
+    .map(c => `<li>${esc(c)}</li>`)
+    .join('')}</ol>`
+  const en = `<p>Thank you for your order of <strong>${p.codes.length} codes</strong> for <strong>${esc(p.pkg.en)}</strong>. Amount paid: <strong>${esc(p.amount)}</strong> (one-time).</p>
+<p>Give one code to each person. Each code works once, on one account, and opens the package and its combined report for that person only.</p>${list}
+<p>Keep this email: for security we do not store the codes in readable form. On your order page you can see which codes have been used and replace an unused one.</p>${button(p.orderUrl, 'Open your order')}
+<p>People redeem their code at <a href="${esc(p.redeemUrl)}">${esc(p.redeemUrl)}</a>.</p>`
+  const ar = `<p>شكراً لطلبك <strong>${p.codes.length} رموز</strong> لباقة <strong>${esc(p.pkg.ar)}</strong>. المبلغ المدفوع: <strong>${esc(p.amount)}</strong> (دفعة واحدة).</p>
+<p>أعطِ كل شخص رمزاً واحداً. يعمل كل رمز مرة واحدة وعلى حساب واحد، ويفتح الباقة وتقريرها المجمّع لذلك الشخص فقط.</p>${list}
+<p>احتفظ بهذه الرسالة، فنحن لا نحفظ الرموز بصيغة مقروءة حفاظاً على الأمان. في صفحة طلبك ترى الرموز المستخدمة ويمكنك استبدال أي رمز لم يُستخدم.</p>${button(p.orderUrl, 'افتح طلبك')}`
+  return {
+    to: p.to,
+    subject: `Your ${p.codes.length} V Welfare package codes | رموز باقتك من V Welfare`,
+    html: layout(en, ar),
+    text: `Your ${p.codes.length} codes for ${p.pkg.en} (${p.amount}):\n${p.codes.join('\n')}\n\nRedeem at ${p.redeemUrl}\nYour order: ${p.orderUrl}`,
+  }
+}

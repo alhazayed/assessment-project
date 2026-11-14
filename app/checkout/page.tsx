@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
 import { useLang } from '@/lib/use-lang'
 import { t } from '@/lib/i18n'
+import { trackEvent } from '@/lib/analytics'
+import { BULK_MIN, BULK_MAX } from '@/lib/billing/bulk-limits'
 
 const StripePaymentFormWrapper = lazy(() =>
   import('@/components/StripePaymentForm').then(mod => ({
@@ -39,6 +41,12 @@ function CheckoutForm() {
   const [isGift, setIsGift] = useState(false)
   const [giftEmail, setGiftEmail] = useState('')
   const giftEmailValid = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(giftEmail.trim())
+
+  // Several codes in one order (clinician intake, staff). Not a gift, no promo.
+  const [isBulk, setIsBulk] = useState(false)
+  const [bulkQty, setBulkQty] = useState('10')
+  const bulkQtyNum = Number(bulkQty)
+  const bulkQtyValid = Number.isInteger(bulkQtyNum) && bulkQtyNum >= BULK_MIN && bulkQtyNum <= BULK_MAX
 
   const [promoCode, setPromoCode] = useState('')
   const [discount, setDiscount] = useState(0)
@@ -96,10 +104,15 @@ function CheckoutForm() {
     )
   }
 
-  const basePrice = selectedPackage.priceUSD
+  const unitPrice = selectedPackage.priceUSD
+  const basePrice = isBulk && bulkQtyValid ? (Math.round(unitPrice * 100) * bulkQtyNum) / 100 : unitPrice
   // A package purchase goes straight back to the package, now unlocked.
-  // A gift goes to billing, where the buyer can see it was sent.
-  const successPath = isGift ? '/billing?gift=sent' : `/packages/${selectedPackage.id}?purchased=1`
+  // A gift or a multi-code order goes to billing, where the buyer can follow it.
+  const successPath = isBulk
+    ? '/billing?bulk=sent'
+    : isGift
+      ? '/billing?gift=sent'
+      : `/packages/${selectedPackage.id}?purchased=1`
   // The final price is authoritative from the server when a promo is applied
   // (validated by /api/checkout/validate-promo, the same helper create-session
   // charges from), so the preview total always matches the actual charge.
@@ -165,6 +178,7 @@ function CheckoutForm() {
   const handlePayment = async () => {
     setPaymentLoading(true)
     setPaymentError(null)
+    trackEvent('checkout_started', { mode: isBulk ? 'bulk' : isGift ? 'gift' : 'self', quantity: isBulk ? bulkQtyNum : 1 })
 
     try {
       const response = await fetch('/api/checkout/create-session', {
@@ -172,8 +186,9 @@ function CheckoutForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           packageId: selectedPackage.id,
-          promoCode: promoApplied ? promoCode.trim() : null,
-          giftEmail: isGift ? giftEmail.trim() : null,
+          promoCode: promoApplied && !isBulk ? promoCode.trim() : null,
+          giftEmail: isGift && !isBulk ? giftEmail.trim() : null,
+          quantity: isBulk ? bulkQtyNum : null,
         }),
       })
 
@@ -257,7 +272,9 @@ function CheckoutForm() {
           <div className="space-y-2 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
             <div className="flex justify-between text-sm">
               <span style={{ color: 'var(--text-secondary)' }}>
-                {lang === 'ar' ? 'السعر الأساسي' : 'Base Price'}
+                {isBulk
+                  ? `${bulkQtyValid ? bulkQtyNum : '?'} × $${unitPrice.toFixed(2)}`
+                  : (lang === 'ar' ? 'السعر الأساسي' : 'Base Price')}
               </span>
               <span style={{ color: 'var(--text-primary)' }}>
                 ${basePrice.toFixed(2)}
@@ -299,7 +316,11 @@ function CheckoutForm() {
             color: 'var(--text-secondary)',
           }}
         >
-          {isGift
+          {isBulk
+            ? (lang === 'ar'
+                ? 'دفعة واحدة. نرسل إليك الرموز بالبريد الإلكتروني؛ أعطِ كل شخص رمزاً يفتح الباقة في حسابه. ترى في صفحة الفواتير أي الرموز استُخدمت.'
+                : 'One-time payment. We email you the codes; give one to each person and it opens the package on their account. Billing shows which codes have been used.')
+            : isGift
             ? (lang === 'ar'
                 ? 'دفعة واحدة. نرسل إلى المستلم رمزاً يُستخدم مرة واحدة لفتح الباقة في حسابه.'
                 : 'One-time payment. We email the recipient a one-time code that opens the package on their account.')
@@ -323,15 +344,15 @@ function CheckoutForm() {
             <label className="flex items-center gap-2 text-[14px] font-semibold cursor-pointer" style={{ color: 'var(--text-primary)' }}>
               <input
                 type="checkbox"
-                checked={isGift}
+                checked={isGift && !isBulk}
                 onChange={e => setIsGift(e.target.checked)}
-                disabled={showStripeForm}
+                disabled={showStripeForm || isBulk}
                 className="w-4 h-4"
               />
               {lang === 'ar' ? 'شراء لشخص آخر (هدية)' : 'Buy for someone else (gift)'}
             </label>
           )}
-          {isGift && (
+          {isGift && !isBulk && (
             <div className={alreadyOwned ? '' : 'mt-3'}>
               <label htmlFor="gift-email" className="block text-[13px] mb-1" style={{ color: 'var(--text-secondary)' }}>
                 {lang === 'ar' ? 'البريد الإلكتروني للمستلم' : "Recipient's email"}
@@ -353,6 +374,49 @@ function CheckoutForm() {
                 {lang === 'ar'
                   ? 'سيصله رمز يُستخدم مرة واحدة. لن تُفتح الباقة في حسابك.'
                   : 'They get a one-time code. The package is not unlocked on your account.'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Several codes for clients or staff */}
+        <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'var(--surface)' }}>
+          <label className="flex items-center gap-2 text-[14px] font-semibold cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+            <input
+              type="checkbox"
+              checked={isBulk}
+              onChange={e => {
+                setIsBulk(e.target.checked)
+                if (e.target.checked && !alreadyOwned) setIsGift(false)
+              }}
+              disabled={showStripeForm || promoApplied}
+              className="w-4 h-4"
+            />
+            {lang === 'ar' ? 'شراء عدة رموز (لعملائك أو موظفيك)' : 'Buy several codes (for your clients or staff)'}
+          </label>
+          {isBulk && (
+            <div className="mt-3">
+              <label htmlFor="bulk-qty" className="block text-[13px] mb-1" style={{ color: 'var(--text-secondary)' }}>
+                {lang === 'ar' ? `عدد الرموز (${BULK_MIN}–${BULK_MAX})` : `Number of codes (${BULK_MIN}–${BULK_MAX})`}
+              </label>
+              <input
+                id="bulk-qty"
+                type="number"
+                inputMode="numeric"
+                min={BULK_MIN}
+                max={BULK_MAX}
+                step={1}
+                value={bulkQty}
+                onChange={e => setBulkQty(e.target.value)}
+                disabled={showStripeForm}
+                className="w-32 px-3 py-2 rounded-lg border text-[14px]"
+                style={{ borderColor: 'var(--border)', backgroundColor: 'var(--page-bg)', color: 'var(--text-primary)' }}
+                aria-invalid={!bulkQtyValid ? true : undefined}
+              />
+              <p className="text-[12px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                {lang === 'ar'
+                  ? 'لا تُفتح الباقة في حسابك، ولا يمكن استخدام رمز خصم مع هذا الطلب. لا ترى نتائج أي شخص؛ يظهر تقرير جماعي مجهول الهوية عندما يُكمل 10 أشخاص على الأقل.'
+                  : "The package is not unlocked on your account, and promo codes don't apply to this order. You never see anyone's results; an anonymised group report appears once 10 or more people finish."}
               </p>
             </div>
           )}
@@ -393,7 +457,7 @@ function CheckoutForm() {
             />
             <button
               onClick={handleApplyPromo}
-              disabled={promoApplied || promoLoading || !promoCode}
+              disabled={promoApplied || promoLoading || !promoCode || isBulk}
               className="px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
               style={{
                 backgroundColor: promoApplied ? '#1B8A5A' : '#1D6296',
@@ -458,7 +522,7 @@ function CheckoutForm() {
             {/* Payment Button */}
             <button
               onClick={handlePayment}
-              disabled={paymentLoading || (isGift && !giftEmailValid)}
+              disabled={paymentLoading || (isGift && !isBulk && !giftEmailValid) || (isBulk && !bulkQtyValid)}
               className="w-full py-4 rounded-lg font-bold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50"
               style={{ backgroundColor: '#1D6296' }}
             >
