@@ -5,7 +5,8 @@ import { getLanguage } from '@/lib/get-language'
 import { t } from '@/lib/i18n'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { CreditCard, CheckCircle2, Clock, XCircle, Receipt, Sparkles, ArrowRight, Gift } from 'lucide-react'
+import { CreditCard, CheckCircle2, Clock, XCircle, Receipt, Sparkles, ArrowRight, Gift, KeyRound } from 'lucide-react'
+import { bulkQuantityOf } from '@/lib/billing/bulk'
 import type { Profile } from '@/lib/types'
 
 interface PaymentRow {
@@ -84,8 +85,10 @@ const PAY_STATUS: Record<string, { icon: typeof CheckCircle2; color: string; bg:
   cancelled: { icon: XCircle, color: '#6B7280', bg: '#F1F1F2' },
 }
 
-export default async function BillingPage(props: { searchParams: Promise<{ gift?: string }> }) {
-  const giftJustSent = (await props.searchParams).gift === 'sent'
+export default async function BillingPage(props: { searchParams: Promise<{ gift?: string; bulk?: string }> }) {
+  const sp = await props.searchParams
+  const giftJustSent = sp.gift === 'sent'
+  const bulkJustSent = sp.bulk === 'sent'
   const supabase = await createClient()
   const lang = await getLanguage()
   const { data: { user } } = await supabase.auth.getUser()
@@ -129,6 +132,7 @@ export default async function BillingPage(props: { searchParams: Promise<{ gift?
     .from('package_gift_codes')
     .select('id, recipient_email, emailed_at, redeemed_at, created_at, packages(name_en, name_ar)')
     .eq('buyer_id', user.id)
+    .eq('kind', 'gift')
     .order('created_at', { ascending: false })
   const gifts = (giftRows || []) as unknown as {
     id: string
@@ -154,8 +158,13 @@ export default async function BillingPage(props: { searchParams: Promise<{ gift?
     ? await supabase.from('packages').select('id, name_en, name_ar').in('id', pkgIds)
     : { data: [] as { id: string; name_en: string; name_ar: string }[] }
   const pkgNameById = new Map((pkgNames || []).map(p => [p.id, lang === 'ar' ? p.name_ar : p.name_en]))
-  const paymentLabel = (pay: PaymentRow) =>
-    pay.package_id ? (pkgNameById.get(pay.package_id) ?? tierLabel(null, lang)) : tierLabel(pay.tier, lang)
+  const paymentLabel = (pay: PaymentRow) => {
+    const name = pay.package_id ? (pkgNameById.get(pay.package_id) ?? tierLabel(null, lang)) : tierLabel(pay.tier, lang)
+    const q = bulkQuantityOf(pay.metadata)
+    return q ? `${name} × ${q}` : name
+  }
+  // Paid multi-code orders (clinician intake, staff): each opens its own page.
+  const bulkOrders = payments.filter(p => p.status === 'succeeded' && bulkQuantityOf(p.metadata))
 
   return (
     <div className="p-4 sm:p-6 lg:p-7 max-w-5xl">
@@ -175,6 +184,14 @@ export default async function BillingPage(props: { searchParams: Promise<{ gift?
           {lang === 'ar'
             ? 'تم الشراء. أرسلنا إلى المستلم رمزاً يُستخدم مرة واحدة، ويمكنك متابعته أدناه.'
             : 'Purchase complete. We have emailed the recipient a one-time code; you can follow it below.'}
+        </div>
+      )}
+
+      {bulkJustSent && (
+        <div role="status" className="card p-4 mb-6 text-[14px]" style={{ borderInlineStart: '4px solid #1B8A5A', color: 'var(--text-primary)' }}>
+          {lang === 'ar'
+            ? 'تم الشراء. أرسلنا الرموز إلى بريدك الإلكتروني، ويمكنك متابعة استخدامها أدناه.'
+            : 'Purchase complete. We have emailed you the codes; you can follow their use below.'}
         </div>
       )}
 
@@ -300,6 +317,35 @@ export default async function BillingPage(props: { searchParams: Promise<{ gift?
                   </p>
                 </div>
                 {!g.redeemed_at && <ResendGiftButton giftId={g.id} lang={lang} />}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Multi-code orders */}
+      {bulkOrders.length > 0 && (
+        <div className="card p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <KeyRound className="w-4 h-4" style={{ color: '#1D6296' }} />
+            <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
+              {lang === 'ar' ? 'رموزك للعملاء أو الموظفين' : 'Codes for clients or staff'}
+            </h2>
+          </div>
+          <ul className="divide-y" style={{ borderColor: 'var(--divider)' }}>
+            {bulkOrders.map(o => (
+              <li key={o.id} className="py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                    {paymentLabel(o)}
+                  </p>
+                  <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                    {lang === 'ar' ? 'تاريخ الشراء' : 'Bought'} {formatDate(o.created_at, lang)}
+                  </p>
+                </div>
+                <Link href={`/billing/codes/${o.id}`} className="btn-secondary text-[13px] flex-shrink-0">
+                  {lang === 'ar' ? 'عرض الرموز' : 'View codes'}
+                </Link>
               </li>
             ))}
           </ul>

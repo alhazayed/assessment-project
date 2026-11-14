@@ -4,6 +4,10 @@ import { checkRateLimit } from '@/lib/rate-limit'
 import { checkAiBudget } from '@/lib/security/aiBudgetGuard'
 import { callGemini } from '@/lib/gemini'
 import { scrubPHI } from '@/lib/security/anonymizePHI'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { isPackagesEnabled } from '@/lib/feature-flags'
+import { parseScaleSummary } from '@/lib/synthesis'
+import { loadSaleCandidates, pickPackage } from '@/lib/billing/suggest-package'
 
 export async function POST(_request: Request) {
   try {
@@ -70,7 +74,7 @@ export async function POST(_request: Request) {
     }
 
     if (latestPerScale.length < 3) {
-      return NextResponse.json({ error: 'Complete at least 3 assessments to unlock your Full Picture', code: 'INSUFFICIENT_DATA' }, { status: 422 })
+      return NextResponse.json({ error: 'Complete at least 3 assessments to unlock your results summary', code: 'INSUFFICIENT_DATA' }, { status: 422 })
     }
 
     const resultsSummary = latestPerScale
@@ -82,26 +86,27 @@ export async function POST(_request: Request) {
       )
       .join('\n')
 
-    const systemInstruction = `You are a compassionate clinical psychologist reviewing multiple psychological assessment results for a single patient. Synthesize these results into a coherent clinical picture that helps the patient understand their overall mental health across domains.
+    // Free tier: each result is explained on its own. Reading several scales
+    // together (patterns across scales, quadrants, a combined picture) is what
+    // the paid package report sells, so the free summary must not do it.
+    const systemInstruction = `You are a compassionate psychologist explaining a person's questionnaire results to them, ONE RESULT AT A TIME.
 
-Provide a synthesis in this exact JSON format (no markdown, no text outside JSON):
+Provide your answer in this exact JSON format (no markdown, no text outside JSON):
 {
-  "summary": "<2-3 sentence overview of the overall clinical picture in plain, empathetic language>",
-  "patterns": ["<cross-scale pattern 1>", "<pattern 2>"],
-  "strengths": ["<identified strength or protective factor>"],
-  "areas_of_concern": ["<area that warrants attention, include HIGH RISK flags prominently>"],
-  "recommendations": ["<practical actionable recommendation 1>", "<recommendation 2>", "<recommendation 3>"],
+  "summary": "<1-2 plain sentences: which results are in a healthy range and which are elevated, listed separately>",
+  "scales": [
+    { "code": "<scale code exactly as given>", "meaning": "<one plain sentence: what this score means on this questionnaire's own bands>", "next_step": "<one practical next step for this result only>" }
+  ],
   "overall_tone": "positive",
-  "high_priority_scale": "<code of the scale most warranting follow-up attention, or null>"
+  "high_priority_scale": "<code of the single result most worth following up, or null>"
 }
 
 Rules:
+- Explain each scale independently. Do NOT link scales to each other, do NOT describe patterns, overlaps or causes across scales (for example, do not say sleep is affecting mood, or that two results together suggest something). Do NOT give an overall diagnosis or profile.
+- One entry in "scales" per result given, in the same order, using the given code.
 - overall_tone must be exactly one of: "positive", "cautionary", "urgent"
-- Be empathetic and accessible — avoid clinical jargon
-- Highlight connections between domains (e.g., sleep affecting mood, anxiety affecting social functioning)
-- If any HIGH RISK flag is present, overall_tone must be "urgent" and it must appear in areas_of_concern
-- Keep recommendations practical and achievable without professional help
-- Strengths list may be empty [] if none are evident`
+- If any result is marked [HIGH RISK], overall_tone must be "urgent" and that scale's next_step must say to contact a professional or an emergency line now.
+- Be empathetic and avoid clinical jargon. This is not a diagnosis.`
 
     const res = await callGemini(apiKey, {
       systemInstruction: { parts: [{ text: systemInstruction }] },
@@ -118,57 +123,23 @@ Rules:
     const data = await res.json()
     const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
 
-    let synthesis: {
-      summary: string
-      patterns: string[]
-      strengths: string[]
-      areas_of_concern: string[]
-      recommendations: string[]
-      overall_tone: string
-      high_priority_scale: string | null
-    } | null = null
-    try {
-      const jsonMatch = raw.match(/\{[\s\S]*\}/)
-      const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null
-      if (
-        parsed &&
-        typeof parsed.summary === 'string' &&
-        Array.isArray(parsed.patterns) &&
-        Array.isArray(parsed.strengths) &&
-        Array.isArray(parsed.areas_of_concern) &&
-        Array.isArray(parsed.recommendations) &&
-        ['positive', 'cautionary', 'urgent'].includes(parsed.overall_tone)
-      ) {
-        // Apply length caps to prevent oversized AI responses from being stored/returned
-        const MAX_LEN = 5000
-        if (parsed.summary && parsed.summary.length > MAX_LEN) parsed.summary = parsed.summary.slice(0, MAX_LEN)
-        if (parsed.summary_ar && parsed.summary_ar.length > MAX_LEN) parsed.summary_ar = parsed.summary_ar.slice(0, MAX_LEN)
-        if (parsed.high_priority_scale && typeof parsed.high_priority_scale === 'string' && parsed.high_priority_scale.length > MAX_LEN) {
-          parsed.high_priority_scale = parsed.high_priority_scale.slice(0, MAX_LEN)
-        }
-        if (Array.isArray(parsed.patterns)) {
-          parsed.patterns = parsed.patterns.map((s: unknown) => typeof s === 'string' && s.length > MAX_LEN ? s.slice(0, MAX_LEN) : s)
-        }
-        if (Array.isArray(parsed.strengths)) {
-          parsed.strengths = parsed.strengths.map((s: unknown) => typeof s === 'string' && s.length > MAX_LEN ? s.slice(0, MAX_LEN) : s)
-        }
-        if (Array.isArray(parsed.areas_of_concern)) {
-          parsed.areas_of_concern = parsed.areas_of_concern.map((s: unknown) => typeof s === 'string' && s.length > MAX_LEN ? s.slice(0, MAX_LEN) : s)
-        }
-        if (Array.isArray(parsed.recommendations)) {
-          parsed.recommendations = parsed.recommendations.map((s: unknown) => typeof s === 'string' && s.length > MAX_LEN ? s.slice(0, MAX_LEN) : s)
-        }
-        synthesis = parsed
-      }
-    } catch {
-      synthesis = null
-    }
-
+    const synthesis = parseScaleSummary(raw, latestPerScale)
     if (!synthesis) {
       return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 })
     }
 
-    return NextResponse.json({ synthesis, scaleCount: latestPerScale.length })
+    // The combined reading lives in the paid package that best matches what
+    // this person has already taken (only while packages are on sale).
+    let suggestedPackage = null
+    if (await isPackagesEnabled()) {
+      try {
+        suggestedPackage = pickPackage(await loadSaleCandidates(createAdminClient()), latestPerScale.map(r => r.code))
+      } catch (err) {
+        console.error('synthesis: package suggestion failed:', err instanceof Error ? err.message : err)
+      }
+    }
+
+    return NextResponse.json({ synthesis, scaleCount: latestPerScale.length, suggestedPackage })
   } catch (err) {
     console.error('synthesis error:', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

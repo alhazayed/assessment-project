@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { hashGiftCode, normalizeGiftCode } from '@/lib/billing/gift-codes'
+import { trackServer } from '@/lib/analytics-server'
 
 /**
  * POST /api/packages/redeem  { code }
@@ -33,7 +34,10 @@ export async function POST(request: Request) {
   }
 
   const result = data as { ok: boolean; reason?: string; package_id?: string }
-  if (result.ok) return NextResponse.json({ ok: true, packageId: result.package_id })
+  if (result.ok) {
+    await trackServer('package_redeemed')
+    return NextResponse.json({ ok: true, packageId: result.package_id })
+  }
 
   const status = result.reason === 'invalid' ? 400 : 409
   // Never reveal which package an unknown code belongs to.

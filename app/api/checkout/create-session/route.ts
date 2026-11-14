@@ -9,6 +9,7 @@ import { isPackagesEnabled } from '@/lib/feature-flags'
 import { checkPromoCode } from '@/lib/billing/promo'
 import { fulfilPayment } from '@/lib/billing/fulfil'
 import { normalizeGiftEmail } from '@/lib/billing/gift-codes'
+import { parseBulkQuantity, BULK_MIN, BULK_MAX } from '@/lib/billing/bulk'
 
 /**
  * POST /api/checkout/create-session
@@ -71,6 +72,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Enter a valid email address for the recipient', reason: 'invalid_gift_email' }, { status: 400 })
     }
 
+    // Optional: several codes of the package in one order (clinician intake,
+    // employer staff). The buyer hands the codes out; nothing unlocks on their
+    // own account. Not combined with a gift or a promo code.
+    const bulkQuantity = parseBulkQuantity(body.quantity)
+    if (bulkQuantity === 'invalid') {
+      return NextResponse.json({ error: `Choose between ${BULK_MIN} and ${BULK_MAX} codes`, reason: 'invalid_quantity' }, { status: 400 })
+    }
+    if (bulkQuantity && (giftEmail || promoCode)) {
+      return NextResponse.json({ error: 'A multi-code order cannot be a gift or use a promo code', reason: 'bulk_conflict' }, { status: 400 })
+    }
+
     // packageId is a package UUID (the monthly tiers are no longer sold). The
     // price is always read server-side from packages.price_cents.
     if (!packageId) {
@@ -93,14 +105,15 @@ export async function POST(request: Request) {
 
     // Don't sell a package to someone who already has it (they can still
     // buy it as a gift).
-    if (!giftEmail && (await hasPackageAccess(db, user.id, product.packageId))) {
+    if (!giftEmail && !bulkQuantity && (await hasPackageAccess(db, user.id, product.packageId))) {
       return NextResponse.json(
         { error: 'You already have this package', reason: 'already_owned' },
         { status: 409 }
       )
     }
 
-    const basePrice = product.priceUSD
+    // Price per code times the number of codes (cents first, so no float drift).
+    const basePrice = bulkQuantity ? Math.round(product.priceUSD * 100) * bulkQuantity / 100 : product.priceUSD
 
     // Validate promo code if provided (same checker as the checkout preview),
     // and capture its discount for server-side price computation.
@@ -146,6 +159,8 @@ export async function POST(request: Request) {
           promoCode: appliedCode,
           productKind: product.kind,
           giftRecipientEmail: giftEmail,
+          bulkQuantity: bulkQuantity ?? null,
+          unitPrice: product.priceUSD,
           basePrice,
           finalAmount: amount,
         },
@@ -171,7 +186,7 @@ export async function POST(request: Request) {
         await db.from('payments').update({ status: 'failed' }).eq('id', payment.id)
         return NextResponse.json({ error: 'Failed to apply promo code' }, { status: 500 })
       }
-      return NextResponse.json({ success: true, free: true, paymentId: payment.id, kind: product.kind, gift: !!giftEmail })
+      return NextResponse.json({ success: true, free: true, paymentId: payment.id, kind: product.kind, gift: !!giftEmail, bulk: !!bulkQuantity })
     }
 
     // Otherwise promo usage is recorded by the webhook on successful payment,
@@ -184,6 +199,7 @@ export async function POST(request: Request) {
       paymentId: payment.id,
       kind: product.kind,
       gift: !!giftEmail,
+      bulk: !!bulkQuantity,
     })
   } catch (error) {
     console.error('Checkout session error:', error)
