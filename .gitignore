@@ -34,7 +34,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-.claude/
+# Claude Code: share project settings and vendored skills, keep personal files out
+.claude/*
+!.claude/settings.json
+!.claude/skills/
 
 # Supabase CLI local cache
 /supabase/.temp/
