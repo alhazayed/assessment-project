@@ -2,7 +2,15 @@
   "mcpServers": {
     "supabase": {
       "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=wyzezyctpvlohuuhzyof"
+      "url": "https://mcp.supabase.com/mcp?project_ref=wyzezyctpvlohuuhzyof&read_only=true&features=database,docs"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@0.0.84", "--isolated"]
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@1.12.0", "--isolated", "--no-usage-statistics", "--no-performance-crux"]
     }
   }
 }
